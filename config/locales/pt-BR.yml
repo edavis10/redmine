@@ -705,7 +705,7 @@ pt-BR:
   text_no_configuration_data: "Os Papéis, tipos de tarefas, situação de tarefas e workflows não foram configurados ainda.\nÉ altamente recomendado carregar as configurações padrão. Você poderá modificar estas configurações assim que carregadas."
   text_load_default_configuration: Carregar a configuração padrão
   text_status_changed_by_changeset: "Aplicado no changeset {{value}}."
-  text_issues_destroy_confirmation: 'Você tem certeza que deseja excluir a(s) tarefa(s) selecionads(s)?'
+  text_issues_destroy_confirmation: 'Você tem certeza que deseja excluir a(s) tarefa(s) selecionada(s)?'
   text_select_project_modules: 'Selecione módulos para habilitar para este projeto:'
   text_default_administrator_account_changed: Conta padrão do administrador alterada
   text_file_repository_writable: Repositório com permissão de escrita
