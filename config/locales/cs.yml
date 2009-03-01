@@ -782,3 +782,5 @@ cs:
   setting_openid: Allow OpenID login and registration
   field_identity_url: OpenID URL
   label_login_with_open_id_option: or login with OpenID
+  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
+  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
