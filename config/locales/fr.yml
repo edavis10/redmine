@@ -247,7 +247,7 @@ fr:
   field_attr_mail: Attribut Email
   field_onthefly: Création des utilisateurs à la volée
   field_start_date: Début
-  field_done_ratio: %% Réalisé
+  field_done_ratio: % Réalisé
   field_auth_source: Mode d'authentification
   field_hide_mail: Cacher mon adresse mail
   field_comments: Commentaire
@@ -273,6 +273,7 @@ fr:
   field_editable: Modifiable
   field_watcher: Observateur
   field_identity_url: URL OpenID
+  field_content: Contenu
   
   setting_app_title: Titre de l'application
   setting_app_subtitle: Sous-titre de l'application
@@ -742,7 +743,7 @@ fr:
   text_regexp_info: ex. ^[A-Z0-9]+$
   text_min_max_length_info: 0 pour aucune restriction
   text_project_destroy_confirmation: Etes-vous sûr de vouloir supprimer ce projet et toutes ses données ?
-  text_subprojects_destroy_warning: "Ses sous-projets: {{value}} seront également supprimés.'"
+  text_subprojects_destroy_warning: "Ses sous-projets: {{value}} seront également supprimés."
   text_workflow_edit: Sélectionner un tracker et un rôle pour éditer le workflow
   text_are_you_sure: Etes-vous sûr ?
   text_journal_changed: "changé de {{old}} à {{new}}"
@@ -779,8 +780,8 @@ fr:
   text_destroy_time_entries: Supprimer les heures
   text_assign_time_entries_to_project: Reporter les heures sur le projet
   text_reassign_time_entries: 'Reporter les heures sur cette demande:'
-  text_user_wrote: "{{value}} a écrit:'"
-  text_enumeration_destroy_question: "Cette valeur est affectée à {{count}} objets.'"
+  text_user_wrote: "{{value}} a écrit:"
+  text_enumeration_destroy_question: "Cette valeur est affectée à {{count}} objets."
   text_enumeration_category_reassign_to: 'Réaffecter les objets à cette valeur:'
   text_email_delivery_not_configured: "L'envoi de mail n'est pas configuré, les notifications sont désactivées.\nConfigurez votre serveur SMTP dans config/email.yml et redémarrez l'application pour les activer."
   text_repository_usernames_mapping: "Vous pouvez sélectionner ou modifier l'utilisateur Redmine associé à chaque nom d'utilisateur figurant dans l'historique du dépôt.\nLes utilisateurs avec le même identifiant ou la même adresse mail seront automatiquement associés."
