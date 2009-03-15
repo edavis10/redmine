@@ -683,7 +683,7 @@ pt-BR:
   text_subprojects_destroy_warning: "Seu(s) subprojeto(s): {{value}} também serão excluídos.'"
   text_workflow_edit: Selecione um papel e um tipo de tarefa para editar o fluxo de trabalho
   text_subprojects_destroy_warning: "Seu(s) subprojeto(s): {{value}} também serão excluídos."
-  text_workflow_edit: Selecione um papel e um tipo de tarefa para editar o workflow
+  text_workflow_edit: Selecione um papel e um tipo de tarefa para editar o fluxo de trabalho
   text_are_you_sure: Você tem certeza?
   text_journal_changed: "alterado(a) de {{old}} para {{new}}"
   text_journal_set_to: "alterado(a) para {{value}}"
@@ -820,3 +820,7 @@ pt-BR:
   field_identity_url: OpenID URL
   label_login_with_open_id_option: ou use o OpenID
   field_content: Content
+  label_descending: Descending
+  label_sort: Sort
+  label_ascending: Ascending
+  label_date_from_to: From {{start}} to {{end}}

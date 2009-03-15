@@ -9,8 +9,8 @@
       # When no format has been given, it uses default.
       # You can provide other formats here if you like!
       default: "%Y-%m-%d"
-      short: "%m月%d日"
-      long: "%Y年%m月%d日"
+      short: "%b%d日"
+      long: "%Y年%b%d日"
 
     day_names: [星期日, 星期一, 星期二, 星期三, 星期四, 星期五, 星期六]
     abbr_day_names: [日, 一, 二, 三, 四, 五, 六]
@@ -348,6 +348,7 @@
   field_editable: 可編輯
   field_watcher: 觀察者
   field_identity_url: OpenID 網址
+  field_content: 內容
   
   setting_app_title: 標題
   setting_app_subtitle: 副標題
@@ -768,6 +769,9 @@
   label_issue_watchers: 觀察者
   label_example: 範例
   label_display: 顯示
+  label_sort: 排序
+  label_ascending: 遞增排序
+  label_descending: 遞減排序
   
   button_login: 登入
   button_submit: 送出
@@ -890,3 +894,4 @@
   error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
   error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
   field_content: Content
+  label_date_from_to: From {{start}} to {{end}}
