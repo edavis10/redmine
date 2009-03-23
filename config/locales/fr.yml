@@ -698,6 +698,8 @@ fr:
   label_ascending: Croissant
   label_descending: Décroissant
   label_date_from_to: Du {{start}} au {{end}}
+  label_greater_or_equal: ">="
+  label_less_or_equal: <=
   
   button_login: Connexion
   button_submit: Soumettre

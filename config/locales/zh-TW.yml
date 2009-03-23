@@ -772,7 +772,10 @@
   label_sort: 排序
   label_ascending: 遞增排序
   label_descending: 遞減排序
-  
+  label_date_from_to: 起 {{start}} 迄 {{end}}
+  label_greater_or_equal: ">="
+  label_less_or_equal: <=
+
   button_login: 登入
   button_submit: 送出
   button_save: 儲存
@@ -893,5 +896,3 @@
   enumeration_activities: 活動 (時間追蹤)
   error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
   error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
-  field_content: Content
-  label_date_from_to: From {{start}} to {{end}}

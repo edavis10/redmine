@@ -722,7 +722,10 @@ sv:
   label_sort: Sortera
   label_descending: Fallande
   label_ascending: Stigande
-  
+  label_date_from_to: Från {{start}} till {{end}}
+  label_greater_or_equal: ">="
+  label_less_or_equal: <=
+
   button_login: Logga in
   button_submit: Spara
   button_save: Spara
@@ -843,5 +846,3 @@ sv:
   enumeration_activities: Aktiviteter (tidsuppföljning)
   error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
   error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
-  field_content: Content
-  label_date_from_to: From {{start}} to {{end}}

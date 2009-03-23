@@ -269,6 +269,7 @@
   field_searchable: Kereshető
   field_default_value: Alapértelmezett érték
   field_comments_sorting: Feljegyzések megjelenítése
+  field_content: Tartalom
   
   setting_app_title: Alkalmazás címe
   setting_app_subtitle: Alkalmazás alcíme
@@ -618,6 +619,12 @@
   label_chronological_order: Időrendben
   label_reverse_chronological_order: Fordított időrendben
   label_planning: Tervezés
+  label_descending: Csökkenő
+  label_sort: Rendezés
+  label_ascending: Növekvő
+  label_date_from_to: "{{start}} -tól {{end}} -ig"
+  label_greater_or_equal: ">="
+  label_less_or_equal: <=
   
   button_login: Bejelentkezés
   button_submit: Elfogad
@@ -817,8 +824,3 @@
   label_login_with_open_id_option: bejelentkezés OpenID használatával
   error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
   error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
-  field_content: Tartalom
-  label_descending: Descending
-  label_sort: Sort
-  label_ascending: Ascending
-  label_date_from_to: From {{start}} to {{end}}
