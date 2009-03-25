@@ -168,6 +168,8 @@ zh:
   error_scm_command_failed: "访问版本库时发生错误：{{value}}"
   error_scm_annotate: "该条目不存在或无法追溯。"
   error_issue_not_found_in_project: '问题不存在或不属于此项目'
+  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
+  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
   
   warning_attachments_not_saved: "{{count}} 个文件保存失败。"
   
@@ -543,6 +545,8 @@ zh:
   label_not_equals: 不等于
   label_in_less_than: 剩余天数小于
   label_in_more_than: 剩余天数大于
+  label_greater_or_equal: '>='
+  label_less_or_equal: '<='
   label_in: 剩余天数
   label_today: 今天
   label_all_time: 全部时间
@@ -819,5 +823,3 @@ zh:
   enumeration_issue_priorities: 问题优先级
   enumeration_doc_categories: 文档类别
   enumeration_activities: 活动（时间跟踪）
-  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
-  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").

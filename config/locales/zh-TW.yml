@@ -243,6 +243,8 @@
   error_scm_command_failed: "嘗試存取儲存庫時發生錯誤： {{value}}"
   error_scm_annotate: "SCM 儲存庫中無此項目或此項目無法被加註。"
   error_issue_not_found_in_project: '該項目不存在或不屬於此專案'
+  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
+  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
   
   warning_attachments_not_saved: "{{count}} 個附加檔案無法儲存。"
   
@@ -618,6 +620,8 @@
   label_not_equals: 不等於
   label_in_less_than: 在小於
   label_in_more_than: 在大於
+  label_greater_or_equal: "大於等於 (>=)"
+  label_less_or_equal: "小於等於 (<=)"
   label_in: 在
   label_today: 今天
   label_all_time: all time
@@ -894,5 +898,3 @@
   enumeration_issue_priorities: 項目優先權
   enumeration_doc_categories: 文件分類
   enumeration_activities: 活動 (時間追蹤)
-  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
-  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").

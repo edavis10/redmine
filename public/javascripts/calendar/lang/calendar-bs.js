@@ -1,7 +1,9 @@
 // ** I18N
 
-// Calendar EN language
-// Author: Mihai Bazon, <mihai_bazon@yahoo.com>
+// Calendar BS language
+// Autor: Ernad Husremović <hernad@bring.out.ba>
+//
+// Preuzeto od Dragan Matic, <kkid@panforma.co.yu>
 // Encoding: any
 // Distributed under the same terms as the calendar itself.
 
@@ -11,14 +13,14 @@
 
 // full day names
 Calendar._DN = new Array
-("Duminică",
- "Luni",
- "Marți",
- "Miercuri",
- "Joi",
- "Vineri",
- "Sâmbătă",
- "Duminică");
+("Nedjelja",
+ "Ponedeljak",
+ "Utorak",
+ "Srijeda",
+ "Četvrtak",
+ "Petak",
+ "Subota",
+ "Nedelja");
 
 // Please note that the following array of short day names (and the same goes
 // for short month names, _SMN) isn't absolutely necessary.  We give it here
@@ -34,52 +36,52 @@ Calendar._DN = new Array
 
 // short day names
 Calendar._SDN = new Array
-("Dum",
- "Lun",
- "Mar",
- "Mie",
- "Joi",
- "Vin",
- "Sâm",
- "Dum");
+("Ned",
+ "Pon",
+ "Uto",
+ "Sri",
+ "Čet",
+ "Pet",
+ "Sub",
+ "Ned");
 
 // First day of the week. "0" means display Sunday first, "1" means display
 // Monday first, etc.
-Calendar._FD = 1;
+Calendar._FD = 0;
 
 // full month names
 Calendar._MN = new Array
-("Ianuarie",
- "Februarie",
- "Martie",
- "Aprilie",
- "Mai",
- "Iunie",
- "Iulie",
- "August",
- "Septembrie",
- "Octombrie",
- "Noiembrie",
- "Decembrie");
+("Januar",
+ "Februar",
+ "Mart",
+ "April",
+ "Maj",
+ "Jun",
+ "Jul",
+ "Avgust",
+ "Septembar",
+ "Oktobar",
+ "Novembar",
+ "Decembar");
 
 // short month names
 Calendar._SMN = new Array
-("Ian",
+("Jan",
  "Feb",
  "Mar",
  "Apr",
- "Mai",
- "Iun",
- "Iul",
- "Aug",
+ "Maj",
+ "Jun",
+ "Jul",
+ "Avg",
  "Sep",
- "Oct",
- "Noi",
+ "Okt",
+ "Nov",
  "Dec");
 
 // tooltips
 Calendar._TT = {};
-Calendar._TT["INFO"] = "Despre calendar";
+Calendar._TT["INFO"] = "O kalendaru";
 
 Calendar._TT["ABOUT"] =
 "DHTML Date/Time Selector\n" +
@@ -87,41 +89,41 @@ Calendar._TT["ABOUT"] =
 "For latest version visit: http://www.dynarch.com/projects/calendar/\n" +
 "Distributed under GNU LGPL.  See http://gnu.org/licenses/lgpl.html for details." +
 "\n\n" +
-"Selectare data:\n" +
-"- Folositi butoanele \xab, \xbb pentru a selecta anul\n" +
-"- Folositi butoanele " + String.fromCharCode(0x2039) + ", " + String.fromCharCode(0x203a) + " pentru a selecta luna\n" +
-"- Lasati apasat butonul pentru o selectie mai rapida.";
+"Date selection:\n" +
+"- Use the \xab, \xbb buttons to select year\n" +
+"- Use the " + String.fromCharCode(0x2039) + ", " + String.fromCharCode(0x203a) + " buttons to select month\n" +
+"- Hold mouse button on any of the above buttons for faster selection.";
 Calendar._TT["ABOUT_TIME"] = "\n\n" +
-"Selectare timp:\n" +
-"- Click pe campul de timp pentru a majora timpul\n" +
-"- sau Shift-Click pentru a micsora\n" +
-"- sau click si drag pentru manipulare rapida.";
+"Time selection:\n" +
+"- Click on any of the time parts to increase it\n" +
+"- or Shift-click to decrease it\n" +
+"- or click and drag for faster selection.";
 
-Calendar._TT["PREV_YEAR"] = "Anul precedent (apasati pentru meniu)";
-Calendar._TT["PREV_MONTH"] = "Luna precedenta (apasati pentru meniu)";
-Calendar._TT["GO_TODAY"] = "Astazi";
-Calendar._TT["NEXT_MONTH"] = "Luna viitoare (apasati pentru meniu)";
-Calendar._TT["NEXT_YEAR"] = "Anul viitor (apasati pentru meniu)";
-Calendar._TT["SEL_DATE"] = "Selecteaza data";
-Calendar._TT["DRAG_TO_MOVE"] = "Drag pentru a muta";
-Calendar._TT["PART_TODAY"] = " (azi)";
+Calendar._TT["PREV_YEAR"] = "Preth. godina (drži pritisnuto za meni)";
+Calendar._TT["PREV_MONTH"] = "Preth. mjesec (drži pritisnuto za meni)";
+Calendar._TT["GO_TODAY"] = "Na današnji dan";
+Calendar._TT["NEXT_MONTH"] = "Naredni mjesec (drži pritisnuto za meni)";
+Calendar._TT["NEXT_YEAR"] = "Naredna godina (drži prisnuto za meni)";
+Calendar._TT["SEL_DATE"] = "Izbor datuma";
+Calendar._TT["DRAG_TO_MOVE"] = "Prevucite za izmjenu";
+Calendar._TT["PART_TODAY"] = " (danas)";
 
 // the following is to inform that "%s" is to be the first day of week
 // %s will be replaced with the day name.
-Calendar._TT["DAY_FIRST"] = "Vizualizează %s prima";
+Calendar._TT["DAY_FIRST"] = "Prikaži %s prvo";
 
 // This may be locale-dependent.  It specifies the week-end days, as an array
 // of comma-separated numbers.  The numbers are from 0 to 6: 0 means Sunday, 1
 // means Monday, etc.
 Calendar._TT["WEEKEND"] = "0,6";
 
-Calendar._TT["CLOSE"] = "Închide";
-Calendar._TT["TODAY"] = "Azi";
-Calendar._TT["TIME_PART"] = "(Shift-)Click sau drag pentru a schimba valoarea";
+Calendar._TT["CLOSE"] = "Zatvori";
+Calendar._TT["TODAY"] = "Danas";
+Calendar._TT["TIME_PART"] = "(Shift-)Klik ili prevlačenje za izmjenu vrijednosti";
 
 // date formats
-Calendar._TT["DEF_DATE_FORMAT"] = "%A-%l-%z";
+Calendar._TT["DEF_DATE_FORMAT"] = "%d.%m.%Y";
 Calendar._TT["TT_DATE_FORMAT"] = "%a, %b %e";
 
-Calendar._TT["WK"] = "săpt";
-Calendar._TT["TIME"] = "Ora:";
+Calendar._TT["WK"] = "wk";
+Calendar._TT["TIME"] = "Vrijeme:";

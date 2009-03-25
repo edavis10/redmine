@@ -194,6 +194,8 @@ sv:
   error_scm_command_failed: "Ett fel inträffade vid försök att nå versionsarkivet: {{value}}"
   error_scm_annotate: "Inlägget existerar inte eller kan inte kommenteras."
   error_issue_not_found_in_project: 'Ärendet hittades inte eller så tillhör det inte detta projekt'
+  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
+  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
   
   warning_attachments_not_saved: "{{count}} fil(er) kunde inte sparas."
   
@@ -568,6 +570,8 @@ sv:
   label_not_equals: är inte
   label_in_less_than: om mindre än
   label_in_more_than: om mer än
+  label_greater_or_equal: '>='
+  label_less_or_equal: '<='
   label_in: om
   label_today: idag
   label_all_time: närsom
@@ -844,5 +848,3 @@ sv:
   enumeration_issue_priorities: Ärendeprioriteter
   enumeration_doc_categories: Dokumentkategorier
   enumeration_activities: Aktiviteter (tidsuppföljning)
-  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
-  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
