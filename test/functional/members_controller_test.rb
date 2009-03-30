@@ -40,9 +40,25 @@ class MembersControllerTest < Test::Unit::TestCase
     )
   end
   
-  def test_new
+  def test_create
     assert_difference 'Member.count' do
       post :new, :id => 1, :member => {:role_id => 1, :user_id => 7}
+    end
+    assert_redirected_to '/projects/ecookbook/settings/members'
+    assert User.find(7).member_of?(Project.find(1))
+  end
+  
+  def test_create_by_user_login
+    assert_difference 'Member.count' do
+      post :new, :id => 1, :member => {:role_id => 1, :user_login => 'someone'}
+    end
+    assert_redirected_to '/projects/ecookbook/settings/members'
+    assert User.find(7).member_of?(Project.find(1))
+  end
+  
+  def test_create_multiple
+    assert_difference 'Member.count', 3 do
+      post :new, :id => 1, :member => {:role_id => 1, :user_ids => [7, 8, 9]}
     end
     assert_redirected_to '/projects/ecookbook/settings/members'
     assert User.find(7).member_of?(Project.find(1))
@@ -61,5 +77,13 @@ class MembersControllerTest < Test::Unit::TestCase
     end
     assert_redirected_to '/projects/ecookbook/settings/members'
     assert !User.find(3).member_of?(Project.find(1))
+  end
+  
+  def test_autocomplete_for_member_login
+    get :autocomplete_for_member_login, :id => 1, :user => 'mis'
+    assert_response :success
+    assert_template 'autocomplete_for_member_login'
+    
+    assert_tag :ul, :child => {:tag => 'li', :content => /miscuser8/}
   end
 end
