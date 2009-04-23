@@ -172,6 +172,8 @@
   error_scm_command_failed: "A tároló elérése közben hiba lépett fel: {{value}}"
   error_scm_annotate: "A bejegyzés nem létezik, vagy nics jegyzetekkel ellátva."
   error_issue_not_found_in_project: 'A feladat nem található, vagy nem ehhez a projekthez tartozik'
+  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
+  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
   
   mail_subject_lost_password: Az Ön Redmine jelszava
   mail_body_lost_password: 'A Redmine jelszó megváltoztatásához, kattintson a következő linkre:'
@@ -822,5 +824,15 @@
   setting_openid: OpenID regisztráció és bejelentkezés engedélyezése
   field_identity_url: OpenID URL
   label_login_with_open_id_option: bejelentkezés OpenID használatával
-  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
-  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
+  field_content: Tartalom
+  label_descending: Csökkenő
+  label_sort: Rendezés
+  label_ascending: Növekvő
+  label_date_from_to: "{{start}} -tól {{end}} -ig"
+  label_greater_or_equal: ">="
+  label_less_or_equal: <=
+  text_wiki_page_destroy_question: This page has {{descendants}} child page(s) and descendant(s). What do you want to do?
+  text_wiki_page_reassign_children: Reassign child pages to this parent page
+  text_wiki_page_nullify_children: Keep child pages as root pages
+  text_wiki_page_destroy_children: Delete child pages and all their descendants
+  setting_password_min_length: Minimum password length

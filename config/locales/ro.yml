@@ -785,3 +785,10 @@ ro:
   enumeration_issue_priorities: Prioritati tichete
   enumeration_doc_categories: Categorii documente
   enumeration_activities: Activitati (timp de lucru)
+  label_greater_or_equal: ">="
+  label_less_or_equal: <=
+  text_wiki_page_destroy_question: This page has {{descendants}} child page(s) and descendant(s). What do you want to do?
+  text_wiki_page_reassign_children: Reassign child pages to this parent page
+  text_wiki_page_nullify_children: Keep child pages as root pages
+  text_wiki_page_destroy_children: Delete child pages and all their descendants
+  setting_password_min_length: Minimum password length

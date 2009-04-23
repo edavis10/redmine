@@ -914,9 +914,14 @@ ru:
   text_user_wrote: "{{value}} писал(а):"
   text_wiki_destroy_confirmation: Вы уверены, что хотите удалить данную Wiki и все ее содержимое?
   text_workflow_edit: Выберите роль и трекер для редактирования последовательности состояний
-
   warning_attachments_not_saved: "{{count}} файл(ов) невозможно сохранить."
   button_create_and_continue: Создать и продолжить
   text_custom_field_possible_values_info: 'По одному значению в каждой строке'
   label_display: Отображение
   field_editable: Редактируемый
+
+  text_wiki_page_destroy_question: This page has {{descendants}} child page(s) and descendant(s). What do you want to do?
+  text_wiki_page_reassign_children: Reassign child pages to this parent page
+  text_wiki_page_nullify_children: Keep child pages as root pages
+  text_wiki_page_destroy_children: Delete child pages and all their descendants
+  setting_password_min_length: Minimum password length
