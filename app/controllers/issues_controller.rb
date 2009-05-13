@@ -273,7 +273,7 @@ class IssuesController < ApplicationController
     end
     # Find potential statuses the user could be allowed to switch issues to
     @available_statuses = Workflow.find(:all, :include => :new_status,
-                                              :conditions => {:role_id => current_role.id}).collect(&:new_status).compact.uniq.sort
+                                              :conditions => {:role_id => User.current.roles_for_project(@project).collect(&:id)}).collect(&:new_status).compact.uniq.sort
     @custom_fields = @project.issue_custom_fields.select {|f| f.field_format == 'list'}
   end
 
@@ -284,7 +284,7 @@ class IssuesController < ApplicationController
       # admin is allowed to move issues to any active (visible) project
       @allowed_projects = Project.find(:all, :conditions => Project.visible_by(User.current))
     else
-      User.current.memberships.each {|m| @allowed_projects << m.project if m.role.allowed_to?(:move_issues)}
+      User.current.memberships.each {|m| @allowed_projects << m.project if m.roles.detect {|r| r.allowed_to?(:move_issues)}}
     end
     @target_project = @allowed_projects.detect {|p| p.id.to_s == params[:new_project_id]} if params[:new_project_id]
     @target_project ||= @project    
