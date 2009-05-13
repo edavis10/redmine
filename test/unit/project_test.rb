@@ -20,7 +20,7 @@ require File.dirname(__FILE__) + '/../test_helper'
 class ProjectTest < Test::Unit::TestCase
   fixtures :projects, :enabled_modules, 
            :issues, :issue_statuses, :journals, :journal_details,
-           :users, :members, :roles, :projects_trackers, :trackers, :boards,
+           :users, :members, :member_roles, :roles, :projects_trackers, :trackers, :boards,
            :queries
 
   def setup
@@ -184,6 +184,14 @@ class ProjectTest < Test::Unit::TestCase
     d = Project.find(1).descendants
     assert d.first.is_a?(Project)
     assert_equal [5, 6, 3, 4], d.collect(&:id)
+  end
+  
+  def test_users_by_role
+    users_by_role = Project.find(1).users_by_role
+    assert_kind_of Hash, users_by_role
+    role = Role.find(1)
+    assert_kind_of Array, users_by_role[role]
+    assert users_by_role[role].include?(User.find(2))
   end
   
   def test_rolled_up_trackers

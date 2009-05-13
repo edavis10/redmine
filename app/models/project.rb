@@ -135,7 +135,7 @@ class Project < ActiveRecord::Base
       statements << "1=0"
       if user.logged?
         statements << "#{Project.table_name}.is_public = #{connection.quoted_true}" if Role.non_member.allowed_to?(permission)
-        allowed_project_ids = user.memberships.select {|m| m.role.allowed_to?(permission)}.collect {|m| m.project_id}
+        allowed_project_ids = user.memberships.select {|m| m.roles.detect {|role| role.allowed_to?(permission)}}.collect {|m| m.project_id}
         statements << "#{Project.table_name}.id IN (#{allowed_project_ids.join(',')})" if allowed_project_ids.any?
       elsif Role.anonymous.allowed_to?(permission)
         # anonymous user allowed on public project
@@ -245,14 +245,27 @@ class Project < ActiveRecord::Base
                          :order => "#{Tracker.table_name}.position")
   end
   
+  # Returns a hash of project users grouped by role
+  def users_by_role
+    members.find(:all, :include => [:user, :roles]).inject({}) do |h, m|
+      m.roles.each do |r|
+        h[r] ||= []
+        h[r] << m.user
+      end
+      h
+    end
+  end
+  
   # Deletes all project's members
   def delete_all_members
+    me, mr = Member.table_name, MemberRole.table_name
+    connection.delete("DELETE FROM #{mr} WHERE #{mr}.member_id IN (SELECT #{me}.id FROM #{me} WHERE #{me}.project_id = #{id})")
     Member.delete_all(['project_id = ?', id])
   end
   
   # Users issues can be assigned to
   def assignable_users
-    members.select {|m| m.role.assignable?}.collect {|m| m.user}.sort
+    members.select {|m| m.roles.detect {|role| role.assignable?}}.collect {|m| m.user}.sort
   end
   
   # Returns the mail adresses of users that should be always notified on project events
@@ -338,6 +351,7 @@ class Project < ActiveRecord::Base
       project.members.each do |member|
         new_member = Member.new
         new_member.attributes = member.attributes.dup.except("project_id")
+        new_member.role_ids = member.role_ids.dup
         new_member.project = self
         self.members << new_member
       end
