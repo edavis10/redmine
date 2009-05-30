@@ -23,7 +23,7 @@ class IssuesController < ApplicationController
   before_filter :find_project, :only => [:new, :update_form, :preview]
   before_filter :authorize, :except => [:index, :changes, :gantt, :calendar, :preview, :update_form, :context_menu]
   before_filter :find_optional_project, :only => [:index, :changes, :gantt, :calendar]
-  accept_key_auth :index, :changes
+  accept_key_auth :index, :show, :changes
 
   helper :journals
   helper :projects
@@ -256,7 +256,7 @@ class IssuesController < ApplicationController
         issue.custom_field_values = custom_field_values if custom_field_values && !custom_field_values.empty?
         call_hook(:controller_issues_bulk_edit_before_save, { :params => params, :issue => issue })
         # Don't save any change to the issue if the user is not authorized to apply the requested status
-        unless (status.nil? || (issue.status.new_status_allowed_to?(status, current_role, issue.tracker) && issue.status = status)) && issue.save
+        unless (status.nil? || (issue.new_statuses_allowed_to(User.current).include?(status) && issue.status = status)) && issue.save
           # Keep unsaved issue ids to display them in flash error
           unsaved_issue_ids << issue.id
         end

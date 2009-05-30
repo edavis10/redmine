@@ -183,7 +183,11 @@ zh:
   mail_body_account_activation_request: "新用户（{{value}}）已完成注册，正在等候您的审核："
   mail_subject_reminder: "{{count}} 个问题需要尽快解决"
   mail_body_reminder: "指派给您的 {{count}} 个问题需要在 {{days}} 天内完成："
-  
+  mail_subject_wiki_content_added: "'{{page}}' wiki页面已添加"
+  mail_body_wiki_content_added: "'{{page}}' wiki页面已由 {{author}} 添加。"
+  mail_subject_wiki_content_updated: "'{{page}}' wiki页面已更新"
+  mail_body_wiki_content_updated: "'{{page}}' wiki页面已由 {{author}} 更新。"
+
   gui_validation_error: 1 个错误
   gui_validation_error_plural: "{{count}} 个错误"
   
@@ -276,6 +280,7 @@ zh:
   field_watcher: 跟踪者
   field_identity_url: OpenID URL
   field_content: 内容
+  field_group_by: 根据此条件分组
 
   setting_app_title: 应用程序标题
   setting_app_subtitle: 应用程序子标题
@@ -319,7 +324,9 @@ zh:
   setting_file_max_size_displayed: 允许直接显示的最大文本文件
   setting_repository_log_display_limit: 在文件变更记录页面上显示的最大修订版本数量
   setting_openid: 允许使用OpenID登录和注册
+  setting_password_min_length: 最短密码长度
 
+  permission_add_project: 新建项目
   permission_edit_project: 编辑项目
   permission_select_project_modules: 选择项目模块
   permission_manage_members: 管理成员
@@ -368,7 +375,7 @@ zh:
   permission_edit_own_messages: 编辑自己的帖子
   permission_delete_messages: 删除帖子
   permission_delete_own_messages: 删除自己的帖子
-  
+
   project_module_issue_tracking: 问题跟踪
   project_module_time_tracking: 时间跟踪
   project_module_news: 新闻
@@ -704,6 +711,8 @@ zh:
   label_date_from_to: 从 {{start}} 到 {{end}}
   label_greater_or_equal: ">="
   label_less_or_equal: <=
+  label_wiki_content_added: Wiki 页面已添加
+  label_wiki_content_updated: Wiki 页面已更新
 
   button_login: 登录
   button_submit: 提交
@@ -797,7 +806,11 @@ zh:
   text_repository_usernames_mapping: "选择或更新与版本库中的用户名对应的Redmine用户。\n版本库中与Redmine中的同名用户将被自动对应。"
   text_diff_truncated: '... 差别内容超过了可显示的最大行数并已被截断'
   text_custom_field_possible_values_info: '每项数值一行'
-  
+  text_wiki_page_destroy_question: 此页面有 {{descendants}} 个子页面和下级页面。您想进行那种操作？
+  text_wiki_page_reassign_children: 将子页面的上级页面设置为
+  text_wiki_page_nullify_children: 将子页面保留为根页面
+  text_wiki_page_destroy_children: 删除子页面及其所有下级页面
+
   default_role_manager: 管理人员
   default_role_developper: 开发人员
   default_role_reporter: 报告人员
@@ -823,9 +836,4 @@ zh:
   enumeration_issue_priorities: 问题优先级
   enumeration_doc_categories: 文档类别
   enumeration_activities: 活动（时间跟踪）
-  text_wiki_page_destroy_question: This page has {{descendants}} child page(s) and descendant(s). What do you want to do?
-  text_wiki_page_reassign_children: Reassign child pages to this parent page
-  text_wiki_page_nullify_children: Keep child pages as root pages
-  text_wiki_page_destroy_children: Delete child pages and all their descendants
-  setting_password_min_length: Minimum password length
-  field_group_by: Group results by
+  setting_new_project_user_role_id: Role given to a non-admin user who creates a project

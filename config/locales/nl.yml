@@ -552,7 +552,7 @@ nl:
   label_tracker_new: Nieuwe tracker
   label_tracker_plural: Trackers
   label_updated_time: "{{value}} geleden bijgewerkt"
-  label_updated_time_by: "{{value}} geleden bijgewerkt door {{author}}"
+  label_updated_time_by: "{{age}} geleden bijgewerkt door {{author}}"
   label_used_by: Gebruikt door
   label_user: Gebruiker
   label_user_activity: "{{value}}'s activiteit"
@@ -774,9 +774,17 @@ nl:
   label_date_from_to: Van {{start}} tot {{end}}
   label_greater_or_equal: ">="
   label_less_or_equal: <=
-  text_wiki_page_destroy_question: This page has {{descendants}} child page(s) and descendant(s). What do you want to do?
-  text_wiki_page_reassign_children: Reassign child pages to this parent page
-  text_wiki_page_nullify_children: Keep child pages as root pages
-  text_wiki_page_destroy_children: Delete child pages and all their descendants
-  setting_password_min_length: Minimum password length
+  text_wiki_page_destroy_question: Deze pagina heeft {{descendants}} subpagina's en onderliggende pagina's?. Wil wil je ermee doen?
+  text_wiki_page_reassign_children: Alle subpagina's toewijzen aan deze hoofdpagina
+  text_wiki_page_nullify_children: Behoud subpagina's als hoofdpagina's
+  text_wiki_page_destroy_children: Verwijder alle subpagina's en onderliggende pagina's
+  setting_password_min_length: Minimum wachtwoord lengte
   field_group_by: Group results by
+  mail_subject_wiki_content_updated: "'{{page}}' wiki page has been updated"
+  label_wiki_content_added: Wiki page added
+  mail_subject_wiki_content_added: "'{{page}}' wiki page has been added"
+  mail_body_wiki_content_added: The '{{page}}' wiki page has been added by {{author}}.
+  label_wiki_content_updated: Wiki page updated
+  mail_body_wiki_content_updated: The '{{page}}' wiki page has been updated by {{author}}.
+  permission_add_project: Create project
+  setting_new_project_user_role_id: Role given to a non-admin user who creates a project
