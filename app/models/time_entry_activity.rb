@@ -1,5 +1,5 @@
-# Redmine - project management software
-# Copyright (C) 2006-2009  Jean-Philippe Lang
+# redMine - project management software
+# Copyright (C) 2006  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,24 +15,22 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../test_helper'
+class TimeEntryActivity < Enumeration
+  has_many :time_entries, :foreign_key => 'activity_id'
 
-class TokenTest < Test::Unit::TestCase
-  fixtures :tokens
-
-  def test_create
-    token = Token.new
-    token.save
-    assert_equal 40, token.value.length
-    assert !token.expired?
-  end
+  OptionName = :enumeration_activities
+  # Backwards compatiblity.  Can be removed post-0.9
+  OptName = 'ACTI'
   
-  def test_create_should_remove_existing_tokens
-    user = User.find(1)
-    t1 = Token.create(:user => user, :action => 'autologin')
-    t2 = Token.create(:user => user, :action => 'autologin')
-    assert_not_equal t1.value, t2.value
-    assert !Token.exists?(t1.id)
-    assert  Token.exists?(t2.id)
+  def option_name
+    OptionName
+  end
+
+  def objects_count
+    time_entries.count
+  end
+
+  def transfer_relations(to)
+    time_entries.update_all("activity_id = #{to.id}")
   end
 end

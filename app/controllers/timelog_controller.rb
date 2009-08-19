@@ -46,7 +46,7 @@ class TimelogController < ApplicationController
                                           :klass => Tracker,
                                           :label => :label_tracker},
                              'activity' => {:sql => "#{TimeEntry.table_name}.activity_id",
-                                           :klass => Enumeration,
+                                           :klass => TimeEntryActivity,
                                            :label => :label_activity},
                              'issue' => {:sql => "#{TimeEntry.table_name}.issue_id",
                                          :klass => Issue,
@@ -197,6 +197,9 @@ class TimelogController < ApplicationController
     render_403 and return if @time_entry && !@time_entry.editable_by?(User.current)
     @time_entry ||= TimeEntry.new(:project => @project, :issue => @issue, :user => User.current, :spent_on => Date.today)
     @time_entry.attributes = params[:time_entry]
+    
+    call_hook(:controller_timelog_edit_before_save, { :params => params, :time_entry => @time_entry })
+    
     if request.post? and @time_entry.save
       flash[:notice] = l(:notice_successful_update)
       redirect_back_or_default :action => 'details', :project_id => @time_entry.project

@@ -1,5 +1,5 @@
-# Redmine - project management software
-# Copyright (C) 2006-2009  Jean-Philippe Lang
+# redMine - project management software
+# Copyright (C) 2006-2008  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,22 +17,20 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class TokenTest < Test::Unit::TestCase
-  fixtures :tokens
+class DocumentCategoryTest < Test::Unit::TestCase
+  fixtures :enumerations, :documents
 
-  def test_create
-    token = Token.new
-    token.save
-    assert_equal 40, token.value.length
-    assert !token.expired?
+  def test_should_be_an_enumeration
+    assert DocumentCategory.ancestors.include?(Enumeration)
   end
   
-  def test_create_should_remove_existing_tokens
-    user = User.find(1)
-    t1 = Token.create(:user => user, :action => 'autologin')
-    t2 = Token.create(:user => user, :action => 'autologin')
-    assert_not_equal t1.value, t2.value
-    assert !Token.exists?(t1.id)
-    assert  Token.exists?(t2.id)
+  def test_objects_count
+    assert_equal 1, DocumentCategory.find_by_name("Uncategorized").objects_count
+    assert_equal 0, DocumentCategory.find_by_name("User documentation").objects_count
+  end
+
+  def test_option_name
+    assert_equal :enumeration_doc_categories, DocumentCategory.new.option_name
   end
 end
+
