@@ -39,7 +39,7 @@ class Issue < ActiveRecord::Base
                      :include => [:project, :journals],
                      # sort by id so that limited eager loading doesn't break with postgresql
                      :order_column => "#{table_name}.id"
-  acts_as_event :title => Proc.new {|o| "#{o.tracker.name} ##{o.id}: #{o.subject}"},
+  acts_as_event :title => Proc.new {|o| "#{o.tracker.name} ##{o.id} (#{o.status}): #{o.subject}"},
                 :url => Proc.new {|o| {:controller => 'issues', :action => 'show', :id => o.id}},
                 :type => Proc.new {|o| 'issue' + (o.closed? ? ' closed' : '') }
   
@@ -203,11 +203,17 @@ class Issue < ActiveRecord::Base
     project.assignable_users
   end
   
+  # Returns true if this issue is blocked by another issue that is still open
+  def blocked?
+    !relations_to.detect {|ir| ir.relation_type == 'blocks' && !ir.issue_from.closed?}.nil?
+  end
+  
   # Returns an array of status that user is able to apply
   def new_statuses_allowed_to(user)
     statuses = status.find_new_statuses_allowed_to(user.roles_for_project(project), tracker)
     statuses << status unless statuses.empty?
-    statuses.uniq.sort
+    statuses = statuses.uniq.sort
+    blocked? ? statuses.reject {|s| s.is_closed?} : statuses
   end
   
   # Returns the mail adresses of users that should be notified for the issue

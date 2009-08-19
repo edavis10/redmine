@@ -237,7 +237,7 @@ pl:
   field_is_public: Publiczny
   field_is_required: Wymagane
   field_issue: Zagadnienie
-  field_issue_to_id: Powiązania zagadnienia
+  field_issue_to: Powiązania zagadnienia
   field_language: Język
   field_last_login_on: Ostatnie połączenie
   field_lastname: Nazwisko
@@ -836,3 +836,6 @@ pl:
   mail_body_wiki_content_updated: The '{{page}}' wiki page has been updated by {{author}}.
   permission_add_project: Create project
   setting_new_project_user_role_id: Role given to a non-admin user who creates a project
+  label_view_all_revisions: View all revisions
+  label_tag: Tag
+  label_branch: Branch

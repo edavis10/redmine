@@ -340,7 +340,7 @@
   field_spent_on: 日期
   field_identifier: 代碼
   field_is_filter: 用來作為過濾器
-  field_issue_to_id: 相關項目
+  field_issue_to: 相關項目
   field_delay: 逾期
   field_assignable: 項目可被分派至此角色
   field_redirect_existing_links: 重新導向現有連結
@@ -915,3 +915,6 @@
   enumeration_issue_priorities: 項目優先權
   enumeration_doc_categories: 文件分類
   enumeration_activities: 活動 (時間追蹤)
+  label_view_all_revisions: View all revisions
+  label_tag: Tag
+  label_branch: Branch

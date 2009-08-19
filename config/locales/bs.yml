@@ -254,7 +254,7 @@ bs:
   field_spent_on: Datum
   field_identifier: Identifikator
   field_is_filter: Korišteno kao filter
-  field_issue_to_id: Povezana aktivnost
+  field_issue_to: Povezana aktivnost
   field_delay: Odgađanje
   field_assignable: Aktivnosti dodijeljene ovoj ulozi
   field_redirect_existing_links: Izvrši redirekciju postojećih linkova
@@ -833,3 +833,6 @@ bs:
   setting_new_project_user_role_id: Role given to a non-admin user who creates a project
   error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
   error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
+  label_view_all_revisions: View all revisions
+  label_tag: Tag
+  label_branch: Branch

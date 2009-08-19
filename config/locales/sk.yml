@@ -226,7 +226,7 @@ sk:
   field_spent_on: Dátum
   field_identifier: Identifikátor
   field_is_filter: Použiť ako filter
-  field_issue_to_id: Súvisiaca úloha
+  field_issue_to: Súvisiaca úloha
   field_delay: Oneskorenie
   field_assignable: Úlohy môžu byť priradené tejto roli
   field_redirect_existing_links: Presmerovať existujúce odkazy
@@ -804,4 +804,7 @@ sk:
   label_wiki_content_updated: Wiki stránka aktualizovaná
   mail_body_wiki_content_updated: Wiki stránka '{{page}}' bola aktualizovaná užívateľom {{author}}.
   setting_repositories_encodings: Kódovanie repozitára
-  setting_new_project_user_role_id: Rola dána non-admin užívateľovi, ktorý vytvorí projekt   
+  setting_new_project_user_role_id: Rola dána non-admin užívateľovi, ktorý vytvorí projekt
+  label_view_all_revisions: View all revisions
+  label_tag: Tag
+  label_branch: Branch

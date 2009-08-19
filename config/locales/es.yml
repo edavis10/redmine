@@ -271,7 +271,7 @@ es:
   field_is_public: Público
   field_is_required: Obligatorio
   field_issue: Petición
-  field_issue_to_id: Petición relacionada
+  field_issue_to: Petición relacionada
   field_language: Idioma
   field_last_login_on: Última conexión
   field_lastname: Apellido
@@ -663,7 +663,7 @@ es:
   notice_default_data_loaded: Configuración por defecto cargada correctamente.
   notice_email_error: "Ha ocurrido un error mientras enviando el correo ({{value}})"
   notice_email_sent: "Se ha enviado un correo a {{value}}"
-  notice_failed_to_save_issues: "Imposible grabar %s peticion(es) en {{count}} seleccionado: {{value}}."
+  notice_failed_to_save_issues: "Imposible grabar %s peticion(es) en {{count}} seleccionado: {{ids}}."
   notice_feeds_access_key_reseted: Su clave de acceso para RSS ha sido reiniciada.
   notice_file_not_found: La página a la que intenta acceder no existe.
   notice_locking_conflict: Los datos han sido modificados por otro usuario.
@@ -845,11 +845,14 @@ es:
   text_wiki_page_destroy_children: Eliminar páginas hijas y todos sus descendientes
   setting_password_min_length: Tamaño mínimo de contraseña
   field_group_by: Agrupar resultados por
-  mail_subject_wiki_content_updated: "'{{page}}' wiki page has been updated"
-  label_wiki_content_added: Wiki page added
-  mail_subject_wiki_content_added: "'{{page}}' wiki page has been added"
-  mail_body_wiki_content_added: The '{{page}}' wiki page has been added by {{author}}.
-  label_wiki_content_updated: Wiki page updated
-  mail_body_wiki_content_updated: The '{{page}}' wiki page has been updated by {{author}}.
-  permission_add_project: Create project
-  setting_new_project_user_role_id: Role given to a non-admin user who creates a project
+  mail_subject_wiki_content_updated: "La página wiki '{{page}}' ha sido actualizada"
+  label_wiki_content_added: Página wiki añadida
+  mail_subject_wiki_content_added: "La página wiki '{{page}}' ha sido añadida"
+  mail_body_wiki_content_added: La página wiki '{{page}}' ha sido añadida por {{author}}.
+  label_wiki_content_updated: Página wiki actualizada
+  mail_body_wiki_content_updated: La página wiki '{{page}}' ha sido actualizada por {{author}}.
+  permission_add_project: Crear proyecto
+  setting_new_project_user_role_id: Permiso asignado a un usuario no-administrador para crear proyectos
+  label_view_all_revisions: View all revisions
+  label_tag: Tag
+  label_branch: Branch

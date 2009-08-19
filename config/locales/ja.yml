@@ -268,7 +268,7 @@ ja:
   field_spent_on: 日付
   field_identifier: 識別子
   field_is_filter: フィルタとして使う
-  field_issue_to_id: 関連するチケット
+  field_issue_to: 関連するチケット
   field_delay: 遅延
   field_assignable: チケットはこのロールに割り当てることができます
   field_redirect_existing_links: 既存のリンクをリダイレクトする
@@ -837,5 +837,10 @@ ja:
   
   enumeration_issue_priorities: チケットの優先度
   enumeration_doc_categories: 文書カテゴリ
-  enumeration_activities: 作業分類 (時間トラッキング)  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
+  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
   error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
+
+  enumeration_activities: 作業分類 (時間トラッキング)
+  label_view_all_revisions: View all revisions
+  label_tag: Tag
+  label_branch: Branch

@@ -62,6 +62,18 @@ class Repository < ActiveRecord::Base
   def entries(path=nil, identifier=nil)
     scm.entries(path, identifier)
   end
+
+  def branches
+    scm.branches
+  end
+
+  def tags
+    scm.tags
+  end
+
+  def default_branch
+    scm.default_branch
+  end
   
   def properties(path, identifier=nil)
     scm.properties(path, identifier)
@@ -75,15 +87,6 @@ class Repository < ActiveRecord::Base
     scm.diff(path, rev, rev_to)
   end
   
-  # Default behaviour: we search in cached changesets
-  def changesets_for_path(path, options={})
-    path = "/#{path}" unless path.starts_with?('/')
-    Change.find(:all, :include => {:changeset => :user}, 
-                      :conditions => ["repository_id = ? AND path = ?", id, path],
-                      :order => "committed_on DESC, #{Changeset.table_name}.id DESC",
-                      :limit => options[:limit]).collect(&:changeset)
-  end
-  
   # Returns a path relative to the url of the repository
   def relative_path(path)
     path
@@ -92,11 +95,26 @@ class Repository < ActiveRecord::Base
   def latest_changeset
     @latest_changeset ||= changesets.find(:first)
   end
+
+  # Returns the latest changesets for +path+
+  # Default behaviour is to search in cached changesets
+  def latest_changesets(path, rev, limit=10)
+    if path.blank?
+      changesets.find(:all, :include => :user,
+                            :order => "#{Changeset.table_name}.committed_on DESC, #{Changeset.table_name}.id DESC",
+                            :limit => limit)
+    else
+      changes.find(:all, :include => {:changeset => :user}, 
+                         :conditions => ["path = ?", path.with_leading_slash],
+                         :order => "#{Changeset.table_name}.committed_on DESC, #{Changeset.table_name}.id DESC",
+                         :limit => limit).collect(&:changeset)
+    end
+  end
     
   def scan_changesets_for_issue_ids
     self.changesets.each(&:scan_comment_for_issue_ids)
   end
-  
+
   # Returns an array of committers usernames and associated user_id
   def committers
     @committers ||= Changeset.connection.select_rows("SELECT DISTINCT committer, user_id FROM #{Changeset.table_name} WHERE repository_id = #{id}")

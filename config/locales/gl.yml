@@ -250,7 +250,7 @@ gl:
   field_is_public: Público
   field_is_required: Obrigatorio
   field_issue: Petición
-  field_issue_to_id: Petición relacionada
+  field_issue_to: Petición relacionada
   field_language: Idioma
   field_last_login_on: Última conexión
   field_lastname: Apelido
@@ -642,7 +642,7 @@ gl:
   notice_default_data_loaded: Configuración por defecto cargada correctamente.
   notice_email_error: "Ocorreu un error enviando o correo ({{value}})"
   notice_email_sent: "Enviouse un correo a {{value}}"
-  notice_failed_to_save_issues: "Imposible gravar %s petición(s) en {{count}} seleccionado: {{value}}."
+  notice_failed_to_save_issues: "Imposible gravar %s petición(s) en {{count}} seleccionado: {{ids}}."
   notice_feeds_access_key_reseted: A súa clave de acceso para RSS reiniciouse.
   notice_file_not_found: A páxina á que tenta acceder non existe.
   notice_locking_conflict: Os datos modificáronse por outro usuario.
@@ -832,3 +832,6 @@ gl:
   mail_body_wiki_content_updated: The '{{page}}' wiki page has been updated by {{author}}.
   permission_add_project: Create project
   setting_new_project_user_role_id: Role given to a non-admin user who creates a project
+  label_view_all_revisions: View all revisions
+  label_tag: Tag
+  label_branch: Branch

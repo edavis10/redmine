@@ -265,7 +265,7 @@ zh:
   field_spent_on: 日期
   field_identifier: 标识
   field_is_filter: 作为过滤条件
-  field_issue_to_id: 相关问题
+  field_issue_to: 相关问题
   field_delay: 延期
   field_assignable: 问题可指派给此角色
   field_redirect_existing_links: 重定向到现有链接
@@ -837,3 +837,6 @@ zh:
   enumeration_issue_priorities: 问题优先级
   enumeration_doc_categories: 文档类别
   enumeration_activities: 活动（时间跟踪）
+  label_view_all_revisions: View all revisions
+  label_tag: Tag
+  label_branch: Branch

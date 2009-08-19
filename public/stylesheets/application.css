@@ -69,6 +69,7 @@ html>body #content { min-height: 600px; }
 #login-form table {margin-top:5em; padding:1em; margin-left: auto; margin-right: auto; border: 2px solid #FDBF3B; background-color:#FFEBC1; }
 #login-form table td {padding: 6px;}
 #login-form label {font-weight: bold;}
+#login-form input#username, #login-form input#password { width: 300px; }
 
 input#openid_url { background: url(../images/openid-bg.gif) no-repeat; background-color: #fff; background-position: 0 50%; padding-left: 18px; }
 
@@ -79,7 +80,7 @@ a, a:link, a:visited{ color: #2A5685; text-decoration: none; }
 a:hover, a:active{ color: #c61a1a; text-decoration: underline;}
 a img{ border: 0; }
 
-a.issue.closed, a.issue.closed:link, a.issue.closed:visited { text-decoration: line-through; }
+a.issue.closed, a.issue.closed:link, a.issue.closed:visited { color: #999; text-decoration: line-through; }
 
 /***** Tables *****/
 table.list { border: 1px solid #e4e4e4;  border-collapse: collapse; width: 100%; margin-bottom: 4px; }
@@ -154,6 +155,10 @@ a.sort { padding-right: 16px; background-position: 100% 50%; background-repeat: 
 a.sort.asc  { background-image: url(../images/sort_asc.png); }
 a.sort.desc { background-image: url(../images/sort_desc.png); }
 
+table.attributes { width: 100% }
+table.attributes th { vertical-align: top; text-align: left; }
+table.attributes td { vertical-align: top; }
+
 .highlight { background-color: #FCFD8D;}
 .highlight.token-1 { background-color: #faa;}
 .highlight.token-2 { background-color: #afa;}
@@ -176,7 +181,7 @@ div.square {
  width: .6em; height: .6em;
 }
 .contextual {float:right; white-space: nowrap; line-height:1.4em;margin-top:5px; padding-left: 10px; font-size:0.9em;}
-.contextual input {font-size:0.9em;}
+.contextual input, .contextual select {font-size:0.9em;}
 .message .contextual { margin-top: 0; }
 
 .splitcontentleft{float:left; width:49%;}

@@ -228,7 +228,7 @@
   field_spent_on: Dato
   field_identifier: Identifikasjon
   field_is_filter: Brukes som filter
-  field_issue_to_id: Relatert saker
+  field_issue_to: Relatert saker
   field_delay: Forsinkelse
   field_assignable: Saker kan tildeles denne rollen
   field_redirect_existing_links: Viderekoble eksisterende lenker
@@ -805,3 +805,6 @@
   mail_body_wiki_content_updated: The '{{page}}' wiki page has been updated by {{author}}.
   permission_add_project: Create project
   setting_new_project_user_role_id: Role given to a non-admin user who creates a project
+  label_view_all_revisions: View all revisions
+  label_tag: Tag
+  label_branch: Branch

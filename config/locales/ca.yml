@@ -125,7 +125,7 @@ ca:
   notice_email_sent: "S'ha enviat un correu electrònic a {{value}}"
   notice_email_error: "S'ha produït un error en enviar el correu ({{value}})"
   notice_feeds_access_key_reseted: "S'ha reiniciat la clau d'accés del RSS."
-  notice_failed_to_save_issues: "No s'han pogut desar %s assumptes de {{count}} seleccionats: {{value}}."
+  notice_failed_to_save_issues: "No s'han pogut desar %s assumptes de {{count}} seleccionats: {{ids}}."
   notice_no_issue_selected: "No s'ha seleccionat cap assumpte. Activeu els assumptes que voleu editar."
   notice_account_pending: "S'ha creat el compte i ara està pendent de l'aprovació de l'administrador."
   notice_default_data_loaded: "S'ha carregat correctament la configuració predeterminada."
@@ -229,7 +229,7 @@ ca:
   field_spent_on: Data
   field_identifier: Identificador
   field_is_filter: "S'ha utilitzat com a filtre"
-  field_issue_to_id: Assumpte relacionat
+  field_issue_to: Assumpte relacionat
   field_delay: Retard
   field_assignable: Es poden assignar assumptes a aquest rol
   field_redirect_existing_links: Redirigeix els enllaços existents
@@ -804,3 +804,6 @@ ca:
   mail_body_wiki_content_updated: The '{{page}}' wiki page has been updated by {{author}}.
   permission_add_project: Create project
   setting_new_project_user_role_id: Role given to a non-admin user who creates a project
+  label_view_all_revisions: View all revisions
+  label_tag: Tag
+  label_branch: Branch

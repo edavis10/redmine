@@ -222,7 +222,7 @@ th:
   field_spent_on: วันที่
   field_identifier: ชื่อเฉพาะ
   field_is_filter: ใช้เป็นตัวกรอง
-  field_issue_to_id: ปัญหาที่เกี่ยวข้อง
+  field_issue_to: ปัญหาที่เกี่ยวข้อง
   field_delay: เลื่อน
   field_assignable: ปัญหาสามารถมอบหมายให้คนที่ทำบทบาทนี้
   field_redirect_existing_links: ย้ายจุดเชื่อมโยงนี้
@@ -803,3 +803,6 @@ th:
   mail_body_wiki_content_updated: The '{{page}}' wiki page has been updated by {{author}}.
   permission_add_project: Create project
   setting_new_project_user_role_id: Role given to a non-admin user who creates a project
+  label_view_all_revisions: View all revisions
+  label_tag: Tag
+  label_branch: Branch
