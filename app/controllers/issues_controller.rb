@@ -451,7 +451,7 @@ private
       @project = projects.first
     else
       # TODO: let users bulk edit/move/destroy issues from different projects
-      render_error 'Can not bulk edit/move/destroy issues from different projects' and return false
+      render_error l(:error_can_t_bulk_edit_issues) and return false
     end
   rescue ActiveRecord::RecordNotFound
     render_404

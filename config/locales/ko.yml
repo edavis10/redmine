@@ -1069,3 +1069,4 @@ ko:
 # Korean (한글) translations for Ruby on Rails 
 # by Kihyun Yoon(ddumbugie@gmail.com)
 # by John Hwang (jhwang@tavon.org),http://github.com/tavon
+  error_can_t_bulk_edit_issue: Can not bulk edit/move/destroy issues from different projects.

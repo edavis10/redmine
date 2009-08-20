@@ -785,13 +785,8 @@
   label_ascending: 遞增排序
   label_descending: 遞減排序
   label_date_from_to: 起 {{start}} 迄 {{end}}
-<<<<<<< HEAD:config/locales/zh-TW.yml
-  label_greater_or_equal: ">="
-  label_less_or_equal: <=
-=======
   label_wiki_content_added: Wiki 頁面已新增
   label_wiki_content_updated: Wiki 頁面已更新
->>>>>>> 70340910de1d5eea1e3dc97314fb5b7a23cb9d87:config/locales/zh-TW.yml
 
   button_login: 登入
   button_submit: 送出
@@ -918,3 +913,4 @@
   label_view_all_revisions: View all revisions
   label_tag: Tag
   label_branch: Branch
+  error_can_t_bulk_edit_issue: Can not bulk edit/move/destroy issues from different projects.

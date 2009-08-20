@@ -138,6 +138,7 @@ en:
   error_issue_not_found_in_project: 'The issue was not found or does not belong to this project'
   error_no_tracker_in_project: 'No tracker is associated to this project. Please check the Project settings.'
   error_no_default_issue_status: 'No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").'
+  error_can_t_bulk_edit_issue: "Can not bulk edit/move/destroy issues from different projects."
   
   warning_attachments_not_saved: "{{count}} file(s) could not be saved."
   

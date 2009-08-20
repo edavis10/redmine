@@ -836,3 +836,4 @@ de:
   label_view_all_revisions: View all revisions
   label_tag: Tag
   label_branch: Branch
+  error_can_t_bulk_edit_issue: Can not bulk edit/move/destroy issues from different projects.

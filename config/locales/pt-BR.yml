@@ -843,3 +843,4 @@ pt-BR:
   label_view_all_revisions: Ver todas as revisões
   label_tag: Tag
   label_branch: Branch
+  error_can_t_bulk_edit_issue: Can not bulk edit/move/destroy issues from different projects.
