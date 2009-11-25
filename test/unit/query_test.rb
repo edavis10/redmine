@@ -17,7 +17,7 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class QueryTest < Test::Unit::TestCase
+class QueryTest < ActiveSupport::TestCase
   fixtures :projects, :enabled_modules, :users, :members, :member_roles, :roles, :trackers, :issue_statuses, :issue_categories, :enumerations, :issues, :watchers, :custom_fields, :custom_values, :versions, :queries
 
   def test_custom_fields_for_all_projects_should_be_available_in_global_queries
@@ -195,6 +195,20 @@ class QueryTest < Test::Unit::TestCase
     assert_equal [:tracker, :subject], q.columns.collect {|c| c.name}
     c = q.columns.first
     assert q.has_column?(c)
+  end
+  
+  def test_groupable_columns_should_include_custom_fields
+    q = Query.new
+    assert q.groupable_columns.detect {|c| c.is_a? QueryCustomFieldColumn}
+  end
+  
+  def test_include_options
+    q = Query.new
+    q.column_names = %w(subject tracker)
+    assert_equal [:tracker], q.include_options
+    
+    q.group_by = 'category'
+    assert_equal [:tracker, :category], q.include_options
   end
   
   def test_default_sort

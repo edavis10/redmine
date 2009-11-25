@@ -21,7 +21,7 @@ require 'repositories_controller'
 # Re-raise errors caught by the controller.
 class RepositoriesController; def rescue_action(e) raise e end; end
 
-class RepositoriesControllerTest < Test::Unit::TestCase
+class RepositoriesControllerTest < ActionController::TestCase
   fixtures :projects, :users, :roles, :members, :member_roles, :repositories, :issues, :issue_statuses, :changesets, :changes, :issue_categories, :enumerations, :custom_fields, :custom_values, :trackers
   
   def setup
@@ -75,6 +75,13 @@ class RepositoriesControllerTest < Test::Unit::TestCase
       {:method => :get, :path => '/projects/restmine/repository/revisions/2457'},
       :controller => 'repositories', :action => 'revision', :id => 'restmine', :rev => '2457'
     )
+  end
+  
+  def test_revision
+    get :revision, :id => 1, :rev => 1
+    assert_response :success
+    assert_not_nil assigns(:changeset)
+    assert_equal "1", assigns(:changeset).revision
   end
   
   def test_revision_with_before_nil_and_afer_normal
@@ -135,6 +142,20 @@ class RepositoriesControllerTest < Test::Unit::TestCase
     assert_routing(
       {:method => :get, :path => '/projects/restmine/repository/revisions/2/entry/path/to/file.c'},
       :controller => 'repositories', :action => 'entry', :id => 'restmine', :path => %w[path to file.c], :rev => '2'
+    )
+  end
+
+  def test_raw_routing
+    assert_routing(
+      {:method => :get, :path => '/projects/restmine/repository/raw/path/to/file.c'},
+      :controller => 'repositories', :action => 'entry', :id => 'restmine', :path => %w[path to file.c], :format => 'raw'
+    )
+  end
+
+  def test_raw_routing_with_revision
+    assert_routing(
+      {:method => :get, :path => '/projects/restmine/repository/revisions/2/raw/path/to/file.c'},
+      :controller => 'repositories', :action => 'entry', :id => 'restmine', :path => %w[path to file.c], :format => 'raw', :rev => '2'
     )
   end
   

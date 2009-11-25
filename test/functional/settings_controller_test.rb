@@ -21,7 +21,7 @@ require 'settings_controller'
 # Re-raise errors caught by the controller.
 class SettingsController; def rescue_action(e) raise e end; end
 
-class SettingsControllerTest < Test::Unit::TestCase
+class SettingsControllerTest < ActionController::TestCase
   fixtures :users
   
   def setup
@@ -30,6 +30,12 @@ class SettingsControllerTest < Test::Unit::TestCase
     @response   = ActionController::TestResponse.new
     User.current = nil
     @request.session[:user_id] = 1 # admin
+  end
+  
+  def test_index
+    get :index
+    assert_response :success
+    assert_template 'edit'
   end
   
   def test_get_edit

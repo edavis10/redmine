@@ -1,6 +1,10 @@
 <h2><%= l(:button_move) %></h2>
 
-<ul><%= @issues.collect {|i| content_tag('li', link_to(h("#{i.tracker} ##{i.id}"), { :action => 'show', :id => i }) + h(": #{i.subject}")) }.join("\n") %></ul>
+<ul>
+<% @issues.each do |issue| -%>
+	<li><%= link_to_issue issue %></li>
+<% end -%>
+</ul>
 
 <% form_tag({}, :id => 'move_form') do %>
 <%= @issues.collect {|i| hidden_field_tag('ids[]', i.id)}.join %>
@@ -21,5 +25,6 @@
 <%= check_box_tag "copy_options[copy]", "1" %></p>
 </div>
 
-<%= submit_tag l(:button_move) %>
+<%= submit_tag l(:button_move) %> 
+<%= submit_tag l(:button_move_and_follow), :name => 'follow' %>
 <% end %>

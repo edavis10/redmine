@@ -249,7 +249,7 @@ ru:
   default_activity_development: Разработка
   default_doc_category_tech: Техническая документация
   default_doc_category_user: Документация пользователя
-  default_issue_status_assigned: Назначен
+  default_issue_status_in_progress: In Progress
   default_issue_status_closed: Закрыт
   default_issue_status_feedback: Обратная связь
   default_issue_status_new: Новый
@@ -276,8 +276,6 @@ ru:
   error_scm_annotate: "Данные отсутствуют или не могут быть подписаны."
   error_scm_command_failed: "Ошибка доступа к хранилищу: {{value}}"
   error_scm_not_found: Хранилище не содержит записи и/или исправления.
-  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
-  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
 
   field_account: Учетная запись
   field_activity: Деятельность
@@ -505,8 +503,8 @@ ru:
   label_history: История
   label_home: Домашняя страница
   label_incoming_emails: Приём сообщений
-  label_index_by_date: Индекс по дате
-  label_index_by_title: Индекс по названию
+  label_index_by_date: История страниц
+  label_index_by_title: Оглавление
   label_information_plural: Информация
   label_information: Информация
   label_in_less_than: менее чем
@@ -887,9 +885,9 @@ ru:
   text_issues_destroy_confirmation: 'Вы уверены, что хотите удалить выбранные задачи?'
   text_issues_ref_in_commit_messages: Сопоставление и изменение статуса задач исходя из текста сообщений
   text_issue_updated: "Задача {{id}} была обновлена ({{author}})."
-  text_journal_changed: "параметр изменился с {{old}} на {{new}}"
-  text_journal_deleted: удалено
-  text_journal_set_to: "параметр изменился на {{value}}"
+  text_journal_changed: "Параметр {{label}} изменился с {{old}} на {{new}}"
+  text_journal_deleted: "Значение {{old}} параметра {{label}} удалено"
+  text_journal_set_to: "Параметр {{label}} изменился на {{value}}"
   text_length_between: "Длина между {{min}} и {{max}} символов."
   text_load_default_configuration: Загрузить конфигурацию по умолчанию
   text_min_max_length_info: 0 означает отсутствие запретов
@@ -914,16 +912,12 @@ ru:
   text_user_wrote: "{{value}} писал(а):"
   text_wiki_destroy_confirmation: Вы уверены, что хотите удалить данную Wiki и все ее содержимое?
   text_workflow_edit: Выберите роль и трекер для редактирования последовательности состояний
-  warning_attachments_not_saved: "{{count}} файл(ов) невозможно сохранить."
-  button_create_and_continue: Создать и продолжить
-  text_custom_field_possible_values_info: 'По одному значению в каждой строке'
-  label_display: Отображение
-  field_editable: Редактируемый
 
-  text_wiki_page_destroy_question: This page has {{descendants}} child page(s) and descendant(s). What do you want to do?
-  text_wiki_page_reassign_children: Reassign child pages to this parent page
-  text_wiki_page_nullify_children: Keep child pages as root pages
-  text_wiki_page_destroy_children: Delete child pages and all their descendants
+  warning_attachments_not_saved: "{{count}} файл(ов) невозможно сохранить."
+  text_wiki_page_destroy_question: Эта страница имеет {{descendants}} дочерних страниц и их потомков. Что вы хотите сделать?
+  text_wiki_page_reassign_children: Переопределить дочерние страницы на текущую страницу
+  text_wiki_page_nullify_children: Сделать дочерние страницы главными страницами
+  text_wiki_page_destroy_children: Удалить дочерние страницы и всех их потомков
   setting_password_min_length: Минимальная длина пароля
   field_group_by: Группировать результаты по
   mail_subject_wiki_content_updated: "Wiki-страница '{{page}}' была обновлена"
@@ -934,7 +928,24 @@ ru:
   mail_body_wiki_content_updated: "{{author}} обновил(а) wiki-страницу '{{page}}'."
   permission_add_project: Создание проекта
   setting_new_project_user_role_id: Роль, назначаемая пользователю, создавшему проект
-  label_view_all_revisions: View all revisions
-  label_tag: Tag
-  label_branch: Branch
-  error_can_t_bulk_edit_issue: Can not bulk edit/move/destroy issues from different projects.
+  label_view_all_revisions: Показать все ревизии
+  label_tag: Метка
+  label_branch: Ветвь
+  error_no_tracker_in_project: С этим проектом не ассоциирован ни один трекер. Проверьте настройки проекта.
+  error_no_default_issue_status: Не определен статус задача по умолчанию. Проверьте настройки (см. "Администрирование -> Статусы задачи").
+  label_group_plural: Группы
+  label_group: Группа
+  label_group_new: Новая группа
+  label_time_entry_plural: Затраченное время
+  text_journal_added: "{{label}} {{value}} добавлен"
+  field_active: Активно
+  enumeration_system_activity: Системная активность
+  permission_delete_issue_watchers: Удалить наблюдателей
+  version_status_closed: закрыт
+  version_status_locked: заблокирован
+  version_status_open: открыт
+  error_can_not_reopen_issue_on_closed_version: Задача, назначенная к закрытой версии, не сможет быть открыта снова
+  label_user_anonymous: Аноним
+  button_move_and_follow: Переместить и перейти
+  setting_default_projects_modules: Включенные по умолчанию модули для новых проектов
+  setting_gravatar_default: Изображение Gravatar по умолчанию

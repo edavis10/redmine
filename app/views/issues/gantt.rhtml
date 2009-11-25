@@ -1,23 +1,14 @@
-<% form_tag(params.merge(:month => nil, :year => nil, :months => nil), :id => 'query_form') do %>
-<% if @query.new_record? %>
-    <h2><%=l(:label_gantt)%></h2>
-    <fieldset id="filters"><legend><%= l(:label_filter_plural) %></legend>
-    <%= render :partial => 'queries/filters', :locals => {:query => @query} %>
-    </fieldset>
-<% else %>
-    <h2><%=h @query.name %></h2>
-    <% html_title @query.name %>
-<% end %>
+<h2><%= l(:label_gantt) %></h2>
 
-<fieldset id="date-range"><legend><%= l(:label_date_range) %></legend>
-    <%= text_field_tag 'months', @gantt.months, :size => 2 %>
-    <%= l(:label_months_from) %>
-    <%= select_month(@gantt.month_from, :prefix => "month", :discard_type => true) %>
-    <%= select_year(@gantt.year_from, :prefix => "year", :discard_type => true) %>
-    <%= hidden_field_tag 'zoom', @gantt.zoom %>
+<% form_tag(params.merge(:month => nil, :year => nil, :months => nil), :id => 'query_form') do %>
+<fieldset id="filters" class="collapsible">
+  <legend onclick="toggleFieldset(this);"><%= l(:label_filter_plural) %></legend>
+	<div>
+    <%= render :partial => 'queries/filters', :locals => {:query => @query} %>
+  </div>
 </fieldset>
 
-<p style="float:right; margin:0px;">
+<p style="float:right;">
 <%= if @gantt.zoom < 4
     link_to_remote image_tag('zoom_in.png'), {:url => @gantt.params.merge(:zoom => (@gantt.zoom+1)), :update => 'content'}, {:href => url_for(@gantt.params.merge(:zoom => (@gantt.zoom+1)))}
   else
@@ -31,6 +22,12 @@
 </p>
 
 <p class="buttons">
+<%= text_field_tag 'months', @gantt.months, :size => 2 %>
+<%= l(:label_months_from) %>
+<%= select_month(@gantt.month_from, :prefix => "month", :discard_type => true) %>
+<%= select_year(@gantt.year_from, :prefix => "year", :discard_type => true) %>
+<%= hidden_field_tag 'zoom', @gantt.zoom %>
+
 <%= link_to_remote l(:button_apply), 
                    { :url => { :set_filter => (@query.new_record? ? 1 : nil) },
                      :update => "content",
@@ -86,7 +83,7 @@ top = headers_height + 8
     <div style="position: absolute;line-height:1.2em;height:16px;top:<%= top %>px;left:4px;overflow:hidden;"><small>    
     <% if i.is_a? Issue %>
       	<%= h("#{i.project} -") unless @project && @project == i.project %>
-      	<%= link_to_issue i %>:	<%=h i.subject %>
+      	<%= link_to_issue i %>
   	<% else %>
 		<span class="icon icon-package">
 	      	<%= h("#{i.project} -") unless @project && @project == i.project %>

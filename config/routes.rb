@@ -6,11 +6,6 @@ ActionController::Routing::Routes.draw do |map|
   # map.connect 'products/:id', :controller => 'catalog', :action => 'view'
   # Keep in mind you can assign values other than :controller and :action
 
-  # Allow Redmine plugins to map routes and potentially override them
-  Rails.plugins.each do |plugin|
-    map.from_plugin plugin.name.to_sym
-  end
-
   map.home '', :controller => 'welcome'
   
   map.signin 'login', :controller => 'account', :action => 'login'
@@ -162,8 +157,8 @@ ActionController::Routing::Routes.draw do |map|
   
   map.with_options :controller => 'users' do |users|
     users.with_options :conditions => {:method => :get} do |user_views|
-      user_views.connect 'users', :action => 'list'
       user_views.connect 'users', :action => 'index'
+      user_views.connect 'users/:id', :action => 'show', :id => /\d+/
       user_views.connect 'users/new', :action => 'add'
       user_views.connect 'users/:id/edit/:tab', :action => 'edit', :tab => nil
     end
@@ -205,6 +200,17 @@ ActionController::Routing::Routes.draw do |map|
       project_actions.connect 'projects/:id/files/new', :action => 'add_file'
       project_actions.connect 'projects/:id/versions/new', :action => 'add_version'
       project_actions.connect 'projects/:id/categories/new', :action => 'add_issue_category'
+      project_actions.connect 'projects/:id/activities/save', :action => 'save_activities'
+    end
+
+    projects.with_options :conditions => {:method => :delete} do |project_actions|
+      project_actions.conditions 'projects/:id/reset_activities', :action => 'reset_activities'
+    end
+  end
+  
+  map.with_options :controller => 'versions' do |versions|
+    versions.with_options :conditions => {:method => :post} do |version_actions|
+      version_actions.connect 'projects/:project_id/versions/close_completed', :action => 'close_completed'
     end
   end
   
@@ -218,7 +224,11 @@ ActionController::Routing::Routes.draw do |map|
       repository_views.connect 'projects/:id/repository/revisions/:rev', :action => 'revision'
       repository_views.connect 'projects/:id/repository/revisions/:rev/diff', :action => 'diff'
       repository_views.connect 'projects/:id/repository/revisions/:rev/diff.:format', :action => 'diff'
+      repository_views.connect 'projects/:id/repository/revisions/:rev/raw/*path', :action => 'entry', :format => 'raw', :requirements => { :rev => /[a-z0-9\.\-_]+/ }
       repository_views.connect 'projects/:id/repository/revisions/:rev/:action/*path', :requirements => { :rev => /[a-z0-9\.\-_]+/ }
+      repository_views.connect 'projects/:id/repository/raw/*path', :action => 'entry', :format => 'raw'
+      # TODO: why the following route is required?
+      repository_views.connect 'projects/:id/repository/entry/*path', :action => 'entry'
       repository_views.connect 'projects/:id/repository/:action/*path'
     end
     
@@ -229,7 +239,8 @@ ActionController::Routing::Routes.draw do |map|
   map.connect 'attachments/:id/:filename', :controller => 'attachments', :action => 'show', :id => /\d+/, :filename => /.*/
   map.connect 'attachments/download/:id/:filename', :controller => 'attachments', :action => 'download', :id => /\d+/, :filename => /.*/
    
-
+  map.resources :groups
+  
   #left old routes at the bottom for backwards compat
   map.connect 'projects/:project_id/issues/:action', :controller => 'issues'
   map.connect 'projects/:project_id/documents/:action', :controller => 'documents'

@@ -84,7 +84,16 @@ fr:
     human:
       format:
         precision: 2
-      storage_units: [ Octet, ko, Mo, Go, To ]
+      storage_units:
+        format: "%n %u"
+        units:
+          byte:
+            one: "Octet"
+            other: "Octet"
+          kb: "ko"
+          mb: "Mo"
+          gb: "Go"
+          tb: "To"
   
   support:
     array:
@@ -168,6 +177,7 @@ fr:
   error_scm_command_failed: "Une erreur s'est produite lors de l'accès au dépôt: {{value}}"
   error_scm_annotate: "L'entrée n'existe pas ou ne peut pas être annotée."
   error_issue_not_found_in_project: "La demande n'existe pas ou n'appartient pas à ce projet"
+  error_can_not_reopen_issue_on_closed_version: 'Une demande assignée à une version fermée ne peut pas être réouverte'
   
   warning_attachments_not_saved: "{{count}} fichier(s) n'ont pas pu être sauvegardés."
   
@@ -324,6 +334,7 @@ fr:
   setting_openid: "Autoriser l'authentification et l'enregistrement OpenID"
   setting_password_min_length: Longueur minimum des mots de passe
   setting_new_project_user_role_id: Rôle donné à un utilisateur non-administrateur qui crée un projet
+  setting_default_projects_modules: Modules activés par défaut pour les nouveaux projets
   
   permission_add_project: Créer un projet
   permission_edit_project: Modifier le projet
@@ -345,6 +356,7 @@ fr:
   permission_view_calendar: Voir le calendrier
   permission_view_issue_watchers: Voir la liste des observateurs
   permission_add_issue_watchers: Ajouter des observateurs
+  permission_delete_issue_watchers: Supprimer des observateurs
   permission_log_time: Saisir le temps passé
   permission_view_time_entries: Voir le temps passé
   permission_edit_time_entries: Modifier les temps passés
@@ -387,6 +399,7 @@ fr:
   label_user: Utilisateur
   label_user_plural: Utilisateurs
   label_user_new: Nouvel utilisateur
+  label_user_anonymous: Anonyme
   label_project: Projet
   label_project_new: Nouveau projet
   label_project_plural: Projets
@@ -706,10 +719,12 @@ fr:
   label_ascending: Croissant
   label_descending: Décroissant
   label_date_from_to: Du {{start}} au {{end}}
-  label_greater_or_equal: ">="
-  label_less_or_equal: <=
   label_wiki_content_added: Page wiki ajoutée
   label_wiki_content_updated: Page wiki mise à jour
+  label_group_plural: Groupes
+  label_group: Groupe
+  label_group_new: Nouveau groupe
+  label_time_entry_plural: Temps passé
   
   button_login: Connexion
   button_submit: Soumettre
@@ -731,6 +746,7 @@ fr:
   button_list: Lister
   button_view: Voir
   button_move: Déplacer
+  button_move_and_follow: Déplacer et suivre
   button_back: Retour
   button_cancel: Annuler
   button_activate: Activer
@@ -755,6 +771,10 @@ fr:
   status_registered: enregistré
   status_locked: vérouillé
   
+  version_status_open: ouvert
+  version_status_locked: vérouillé
+  version_status_closed: fermé
+  
   text_select_mail_notifications: Actions pour lesquelles une notification par e-mail est envoyée
   text_regexp_info: ex. ^[A-Z0-9]+$
   text_min_max_length_info: 0 pour aucune restriction
@@ -762,9 +782,6 @@ fr:
   text_subprojects_destroy_warning: "Ses sous-projets: {{value}} seront également supprimés."
   text_workflow_edit: Sélectionner un tracker et un rôle pour éditer le workflow
   text_are_you_sure: Etes-vous sûr ?
-  text_journal_changed: "changé de {{old}} à {{new}}"
-  text_journal_set_to: "mis à {{value}}"
-  text_journal_deleted: supprimé
   text_tip_task_begin_day: tâche commençant ce jour
   text_tip_task_end_day: tâche finissant ce jour
   text_tip_task_begin_end_day: tâche commençant et finissant ce jour
@@ -815,7 +832,7 @@ fr:
   default_tracker_feature: Evolution
   default_tracker_support: Assistance
   default_issue_status_new: Nouveau
-  default_issue_status_assigned: Assigné
+  default_issue_status_in_progress: In Progress
   default_issue_status_resolved: Résolu
   default_issue_status_feedback: Commentaire
   default_issue_status_closed: Fermé
@@ -833,9 +850,17 @@ fr:
   enumeration_issue_priorities: Priorités des demandes
   enumeration_doc_categories: Catégories des documents
   enumeration_activities: Activités (suivi du temps)
-  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
-  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
-  label_view_all_revisions: View all revisions
+  label_greater_or_equal: ">="
+  label_less_or_equal: "<="
+  label_view_all_revisions: Voir toutes les révisions
   label_tag: Tag
-  label_branch: Branch
-  error_can_t_bulk_edit_issue: Can not bulk edit/move/destroy issues from different projects.
+  label_branch: Branche
+  error_no_tracker_in_project: "Aucun tracker n'est associé à ce projet. Vérifier la configuration du projet."
+  error_no_default_issue_status: "Aucun statut de demande n'est défini par défaut. Vérifier votre configuration (Administration -> Statuts de demandes)."
+  text_journal_changed: "{{label}} changé de {{old}} à {{new}}"
+  text_journal_set_to: "{{label}} mis à {{value}}"
+  text_journal_deleted: "{{label}} {{old}} supprimé"
+  text_journal_added: "{{label}} {{value}} ajouté"
+  field_active: Actif
+  enumeration_system_activity: Activité système
+  setting_gravatar_default: Default Gravatar image

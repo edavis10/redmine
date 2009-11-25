@@ -21,7 +21,7 @@ require 'users_controller'
 # Re-raise errors caught by the controller.
 class UsersController; def rescue_action(e) raise e end; end
 
-class UsersControllerTest < Test::Unit::TestCase
+class UsersControllerTest < ActionController::TestCase
   include Redmine::I18n
   
   fixtures :users, :projects, :members, :member_roles, :roles
@@ -35,44 +35,86 @@ class UsersControllerTest < Test::Unit::TestCase
   end
   
   def test_index_routing
-    #TODO: unify with list
     assert_generates(
       '/users',
       :controller => 'users', :action => 'index'
+    )
+    assert_routing(
+      {:method => :get, :path => '/users'},
+      :controller => 'users', :action => 'index'
+    )
+    assert_recognizes(
+      {:controller => 'users', :action => 'index'},
+      {:method => :get, :path => '/users'}
     )
   end
   
   def test_index
     get :index
     assert_response :success
-    assert_template 'list'
-  end
-  
-  def test_list_routing
-    #TODO: rename action to index
-    assert_routing(
-      {:method => :get, :path => '/users'},
-      :controller => 'users', :action => 'list'
-    )
+    assert_template 'index'
   end
 
-  def test_list
-    get :list
+  def test_index
+    get :index
     assert_response :success
-    assert_template 'list'
+    assert_template 'index'
     assert_not_nil assigns(:users)
     # active users only
     assert_nil assigns(:users).detect {|u| !u.active?}
   end
   
-  def test_list_with_name_filter
-    get :list, :name => 'john'
+  def test_index_with_name_filter
+    get :index, :name => 'john'
     assert_response :success
-    assert_template 'list'
+    assert_template 'index'
     users = assigns(:users)
     assert_not_nil users
     assert_equal 1, users.size
     assert_equal 'John', users.first.firstname
+  end
+  
+  def test_show_routing
+    assert_routing(
+      {:method => :get, :path => '/users/44'},
+      :controller => 'users', :action => 'show', :id => '44'
+    )
+    assert_recognizes(
+      {:controller => 'users', :action => 'show', :id => '44'},
+      {:method => :get, :path => '/users/44'}
+    )
+  end
+  
+  def test_show
+    @request.session[:user_id] = nil
+    get :show, :id => 2
+    assert_response :success
+    assert_template 'show'
+    assert_not_nil assigns(:user)
+  end
+
+  def test_show_should_not_fail_when_custom_values_are_nil
+    user = User.find(2)
+
+    # Create a custom field to illustrate the issue
+    custom_field = CustomField.create!(:name => 'Testing', :field_format => 'text')
+    custom_value = user.custom_values.build(:custom_field => custom_field).save!
+
+    get :show, :id => 2
+    assert_response :success
+  end
+  
+
+  def test_show_inactive
+    get :show, :id => 5
+    assert_response 404
+    assert_nil assigns(:user)
+  end
+  
+  def test_show_should_not_reveal_users_with_no_visible_activity_or_project
+    @request.session[:user_id] = nil
+    get :show, :id => 9
+    assert_response 404
   end
 
   def test_add_routing

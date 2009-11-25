@@ -27,6 +27,15 @@ module QueriesHelper
                       content_tag('th', column.caption)
   end
   
+  def column_value(column, issue)
+    if column.is_a?(QueryCustomFieldColumn)
+      cv = issue.custom_values.detect {|v| v.custom_field_id == column.custom_field.id}
+      show_value(cv)
+    else
+      value = issue.send(column.name)
+    end
+  end
+  
   def column_content(column, issue)
     if column.is_a?(QueryCustomFieldColumn)
       cv = issue.custom_values.detect {|v| v.custom_field_id == column.custom_field.id}
@@ -45,9 +54,9 @@ module QueriesHelper
         when :project
           link_to(h(value), :controller => 'projects', :action => 'show', :id => value)
         when :assigned_to
-          link_to(h(value), :controller => 'account', :action => 'show', :id => value)
+          link_to_user value
         when :author
-          link_to(h(value), :controller => 'account', :action => 'show', :id => value)
+          link_to_user value
         when :done_ratio
           progress_bar(value, :width => '80px')
         when :fixed_version

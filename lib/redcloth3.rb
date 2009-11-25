@@ -577,7 +577,7 @@ class RedCloth3 < String
         end
     end
     
-    QUOTES_RE = /(^>+([^\n]*?)\n?)+/m
+    QUOTES_RE = /(^>+([^\n]*?)(\n|$))+/m
     QUOTES_CONTENT_RE = /^([> ]+)(.*)$/m
     
     def block_textile_quotes( text )
@@ -912,7 +912,7 @@ class RedCloth3 < String
     end
 
     IMAGE_RE = /
-            (<p>|\s|^)           # start of line?
+            (>|\s|^)           # start of line?
             \!                   # opening
             (\<|\=|\>)?          # optional alignment atts
             (#{C})               # optional style,class atts
@@ -1016,7 +1016,7 @@ class RedCloth3 < String
     end
     
     OFFTAGS = /(code|pre|kbd|notextile)/
-    OFFTAG_MATCH = /(?:(<\/#{ OFFTAGS }>)|(<#{ OFFTAGS }[^>]*>))(.*?)(?=<\/?#{ OFFTAGS }|\Z)/mi
+    OFFTAG_MATCH = /(?:(<\/#{ OFFTAGS }>)|(<#{ OFFTAGS }[^>]*>))(.*?)(?=<\/?#{ OFFTAGS }\W|\Z)/mi
     OFFTAG_OPEN = /<#{ OFFTAGS }/
     OFFTAG_CLOSE = /<\/?#{ OFFTAGS }/
     HASTAG_MATCH = /(<\/?\w[^\n]*?>)/m

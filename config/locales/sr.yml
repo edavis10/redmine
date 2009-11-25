@@ -81,6 +81,17 @@
         unit: 'ДИН'
         precision: 2
         format: '%n %u'
+    human:
+      storage_units:
+        format: "%n %u"
+        units:
+          byte:
+            one: "Byte"
+            other: "Bytes"
+          kb: "KB"
+          mb: "MB"
+          gb: "GB"
+          tb: "TB"
 
   support:
     array:
@@ -587,9 +598,6 @@
   text_project_destroy_confirmation: Da li ste sigurni da želite da izbrišete ovaj projekat i sve njegove podatke?
   text_workflow_edit: Select a role and a tracker to edit the workflow
   text_are_you_sure: Da li ste sigurni ?
-  text_journal_changed: "promenjen iz {{old}} u {{new}}"
-  text_journal_set_to: "postavi na {{value}}"
-  text_journal_deleted: izbrisano
   text_tip_task_begin_day: Zadaci koji počinju ovog dana
   text_tip_task_end_day: zadaci koji se završavaju ovog dana
   text_tip_task_begin_end_day: Zadaci koji počinju i završavaju se ovog dana
@@ -615,7 +623,7 @@
   default_tracker_feature: Nova osobina
   default_tracker_support: Podrška
   default_issue_status_new: Novo
-  default_issue_status_assigned: Dodeljeno
+  default_issue_status_in_progress: In Progress
   default_issue_status_resolved: Rešeno
   default_issue_status_feedback: Povratna informacija
   default_issue_status_closed: Zatvoreno
@@ -803,8 +811,6 @@
   setting_openid: Allow OpenID login and registration
   field_identity_url: OpenID URL
   label_login_with_open_id_option: or login with OpenID
-  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
-  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
   field_content: Content
   label_descending: Descending
   label_sort: Sort
@@ -829,4 +835,24 @@
   label_view_all_revisions: View all revisions
   label_tag: Tag
   label_branch: Branch
-  error_can_t_bulk_edit_issue: Can not bulk edit/move/destroy issues from different projects.
+  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
+  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
+  text_journal_changed: "{{label}} changed from {{old}} to {{new}}"
+  text_journal_set_to: "{{label}} set to {{value}}"
+  text_journal_deleted: "{{label}} deleted ({{old}})"
+  label_group_plural: Groups
+  label_group: Group
+  label_group_new: New group
+  label_time_entry_plural: Spent time
+  text_journal_added: "{{label}} {{value}} added"
+  field_active: Active
+  enumeration_system_activity: System Activity
+  permission_delete_issue_watchers: Delete watchers
+  version_status_closed: closed
+  version_status_locked: locked
+  version_status_open: open
+  error_can_not_reopen_issue_on_closed_version: An issue assigned to a closed version can not be reopened
+  label_user_anonymous: Anonymous
+  button_move_and_follow: Move and follow
+  setting_default_projects_modules: Default enabled modules for new projects
+  setting_gravatar_default: Default Gravatar image

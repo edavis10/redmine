@@ -20,8 +20,15 @@ class Project < ActiveRecord::Base
   STATUS_ACTIVE     = 1
   STATUS_ARCHIVED   = 9
   
-  has_many :members, :include => :user, :conditions => "#{User.table_name}.status=#{User::STATUS_ACTIVE}"
+  # Specific overidden Activities
+  has_many :time_entry_activities
+  has_many :members, :include => [:user, :roles], :conditions => "#{User.table_name}.type='User' AND #{User.table_name}.status=#{User::STATUS_ACTIVE}"
+  has_many :member_principals, :class_name => 'Member', 
+                               :include => :principal,
+                               :conditions => "#{Principal.table_name}.type='Group' OR (#{Principal.table_name}.type='User' AND #{Principal.table_name}.status=#{User::STATUS_ACTIVE})"
   has_many :users, :through => :members
+  has_many :principals, :through => :member_principals, :source => :principal
+  
   has_many :enabled_modules, :dependent => :delete_all
   has_and_belongs_to_many :trackers, :order => "#{Tracker.table_name}.position"
   has_many :issues, :dependent => :destroy, :order => "#{Issue.table_name}.created_on DESC", :include => [:status, :tracker]
@@ -70,7 +77,7 @@ class Project < ActiveRecord::Base
 
   named_scope :has_module, lambda { |mod| { :conditions => ["#{Project.table_name}.id IN (SELECT em.project_id FROM #{EnabledModule.table_name} em WHERE em.name=?)", mod.to_s] } }
   named_scope :active, { :conditions => "#{Project.table_name}.status = #{STATUS_ACTIVE}"}
-  named_scope :public, { :conditions => { :is_public => true } }
+  named_scope :all_public, { :conditions => { :is_public => true } }
   named_scope :visible, lambda { { :conditions => Project.visible_by(User.current) } }
   
   def identifier=(identifier)
@@ -79,21 +86,6 @@ class Project < ActiveRecord::Base
   
   def identifier_frozen?
     errors[:identifier].nil? && !(new_record? || identifier.blank?)
-  end
-  
-  def issues_with_subprojects(include_subprojects=false)
-    conditions = nil
-    if include_subprojects
-      ids = [id] + descendants.collect(&:id)
-      conditions = ["#{Project.table_name}.id IN (#{ids.join(',')}) AND #{Project.visible_by}"]
-    end
-    conditions ||= ["#{Project.table_name}.id = ?", id]
-    # Quick and dirty fix for Rails 2 compatibility
-    Issue.send(:with_scope, :find => { :conditions => conditions }) do 
-      Version.send(:with_scope, :find => { :conditions => conditions }) do
-        yield
-      end
-    end 
   end
 
   # returns latest created projects
@@ -124,7 +116,7 @@ class Project < ActiveRecord::Base
     if perm = Redmine::AccessControl.permission(permission)
       unless perm.project_module.nil?
         # If the permission belongs to a project module, make sure the module is enabled
-        base_statement << " AND EXISTS (SELECT em.id FROM #{EnabledModule.table_name} em WHERE em.name='#{perm.project_module}' AND em.project_id=#{Project.table_name}.id)"
+        base_statement << " AND #{Project.table_name}.id IN (SELECT em.project_id FROM #{EnabledModule.table_name} em WHERE em.name='#{perm.project_module}')"
       end
     end
     if options[:project]
@@ -137,17 +129,64 @@ class Project < ActiveRecord::Base
     else
       statements << "1=0"
       if user.logged?
-        statements << "#{Project.table_name}.is_public = #{connection.quoted_true}" if Role.non_member.allowed_to?(permission)
+        if Role.non_member.allowed_to?(permission) && !options[:member]
+          statements << "#{Project.table_name}.is_public = #{connection.quoted_true}"
+        end
         allowed_project_ids = user.memberships.select {|m| m.roles.detect {|role| role.allowed_to?(permission)}}.collect {|m| m.project_id}
         statements << "#{Project.table_name}.id IN (#{allowed_project_ids.join(',')})" if allowed_project_ids.any?
-      elsif Role.anonymous.allowed_to?(permission)
-        # anonymous user allowed on public project
-        statements << "#{Project.table_name}.is_public = #{connection.quoted_true}" 
       else
-        # anonymous user is not authorized
+        if Role.anonymous.allowed_to?(permission) && !options[:member]
+          # anonymous user allowed on public project
+          statements << "#{Project.table_name}.is_public = #{connection.quoted_true}"
+        end 
       end
     end
     statements.empty? ? base_statement : "((#{base_statement}) AND (#{statements.join(' OR ')}))"
+  end
+
+  # Returns the Systemwide and project specific activities
+  def activities(include_inactive=false)
+    if include_inactive
+      return all_activities
+    else
+      return active_activities
+    end
+  end
+
+  # Will create a new Project specific Activity or update an existing one
+  #
+  # This will raise a ActiveRecord::Rollback if the TimeEntryActivity
+  # does not successfully save.
+  def update_or_create_time_entry_activity(id, activity_hash)
+    if activity_hash.respond_to?(:has_key?) && activity_hash.has_key?('parent_id')
+      self.create_time_entry_activity_if_needed(activity_hash)
+    else
+      activity = project.time_entry_activities.find_by_id(id.to_i)
+      activity.update_attributes(activity_hash) if activity
+    end
+  end
+  
+  # Create a new TimeEntryActivity if it overrides a system TimeEntryActivity
+  #
+  # This will raise a ActiveRecord::Rollback if the TimeEntryActivity
+  # does not successfully save.
+  def create_time_entry_activity_if_needed(activity)
+    if activity['parent_id']
+    
+      parent_activity = TimeEntryActivity.find(activity['parent_id'])
+      activity['name'] = parent_activity.name
+      activity['position'] = parent_activity.position
+
+      if Enumeration.overridding_change?(activity, parent_activity)
+        project_activity = self.time_entry_activities.create(activity)
+
+        if project_activity.new_record?
+          raise ActiveRecord::Rollback, "Overridding TimeEntryActivity was not successfully saved"
+        else
+          self.time_entries.update_all("activity_id = #{project_activity.id}", ["activity_id = ?", parent_activity.id])
+        end
+      end
+    end
   end
 
   # Returns a :conditions SQL string that can be used to find the issues associated with this project.
@@ -197,8 +236,34 @@ class Project < ActiveRecord::Base
   end
   
   # Returns an array of projects the project can be moved to
-  def possible_parents
-    @possible_parents ||= (Project.active.find(:all) - self_and_descendants)
+  # by the current user
+  def allowed_parents
+    return @allowed_parents if @allowed_parents
+    @allowed_parents = (Project.find(:all, :conditions => Project.allowed_to_condition(User.current, :add_project, :member => true)) - self_and_descendants)
+    unless parent.nil? || @allowed_parents.empty? || @allowed_parents.include?(parent)
+      @allowed_parents << parent
+    end
+    @allowed_parents
+  end
+  
+  # Sets the parent of the project with authorization check
+  def set_allowed_parent!(p)
+    unless p.nil? || p.is_a?(Project)
+      if p.to_s.blank?
+        p = nil
+      else
+        p = Project.find_by_id(p)
+        return false unless p
+      end
+    end
+    if p.nil?
+      if !new_record? && allowed_parents.empty?
+        return false
+      end
+    elsif !allowed_parents.include?(p)
+      return false
+    end
+    set_parent!(p)
   end
   
   # Sets the parent of the project
@@ -246,6 +311,17 @@ class Project < ActiveRecord::Base
                          :select => "DISTINCT #{Tracker.table_name}.*",
                          :conditions => ["#{Project.table_name}.lft >= ? AND #{Project.table_name}.rgt <= ? AND #{Project.table_name}.status = #{STATUS_ACTIVE}", lft, rgt],
                          :order => "#{Tracker.table_name}.position")
+  end
+  
+  # Closes open and locked project versions that are completed
+  def close_completed_versions
+    Version.transaction do
+      versions.find(:all, :conditions => {:status => %w(open locked)}).each do |version|
+        if version.completed?
+          version.update_attribute(:status, 'closed')
+        end
+      end
+    end
   end
   
   # Returns a hash of project users grouped by role
@@ -322,7 +398,7 @@ class Project < ActiveRecord::Base
       # remove disabled modules
       enabled_modules.each {|mod| mod.destroy unless module_names.include?(mod.name)}
       # add new modules
-      module_names.each {|name| enabled_modules << EnabledModule.new(:name => name)}
+      module_names.reject {|name| module_enabled?(name)}.each {|name| enabled_modules << EnabledModule.new(:name => name)}
     else
       enabled_modules.clear
     end
@@ -335,41 +411,35 @@ class Project < ActiveRecord::Base
   end
 
   # Copies and saves the Project instance based on the +project+.
-  # Will duplicate the source project's:
+  # Duplicates the source project's:
+  # * Wiki
+  # * Versions
+  # * Categories
   # * Issues
   # * Members
   # * Queries
-  def copy(project)
+  #
+  # Accepts an +options+ argument to specify what to copy
+  #
+  # Examples:
+  #   project.copy(1)                                    # => copies everything
+  #   project.copy(1, :only => 'members')                # => copies members only
+  #   project.copy(1, :only => ['members', 'versions'])  # => copies members and versions
+  def copy(project, options={})
     project = project.is_a?(Project) ? project : Project.find(project)
-
-    Project.transaction do
-      # Issues
-      project.issues.each do |issue|
-        new_issue = Issue.new
-        new_issue.copy_from(issue)
-        self.issues << new_issue
-      end
     
-      # Members
-      project.members.each do |member|
-        new_member = Member.new
-        new_member.attributes = member.attributes.dup.except("project_id")
-        new_member.role_ids = member.role_ids.dup
-        new_member.project = self
-        self.members << new_member
+    to_be_copied = %w(wiki versions issue_categories issues members queries boards)
+    to_be_copied = to_be_copied & options[:only].to_a unless options[:only].nil?
+    
+    Project.transaction do
+      if save
+        reload
+        to_be_copied.each do |name|
+          send "copy_#{name}", project
+        end
+        Redmine::Hook.call_hook(:model_project_copy_before_save, :source_project => project, :destination_project => self)
+        save
       end
-      
-      # Queries
-      project.queries.each do |query|
-        new_query = Query.new
-        new_query.attributes = query.attributes.dup.except("project_id", "sort_criteria")
-        new_query.sort_criteria = query.sort_criteria if query.sort_criteria
-        new_query.project = self
-        self.queries << new_query
-      end
-
-      Redmine::Hook.call_hook(:model_project_copy_before_save, :source_project => project, :destination_project => self)
-      self.save
     end
   end
 
@@ -381,11 +451,12 @@ class Project < ActiveRecord::Base
       project = project.is_a?(Project) ? project : Project.find(project)
       if project
         # clear unique attributes
-        attributes = project.attributes.dup.except('name', 'identifier', 'id', 'status')
+        attributes = project.attributes.dup.except('id', 'name', 'identifier', 'status', 'parent_id', 'lft', 'rgt')
         copy = Project.new(attributes)
         copy.enabled_modules = project.enabled_modules
         copy.trackers = project.trackers
         copy.custom_values = project.custom_values.collect {|v| v.clone}
+        copy.issue_custom_fields = project.issue_custom_fields
         return copy
       else
         return nil
@@ -395,7 +466,92 @@ class Project < ActiveRecord::Base
     end
   end
   
-private
+  private
+  
+  # Copies wiki from +project+
+  def copy_wiki(project)
+    # Check that the source project has a wiki first
+    unless project.wiki.nil?
+      self.wiki ||= Wiki.new
+      wiki.attributes = project.wiki.attributes.dup.except("id", "project_id")
+      project.wiki.pages.each do |page|
+        new_wiki_content = WikiContent.new(page.content.attributes.dup.except("id", "page_id", "updated_on"))
+        new_wiki_page = WikiPage.new(page.attributes.dup.except("id", "wiki_id", "created_on", "parent_id"))
+        new_wiki_page.content = new_wiki_content
+        wiki.pages << new_wiki_page
+      end
+    end
+  end
+
+  # Copies versions from +project+
+  def copy_versions(project)
+    project.versions.each do |version|
+      new_version = Version.new
+      new_version.attributes = version.attributes.dup.except("id", "project_id", "created_on", "updated_on")
+      self.versions << new_version
+    end
+  end
+
+  # Copies issue categories from +project+
+  def copy_issue_categories(project)
+    project.issue_categories.each do |issue_category|
+      new_issue_category = IssueCategory.new
+      new_issue_category.attributes = issue_category.attributes.dup.except("id", "project_id")
+      self.issue_categories << new_issue_category
+    end
+  end
+  
+  # Copies issues from +project+
+  def copy_issues(project)
+    project.issues.each do |issue|
+      new_issue = Issue.new
+      new_issue.copy_from(issue)
+      # Reassign fixed_versions by name, since names are unique per
+      # project and the versions for self are not yet saved
+      if issue.fixed_version
+        new_issue.fixed_version = self.versions.select {|v| v.name == issue.fixed_version.name}.first
+      end
+      # Reassign the category by name, since names are unique per
+      # project and the categories for self are not yet saved
+      if issue.category
+        new_issue.category = self.issue_categories.select {|c| c.name == issue.category.name}.first
+      end
+      self.issues << new_issue
+    end
+  end
+
+  # Copies members from +project+
+  def copy_members(project)
+    project.members.each do |member|
+      new_member = Member.new
+      new_member.attributes = member.attributes.dup.except("id", "project_id", "created_on")
+      new_member.role_ids = member.role_ids.dup
+      new_member.project = self
+      self.members << new_member
+    end
+  end
+
+  # Copies queries from +project+
+  def copy_queries(project)
+    project.queries.each do |query|
+      new_query = Query.new
+      new_query.attributes = query.attributes.dup.except("id", "project_id", "sort_criteria")
+      new_query.sort_criteria = query.sort_criteria if query.sort_criteria
+      new_query.project = self
+      self.queries << new_query
+    end
+  end
+
+  # Copies boards from +project+
+  def copy_boards(project)
+    project.boards.each do |board|
+      new_board = Board.new
+      new_board.attributes = board.attributes.dup.except("id", "project_id", "topics_count", "messages_count", "last_message_id")
+      new_board.project = self
+      self.boards << new_board
+    end
+  end
+  
   def allowed_permissions
     @allowed_permissions ||= begin
       module_names = enabled_modules.collect {|m| m.name}
@@ -405,5 +561,43 @@ private
 
   def allowed_actions
     @actions_allowed ||= allowed_permissions.inject([]) { |actions, permission| actions += Redmine::AccessControl.allowed_actions(permission) }.flatten
+  end
+
+  # Returns all the active Systemwide and project specific activities
+  def active_activities
+    overridden_activity_ids = self.time_entry_activities.active.collect(&:parent_id)
+
+    if overridden_activity_ids.empty?
+      return TimeEntryActivity.shared.active
+    else
+      return system_activities_and_project_overrides
+    end
+  end
+
+  # Returns all the Systemwide and project specific activities
+  # (inactive and active)
+  def all_activities
+    overridden_activity_ids = self.time_entry_activities.collect(&:parent_id)
+
+    if overridden_activity_ids.empty?
+      return TimeEntryActivity.shared
+    else
+      return system_activities_and_project_overrides(true)
+    end
+  end
+
+  # Returns the systemwide active activities merged with the project specific overrides
+  def system_activities_and_project_overrides(include_inactive=false)
+    if include_inactive
+      return TimeEntryActivity.shared.
+        find(:all,
+             :conditions => ["id NOT IN (?)", self.time_entry_activities.collect(&:parent_id)]) +
+        self.time_entry_activities
+    else
+      return TimeEntryActivity.shared.active.
+        find(:all,
+             :conditions => ["id NOT IN (?)", self.time_entry_activities.active.collect(&:parent_id)]) +
+        self.time_entry_activities.active
+    end
   end
 end

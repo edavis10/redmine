@@ -49,6 +49,7 @@ module Redmine
                                       :position => 2, 
                                       :permissions => [:manage_versions, 
                                                       :manage_categories,
+                                                      :view_issues,
                                                       :add_issues,
                                                       :edit_issues,
                                                       :manage_issue_relations,
@@ -74,7 +75,8 @@ module Redmine
             
             reporter = Role.create! :name => l(:default_role_reporter),
                                     :position => 3,
-                                    :permissions => [:add_issues,
+                                    :permissions => [:view_issues,
+                                                    :add_issues,
                                                     :add_issue_notes,
                                                     :save_queries,
                                                     :view_gantt,
@@ -91,7 +93,8 @@ module Redmine
                                                     :browse_repository,
                                                     :view_changesets]
                         
-            Role.non_member.update_attribute :permissions, [:add_issues,
+            Role.non_member.update_attribute :permissions, [:view_issues,
+                                                            :add_issues,
                                                             :add_issue_notes,
                                                             :save_queries,
                                                             :view_gantt,
@@ -106,7 +109,8 @@ module Redmine
                                                             :browse_repository,
                                                             :view_changesets]
           
-            Role.anonymous.update_attribute :permissions, [:view_gantt,
+            Role.anonymous.update_attribute :permissions, [:view_issues,
+                                                           :view_gantt,
                                                            :view_calendar,
                                                            :view_time_entries,
                                                            :view_documents,
@@ -123,7 +127,7 @@ module Redmine
             
             # Issue statuses
             new       = IssueStatus.create!(:name => l(:default_issue_status_new), :is_closed => false, :is_default => true, :position => 1)
-            assigned  = IssueStatus.create!(:name => l(:default_issue_status_assigned), :is_closed => false, :is_default => false, :position => 2)
+            in_progress  = IssueStatus.create!(:name => l(:default_issue_status_in_progress), :is_closed => false, :is_default => false, :position => 2)
             resolved  = IssueStatus.create!(:name => l(:default_issue_status_resolved), :is_closed => false, :is_default => false, :position => 3)
             feedback  = IssueStatus.create!(:name => l(:default_issue_status_feedback), :is_closed => false, :is_default => false, :position => 4)
             closed    = IssueStatus.create!(:name => l(:default_issue_status_closed), :is_closed => true, :is_default => false, :position => 5)
@@ -139,15 +143,15 @@ module Redmine
             }
             
             Tracker.find(:all).each { |t|
-              [new, assigned, resolved, feedback].each { |os|
-                [assigned, resolved, feedback, closed].each { |ns|
+              [new, in_progress, resolved, feedback].each { |os|
+                [in_progress, resolved, feedback, closed].each { |ns|
                   Workflow.create!(:tracker_id => t.id, :role_id => developper.id, :old_status_id => os.id, :new_status_id => ns.id) unless os == ns
                 }        
               }      
             }
             
             Tracker.find(:all).each { |t|
-              [new, assigned, resolved, feedback].each { |os|
+              [new, in_progress, resolved, feedback].each { |os|
                 [closed].each { |ns|
                   Workflow.create!(:tracker_id => t.id, :role_id => reporter.id, :old_status_id => os.id, :new_status_id => ns.id) unless os == ns
                 }        

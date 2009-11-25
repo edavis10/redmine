@@ -17,7 +17,7 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class MailHandlerTest < Test::Unit::TestCase
+class MailHandlerTest < ActiveSupport::TestCase
   fixtures :users, :projects, 
                    :enabled_modules,
                    :roles,
@@ -183,6 +183,13 @@ class MailHandlerTest < Test::Unit::TestCase
   def test_add_issue_without_from_header
     Role.anonymous.add_permission!(:add_issues)
     assert_equal false, submit_email('ticket_without_from_header.eml')
+  end
+
+  def test_should_ignore_emails_from_emission_address
+    Role.anonymous.add_permission!(:add_issues)
+    assert_no_difference 'User.count' do
+      assert_equal false, submit_email('ticket_from_emission_address.eml', :issue => {:project => 'ecookbook'}, :unknown_user => 'create')
+    end
   end
 
   def test_add_issue_should_send_email_notification

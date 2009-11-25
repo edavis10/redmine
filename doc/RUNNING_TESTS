@@ -1,9 +1,17 @@
+Installing gems for testing
+===========================
+
+Run `rake gems RAILS_ENV=test` to list the required gems.  Run 
+`rake gems:install RAILS_ENV=test` to install any missing gems.
+
 Running Tests
 =============
 
 Run `rake --tasks test` to see available tests.
 `rake test` will run the entire testsuite.
 
+Before running `rake test` you need to configure both development
+and test databases.
 
 Creating test repositories
 ===================

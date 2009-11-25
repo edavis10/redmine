@@ -1,3 +1,5 @@
+# encoding: utf-8
+#
 # redMine - project management software
 # Copyright (C) 2006-2007  Jean-Philippe Lang
 #
@@ -17,7 +19,7 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class WikiTest < Test::Unit::TestCase
+class WikiTest < ActiveSupport::TestCase
   fixtures :wikis, :wiki_pages, :wiki_contents, :wiki_content_versions
   
   def test_create

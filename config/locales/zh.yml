@@ -86,7 +86,16 @@ zh:
       format:
         delimiter: ""
         precision: 1
-      storage_units: [Bytes, KB, MB, GB, TB]
+      storage_units:
+        format: "%n %u"
+        units:
+          byte:
+            one: "Byte"
+            other: "Bytes"
+          kb: "KB"
+          mb: "MB"
+          gb: "GB"
+          tb: "TB"
   
   support:
     array:
@@ -168,9 +177,10 @@ zh:
   error_scm_command_failed: "访问版本库时发生错误：{{value}}"
   error_scm_annotate: "该条目不存在或无法追溯。"
   error_issue_not_found_in_project: '问题不存在或不属于此项目'
-  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
-  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
-  
+  error_no_tracker_in_project: 该项目未设定跟踪标签，请检查项目配置。
+  error_no_default_issue_status: 未设置默认的问题状态。请检查系统设置（"管理" -> "问题状态"）。
+  error_can_not_reopen_issue_on_closed_version: 该问题被关联到一个已经关闭的版本，因此无法重新打开。
+
   warning_attachments_not_saved: "{{count}} 个文件保存失败。"
   
   mail_subject_lost_password: "您的 {{value}} 密码"
@@ -347,6 +357,7 @@ zh:
   permission_view_calendar: 查看日历
   permission_view_issue_watchers: 查看跟踪者列表
   permission_add_issue_watchers: 添加跟踪者
+  permission_delete_issue_watchers: 删除跟踪者
   permission_log_time: 登记工时
   permission_view_time_entries: 查看耗时
   permission_edit_time_entries: 编辑耗时
@@ -389,6 +400,7 @@ zh:
   label_user: 用户
   label_user_plural: 用户
   label_user_new: 新建用户
+  label_user_anonymous: 匿名用户
   label_project: 项目
   label_project_new: 新建项目
   label_project_plural: 项目
@@ -577,6 +589,8 @@ zh:
   label_browse: 浏览
   label_modification: "{{count}} 个更新"
   label_modification_plural: "{{count}} 个更新"
+  label_branch: 分支
+  label_tag: 标签
   label_revision: 修订
   label_revision_plural: 修订
   label_associated_revisions: 相关修订版本
@@ -588,6 +602,7 @@ zh:
   label_latest_revision: 最近的修订版本
   label_latest_revision_plural: 最近的修订版本
   label_view_revisions: 查看修订
+  label_view_all_revisions: 查看所有修订
   label_max_size: 最大尺寸
   label_sort_highest: 置顶
   label_sort_higher: 上移
@@ -710,10 +725,12 @@ zh:
   label_ascending: 升序
   label_descending: 降序
   label_date_from_to: 从 {{start}} 到 {{end}}
-  label_greater_or_equal: ">="
-  label_less_or_equal: <=
   label_wiki_content_added: Wiki 页面已添加
   label_wiki_content_updated: Wiki 页面已更新
+  label_group: 组
+  label_group_plural: 组
+  label_group_new: 新建组
+  label_time_entry_plural: 耗时
 
   button_login: 登录
   button_submit: 提交
@@ -758,7 +775,13 @@ zh:
   status_active: 活动的
   status_registered: 已注册
   status_locked: 已锁定
-  
+
+  version_status_open: 打开
+  version_status_locked: 锁定
+  version_status_closed: 关闭
+
+  field_active: 活动
+
   text_select_mail_notifications: 选择需要发送邮件通知的动作
   text_regexp_info: 例如：^[A-Z0-9]+$
   text_min_max_length_info: 0 表示没有限制
@@ -766,9 +789,10 @@ zh:
   text_subprojects_destroy_warning: "以下子项目也将被同时删除：{{value}}"
   text_workflow_edit: 选择角色和跟踪标签来编辑工作流程
   text_are_you_sure: 您确定？
-  text_journal_changed: "从 {{old}} 变更为 {{new}}"
-  text_journal_set_to: "设置为 {{value}}"
-  text_journal_deleted: 已删除
+  text_journal_changed: "{{label}} 从 {{old}} 变更为 {{new}}"
+  text_journal_set_to: "{{label}} 被设置为 {{value}}"
+  text_journal_deleted: "{{label}} 已删除 ({{old}})"
+  text_journal_added: "{{label}} {{value}} 已添加"
   text_tip_task_begin_day: 今天开始的任务
   text_tip_task_end_day: 今天结束的任务
   text_tip_task_begin_end_day: 今天开始并结束的任务
@@ -819,7 +843,7 @@ zh:
   default_tracker_feature: 功能
   default_tracker_support: 支持
   default_issue_status_new: 新建
-  default_issue_status_assigned: 已指派
+  default_issue_status_in_progress: In Progress
   default_issue_status_resolved: 已解决
   default_issue_status_feedback: 反馈
   default_issue_status_closed: 已关闭
@@ -837,7 +861,7 @@ zh:
   enumeration_issue_priorities: 问题优先级
   enumeration_doc_categories: 文档类别
   enumeration_activities: 活动（时间跟踪）
-  label_view_all_revisions: View all revisions
-  label_tag: Tag
-  label_branch: Branch
-  error_can_t_bulk_edit_issue: Can not bulk edit/move/destroy issues from different projects.
+  enumeration_system_activity: 系统活动
+  button_move_and_follow: Move and follow
+  setting_default_projects_modules: Default enabled modules for new projects
+  setting_gravatar_default: Default Gravatar image

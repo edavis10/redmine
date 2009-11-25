@@ -1,6 +1,16 @@
 ### From http://svn.geekdaily.org/public/rails/plugins/generally_useful/tasks/coverage_via_rcov.rake
 
 namespace :test do
+  desc 'Measures test coverage'
+  task :coverage do
+    rm_f "coverage"
+    rm_f "coverage.data"
+    rcov = "rcov --rails --aggregate coverage.data --text-summary -Ilib --html"
+    files = Dir.glob("test/**/*_test.rb").join(" ")
+    system("#{rcov} #{files}")
+    system("open coverage/index.html") if PLATFORM['darwin']
+  end
+
   namespace :scm do
     namespace :setup do
       desc "Creates directory for test repositories"

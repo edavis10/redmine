@@ -1,5 +1,5 @@
-# redMine - project management software
-# Copyright (C) 2006-2007  Jean-Philippe Lang
+# Redmine - project management software
+# Copyright (C) 2006-2009  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,7 +17,7 @@
 
 require "digest/sha1"
 
-class User < ActiveRecord::Base
+class User < Principal
 
   # Account statuses
   STATUS_ANONYMOUS  = 0
@@ -33,9 +33,8 @@ class User < ActiveRecord::Base
     :username => '#{login}'
   }
 
-  has_many :memberships, :class_name => 'Member', :include => [ :project, :roles ], :conditions => "#{Project.table_name}.status=#{Project::STATUS_ACTIVE}", :order => "#{Project.table_name}.name"
-  has_many :members, :dependent => :delete_all
-  has_many :projects, :through => :memberships
+  has_and_belongs_to_many :groups, :after_add => Proc.new {|user, group| group.user_added(user)},
+                                   :after_remove => Proc.new {|user, group| group.user_removed(user)}
   has_many :issue_categories, :foreign_key => 'assigned_to_id', :dependent => :nullify
   has_many :changesets, :dependent => :nullify
   has_one :preference, :dependent => :destroy, :class_name => 'UserPreference'
@@ -50,7 +49,7 @@ class User < ActiveRecord::Base
   attr_accessor :password, :password_confirmation
   attr_accessor :last_before_login_on
   # Prevents unauthorized assignments
-  attr_protected :login, :admin, :password, :password_confirmation, :hashed_password
+  attr_protected :login, :admin, :password, :password_confirmation, :hashed_password, :group_ids
 	
   validates_presence_of :login, :firstname, :lastname, :mail, :if => Proc.new { |user| !user.is_a?(AnonymousUser) }
   validates_uniqueness_of :login, :if => Proc.new { |user| !user.login.blank? }
@@ -225,6 +224,15 @@ class User < ActiveRecord::Base
     name
   end
   
+  # Returns the current day according to user's time zone
+  def today
+    if time_zone.nil?
+      Date.today
+    else
+      Time.now.in_time_zone(time_zone).to_date
+    end
+  end
+  
   def logged?
     true
   end
@@ -317,7 +325,7 @@ class User < ActiveRecord::Base
   end
   
   private
-  
+    
   # Return password digest
   def self.hash_password(clear_password)
     Digest::SHA1.hexdigest(clear_password || "")
@@ -338,7 +346,7 @@ class AnonymousUser < User
   # Overrides a few properties
   def logged?; false end
   def admin; false end
-  def name; 'Anonymous' end
+  def name(*args); I18n.t(:label_user_anonymous) end
   def mail; nil end
   def time_zone; nil end
   def rss_key; nil end

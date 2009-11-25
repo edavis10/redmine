@@ -47,6 +47,16 @@ es:
         # separator: 
         delimiter: "" 
         precision: 1
+      storage_units:
+        format: "%n %u"
+        units:
+          byte:
+            one: "Byte"
+            other: "Bytes"
+          kb: "KB"
+          mb: "MB"
+          gb: "GB"
+          tb: "TB"
 
   # Used in distance_of_time_in_words(), distance_of_time_in_words_to_now(), time_ago_in_words()
   datetime:
@@ -202,7 +212,7 @@ es:
   default_activity_development: Desarrollo
   default_doc_category_tech: Documentación técnica
   default_doc_category_user: Documentación de usuario
-  default_issue_status_assigned: Asignada
+  default_issue_status_in_progress: In Progress
   default_issue_status_closed: Cerrada
   default_issue_status_feedback: Comentarios
   default_issue_status_new: Nueva
@@ -792,9 +802,6 @@ es:
   text_issue_updated: "La petición {{id}} ha sido actualizada por {{author}}."
   text_issues_destroy_confirmation: '¿Seguro que quiere borrar las peticiones seleccionadas?'
   text_issues_ref_in_commit_messages: Referencia y petición de corrección en los mensajes
-  text_journal_changed: "cambiado de {{old}} a {{new}}"
-  text_journal_deleted: suprimido
-  text_journal_set_to: "fijado a {{value}}"
   text_length_between: "Longitud entre {{min}} y {{max}} caracteres."
   text_load_default_configuration: Cargar la configuración por defecto
   text_min_max_length_info: 0 para ninguna restricción
@@ -829,8 +836,6 @@ es:
   field_watcher: Seguidor
   setting_openid: Permitir autenticación y registro con OpenID
   field_identity_url: OpenID URL
-  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
-  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
   label_login_with_open_id_option: o acceder mediante OpenID
   field_content: Contenido
   label_descending: Descendiente
@@ -853,7 +858,27 @@ es:
   mail_body_wiki_content_updated: La página wiki '{{page}}' ha sido actualizada por {{author}}.
   permission_add_project: Crear proyecto
   setting_new_project_user_role_id: Permiso asignado a un usuario no-administrador para crear proyectos
-  label_view_all_revisions: View all revisions
-  label_tag: Tag
-  label_branch: Branch
-  error_can_t_bulk_edit_issue: Can not bulk edit/move/destroy issues from different projects.
+  label_view_all_revisions: Visualizar todas las revisiones
+  label_tag: Etiqueta
+  label_branch: Rama
+  error_no_tracker_in_project: No existe un tipo de petición asociado a este proyecto. Verifique la configuración del proyecto, por favor.
+  error_no_default_issue_status: No se ha definido un estado por defecto de petición. Verifique su configuración (Vaya a "Administración -> Estados de las peticiones").
+  text_journal_changed: "{{label}} cambiada {{old}} por {{new}}"
+  text_journal_set_to: "{{label}} establecida a {{value}}"
+  text_journal_deleted: "{{label}} eliminado ({{old}})"
+  label_group_plural: Grupos
+  label_group: Grupo
+  label_group_new: Nuevo grupo
+  label_time_entry_plural: Tiempo dedicado
+  text_journal_added: "{{label}} {{value}} added"
+  field_active: Active
+  enumeration_system_activity: System Activity
+  permission_delete_issue_watchers: Delete watchers
+  version_status_closed: closed
+  version_status_locked: locked
+  version_status_open: open
+  error_can_not_reopen_issue_on_closed_version: An issue assigned to a closed version can not be reopened
+  label_user_anonymous: Anonymous
+  button_move_and_follow: Move and follow
+  setting_default_projects_modules: Default enabled modules for new projects
+  setting_gravatar_default: Default Gravatar image

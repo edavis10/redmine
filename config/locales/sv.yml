@@ -47,7 +47,16 @@ sv:
         # separator: 
         delimiter: ""
         # precision: 1
-      storage_units: [Byte, KB, MB, GB, TB]
+      storage_units:
+        format: "%n %u"
+        units:
+          byte:
+            one: "Byte"
+            other: "Bytes"
+          kb: "KB"
+          mb: "MB"
+          gb: "GB"
+          tb: "TB"
 
   # Used in distance_of_time_in_words(), distance_of_time_in_words_to_now(), time_ago_in_words()
   datetime:
@@ -194,8 +203,8 @@ sv:
   error_scm_command_failed: "Ett fel inträffade vid försök att nå versionsarkivet: {{value}}"
   error_scm_annotate: "Inlägget existerar inte eller kan inte kommenteras."
   error_issue_not_found_in_project: 'Ärendet hittades inte eller så tillhör det inte detta projekt'
-  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
-  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
+  error_no_tracker_in_project: Ingen ärendetyp är associerad med projektet. Vänligen kontrollera projektinställningarna.
+  error_no_default_issue_status: Ingen status är definierad som standard för nya ärenden. Vänligen kontrollera din konfiguration (Gå till "Administration -> Ärendestatus").
   
   warning_attachments_not_saved: "{{count}} fil(er) kunde inte sparas."
   
@@ -373,6 +382,7 @@ sv:
   permission_view_calendar: Visa kalender
   permission_view_issue_watchers: Visa bevakarlista
   permission_add_issue_watchers: Lägga till bevakare
+  permission_delete_issue_watchers: Ta bort bevakare
   permission_log_time: Logga spenderad tid
   permission_view_time_entries: Visa spenderad tid
   permission_edit_time_entries: Ändra tidloggningar
@@ -602,6 +612,8 @@ sv:
   label_browse: Bläddra
   label_modification: "{{count}} ändring"
   label_modification_plural: "{{count}} ändringar"
+  label_branch: Branch
+  label_tag: Tag
   label_revision: Revision
   label_revision_plural: Revisioner
   label_associated_revisions: Associerade revisioner
@@ -613,6 +625,7 @@ sv:
   label_latest_revision: Senaste revisionen
   label_latest_revision_plural: Senaste revisionerna
   label_view_revisions: Visa revisioner
+  label_view_all_revisions: Visa alla revisioner
   label_max_size: Maxstorlek
   label_sort_highest: Flytta till toppen
   label_sort_higher: Flytta upp
@@ -735,10 +748,12 @@ sv:
   label_descending: Fallande
   label_ascending: Stigande
   label_date_from_to: Från {{start}} till {{end}}
-  label_greater_or_equal: ">="
-  label_less_or_equal: <=
   label_wiki_content_added: Wikisida tillagd
   label_wiki_content_updated: Wikisida uppdaterad
+  label_group: Grupp
+  label_group_plural: Grupper
+  label_group_new: Ny grupp
+  label_time_entry_plural: Spenderad tid
   
   button_login: Logga in
   button_submit: Spara
@@ -784,6 +799,8 @@ sv:
   status_registered: registrerad
   status_locked: låst
   
+  field_active: Aktiv
+  
   text_select_mail_notifications: Välj för vilka händelser mail ska skickas.
   text_regexp_info: eg. ^[A-Z0-9]+$
   text_min_max_length_info: 0 betyder ingen gräns
@@ -791,9 +808,10 @@ sv:
   text_subprojects_destroy_warning: "Alla underprojekt: {{value}} kommer också tas bort."
   text_workflow_edit: Välj en roll och en ärendetyp för att ändra arbetsflöde
   text_are_you_sure: Är du säker ?
-  text_journal_changed: "ändrad från {{old}} till {{new}}"
-  text_journal_set_to: "satt till {{value}}"
-  text_journal_deleted: borttagen
+  text_journal_changed: "{{label}} ändrad från {{old}} till {{new}}"
+  text_journal_set_to: "{{label}} satt till {{value}}"
+  text_journal_deleted: "{{label}} borttagen ({{old}})"
+  text_journal_added: "{{label}} {{value}} tillagd"
   text_tip_task_begin_day: arbetsuppgift som börjar denna dag
   text_tip_task_end_day: arbetsuppgift som slutar denna dag
   text_tip_task_begin_end_day: arbetsuppgift börjar och slutar denna dag
@@ -844,7 +862,7 @@ sv:
   default_tracker_feature: Funktionalitet
   default_tracker_support: Support
   default_issue_status_new: Ny
-  default_issue_status_assigned: Tilldelad
+  default_issue_status_in_progress: In Progress
   default_issue_status_resolved: Löst
   default_issue_status_feedback: Feedback
   default_issue_status_closed: Stängd
@@ -862,7 +880,12 @@ sv:
   enumeration_issue_priorities: Ärendeprioriteter
   enumeration_doc_categories: Dokumentkategorier
   enumeration_activities: Aktiviteter (tidsuppföljning)
-  label_view_all_revisions: View all revisions
-  label_tag: Tag
-  label_branch: Branch
-  error_can_t_bulk_edit_issue: Can not bulk edit/move/destroy issues from different projects.
+  enumeration_system_activity: Systemaktivitet
+  version_status_closed: closed
+  version_status_locked: locked
+  version_status_open: open
+  error_can_not_reopen_issue_on_closed_version: An issue assigned to a closed version can not be reopened
+  label_user_anonymous: Anonymous
+  button_move_and_follow: Move and follow
+  setting_default_projects_modules: Default enabled modules for new projects
+  setting_gravatar_default: Default Gravatar image

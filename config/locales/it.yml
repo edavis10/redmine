@@ -74,6 +74,17 @@ it:
         unit: '€'
         precision: 2
         format: '%n %u'
+    human:
+      storage_units:
+        format: "%n %u"
+        units:
+          byte:
+            one: "Byte"
+            other: "Bytes"
+          kb: "KB"
+          mb: "MB"
+          gb: "GB"
+          tb: "TB"
         
   support:
     array:
@@ -557,9 +568,6 @@ it:
   text_project_destroy_confirmation: Sei sicuro di voler cancellare il progetti e tutti i dati ad esso collegati?
   text_workflow_edit: Seleziona un ruolo ed un tracker per modificare il workflow
   text_are_you_sure: Sei sicuro ?
-  text_journal_changed: "cambiato da {{old}} a {{new}}"
-  text_journal_set_to: "impostato a {{value}}"
-  text_journal_deleted: cancellato
   text_tip_task_begin_day: attività che iniziano in questa giornata
   text_tip_task_end_day: attività che terminano in questa giornata
   text_tip_task_begin_end_day: attività che iniziano e terminano in questa giornata
@@ -584,7 +592,7 @@ it:
   default_tracker_feature: Funzione
   default_tracker_support: Supporto
   default_issue_status_new: Nuovo
-  default_issue_status_assigned: Assegnato
+  default_issue_status_in_progress: In Progress
   default_issue_status_resolved: Risolto
   default_issue_status_feedback: Feedback
   default_issue_status_closed: Chiuso
@@ -783,10 +791,6 @@ it:
   label_updated_time_by: "Aggiornato da {{author}} {{age}} fa"
   text_diff_truncated: '... Le differenze sono state troncate perchè superano il limite massimo visualizzabile.'
   setting_diff_max_lines_displayed: Limite massimo di differenze (linee) mostrate
-
-  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
-  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
-
   text_plugin_assets_writable: Assets directory dei plugins scrivibile
   warning_attachments_not_saved: "{{count}} file non possono essere salvati."
   button_create_and_continue: Crea e continua
@@ -804,7 +808,6 @@ it:
   label_sort: Ordina
   label_ascending: Ascendente
   label_date_from_to: Da {{start}} a {{end}}
-
   label_greater_or_equal: ">="
   label_less_or_equal: <=
   text_wiki_page_destroy_question: Questa pagina ha {{descendants}} pagine figlie. Cosa ne vuoi fare?
@@ -824,4 +827,24 @@ it:
   label_view_all_revisions: View all revisions
   label_tag: Tag
   label_branch: Branch
-  error_can_t_bulk_edit_issue: Can not bulk edit/move/destroy issues from different projects.
+  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
+  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
+  text_journal_changed: "{{label}} changed from {{old}} to {{new}}"
+  text_journal_set_to: "{{label}} set to {{value}}"
+  text_journal_deleted: "{{label}} deleted ({{old}})"
+  label_group_plural: Groups
+  label_group: Group
+  label_group_new: New group
+  label_time_entry_plural: Spent time
+  text_journal_added: "{{label}} {{value}} added"
+  field_active: Active
+  enumeration_system_activity: System Activity
+  permission_delete_issue_watchers: Delete watchers
+  version_status_closed: closed
+  version_status_locked: locked
+  version_status_open: open
+  error_can_not_reopen_issue_on_closed_version: An issue assigned to a closed version can not be reopened
+  label_user_anonymous: Anonymous
+  button_move_and_follow: Move and follow
+  setting_default_projects_modules: Default enabled modules for new projects
+  setting_gravatar_default: Default Gravatar image

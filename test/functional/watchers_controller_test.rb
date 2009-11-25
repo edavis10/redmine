@@ -21,7 +21,7 @@ require 'watchers_controller'
 # Re-raise errors caught by the controller.
 class WatchersController; def rescue_action(e) raise e end; end
 
-class WatchersControllerTest < Test::Unit::TestCase
+class WatchersControllerTest < ActionController::TestCase
   fixtures :projects, :users, :roles, :members, :member_roles, :enabled_modules,
            :issues, :trackers, :projects_trackers, :issue_statuses, :enumerations, :watchers
   
@@ -66,5 +66,15 @@ class WatchersControllerTest < Test::Unit::TestCase
       assert_select_rjs :replace_html, 'watchers'
     end
     assert Issue.find(2).watched_by?(User.find(4))
+  end
+  
+  def test_remove_watcher
+    @request.session[:user_id] = 2
+    assert_difference('Watcher.count', -1) do
+      xhr :post, :destroy, :object_type => 'issue', :object_id => '2', :user_id => '3'
+      assert_response :success
+      assert_select_rjs :replace_html, 'watchers'
+    end
+    assert !Issue.find(2).watched_by?(User.find(3))
   end
 end

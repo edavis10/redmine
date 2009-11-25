@@ -81,6 +81,19 @@ class ApplicationHelperTest < HelperTestCase
     to_test.each { |text, result| assert_equal "<p>#{result}</p>", textilizable(text) }
   end
   
+  def test_inline_images_inside_tags
+    raw = <<-RAW
+h1. !foo.png! Heading
+
+Centered image:
+
+p=. !bar.gif!
+RAW
+
+    assert textilizable(raw).include?('<img src="foo.png" alt="" />')
+    assert textilizable(raw).include?('<img src="bar.gif" alt="" />')
+  end
+  
   def test_acronyms
     to_test = {
       'this is an acronym: GPL(General Public License)' => 'this is an acronym: <acronym title="General Public License">GPL</acronym>',
@@ -95,7 +108,9 @@ class ApplicationHelperTest < HelperTestCase
       'Inline image: !logo.gif!' => 'Inline image: <img src="/attachments/download/3" title="This is a logo" alt="This is a logo" />',
       'Inline image: !logo.GIF!' => 'Inline image: <img src="/attachments/download/3" title="This is a logo" alt="This is a logo" />',
       'No match: !ogo.gif!' => 'No match: <img src="ogo.gif" alt="" />',
-      'No match: !ogo.GIF!' => 'No match: <img src="ogo.GIF" alt="" />'
+      'No match: !ogo.GIF!' => 'No match: <img src="ogo.GIF" alt="" />',
+      # link image
+      '!logo.gif!:http://foo.bar/' => '<a href="http://foo.bar/"><img src="/attachments/download/3" title="This is a logo" alt="This is a logo" /></a>',
     }
     attachments = Attachment.find(:all)
     to_test.each { |text, result| assert_equal "<p>#{result}</p>", textilizable(text, :attachments => attachments) }
@@ -120,7 +135,7 @@ class ApplicationHelperTest < HelperTestCase
   
   def test_redmine_links
     issue_link = link_to('#3', {:controller => 'issues', :action => 'show', :id => 3}, 
-                               :class => 'issue', :title => 'Error 281 when updating a recipe (New)')
+                               :class => 'issue status-1 priority-1 overdue', :title => 'Error 281 when updating a recipe (New)')
     
     changeset_link = link_to('r1', {:controller => 'repositories', :action => 'revision', :id => 'ecookbook', :rev => 1},
                                    :class => 'changeset', :title => 'My very first commit')
@@ -243,7 +258,29 @@ class ApplicationHelperTest < HelperTestCase
     to_test.each { |text, result| assert_equal result, textilizable(text) }
   end
   
-  def syntax_highlight
+  def test_pre_tags
+    raw = <<-RAW
+Before
+
+<pre>
+<prepared-statement-cache-size>32</prepared-statement-cache-size>
+</pre>
+
+After
+RAW
+
+    expected = <<-EXPECTED
+<p>Before</p>
+<pre>
+&lt;prepared-statement-cache-size&gt;32&lt;/prepared-statement-cache-size&gt;
+</pre>
+<p>After</p>
+EXPECTED
+    
+    assert_equal expected.gsub(%r{[\r\n\t]}, ''), textilizable(raw).gsub(%r{[\r\n\t]}, '')
+  end
+  
+  def test_syntax_highlight
     raw = <<-RAW
 <pre><code class="ruby">
 # Some ruby code here
@@ -446,10 +483,10 @@ EXPECTED
     to_test = { Date.today => 'Due in 0 days',
                 Date.today + 1 => 'Due in 1 day',
                 Date.today + 100 => 'Due in about 3 months',
-                Date.today + 20000 => 'Due in over 55 years',
+                Date.today + 20000 => 'Due in over 54 years',
                 Date.today - 1 => '1 day late',
                 Date.today - 100 => 'about 3 months late',
-                Date.today - 20000 => 'over 55 years late',
+                Date.today - 20000 => 'over 54 years late',
                }
     to_test.each do |date, expected|
       assert_equal expected, due_date_distance_in_words(date)
@@ -467,5 +504,25 @@ EXPECTED
     # turn off avatars
     Setting.gravatar_enabled = '0'
     assert_nil avatar(User.find_by_mail('jsmith@somenet.foo'))
+  end
+  
+  def test_link_to_user
+    user = User.find(2)
+    t = link_to_user(user)
+    assert_equal "<a href=\"/users/2\">#{ user.name }</a>", t
+  end
+                                      
+  def test_link_to_user_should_not_link_to_locked_user
+    user = User.find(5)
+    assert user.locked?
+    t = link_to_user(user)
+    assert_equal user.name, t
+  end
+                                                                          
+  def test_link_to_user_should_not_link_to_anonymous
+    user = User.anonymous
+    assert user.anonymous?
+    t = link_to_user(user)
+    assert_equal ::I18n.t(:label_user_anonymous), t
   end
 end

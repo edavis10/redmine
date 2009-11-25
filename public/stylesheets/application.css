@@ -124,6 +124,8 @@ tr.message td.last_message { font-size: 80%; }
 tr.message.locked td.subject a { background-image: url(../images/locked.png); }
 tr.message.sticky td.subject a { background-image: url(../images/sticky.png); font-weight: bold; }
 
+tr.version.closed, tr.version.closed a { color: #999; }
+
 tr.user td { width:13%; }
 tr.user td.email { width:18%; }
 tr.user td { white-space: nowrap; }
@@ -159,6 +161,8 @@ table.attributes { width: 100% }
 table.attributes th { vertical-align: top; text-align: left; }
 table.attributes td { vertical-align: top; }
 
+td.center {text-align:center;}
+
 .highlight { background-color: #FCFD8D;}
 .highlight.token-1 { background-color: #faa;}
 .highlight.token-2 { background-color: #afa;}
@@ -193,6 +197,7 @@ legend {color: #484848;}
 hr { width: 100%; height: 1px; background: #ccc; border: 0;}
 blockquote { font-style: italic; border-left: 3px solid #e0e0e0; padding-left: 0.6em; margin-left: 2.4em;}
 blockquote blockquote { margin-left: 0;}
+acronym  { border-bottom: 1px dotted; cursor: help; }
 textarea.wiki-edit { width: 99%; }
 li p {margin-top: 0;}
 div.issue {background:#ffffdd; padding:6px; margin-bottom:6px;border: 1px solid #d7d7d7;}
@@ -200,17 +205,16 @@ p.breadcrumb { font-size: 0.9em; margin: 4px 0 4px 0;}
 p.subtitle { font-size: 0.9em; margin: -6px 0 12px 0; font-style: italic; } 
 p.footnote { font-size: 0.9em; margin-top: 0px; margin-bottom: 0px; }
 
-#query_form_content { font-size: 0.9em; padding: 4px; background: #f6f6f6; border: 1px solid #e4e4e4; }
-#query_form_content fieldset#filters { border-left: 0; border-right: 0; }
-#query_form_content p { margin-top: 0.5em; margin-bottom: 0.5em; }
+fieldset.collapsible { border-width: 1px 0 0 0; font-size: 0.9em; }
+fieldset.collapsible legend { padding-left: 16px; background: url(../images/arrow_expanded.png) no-repeat 0% 40%; cursor:pointer; }
+fieldset.collapsible.collapsed legend { background-image: url(../images/arrow_collapsed.png); }
 
-fieldset#filters, fieldset#date-range { padding: 0.7em; margin-bottom: 8px; }
-fieldset#filters p { margin: 1.2em 0 0.8em 2px; }
+fieldset#date-range p { margin: 2px 0 2px 0; }
 fieldset#filters table { border-collapse: collapse; }
 fieldset#filters table td { padding: 0; vertical-align: middle; }
 fieldset#filters tr.filter { height: 2em; }
 fieldset#filters td.add-filter { text-align: right; vertical-align: top; }
-.buttons { font-size: 0.9em; margin-bottom: 1.4em; }
+.buttons { font-size: 0.9em; margin-bottom: 1.4em; margin-top: 1em; }
 
 div#issue-changesets {float:right; width:45%; margin-left: 1em; margin-bottom: 1em; background: #fff; padding-left: 1em; font-size: 90%;}
 div#issue-changesets .changeset { padding: 4px;}
@@ -244,6 +248,7 @@ dt.wiki-page { background-image: url(../images/wiki_edit.png); }
 dt.attachment { background-image: url(../images/attachment.png); }
 dt.document { background-image: url(../images/document.png); }
 dt.project { background-image: url(../images/projects.png); }
+dt.time-entry { background-image: url(../images/time.png); }
 
 #search-results dt.issue.closed { background-image: url(../images/ticket_checked.png); }
 
@@ -319,6 +324,15 @@ text-align: left;
 width: 270px;
 }
 
+.tabular label.block{
+font-weight: normal;
+margin-left: 0px !important;
+text-align: left;
+float: none;
+display: block;
+width: auto;
+}
+
 input#time_entry_comments { width: 90%;}
 
 #preview fieldset {margin-top: 1em; background: url(../images/draft.png)}
@@ -342,12 +356,14 @@ p.other-formats { text-align: right; font-size:0.9em; color: #666; }
 a.atom { background: url(../images/feed.png) no-repeat 1px 50%; padding: 2px 0px 3px 16px; }
 
 /* Project members tab */
-div#tab-content-members .splitcontentleft, div#tab-content-memberships .splitcontentleft { width: 64% }
-div#tab-content-members .splitcontentright, div#tab-content-memberships .splitcontentright { width: 34% }
-div#tab-content-members fieldset, div#tab-content-memberships fieldset { padding:1em; margin-bottom: 1em; }
-div#tab-content-members fieldset legend, div#tab-content-memberships fieldset legend { font-weight: bold; }
-div#tab-content-members fieldset label, div#tab-content-memberships fieldset label { display: block; }
-div#tab-content-members fieldset div { max-height: 400px; overflow:auto; }
+div#tab-content-members .splitcontentleft, div#tab-content-memberships .splitcontentleft, div#tab-content-users .splitcontentleft { width: 64% }
+div#tab-content-members .splitcontentright, div#tab-content-memberships .splitcontentright, div#tab-content-users .splitcontentright { width: 34% }
+div#tab-content-members fieldset, div#tab-content-memberships fieldset, div#tab-content-users fieldset { padding:1em; margin-bottom: 1em; }
+div#tab-content-members fieldset legend, div#tab-content-memberships fieldset legend, div#tab-content-users fieldset legend { font-weight: bold; }
+div#tab-content-members fieldset label, div#tab-content-memberships fieldset label, div#tab-content-users fieldset label { display: block; }
+div#tab-content-members fieldset div, div#tab-content-users fieldset div { max-height: 400px; overflow:auto; }
+
+table.members td.group { padding-left: 20px; background: url(../images/users.png) no-repeat 0% 0%; }
 
 * html div#tab-content-members fieldset div { height: 450px; }
 
@@ -725,6 +741,7 @@ vertical-align: middle;
 
 .icon22-projects { background-image: url(../images/22x22/projects.png); }
 .icon22-users { background-image: url(../images/22x22/users.png); }
+.icon22-groups { background-image: url(../images/22x22/groups.png); }
 .icon22-tracker { background-image: url(../images/22x22/tracker.png); }
 .icon22-role { background-image: url(../images/22x22/role.png); }
 .icon22-workflow { background-image: url(../images/22x22/workflow.png); }
@@ -776,6 +793,10 @@ td.username img.gravatar {
 #activity dt,
 .journal {
 	clear: left;
+}
+
+.gravatar-margin {
+  margin-left: 40px;
 }
 
 h2 img { vertical-align:middle; }

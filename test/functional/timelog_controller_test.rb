@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # redMine - project management software
 # Copyright (C) 2006-2007  Jean-Philippe Lang
 #
@@ -21,7 +22,7 @@ require 'timelog_controller'
 # Re-raise errors caught by the controller.
 class TimelogController; def rescue_action(e) raise e end; end
 
-class TimelogControllerTest < Test::Unit::TestCase
+class TimelogControllerTest < ActionController::TestCase
   fixtures :projects, :enabled_modules, :roles, :members, :member_roles, :issues, :time_entries, :users, :trackers, :enumerations, :issue_statuses, :custom_fields, :custom_values
 
   def setup
@@ -69,6 +70,28 @@ class TimelogControllerTest < Test::Unit::TestCase
     assert_template 'edit'
     # Default activity selected
     assert_tag :tag => 'form', :attributes => { :action => '/projects/ecookbook/timelog/edit/2' }
+  end
+  
+  def test_get_edit_should_only_show_active_time_entry_activities
+    @request.session[:user_id] = 3
+    get :edit, :project_id => 1
+    assert_response :success
+    assert_template 'edit'
+    assert_no_tag :tag => 'option', :content => 'Inactive Activity'
+                                    
+  end
+
+  def test_get_edit_with_an_existing_time_entry_with_inactive_activity
+    te = TimeEntry.find(1)
+    te.activity = TimeEntryActivity.find_by_name("Inactive Activity")
+    te.save!
+
+    @request.session[:user_id] = 1
+    get :edit, :project_id => 1, :id => 1
+    assert_response :success
+    assert_template 'edit'
+    # Blank option since nothing is pre-selected
+    assert_tag :tag => 'option', :content => '--- Please select ---'
   end
   
   def test_post_edit
@@ -206,13 +229,29 @@ class TimelogControllerTest < Test::Unit::TestCase
     assert_equal "162.90", "%.2f" % assigns(:total_hours)
   end
   
+  def test_report_one_day
+    get :report, :project_id => 1, :columns => 'day', :from => "2007-03-23", :to => "2007-03-23", :criterias => ["member", "activity"]
+    assert_response :success
+    assert_template 'report'
+    assert_not_nil assigns(:total_hours)
+    assert_equal "4.25", "%.2f" % assigns(:total_hours)
+  end
+  
+  def test_report_at_issue_level
+    get :report, :project_id => 1, :issue_id => 1, :columns => 'month', :from => "2007-01-01", :to => "2007-12-31", :criterias => ["member", "activity"]
+    assert_response :success
+    assert_template 'report'
+    assert_not_nil assigns(:total_hours)
+    assert_equal "154.25", "%.2f" % assigns(:total_hours)
+  end
+  
   def test_report_custom_field_criteria
-    get :report, :project_id => 1, :criterias => ['project', 'cf_1']
+    get :report, :project_id => 1, :criterias => ['project', 'cf_1', 'cf_7']
     assert_response :success
     assert_template 'report'
     assert_not_nil assigns(:total_hours)
     assert_not_nil assigns(:criterias)
-    assert_equal 2, assigns(:criterias).size
+    assert_equal 3, assigns(:criterias).size
     assert_equal "162.90", "%.2f" % assigns(:total_hours)
     # Custom field column
     assert_tag :tag => 'th', :content => 'Database'
@@ -221,6 +260,8 @@ class TimelogControllerTest < Test::Unit::TestCase
                              :sibling => { :tag => 'td', :attributes => { :class => 'hours' },
                                                          :child => { :tag => 'span', :attributes => { :class => 'hours hours-int' },
                                                                                      :content => '1' }}
+    # Second custom field column
+    assert_tag :tag => 'th', :content => 'Billable'
   end
   
   def test_report_one_criteria_no_result
@@ -303,6 +344,14 @@ class TimelogControllerTest < Test::Unit::TestCase
     assert_not_nil assigns(:total_hours)
     assert_equal Date.today - 7, assigns(:from)
     assert_equal Date.today, assigns(:to)
+  end
+
+  def test_details_one_day
+    get :details, :project_id => 1, :from => "2007-03-23", :to => "2007-03-23"
+    assert_response :success
+    assert_template 'details'
+    assert_not_nil assigns(:total_hours)
+    assert_equal "4.25", "%.2f" % assigns(:total_hours)
   end
   
   def test_issue_details_routing

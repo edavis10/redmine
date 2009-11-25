@@ -21,7 +21,7 @@ require 'documents_controller'
 # Re-raise errors caught by the controller.
 class DocumentsController; def rescue_action(e) raise e end; end
 
-class DocumentsControllerTest < Test::Unit::TestCase
+class DocumentsControllerTest < ActionController::TestCase
   fixtures :projects, :users, :roles, :members, :member_roles, :enabled_modules, :documents, :enumerations
   
   def setup
@@ -75,7 +75,7 @@ class DocumentsControllerTest < Test::Unit::TestCase
                :document => { :title => 'DocumentsControllerTest#test_post_new',
                               :description => 'This is a new document',
                               :category_id => 2},
-               :attachments => {'1' => {'file' => test_uploaded_file('testfile.txt', 'text/plain')}}
+               :attachments => {'1' => {'file' => uploaded_test_file('testfile.txt', 'text/plain')}}
                
     assert_redirected_to 'projects/ecookbook/documents'
     

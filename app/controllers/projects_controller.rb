@@ -1,5 +1,5 @@
-# redMine - project management software
-# Copyright (C) 2006-2007  Jean-Philippe Lang
+# Redmine - project management software
+# Copyright (C) 2006-2009  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -71,11 +71,11 @@ class ProjectsController < ApplicationController
       @project.identifier = Project.next_identifier if Setting.sequential_project_identifiers?
       @project.trackers = Tracker.all
       @project.is_public = Setting.default_projects_public?
-      @project.enabled_module_names = Redmine::AccessControl.available_project_modules
+      @project.enabled_module_names = Setting.default_projects_modules
     else
       @project.enabled_module_names = params[:enabled_modules]
       if @project.save
-        @project.set_parent!(params[:project]['parent_id']) if User.current.admin? && params[:project].has_key?('parent_id')
+        @project.set_allowed_parent!(params[:project]['parent_id']) if params[:project].has_key?('parent_id')
         # Add current user as a project member if he is not admin
         unless User.current.admin?
           r = Role.givable.find_by_id(Setting.new_project_user_role_id.to_i) || Role.givable.first
@@ -94,8 +94,9 @@ class ProjectsController < ApplicationController
     @root_projects = Project.find(:all,
                                   :conditions => "parent_id IS NULL AND status = #{Project::STATUS_ACTIVE}",
                                   :order => 'name')
+    @source_project = Project.find(params[:id])
     if request.get?
-      @project = Project.copy_from(params[:id])
+      @project = Project.copy_from(@source_project)
       if @project
         @project.identifier = Project.next_identifier if Setting.sequential_project_identifiers?
       else
@@ -104,13 +105,15 @@ class ProjectsController < ApplicationController
     else
       @project = Project.new(params[:project])
       @project.enabled_module_names = params[:enabled_modules]
-      if @project.copy(params[:id])
+      if @project.copy(@source_project, :only => params[:only])
+        @project.set_allowed_parent!(params[:project]['parent_id']) if params[:project].has_key?('parent_id')
         flash[:notice] = l(:notice_successful_create)
         redirect_to :controller => 'admin', :action => 'projects'
       end		
-    end	
+    end
+  rescue ActiveRecord::RecordNotFound
+    redirect_to :controller => 'admin', :action => 'projects'
   end
-
 	
   # Show @project
   def show
@@ -155,7 +158,7 @@ class ProjectsController < ApplicationController
     if request.post?
       @project.attributes = params[:project]
       if @project.save
-        @project.set_parent!(params[:project]['parent_id']) if User.current.admin? && params[:project].has_key?('parent_id')
+        @project.set_allowed_parent!(params[:project]['parent_id']) if params[:project].has_key?('parent_id')
         flash[:notice] = l(:notice_successful_update)
         redirect_to :action => 'settings', :id => @project
       else
@@ -231,6 +234,25 @@ class ProjectsController < ApplicationController
     end
     @versions = @project.versions.sort
   end
+
+  def save_activities
+    if request.post? && params[:enumerations]
+      Project.transaction do
+        params[:enumerations].each do |id, activity|
+          @project.update_or_create_time_entry_activity(id, activity)
+        end
+      end
+    end
+    
+    redirect_to :controller => 'projects', :action => 'settings', :tab => 'activities', :id => @project
+  end
+
+  def reset_activities
+    @project.time_entry_activities.each do |time_entry_activity|
+      time_entry_activity.destroy(time_entry_activity.parent)
+    end
+    redirect_to :controller => 'projects', :action => 'settings', :tab => 'activities', :id => @project
+  end
   
   def list_files
     sort_init 'filename', 'asc'
@@ -278,20 +300,22 @@ class ProjectsController < ApplicationController
 
     events = @activity.events(@date_from, @date_to)
     
-    respond_to do |format|
-      format.html { 
-        @events_by_day = events.group_by(&:event_date)
-        render :layout => false if request.xhr?
-      }
-      format.atom {
-        title = l(:label_activity)
-        if @author
-          title = @author.name
-        elsif @activity.scope.size == 1
-          title = l("label_#{@activity.scope.first.singularize}_plural")
-        end
-        render_feed(events, :title => "#{@project || Setting.app_title}: #{title}")
-      }
+    if events.empty? || stale?(:etag => [events.first, User.current])
+      respond_to do |format|
+        format.html { 
+          @events_by_day = events.group_by(&:event_date)
+          render :layout => false if request.xhr?
+        }
+        format.atom {
+          title = l(:label_activity)
+          if @author
+            title = @author.name
+          elsif @activity.scope.size == 1
+            title = l("label_#{@activity.scope.first.singularize}_plural")
+          end
+          render_feed(events, :title => "#{@project || Setting.app_title}: #{title}")
+        }
+      end
     end
     
   rescue ActiveRecord::RecordNotFound

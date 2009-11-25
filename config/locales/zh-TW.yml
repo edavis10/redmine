@@ -86,8 +86,9 @@
         precision: 1
         # 儲存單位輸出格式.
         # %u 是儲存單位, %n 是數值 (預設值: 2 MB)
+      storage_units:
         format: "%n %u"
-        storage_units:
+        units:
           byte:
             one: "位元組 (B)"
             other: "位元組 (B)"
@@ -243,8 +244,9 @@
   error_scm_command_failed: "嘗試存取儲存庫時發生錯誤： {{value}}"
   error_scm_annotate: "SCM 儲存庫中無此項目或此項目無法被加註。"
   error_issue_not_found_in_project: '該項目不存在或不屬於此專案'
-  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
-  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
+  error_no_tracker_in_project: '此專案尚未指定追蹤標籤。請檢查專案的設定資訊。'
+  error_no_default_issue_status: '尚未定義項目狀態的預設值。請您前往「網站管理」->「項目狀態清單」頁面，檢查相關組態設定。'
+  error_can_not_reopen_issue_on_closed_version: '指派給「已結束」版本的項目，無法再將其狀態變更為「進行中」'
   
   warning_attachments_not_saved: "{{count}} 個附加檔案無法儲存。"
   
@@ -280,7 +282,7 @@
   field_created_on: 建立日期
   field_updated_on: 更新
   field_field_format: 格式
-  field_is_for_all: 給所有專案
+  field_is_for_all: 給全部的專案
   field_possible_values: 可能值
   field_regexp: 正規表示式
   field_min_length: 最小長度
@@ -395,13 +397,15 @@
   setting_mail_handler_api_key: API 金鑰
   setting_sequential_project_identifiers: 循序產生專案識別碼
   setting_gravatar_enabled: 啟用 Gravatar 全球認證大頭像
+  setting_gravatar_default: 預設全球認證大頭像圖片
   setting_diff_max_lines_displayed: 差異顯示行數之最大值
   setting_file_max_size_displayed: 檔案內容顯示大小之最大值
   setting_repository_log_display_limit: 版次顯示數目之最大值
   setting_openid: 允許使用 OpenID 登入與註冊
   setting_password_min_length: 密碼最小長度
   setting_new_project_user_role_id: 管理者以外之用戶建立新專案時，將被指派的角色
-  
+  setting_default_projects_modules: 新專案預設啟用的模組
+
   permission_add_project: 建立專案
   permission_edit_project: 編輯專案
   permission_select_project_modules: 選擇專案模組
@@ -421,7 +425,8 @@
   permission_view_gantt: 檢視甘特圖
   permission_view_calendar: 檢視日曆
   permission_view_issue_watchers: 檢視觀察者清單
-  permission_add_issue_watchers: 增加觀察者
+  permission_add_issue_watchers: 新增觀察者
+  permission_delete_issue_watchers: 刪除觀察者
   permission_log_time: 紀錄耗用工時
   permission_view_time_entries: 檢視耗用工時
   permission_edit_time_entries: 編輯工時紀錄
@@ -464,6 +469,7 @@
   label_user: 用戶
   label_user_plural: 用戶清單
   label_user_new: 建立新用戶
+  label_user_anonymous: 匿名用戶
   label_project: 專案
   label_project_new: 建立新專案
   label_project_plural: 專案清單
@@ -476,7 +482,7 @@
   label_issue: 項目
   label_issue_new: 建立新項目
   label_issue_plural: 項目清單
-  label_issue_view_all: 檢視所有項目
+  label_issue_view_all: 檢視全部的項目
   label_issues_by: "項目按 {{value}} 分組顯示"
   label_issue_added: 項目已新增
   label_issue_updated: 項目已更新
@@ -525,7 +531,7 @@
   label_last_login: 最近一次連線
   label_registered_on: 註冊於
   label_activity: 活動
-  label_overall_activity: 檢視所有活動
+  label_overall_activity: 檢視整體活動
   label_user_activity: "{{value}} 的活動"
   label_new: 建立新的...
   label_logged_as: 目前登入
@@ -562,7 +568,7 @@
   label_news_new: 建立新聞
   label_news_plural: 新聞
   label_news_latest: 最近新聞
-  label_news_view_all: 檢視所有新聞
+  label_news_view_all: 檢視全部的新聞
   label_news_added: 新聞已新增
   label_change_log: 變更記錄
   label_settings: 設定
@@ -608,7 +614,7 @@
   label_gantt: 甘特圖
   label_internal: 內部
   label_last_changes: "最近 {{count}} 個變更"
-  label_change_view_all: 檢視所有變更
+  label_change_view_all: 檢視全部的變更
   label_personalize_page: 自訂版面
   label_comment: 註解
   label_comment_plural: 註解
@@ -632,7 +638,7 @@
   label_less_or_equal: "小於等於 (<=)"
   label_in: 在
   label_today: 今天
-  label_all_time: all time
+  label_all_time: 全部
   label_yesterday: 昨天
   label_this_week: 本週
   label_last_week: 上週
@@ -652,6 +658,8 @@
   label_browse: 瀏覽
   label_modification: "{{count}} 變更"
   label_modification_plural: "{{count}} 變更"
+  label_branch: 分支
+  label_tag: 標籤 
   label_revision: 版次
   label_revision_plural: 版次清單
   label_associated_revisions: 相關版次
@@ -663,18 +671,19 @@
   label_latest_revision: 最新版次
   label_latest_revision_plural: 最近版次清單
   label_view_revisions: 檢視版次清單
+  label_view_all_revisions: 檢視全部的版次清單
   label_max_size: 最大長度
   label_sort_highest: 移動至開頭
   label_sort_higher: 往上移動
   label_sort_lower: 往下移動
   label_sort_lowest: 移動至結尾
   label_roadmap: 版本藍圖
-  label_roadmap_due_in: 倒數天數： 
-  label_roadmap_overdue: "{{value}} 逾期"
+  label_roadmap_due_in: "剩餘 {{value}}"
+  label_roadmap_overdue: "逾期 {{value}}"
   label_roadmap_no_issues: 此版本尚未包含任何項目
   label_search: 搜尋
   label_result_plural: 結果
-  label_all_words: All words
+  label_all_words: 包含全部的字詞
   label_wiki: Wiki
   label_wiki_edit: Wiki 編輯
   label_wiki_edit_plural: Wiki 編輯
@@ -687,7 +696,7 @@
   label_feed_plural: Feeds
   label_changes_details: 所有變更的明細
   label_issue_tracking: 項目追蹤
-  label_spent_time: 耗用時間
+  label_spent_time: 耗用工時
   label_f_hour: "{{value}} 小時"
   label_f_hour_plural: "{{value}} 小時"
   label_time_tracking: 工時追蹤
@@ -754,7 +763,7 @@
   label_theme: 畫面主題
   label_default: 預設
   label_search_titles_only: 僅搜尋標題
-  label_user_mail_option_all: "提醒與我的專案有關的所有事件"
+  label_user_mail_option_all: "提醒與我的專案有關的全部事件"
   label_user_mail_option_selected: "只提醒我所選擇專案中的事件..."
   label_user_mail_option_none: "只提醒我觀察中或參與中的事件"
   label_user_mail_no_self_notified: "不提醒我自己所做的變更"
@@ -787,6 +796,10 @@
   label_date_from_to: 起 {{start}} 迄 {{end}}
   label_wiki_content_added: Wiki 頁面已新增
   label_wiki_content_updated: Wiki 頁面已更新
+  label_group: 群組
+  label_group_plural: 群組清單
+  label_group_new: 建立新群組
+  label_time_entry_plural: 耗用工時
 
   button_login: 登入
   button_submit: 送出
@@ -808,6 +821,7 @@
   button_list: 清單
   button_view: 檢視
   button_move: 移動
+  button_move_and_follow: 移動後跟隨
   button_back: 返回
   button_cancel: 取消
   button_activate: 啟用
@@ -823,7 +837,7 @@
   button_rename: 重新命名
   button_change_password: 變更密碼
   button_copy: 複製
-  button_annotate: 加注
+  button_annotate: 註解
   button_update: 更新
   button_configure: 設定
   button_quote: 引用
@@ -832,6 +846,12 @@
   status_registered: 註冊完成
   status_locked: 鎖定中
   
+  version_status_open: 進行中
+  version_status_locked: 已鎖定
+  version_status_closed: 已結束
+  
+  field_active: 活動中
+  
   text_select_mail_notifications: 選擇欲寄送提醒通知郵件之動作
   text_regexp_info: eg. ^[A-Z0-9]+$
   text_min_max_length_info: 0 代表「不限制」
@@ -839,9 +859,10 @@
   text_subprojects_destroy_warning: "下列子專案： {{value}} 將一併被刪除。"
   text_workflow_edit: 選擇角色與追蹤標籤以設定其工作流程
   text_are_you_sure: 確定執行？
-  text_journal_changed: "從 {{old}} 變更為 {{new}}"
-  text_journal_set_to: "設定為 {{value}}"
-  text_journal_deleted: 已刪除
+  text_journal_changed: "{{label}} 從 {{old}} 變更為 {{new}}"
+  text_journal_set_to: "{{label}} 設定為 {{value}}"
+  text_journal_deleted: "{{label}} 已刪除 ({{old}})"
+  text_journal_added: "{{label}} {{value}} 已新增"
   text_tip_task_begin_day: 今天起始的工作
   text_tip_task_end_day: 今天截止的的工作
   text_tip_task_begin_end_day: 今天起始與截止的工作
@@ -892,7 +913,7 @@
   default_tracker_feature: 功能
   default_tracker_support: 支援
   default_issue_status_new: 新建立
-  default_issue_status_assigned: 已指派
+  default_issue_status_in_progress: 實作中
   default_issue_status_resolved: 已解決
   default_issue_status_feedback: 已回應
   default_issue_status_closed: 已結束
@@ -910,7 +931,4 @@
   enumeration_issue_priorities: 項目優先權
   enumeration_doc_categories: 文件分類
   enumeration_activities: 活動 (時間追蹤)
-  label_view_all_revisions: View all revisions
-  label_tag: Tag
-  label_branch: Branch
-  error_can_t_bulk_edit_issue: Can not bulk edit/move/destroy issues from different projects.
+  enumeration_system_activity: 系統活動

@@ -21,7 +21,7 @@ require 'versions_controller'
 # Re-raise errors caught by the controller.
 class VersionsController; def rescue_action(e) raise e end; end
 
-class VersionsControllerTest < Test::Unit::TestCase
+class VersionsControllerTest < ActionController::TestCase
   fixtures :projects, :versions, :issues, :users, :roles, :members, :member_roles, :enabled_modules
   
   def setup
@@ -45,6 +45,14 @@ class VersionsControllerTest < Test::Unit::TestCase
     get :edit, :id => 2
     assert_response :success
     assert_template 'edit'
+  end
+  
+  def test_close_completed
+    Version.update_all("status = 'open'")
+    @request.session[:user_id] = 2
+    post :close_completed, :project_id => 'ecookbook'
+    assert_redirected_to :controller => 'projects', :action => 'settings', :tab => 'versions', :id => 'ecookbook'
+    assert_not_nil Version.find_by_status('closed')
   end
   
   def test_post_edit

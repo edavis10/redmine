@@ -24,6 +24,8 @@ class InvalidRevisionParam < Exception; end
 
 class RepositoriesController < ApplicationController
   menu_item :repository
+  default_search_scope :changesets
+  
   before_filter :find_repository, :except => :edit
   before_filter :find_project, :only => :edit
   before_filter :authorize
@@ -72,9 +74,7 @@ class RepositoriesController < ApplicationController
       @entries ? render(:partial => 'dir_list_content') : render(:nothing => true)
     else
       show_error_not_found and return unless @entries
-      if @path.blank?
-        @changesets = @repository.latest_changesets(@path, @rev)
-      end
+      @changesets = @repository.latest_changesets(@path, @rev)
       @properties = @repository.properties(@path, @rev)
       render :action => 'show'
     end
@@ -132,7 +132,7 @@ class RepositoriesController < ApplicationController
   end
   
   def revision
-    @changeset = @repository.changesets.find(:first, :conditions => ["revision LIKE ?", @rev + '%'])
+    @changeset = @repository.find_changeset_by_name(@rev)
     raise ChangesetNotFound unless @changeset
 
     respond_to do |format|
@@ -261,7 +261,7 @@ private
 
   def graph_commits_per_author(repository)
     commits_by_author = repository.changesets.count(:all, :group => :committer)
-    commits_by_author.sort! {|x, y| x.last <=> y.last}
+    commits_by_author.to_a.sort! {|x, y| x.last <=> y.last}
 
     changes_by_author = repository.changes.count(:all, :group => :committer)
     h = changes_by_author.inject({}) {|o, i| o[i.first] = i.last; o}

@@ -21,7 +21,7 @@ require 'issues_controller'
 # Re-raise errors caught by the controller.
 class IssuesController; def rescue_action(e) raise e end; end
 
-class IssuesControllerTest < Test::Unit::TestCase
+class IssuesControllerTest < ActionController::TestCase
   fixtures :projects,
            :users,
            :roles,
@@ -42,7 +42,8 @@ class IssuesControllerTest < Test::Unit::TestCase
            :custom_fields_trackers,
            :time_entries,
            :journals,
-           :journal_details
+           :journal_details,
+           :queries
   
   def setup
     @controller = IssuesController.new
@@ -170,19 +171,36 @@ class IssuesControllerTest < Test::Unit::TestCase
     assert_nil assigns(:issue_count_by_group)
   end
   
-  def test_index_with_grouped_query
+  def test_index_with_query_grouped_by_tracker
     get :index, :project_id => 1, :query_id => 6
     assert_response :success
     assert_template 'index.rhtml'
     assert_not_nil assigns(:issues)
-    assert_not_nil assigns(:issue_count_by_group)
+    count_by_group = assigns(:issue_count_by_group)
+    assert_kind_of Hash, count_by_group
+    assert_kind_of Tracker, count_by_group.keys.first
+    assert_not_nil count_by_group[Tracker.find(1)]
+  end
+  
+  def test_index_with_query_grouped_by_list_custom_field
+    get :index, :project_id => 1, :query_id => 9
+    assert_response :success
+    assert_template 'index.rhtml'
+    assert_not_nil assigns(:issues)
+    count_by_group = assigns(:issue_count_by_group)
+    assert_kind_of Hash, count_by_group
+    assert_kind_of String, count_by_group.keys.first
+    assert_not_nil count_by_group['MySQL']
   end
   
   def test_index_csv_with_project
+    Setting.default_language = 'en'
+    
     get :index, :format => 'csv'
     assert_response :success
     assert_not_nil assigns(:issues)
     assert_equal 'text/csv', @response.content_type
+    assert @response.body.starts_with?("#,")
 
     get :index, :project_id => 1, :format => 'csv'
     assert_response :success
@@ -354,6 +372,26 @@ class IssuesControllerTest < Test::Unit::TestCase
                                             :content => /Notes/ } }
   end
   
+  def test_show_should_deny_anonymous_access_without_permission
+    Role.anonymous.remove_permission!(:view_issues)
+    get :show, :id => 1
+    assert_response :redirect
+  end
+  
+  def test_show_should_deny_non_member_access_without_permission
+    Role.non_member.remove_permission!(:view_issues)
+    @request.session[:user_id] = 9
+    get :show, :id => 1
+    assert_response 403
+  end
+  
+  def test_show_should_deny_member_access_without_permission
+    Role.find(1).remove_permission!(:view_issues)
+    @request.session[:user_id] = 2
+    get :show, :id => 1
+    assert_response 403
+  end
+  
   def test_show_should_not_disclose_relations_to_invisible_issues
     Setting.cross_project_issue_relations = '1'
     IssueRelation.create!(:issue_from => Issue.find(1), :issue_to => Issue.find(2), :relation_type => 'relates')
@@ -374,7 +412,7 @@ class IssuesControllerTest < Test::Unit::TestCase
     assert_response :success
     assert_template 'changes.rxml'
     # Inline image
-    assert @response.body.include?("&lt;img src=&quot;http://test.host/attachments/download/10&quot; alt=&quot;&quot; /&gt;")
+    assert @response.body.include?("&lt;img src=\"http://test.host/attachments/download/10\" alt=\"\" /&gt;"), "Body did not match. Body: #{@response.body}"
   end
   
   def test_new_routing
@@ -452,14 +490,16 @@ class IssuesControllerTest < Test::Unit::TestCase
   
   def test_post_new
     @request.session[:user_id] = 2
-    post :new, :project_id => 1, 
-               :issue => {:tracker_id => 3,
-                          :subject => 'This is the test_new issue',
-                          :description => 'This is the description',
-                          :priority_id => 5,
-                          :estimated_hours => '',
-                          :custom_field_values => {'2' => 'Value for field 2'}}
-    assert_redirected_to :action => 'show'
+    assert_difference 'Issue.count' do
+      post :new, :project_id => 1, 
+                 :issue => {:tracker_id => 3,
+                            :subject => 'This is the test_new issue',
+                            :description => 'This is the description',
+                            :priority_id => 5,
+                            :estimated_hours => '',
+                            :custom_field_values => {'2' => 'Value for field 2'}}
+    end
+    assert_redirected_to :controller => 'issues', :action => 'show', :id => Issue.last.id
     
     issue = Issue.find_by_subject('This is the test_new issue')
     assert_not_nil issue
@@ -483,12 +523,14 @@ class IssuesControllerTest < Test::Unit::TestCase
   
   def test_post_new_without_custom_fields_param
     @request.session[:user_id] = 2
-    post :new, :project_id => 1, 
-               :issue => {:tracker_id => 1,
-                          :subject => 'This is the test_new issue',
-                          :description => 'This is the description',
-                          :priority_id => 5}
-    assert_redirected_to :action => 'show'
+    assert_difference 'Issue.count' do
+      post :new, :project_id => 1, 
+                 :issue => {:tracker_id => 1,
+                            :subject => 'This is the test_new issue',
+                            :description => 'This is the description',
+                            :priority_id => 5}
+    end
+    assert_redirected_to :controller => 'issues', :action => 'show', :id => Issue.last.id
   end
 
   def test_post_new_with_required_custom_field_and_without_custom_fields_param
@@ -536,14 +578,16 @@ class IssuesControllerTest < Test::Unit::TestCase
   def test_post_new_should_send_a_notification
     ActionMailer::Base.deliveries.clear
     @request.session[:user_id] = 2
-    post :new, :project_id => 1, 
-               :issue => {:tracker_id => 3,
-                          :subject => 'This is the test_new issue',
-                          :description => 'This is the description',
-                          :priority_id => 5,
-                          :estimated_hours => '',
-                          :custom_field_values => {'2' => 'Value for field 2'}}
-    assert_redirected_to :action => 'show'
+    assert_difference 'Issue.count' do
+      post :new, :project_id => 1, 
+                 :issue => {:tracker_id => 3,
+                            :subject => 'This is the test_new issue',
+                            :description => 'This is the description',
+                            :priority_id => 5,
+                            :estimated_hours => '',
+                            :custom_field_values => {'2' => 'Value for field 2'}}
+    end
+    assert_redirected_to :controller => 'issues', :action => 'show', :id => Issue.last.id
     
     assert_equal 1, ActionMailer::Base.deliveries.size
   end
@@ -780,7 +824,7 @@ class IssuesControllerTest < Test::Unit::TestCase
     post :edit,
          :id => 1,
          :notes => '',
-         :attachments => {'1' => {'file' => test_uploaded_file('testfile.txt', 'text/plain')}}
+         :attachments => {'1' => {'file' => uploaded_test_file('testfile.txt', 'text/plain')}}
     assert_redirected_to :action => 'show', :id => '1'
     j = Issue.find(1).journals.find(:first, :order => 'id DESC')
     assert j.notes.blank?
@@ -938,6 +982,12 @@ class IssuesControllerTest < Test::Unit::TestCase
     assert_equal 2, Issue.find(1).project_id
   end
 
+  def test_move_one_issue_to_another_project_should_follow_when_needed
+    @request.session[:user_id] = 2
+    post :move, :id => 1, :new_project_id => 2, :follow => '1'
+    assert_redirected_to '/issues/1'
+  end
+
   def test_bulk_move_to_another_project
     @request.session[:user_id] = 2
     post :move, :ids => [1, 2], :new_project_id => 2
@@ -966,6 +1016,13 @@ class IssuesControllerTest < Test::Unit::TestCase
       end
     end
     assert_redirected_to 'projects/ecookbook/issues'
+  end
+
+  def test_copy_to_another_project_should_follow_when_needed
+    @request.session[:user_id] = 2
+    post :move, :ids => [1], :new_project_id => 2, :copy_options => {:copy => '1'}, :follow => '1'
+    issue = Issue.first(:order => 'id DESC')
+    assert_redirected_to :controller => 'issues', :action => 'show', :id => issue
   end
   
   def test_context_menu_one_issue
@@ -1085,5 +1142,12 @@ class IssuesControllerTest < Test::Unit::TestCase
     assert !(Issue.find_by_id(1) || Issue.find_by_id(3))
     assert_equal 2, TimeEntry.find(1).issue_id
     assert_equal 2, TimeEntry.find(2).issue_id
+  end
+  
+  def test_default_search_scope
+    get :index
+    assert_tag :div, :attributes => {:id => 'quick-search'},
+                     :child => {:tag => 'form',
+                                :child => {:tag => 'input', :attributes => {:name => 'issues', :type => 'hidden', :value => '1'}}}
   end
 end

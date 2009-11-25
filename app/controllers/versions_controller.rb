@@ -17,8 +17,12 @@
 
 class VersionsController < ApplicationController
   menu_item :roadmap
-  before_filter :find_project, :authorize
+  before_filter :find_version, :except => :close_completed
+  before_filter :find_project, :only => :close_completed
+  before_filter :authorize
 
+  helper :custom_fields
+  
   def show
   end
   
@@ -27,6 +31,13 @@ class VersionsController < ApplicationController
       flash[:notice] = l(:notice_successful_update)
       redirect_to :controller => 'projects', :action => 'settings', :tab => 'versions', :id => @project
     end
+  end
+  
+  def close_completed
+    if request.post?
+      @project.close_completed_versions
+    end
+    redirect_to :controller => 'projects', :action => 'settings', :tab => 'versions', :id => @project
   end
 
   def destroy
@@ -45,10 +56,16 @@ class VersionsController < ApplicationController
   end
 
 private
-  def find_project
+  def find_version
     @version = Version.find(params[:id])
     @project = @version.project
   rescue ActiveRecord::RecordNotFound
     render_404
-  end  
+  end
+  
+  def find_project
+    @project = Project.find(params[:project_id])
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
 end

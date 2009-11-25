@@ -17,7 +17,7 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class ProjectTest < Test::Unit::TestCase
+class ProjectTest < ActiveSupport::TestCase
   fixtures :projects, :enabled_modules, 
            :issues, :issue_statuses, :journals, :journal_details,
            :users, :members, :member_roles, :roles, :projects_trackers, :trackers, :boards,
@@ -26,8 +26,39 @@ class ProjectTest < Test::Unit::TestCase
   def setup
     @ecookbook = Project.find(1)
     @ecookbook_sub1 = Project.find(3)
+    User.current = nil
   end
   
+  should_validate_presence_of :name
+  should_validate_presence_of :identifier
+
+  should_validate_uniqueness_of :name
+  should_validate_uniqueness_of :identifier
+
+  context "associations" do
+    should_have_many :members
+    should_have_many :users, :through => :members
+    should_have_many :member_principals
+    should_have_many :principals, :through => :member_principals
+    should_have_many :enabled_modules
+    should_have_many :issues
+    should_have_many :issue_changes, :through => :issues
+    should_have_many :versions
+    should_have_many :time_entries
+    should_have_many :queries
+    should_have_many :documents
+    should_have_many :news
+    should_have_many :issue_categories
+    should_have_many :boards
+    should_have_many :changesets, :through => :repository
+
+    should_have_one :repository
+    should_have_one :wiki
+
+    should_have_and_belong_to_many :trackers
+    should_have_and_belong_to_many :issue_custom_fields
+  end
+
   def test_truth
     assert_kind_of Project, @ecookbook
     assert_equal "eCookbook", @ecookbook.name
@@ -39,13 +70,6 @@ class ProjectTest < Test::Unit::TestCase
     assert @ecookbook.save, @ecookbook.errors.full_messages.join("; ")
     @ecookbook.reload
     assert_equal "eCook", @ecookbook.name
-  end
-  
-  def test_validate
-    @ecookbook.name = ""
-    assert !@ecookbook.save
-    assert_equal 1, @ecookbook.errors.count
-    assert_equal I18n.translate('activerecord.errors.messages.blank'), @ecookbook.errors.on(:name)
   end
   
   def test_validate_identifier
@@ -60,6 +84,18 @@ class ProjectTest < Test::Unit::TestCase
       p.identifier = identifier
       p.valid?
       assert_equal valid, p.errors.on('identifier').nil?
+    end
+  end
+
+  def test_members_should_be_active_users
+    Project.all.each do |project|
+      assert_nil project.members.detect {|m| !(m.user.is_a?(User) && m.user.active?) }
+    end
+  end
+  
+  def test_users_should_be_active_users
+    Project.all.each do |project|
+      assert_nil project.users.detect {|u| !(u.is_a?(User) && u.active?) }
     end
   end
   
@@ -201,6 +237,14 @@ class ProjectTest < Test::Unit::TestCase
     assert_equal [5, 6, 3, 4], d.collect(&:id)
   end
   
+  def test_allowed_parents_should_be_empty_for_non_member_user
+    Role.non_member.add_permission!(:add_project)
+    user = User.find(9)
+    assert user.memberships.empty?
+    User.current = user
+    assert Project.new.allowed_parents.empty?
+  end
+  
   def test_users_by_role
     users_by_role = Project.find(1).users_by_role
     assert_kind_of Hash, users_by_role
@@ -277,67 +321,240 @@ class ProjectTest < Test::Unit::TestCase
     # Default attributes
     assert_equal 1, copied_project.status
   end
+
+  def test_activities_should_use_the_system_activities
+    project = Project.find(1)
+    assert_equal project.activities, TimeEntryActivity.find(:all, :conditions => {:active => true} )
+  end
+
+
+  def test_activities_should_use_the_project_specific_activities
+    project = Project.find(1)
+    overridden_activity = TimeEntryActivity.new({:name => "Project", :project => project})
+    assert overridden_activity.save!
+
+    assert project.activities.include?(overridden_activity), "Project specific Activity not found"
+  end
+
+  def test_activities_should_not_include_the_inactive_project_specific_activities
+    project = Project.find(1)
+    overridden_activity = TimeEntryActivity.new({:name => "Project", :project => project, :parent => TimeEntryActivity.find(:first), :active => false})
+    assert overridden_activity.save!
+
+    assert !project.activities.include?(overridden_activity), "Inactive Project specific Activity found"
+  end
+
+  def test_activities_should_not_include_project_specific_activities_from_other_projects
+    project = Project.find(1)
+    overridden_activity = TimeEntryActivity.new({:name => "Project", :project => Project.find(2)})
+    assert overridden_activity.save!
+
+    assert !project.activities.include?(overridden_activity), "Project specific Activity found on a different project"
+  end
+
+  def test_activities_should_handle_nils
+    overridden_activity = TimeEntryActivity.new({:name => "Project", :project => Project.find(1), :parent => TimeEntryActivity.find(:first)})
+    TimeEntryActivity.delete_all
+
+    # No activities
+    project = Project.find(1)
+    assert project.activities.empty?
+
+    # No system, one overridden
+    assert overridden_activity.save!
+    project.reload
+    assert_equal [overridden_activity], project.activities
+  end
+
+  def test_activities_should_override_system_activities_with_project_activities
+    project = Project.find(1)
+    parent_activity = TimeEntryActivity.find(:first)
+    overridden_activity = TimeEntryActivity.new({:name => "Project", :project => project, :parent => parent_activity})
+    assert overridden_activity.save!
+
+    assert project.activities.include?(overridden_activity), "Project specific Activity not found"
+    assert !project.activities.include?(parent_activity), "System Activity found when it should have been overridden"
+  end
+
+  def test_activities_should_include_inactive_activities_if_specified
+    project = Project.find(1)
+    overridden_activity = TimeEntryActivity.new({:name => "Project", :project => project, :parent => TimeEntryActivity.find(:first), :active => false})
+    assert overridden_activity.save!
+
+    assert project.activities(true).include?(overridden_activity), "Inactive Project specific Activity not found"
+  end
   
-  # Context: Project#copy
-  def test_copy_should_copy_issues
-    # Setup
-    ProjectCustomField.destroy_all # Custom values are a mess to isolate in tests
-    source_project = Project.find(2)
-    Project.destroy_all :identifier => "copy-test"
-    project = Project.new(:name => 'Copy Test', :identifier => 'copy-test')
-    project.trackers = source_project.trackers
-    assert project.valid?
+  def test_close_completed_versions
+    Version.update_all("status = 'open'")
+    project = Project.find(1)
+    assert_not_nil project.versions.detect {|v| v.completed? && v.status == 'open'}
+    assert_not_nil project.versions.detect {|v| !v.completed? && v.status == 'open'}
+    project.close_completed_versions
+    project.reload
+    assert_nil project.versions.detect {|v| v.completed? && v.status != 'closed'}
+    assert_not_nil project.versions.detect {|v| !v.completed? && v.status == 'open'}
+  end
+
+  context "Project#copy" do
+    setup do
+      ProjectCustomField.destroy_all # Custom values are a mess to isolate in tests
+      Project.destroy_all :identifier => "copy-test"
+      @source_project = Project.find(2)
+      @project = Project.new(:name => 'Copy Test', :identifier => 'copy-test')
+      @project.trackers = @source_project.trackers
+      @project.enabled_module_names = @source_project.enabled_modules.collect(&:name)
+    end
+
+    should "copy issues" do
+      @source_project.issues << Issue.generate!(:status_id => 5,
+                                                :subject => "copy issue status",
+                                                :tracker_id => 1,
+                                                :assigned_to_id => 2,
+                                                :project_id => @source_project.id)
+      assert @project.valid?
+      assert @project.issues.empty?
+      assert @project.copy(@source_project)
+
+      assert_equal @source_project.issues.size, @project.issues.size
+      @project.issues.each do |issue|
+        assert issue.valid?
+        assert ! issue.assigned_to.blank?
+        assert_equal @project, issue.project
+      end
+      
+      copied_issue = @project.issues.first(:conditions => {:subject => "copy issue status"})
+      assert copied_issue
+      assert copied_issue.status
+      assert_equal "Closed", copied_issue.status.name
+    end
+
+    should "change the new issues to use the copied version" do
+      assigned_version = Version.generate!(:name => "Assigned Issues")
+      @source_project.versions << assigned_version
+      assert_equal 1, @source_project.versions.size
+      @source_project.issues << Issue.generate!(:fixed_version_id => assigned_version.id,
+                                                :subject => "change the new issues to use the copied version",
+                                                :tracker_id => 1,
+                                                :project_id => @source_project.id)
+      
+      assert @project.copy(@source_project)
+      @project.reload
+      copied_issue = @project.issues.first(:conditions => {:subject => "change the new issues to use the copied version"})
+
+      assert copied_issue
+      assert copied_issue.fixed_version
+      assert_equal "Assigned Issues", copied_issue.fixed_version.name # Same name
+      assert_not_equal assigned_version.id, copied_issue.fixed_version.id # Different record
+    end
+
+    should "copy members" do
+      assert @project.valid?
+      assert @project.members.empty?
+      assert @project.copy(@source_project)
+
+      assert_equal @source_project.members.size, @project.members.size
+      @project.members.each do |member|
+        assert member
+        assert_equal @project, member.project
+      end
+    end
+
+    should "copy project specific queries" do
+      assert @project.valid?
+      assert @project.queries.empty?
+      assert @project.copy(@source_project)
+
+      assert_equal @source_project.queries.size, @project.queries.size
+      @project.queries.each do |query|
+        assert query
+        assert_equal @project, query.project
+      end
+    end
+
+    should "copy versions" do
+      @source_project.versions << Version.generate!
+      @source_project.versions << Version.generate!
+
+      assert @project.versions.empty?
+      assert @project.copy(@source_project)
+
+      assert_equal @source_project.versions.size, @project.versions.size
+      @project.versions.each do |version|
+        assert version
+        assert_equal @project, version.project
+      end
+    end
+
+    should "copy wiki" do
+      assert_difference 'Wiki.count' do
+        assert @project.copy(@source_project)
+      end
+
+      assert @project.wiki
+      assert_not_equal @source_project.wiki, @project.wiki
+      assert_equal "Start page", @project.wiki.start_page
+    end
+
+    should "copy wiki pages and content" do
+      assert @project.copy(@source_project)
+
+      assert @project.wiki
+      assert_equal 1, @project.wiki.pages.length
+
+      @project.wiki.pages.each do |wiki_page|
+        assert wiki_page.content
+        assert !@source_project.wiki.pages.include?(wiki_page)
+      end
+    end
+
+    should "copy custom fields"
+
+    should "copy issue categories" do
+      assert @project.copy(@source_project)
+
+      assert_equal 2, @project.issue_categories.size
+      @project.issue_categories.each do |issue_category|
+        assert !@source_project.issue_categories.include?(issue_category)
+      end
+    end
+
+    should "copy boards" do
+      assert @project.copy(@source_project)
+
+      assert_equal 1, @project.boards.size
+      @project.boards.each do |board|
+        assert !@source_project.boards.include?(board)
+      end
+    end
+
+    should "change the new issues to use the copied issue categories" do
+      issue = Issue.find(4)
+      issue.update_attribute(:category_id, 3)
+
+      assert @project.copy(@source_project)
+
+      @project.issues.each do |issue|
+        assert issue.category
+        assert_equal "Stock management", issue.category.name # Same name
+        assert_not_equal IssueCategory.find(3), issue.category # Different record
+      end
+    end
     
-    assert project.issues.empty?
-    assert project.copy(source_project)
+    should "limit copy with :only option" do
+      assert @project.members.empty?
+      assert @project.issue_categories.empty?
+      assert @source_project.issues.any?
+    
+      assert @project.copy(@source_project, :only => ['members', 'issue_categories'])
 
-    # Tests
-    assert_equal source_project.issues.size, project.issues.size
-    project.issues.each do |issue|
-      assert issue.valid?
-      assert ! issue.assigned_to.blank?
-      assert_equal project, issue.project
+      assert @project.members.any?
+      assert @project.issue_categories.any?
+      assert @project.issues.empty?
     end
-  end
-  
-  def test_copy_should_copy_members
-    # Setup
-    ProjectCustomField.destroy_all # Custom values are a mess to isolate in tests
-    source_project = Project.find(2)
-    project = Project.new(:name => 'Copy Test', :identifier => 'copy-test')
-    project.trackers = source_project.trackers
-    project.enabled_modules = source_project.enabled_modules
-    assert project.valid?
+    
+    should "copy issue relations"
+    should "link issue relations if cross project issue relations are valid"
 
-    assert project.members.empty?
-    assert project.copy(source_project)
-
-    # Tests
-    assert_equal source_project.members.size, project.members.size
-    project.members.each do |member|
-      assert member
-      assert_equal project, member.project
-    end
-  end
-
-  def test_copy_should_copy_project_level_queries
-    # Setup
-    ProjectCustomField.destroy_all # Custom values are a mess to isolate in tests
-    source_project = Project.find(2)
-    project = Project.new(:name => 'Copy Test', :identifier => 'copy-test')
-    project.trackers = source_project.trackers
-    project.enabled_modules = source_project.enabled_modules
-    assert project.valid?
-
-    assert project.queries.empty?
-    assert project.copy(source_project)
-
-    # Tests
-    assert_equal source_project.queries.size, project.queries.size
-    project.queries.each do |query|
-      assert query
-      assert_equal project, query.project
-    end
   end
 
 end

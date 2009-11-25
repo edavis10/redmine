@@ -17,7 +17,7 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class VersionTest < Test::Unit::TestCase
+class VersionTest < ActiveSupport::TestCase
   fixtures :projects, :users, :issues, :issue_statuses, :trackers, :enumerations, :versions
 
   def setup
@@ -26,6 +26,7 @@ class VersionTest < Test::Unit::TestCase
   def test_create
     v = Version.new(:project => Project.find(1), :name => '1.1', :effective_date => '2011-03-25')
     assert v.save
+    assert_equal 'open', v.status
   end
   
   def test_invalid_effective_date_validation

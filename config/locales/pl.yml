@@ -21,7 +21,16 @@ pl:
       format:
         delimiter: ""
         precision: 1
-      storage_units: [B, KB, MB, GB, TB]
+      storage_units:
+        format: "%n %u"
+        units:
+          byte:
+            one: "B"
+            other: "B"
+          kb: "KB"
+          mb: "MB"
+          gb: "GB"
+          tb: "TB"
 
   date:
     formats:
@@ -168,7 +177,7 @@ pl:
   default_activity_development: Rozwój
   default_doc_category_tech: Dokumentacja techniczna
   default_doc_category_user: Dokumentacja użytkownika
-  default_issue_status_assigned: Przypisany
+  default_issue_status_in_progress: W Toku
   default_issue_status_closed: Zamknięty
   default_issue_status_feedback: Odpowiedź
   default_issue_status_new: Nowy
@@ -426,7 +435,7 @@ pl:
   label_in_less_than: mniejsze niż
   label_in_more_than: większe niż
   label_incoming_emails: Przychodząca poczta elektroniczna
-  label_index_by_date: Index by date
+  label_index_by_date: Indeks wg daty
   label_index_by_title: Indeks
   label_information: Informacja
   label_information_plural: Informacje
@@ -770,9 +779,6 @@ pl:
   text_issue_updated: "Zagadnienie {{id}} zostało zaktualizowane (by {{author}})."
   text_issues_destroy_confirmation: 'Czy jestes pewien, że chcesz usunąć wskazane zagadnienia?'
   text_issues_ref_in_commit_messages: Odwołania do zagadnień w komentarzach zatwierdzeń
-  text_journal_changed: "zmienione {{old}} do {{new}}"
-  text_journal_deleted: usunięte
-  text_journal_set_to: "ustawione na {{value}}"
   text_length_between: "Długość pomiędzy {{min}} i {{max}} znaków."
   text_load_default_configuration: Załaduj domyślną konfigurację
   text_min_max_length_info: 0 oznacza brak restrykcji
@@ -802,8 +808,6 @@ pl:
   text_diff_truncated: '... Ten plik różnic został przycięty ponieważ jest zbyt długi.'
   setting_diff_max_lines_displayed: Maksymalna liczba linii różnicy do pokazania
   text_plugin_assets_writable: Zapisywalny katalog zasobów wtyczek
-  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
-  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
   warning_attachments_not_saved: "{{count}} załącznik(ów) nie zostało zapisanych."
   field_editable: Edytowalne
   label_display: Wygląd
@@ -826,17 +830,37 @@ pl:
   text_wiki_page_reassign_children: Reassign child pages to this parent page
   text_wiki_page_nullify_children: Keep child pages as root pages
   text_wiki_page_destroy_children: Delete child pages and all their descendants
-  setting_password_min_length: Minimum password length
-  field_group_by: Group results by
-  mail_subject_wiki_content_updated: "'{{page}}' wiki page has been updated"
-  label_wiki_content_added: Wiki page added
-  mail_subject_wiki_content_added: "'{{page}}' wiki page has been added"
-  mail_body_wiki_content_added: The '{{page}}' wiki page has been added by {{author}}.
-  label_wiki_content_updated: Wiki page updated
-  mail_body_wiki_content_updated: The '{{page}}' wiki page has been updated by {{author}}.
-  permission_add_project: Create project
+  setting_password_min_length: Minimalna długość hasła
+  field_group_by: Grupuj wyniki wg
+  mail_subject_wiki_content_updated: "Strona wiki '{{page}}' została uaktualniona"
+  label_wiki_content_added: Dodano stronę wiki
+  mail_subject_wiki_content_added: "Strona wiki '{{page}}' została dodana"
+  mail_body_wiki_content_added: Strona wiki '{{page}}' została dodana przez {{author}}.
+  label_wiki_content_updated: Uaktualniono stronę wiki
+  mail_body_wiki_content_updated: Strona wiki '{{page}}' została uaktualniona przez {{author}}.
+  permission_add_project: Tworzenie projektu
   setting_new_project_user_role_id: Role given to a non-admin user who creates a project
-  label_view_all_revisions: View all revisions
+  label_view_all_revisions: Pokaż wszystkie rewizje
   label_tag: Tag
-  label_branch: Branch
-  error_can_t_bulk_edit_issue: Can not bulk edit/move/destroy issues from different projects.
+  label_branch: Gałąź
+  error_no_tracker_in_project: Projekt nie posiada powiązanych typów zagadnień. Sprawdź ustawienia projektu.
+  error_no_default_issue_status: Nie zdefiniowano domyślnego statusu zagadnień. Sprawdź konfigurację (Przejdź do "Administracja -> Statusy zagadnień).
+  text_journal_changed: "Zmieniono {{label}} z {{old}} na {{new}}"
+  text_journal_set_to: "Ustawiono {{label}} na {{value}}"
+  text_journal_deleted: "Usunięto {{label}} ({{old}})"
+  label_group_plural: Grupy
+  label_group: Grupa
+  label_group_new: Nowa grupa
+  label_time_entry_plural: Spędzony czas
+  text_journal_added: "Dodano {{label}} {{value}}"
+  field_active: Aktywne
+  enumeration_system_activity: Aktywność Systemowa
+  permission_delete_issue_watchers: Delete watchers
+  version_status_closed: closed
+  version_status_locked: locked
+  version_status_open: open
+  error_can_not_reopen_issue_on_closed_version: An issue assigned to a closed version can not be reopened
+  label_user_anonymous: Anonymous
+  button_move_and_follow: Move and follow
+  setting_default_projects_modules: Default enabled modules for new projects
+  setting_gravatar_default: Default Gravatar image

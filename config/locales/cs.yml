@@ -59,6 +59,22 @@ cs:
       over_x_years:
         one:   "více než 1 rok"
         other: "více než {{count}} roky"
+
+  number: 
+    human: 
+      format: 
+        precision: 1
+        delimiter: ""
+      storage_units: 
+        format: "%n %u"
+        units: 
+          kb: KB
+          tb: TB
+          gb: GB
+          byte: 
+            one: Byte
+            other: Bytes
+          mb: MB
         
 # Used in array.to_sentence.
   support:
@@ -139,8 +155,6 @@ cs:
   error_scm_not_found: "Položka a/nebo revize neexistují v repository."
   error_scm_command_failed: "Při pokusu o přístup k repository došlo k chybě: {{value}}"
   error_issue_not_found_in_project: 'Úkol nebyl nalezen nebo nepatří k tomuto projektu'
-  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
-  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
   
   mail_subject_lost_password: "Vaše heslo ({{value}})"
   mail_body_lost_password: 'Pro změnu vašeho hesla klikněte na následující odkaz:'
@@ -634,9 +648,6 @@ cs:
   text_project_destroy_confirmation: Jste si jisti, že chcete odstranit tento projekt a všechna související data ?
   text_workflow_edit: Vyberte roli a frontu k editaci workflow
   text_are_you_sure: Jste si jisti?
-  text_journal_changed: "změněno z {{old}} na {{new}}"
-  text_journal_set_to: "nastaveno na {{value}}"
-  text_journal_deleted: odstraněno
   text_tip_task_begin_day: úkol začíná v tento den
   text_tip_task_end_day: úkol končí v tento den
   text_tip_task_begin_end_day: úkol začíná a končí v tento den
@@ -675,7 +686,7 @@ cs:
   default_tracker_feature: Požadavek
   default_tracker_support: Podpora
   default_issue_status_new: Nový
-  default_issue_status_assigned: Přiřazený
+  default_issue_status_in_progress: In Progress
   default_issue_status_resolved: Vyřešený
   default_issue_status_feedback: Čeká se
   default_issue_status_closed: Uzavřený
@@ -784,8 +795,14 @@ cs:
   field_watcher: Sleduje
   setting_openid: Umožnit přihlašování a registrace s OpenID
   field_identity_url: OpenID URL
+  label_login_with_open_id_option: nebo se přihlašte s OpenID
+  field_content: Obsah
+  label_descending: Sestupně
+  label_sort: Řazení
+  label_ascending: Vzestupně
+  label_date_from_to: Od {{start}} do {{end}}
   label_greater_or_equal: ">="
-
+  label_less_or_equal: <=
   text_wiki_page_destroy_question: This page has {{descendants}} child page(s) and descendant(s). What do you want to do?
   text_wiki_page_reassign_children: Reassign child pages to this parent page
   text_wiki_page_nullify_children: Keep child pages as root pages
@@ -800,14 +817,27 @@ cs:
   mail_body_wiki_content_updated: The '{{page}}' wiki page has been updated by {{author}}.
   permission_add_project: Create project
   setting_new_project_user_role_id: Role given to a non-admin user who creates a project
-  label_descending: Descending
-  label_sort: Sort
-  field_content: Content
-  label_date_from_to: From {{start}} to {{end}}
-  label_less_or_equal: <=
-  label_ascending: Ascending
-  label_login_with_open_id_option: or login with OpenID
   label_view_all_revisions: View all revisions
   label_tag: Tag
   label_branch: Branch
-  error_can_t_bulk_edit_issue: Can not bulk edit/move/destroy issues from different projects.
+  error_no_tracker_in_project: No tracker is associated to this project. Please check the Project settings.
+  error_no_default_issue_status: No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").
+  text_journal_changed: "{{label}} changed from {{old}} to {{new}}"
+  text_journal_set_to: "{{label}} set to {{value}}"
+  text_journal_deleted: "{{label}} deleted ({{old}})"
+  label_group_plural: Groups
+  label_group: Group
+  label_group_new: New group
+  label_time_entry_plural: Spent time
+  text_journal_added: "{{label}} {{value}} added"
+  field_active: Active
+  enumeration_system_activity: System Activity
+  permission_delete_issue_watchers: Delete watchers
+  version_status_closed: closed
+  version_status_locked: locked
+  version_status_open: open
+  error_can_not_reopen_issue_on_closed_version: An issue assigned to a closed version can not be reopened
+  label_user_anonymous: Anonymous
+  button_move_and_follow: Move and follow
+  setting_default_projects_modules: Default enabled modules for new projects
+  setting_gravatar_default: Default Gravatar image

@@ -1,5 +1,5 @@
-# redMine - project management software
-# Copyright (C) 2006-2007  Jean-Philippe Lang
+# Redmine - project management software
+# Copyright (C) 2006-2009  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class UsersController < ApplicationController
-  before_filter :require_admin
+  before_filter :require_admin, :except => :show
 
   helper :sort
   include SortHelper
@@ -24,11 +24,6 @@ class UsersController < ApplicationController
   include CustomFieldsHelper   
 
   def index
-    list
-    render :action => 'list' unless request.xhr?
-  end
-
-  def list
     sort_init 'login', 'asc'
     sort_update %w(login firstname lastname mail admin created_on last_login_on)
     
@@ -37,7 +32,7 @@ class UsersController < ApplicationController
 
     unless params[:name].blank?
       name = "%#{params[:name].strip.downcase}%"
-      c << ["LOWER(login) LIKE ? OR LOWER(firstname) LIKE ? OR LOWER(lastname) LIKE ?", name, name, name]
+      c << ["LOWER(login) LIKE ? OR LOWER(firstname) LIKE ? OR LOWER(lastname) LIKE ? OR LOWER(mail) LIKE ?", name, name, name, name]
     end
     
     @user_count = User.count(:conditions => c.conditions)
@@ -49,7 +44,27 @@ class UsersController < ApplicationController
 						:limit  =>  @user_pages.items_per_page,
 						:offset =>  @user_pages.current.offset
 
-    render :action => "list", :layout => false if request.xhr?	
+    render :layout => !request.xhr?	
+  end
+  
+  def show
+    @user = User.active.find(params[:id])
+    @custom_values = @user.custom_values
+    
+    # show only public projects and private projects that the logged in user is also a member of
+    @memberships = @user.memberships.select do |membership|
+      membership.project.is_public? || (User.current.member_of?(membership.project))
+    end
+    
+    events = Redmine::Activity::Fetcher.new(User.current, :author => @user).events(nil, nil, :limit => 10)
+    @events_by_day = events.group_by(&:event_date)
+    
+    if @user != User.current && !User.current.admin? && @memberships.empty? && events.empty?
+      render_404 and return
+    end
+    
+  rescue ActiveRecord::RecordNotFound
+    render_404
   end
 
   def add
@@ -63,7 +78,7 @@ class UsersController < ApplicationController
       if @user.save
         Mailer.deliver_account_information(@user, params[:password]) if params[:send_information]
         flash[:notice] = l(:notice_successful_create)
-        redirect_to :action => 'list'
+        redirect_to :controller => 'users', :action => 'edit', :id => @user
       end
     end
     @auth_sources = AuthSource.find(:all)
@@ -75,6 +90,7 @@ class UsersController < ApplicationController
       @user.admin = params[:user][:admin] if params[:user][:admin]
       @user.login = params[:user][:login] if params[:user][:login]
       @user.password, @user.password_confirmation = params[:password], params[:password_confirmation] unless params[:password].nil? or params[:password].empty? or @user.auth_source_id
+      @user.group_ids = params[:user][:group_ids] if params[:user][:group_ids]
       @user.attributes = params[:user]
       # Was the account actived ? (do it before User#save clears the change)
       was_activated = (@user.status_change == [User::STATUS_REGISTERED, User::STATUS_ACTIVE])
@@ -85,17 +101,18 @@ class UsersController < ApplicationController
           Mailer.deliver_account_information(@user, params[:password])
         end
         flash[:notice] = l(:notice_successful_update)
-        # Give a string to redirect_to otherwise it would use status param as the response code
-        redirect_to(url_for(:action => 'list', :status => params[:status], :page => params[:page]))
+        redirect_to :back
       end
     end
     @auth_sources = AuthSource.find(:all)
     @membership ||= Member.new
+  rescue ::ActionController::RedirectBackError
+    redirect_to :controller => 'users', :action => 'edit', :id => @user
   end
   
   def edit_membership
     @user = User.find(params[:id])
-    @membership = params[:membership_id] ? Member.find(params[:membership_id]) : Member.new(:user => @user)
+    @membership = params[:membership_id] ? Member.find(params[:membership_id]) : Member.new(:principal => @user)
     @membership.attributes = params[:membership]
     @membership.save if request.post?
     respond_to do |format|
@@ -111,7 +128,10 @@ class UsersController < ApplicationController
   
   def destroy_membership
     @user = User.find(params[:id])
-    Member.find(params[:membership_id]).destroy if request.post?
+    @membership = Member.find(params[:membership_id])
+    if request.post? && @membership.deletable?
+      @membership.destroy
+    end
     respond_to do |format|
       format.html { redirect_to :controller => 'users', :action => 'edit', :id => @user, :tab => 'memberships' }
       format.js { render(:update) {|page| page.replace_html "tab-content-memberships", :partial => 'users/memberships'} }
