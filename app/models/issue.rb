@@ -127,6 +127,11 @@ class Issue < ActiveRecord::Base
     self.priority = nil
     write_attribute(:priority_id, pid)
   end
+
+  def tracker_id=(tid)
+    self.tracker = nil
+    write_attribute(:tracker_id, tid)
+  end
   
   def estimated_hours=(h)
     write_attribute :estimated_hours, (h.is_a?(String) ? h.to_hours : h)
@@ -152,10 +157,13 @@ class Issue < ActiveRecord::Base
         errors.add_to_base I18n.t(:error_can_not_reopen_issue_on_closed_version)
       end
     end
-  end
-  
-  def validate_on_create
-    errors.add :tracker_id, :invalid unless project.trackers.include?(tracker)
+    
+    # Checks that the issue can not be added/moved to a disabled tracker
+    if project && (tracker_id_changed? || project_id_changed?)
+      unless project.trackers.include?(tracker)
+        errors.add :tracker_id, :inclusion
+      end
+    end
   end
   
   def before_create

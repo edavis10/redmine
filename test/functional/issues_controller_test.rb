@@ -39,6 +39,7 @@ class IssuesControllerTest < ActionController::TestCase
            :workflows,
            :custom_fields,
            :custom_values,
+           :custom_fields_projects,
            :custom_fields_trackers,
            :time_entries,
            :journals,
@@ -193,6 +194,11 @@ class IssuesControllerTest < ActionController::TestCase
     assert_not_nil count_by_group['MySQL']
   end
   
+  def test_index_sort_by_field_not_included_in_columns
+    Setting.issue_list_default_columns = %w(subject author)
+    get :index, :sort => 'tracker'
+  end
+  
   def test_index_csv_with_project
     Setting.default_language = 'en'
     
@@ -248,6 +254,22 @@ class IssuesControllerTest < ActionController::TestCase
     assert_not_nil issues
     assert !issues.empty?
     assert_equal issues.sort {|a,b| a.tracker == b.tracker ? b.id <=> a.id : a.tracker <=> b.tracker }.collect(&:id), issues.collect(&:id)
+  end
+  
+  def test_index_with_columns
+    columns = ['tracker', 'subject', 'assigned_to']
+    get :index, :set_filter => 1, :query => { 'column_names' => columns}
+    assert_response :success
+    
+    # query should use specified columns
+    query = assigns(:query)
+    assert_kind_of Query, query
+    assert_equal columns, query.column_names.map(&:to_s)
+    
+    # columns should be stored in session
+    assert_kind_of Hash, session[:query]
+    assert_kind_of Array, session[:query][:column_names]
+    assert_equal columns, session[:query][:column_names].map(&:to_s)
   end
 
   def test_gantt
@@ -479,14 +501,20 @@ class IssuesControllerTest < ActionController::TestCase
   
   def test_update_new_form
     @request.session[:user_id] = 2
-    xhr :post, :new, :project_id => 1,
+    xhr :post, :update_form, :project_id => 1,
                      :issue => {:tracker_id => 2, 
                                 :subject => 'This is the test_new issue',
                                 :description => 'This is the description',
                                 :priority_id => 5}
     assert_response :success
-    assert_template 'new'
-  end 
+    assert_template 'attributes'
+    
+    issue = assigns(:issue)
+    assert_kind_of Issue, issue
+    assert_equal 1, issue.project_id
+    assert_equal 2, issue.tracker_id
+    assert_equal 'This is the test_new issue', issue.subject
+  end
   
   def test_post_new
     @request.session[:user_id] = 2
@@ -675,6 +703,25 @@ class IssuesControllerTest < ActionController::TestCase
                         :child => { :tag => 'option', 
                                     :content => 'Urgent',
                                     :attributes => { :selected => 'selected' } }
+  end
+
+  def test_update_edit_form
+    @request.session[:user_id] = 2
+    xhr :post, :update_form, :project_id => 1,
+                             :id => 1,
+                             :issue => {:tracker_id => 2, 
+                                        :subject => 'This is the test_new issue',
+                                        :description => 'This is the description',
+                                        :priority_id => 5}
+    assert_response :success
+    assert_template 'attributes'
+    
+    issue = assigns(:issue)
+    assert_kind_of Issue, issue
+    assert_equal 1, issue.id
+    assert_equal 1, issue.project_id
+    assert_equal 2, issue.tracker_id
+    assert_equal 'This is the test_new issue', issue.subject
   end
   
   def test_reply_routing

@@ -202,15 +202,6 @@ class QueryTest < ActiveSupport::TestCase
     assert q.groupable_columns.detect {|c| c.is_a? QueryCustomFieldColumn}
   end
   
-  def test_include_options
-    q = Query.new
-    q.column_names = %w(subject tracker)
-    assert_equal [:tracker], q.include_options
-    
-    q.group_by = 'category'
-    assert_equal [:tracker, :category], q.include_options
-  end
-  
   def test_default_sort
     q = Query.new
     assert_equal [], q.sort_criteria
@@ -276,6 +267,13 @@ class QueryTest < ActiveSupport::TestCase
     values = issues.collect {|i| begin; Kernel.Float(i.custom_value_for(c.custom_field).to_s); rescue; nil; end}.compact
     assert !values.empty?
     assert_equal values.sort, values
+  end
+  
+  def test_invalid_query_should_raise_query_statement_invalid_error
+    q = Query.new
+    assert_raise Query::StatementInvalid do
+      q.issues(:conditions => "foo = 1")
+    end
   end
   
   def test_label_for

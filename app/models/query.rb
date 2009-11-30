@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class QueryColumn  
-  attr_accessor :name, :sortable, :groupable, :default_order, :include_options
+  attr_accessor :name, :sortable, :groupable, :default_order
   include Redmine::I18n
   
   def initialize(name, options={})
@@ -27,7 +27,6 @@ class QueryColumn
       self.groupable = name.to_s
     end
     self.default_order = options[:default_order]
-    self.include_options = options[:include]
   end
   
   def caption
@@ -49,7 +48,6 @@ class QueryCustomFieldColumn < QueryColumn
       self.groupable = custom_field.order_statement
     end
     self.groupable ||= false
-    self.include_options = :custom_values
     @cf = custom_field
   end
   
@@ -63,6 +61,9 @@ class QueryCustomFieldColumn < QueryColumn
 end
 
 class Query < ActiveRecord::Base
+  class StatementInvalid < ::ActiveRecord::StatementInvalid
+  end
+  
   belongs_to :project
   belongs_to :user
   serialize :filters
@@ -109,15 +110,15 @@ class Query < ActiveRecord::Base
 
   @@available_columns = [
     QueryColumn.new(:project, :sortable => "#{Project.table_name}.name", :groupable => true),
-    QueryColumn.new(:tracker, :sortable => "#{Tracker.table_name}.position", :groupable => true, :include => :tracker),
+    QueryColumn.new(:tracker, :sortable => "#{Tracker.table_name}.position", :groupable => true),
     QueryColumn.new(:status, :sortable => "#{IssueStatus.table_name}.position", :groupable => true),
     QueryColumn.new(:priority, :sortable => "#{IssuePriority.table_name}.position", :default_order => 'desc', :groupable => true),
     QueryColumn.new(:subject, :sortable => "#{Issue.table_name}.subject"),
     QueryColumn.new(:author),
-    QueryColumn.new(:assigned_to, :sortable => ["#{User.table_name}.lastname", "#{User.table_name}.firstname", "#{User.table_name}.id"], :groupable => true, :include => :assigned_to),
+    QueryColumn.new(:assigned_to, :sortable => ["#{User.table_name}.lastname", "#{User.table_name}.firstname", "#{User.table_name}.id"], :groupable => true),
     QueryColumn.new(:updated_on, :sortable => "#{Issue.table_name}.updated_on", :default_order => 'desc'),
-    QueryColumn.new(:category, :sortable => "#{IssueCategory.table_name}.name", :groupable => true, :include => :category),
-    QueryColumn.new(:fixed_version, :sortable => ["#{Version.table_name}.effective_date", "#{Version.table_name}.name"], :default_order => 'desc', :groupable => true, :include => :fixed_version),
+    QueryColumn.new(:category, :sortable => "#{IssueCategory.table_name}.name", :groupable => true),
+    QueryColumn.new(:fixed_version, :sortable => ["#{Version.table_name}.effective_date", "#{Version.table_name}.name"], :default_order => 'desc', :groupable => true),
     QueryColumn.new(:start_date, :sortable => "#{Issue.table_name}.start_date"),
     QueryColumn.new(:due_date, :sortable => "#{Issue.table_name}.due_date"),
     QueryColumn.new(:estimated_hours, :sortable => "#{Issue.table_name}.estimated_hours"),
@@ -269,8 +270,14 @@ class Query < ActiveRecord::Base
   end
   
   def column_names=(names)
-    names = names.select {|n| n.is_a?(Symbol) || !n.blank? } if names
-    names = names.collect {|n| n.is_a?(Symbol) ? n : n.to_sym } if names
+    if names
+      names = names.select {|n| n.is_a?(Symbol) || !n.blank? }
+      names = names.collect {|n| n.is_a?(Symbol) ? n : n.to_sym }
+      # Set column_names to nil if default columns
+      if names.map(&:to_s) == Setting.issue_list_default_columns
+        names = nil
+      end
+    end
     write_attribute(:column_names, names)
   end
   
@@ -323,10 +330,6 @@ class Query < ActiveRecord::Base
   
   def group_by_statement
     group_by_column.groupable
-  end
-
-  def include_options
-    (columns << group_by_column).collect {|column| column && column.include_options}.flatten.compact.uniq
   end
   
   def project_statement
@@ -393,6 +396,65 @@ class Query < ActiveRecord::Base
     end if filters and valid?
     
     (filters_clauses << project_statement).join(' AND ')
+  end
+  
+  # Returns the issue count
+  def issue_count
+    Issue.count(:include => [:status, :project], :conditions => statement)
+  rescue ::ActiveRecord::StatementInvalid => e
+    raise StatementInvalid.new(e.message)
+  end
+  
+  # Returns the issue count by group or nil if query is not grouped
+  def issue_count_by_group
+    if grouped?
+      begin
+        # Rails will raise an (unexpected) RecordNotFound if there's only a nil group value
+        Issue.count(:group => group_by_statement, :include => [:status, :project], :conditions => statement)
+      rescue ActiveRecord::RecordNotFound
+        {nil => issue_count}
+      end
+    else
+      nil
+    end
+  rescue ::ActiveRecord::StatementInvalid => e
+    raise StatementInvalid.new(e.message)
+  end
+  
+  # Returns the issues
+  # Valid options are :order, :offset, :limit, :include, :conditions
+  def issues(options={})
+    order_option = [group_by_sort_order, options[:order]].reject {|s| s.blank?}.join(',')
+    order_option = nil if order_option.blank?
+    
+    Issue.find :all, :include => ([:status, :project] + (options[:include] || [])).uniq,
+                     :conditions => Query.merge_conditions(statement, options[:conditions]),
+                     :order => order_option,
+                     :limit  => options[:limit],
+                     :offset => options[:offset]
+  rescue ::ActiveRecord::StatementInvalid => e
+    raise StatementInvalid.new(e.message)
+  end
+
+  # Returns the journals
+  # Valid options are :order, :offset, :limit
+  def journals(options={})
+    Journal.find :all, :include => [:details, :user, {:issue => [:project, :author, :tracker, :status]}],
+                       :conditions => statement,
+                       :order => options[:order],
+                       :limit => options[:limit],
+                       :offset => options[:offset]
+  rescue ::ActiveRecord::StatementInvalid => e
+    raise StatementInvalid.new(e.message)
+  end
+  
+  # Returns the versions
+  # Valid options are :conditions
+  def versions(options={})
+    Version.find :all, :include => :project,
+                       :conditions => Query.merge_conditions(project_statement, options[:conditions])
+  rescue ::ActiveRecord::StatementInvalid => e
+    raise StatementInvalid.new(e.message)
   end
   
   private
