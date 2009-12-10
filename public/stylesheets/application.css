@@ -125,6 +125,9 @@ tr.message.locked td.subject a { background-image: url(../images/locked.png); }
 tr.message.sticky td.subject a { background-image: url(../images/sticky.png); font-weight: bold; }
 
 tr.version.closed, tr.version.closed a { color: #999; }
+tr.version td.name { padding-left: 20px; }
+tr.version.shared td.name { background: url(../images/link.png) no-repeat 0% 70%; }
+tr.version td.date, tr.version td.status, tr.version td.sharing { text-align: center; }
 
 tr.user td { width:13%; }
 tr.user td.email { width:18%; }
@@ -694,6 +697,7 @@ vertical-align: middle;
 .icon-add { background-image: url(../images/add.png); }
 .icon-edit { background-image: url(../images/edit.png); }
 .icon-copy { background-image: url(../images/copy.png); }
+.icon-duplicate { background-image: url(../images/duplicate.png); }
 .icon-del { background-image: url(../images/delete.png); }
 .icon-move { background-image: url(../images/move.png); }
 .icon-save { background-image: url(../images/save.png); }

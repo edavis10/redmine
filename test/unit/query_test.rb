@@ -31,6 +31,14 @@ class QueryTest < ActiveSupport::TestCase
       :include => [ :assigned_to, :status, :tracker, :project, :priority ], 
       :conditions => query.statement
   end
+
+  def test_query_should_allow_shared_versions_for_a_project_query
+    subproject_version = Version.find(4)
+    query = Query.new(:project => Project.find(1), :name => '_')
+    query.add_filter('fixed_version_id', '=', [subproject_version.id.to_s])
+
+    assert query.statement.include?("#{Issue.table_name}.fixed_version_id IN ('4')")
+  end
   
   def test_query_with_multiple_custom_fields
     query = Query.find(1)
@@ -274,6 +282,32 @@ class QueryTest < ActiveSupport::TestCase
     assert_raise Query::StatementInvalid do
       q.issues(:conditions => "foo = 1")
     end
+  end
+  
+  def test_issue_count_by_association_group
+    q = Query.new(:name => '_', :group_by => 'assigned_to')
+    count_by_group = q.issue_count_by_group
+    assert_kind_of Hash, count_by_group
+    assert_equal %w(NilClass User), count_by_group.keys.collect {|k| k.class.name}.uniq.sort
+    assert_equal %w(Fixnum), count_by_group.values.collect {|k| k.class.name}.uniq
+    assert count_by_group.has_key?(User.find(3))
+  end
+
+  def test_issue_count_by_list_custom_field_group
+    q = Query.new(:name => '_', :group_by => 'cf_1')
+    count_by_group = q.issue_count_by_group
+    assert_kind_of Hash, count_by_group
+    assert_equal %w(NilClass String), count_by_group.keys.collect {|k| k.class.name}.uniq.sort
+    assert_equal %w(Fixnum), count_by_group.values.collect {|k| k.class.name}.uniq
+    assert count_by_group.has_key?('MySQL')
+  end
+  
+  def test_issue_count_by_date_custom_field_group
+    q = Query.new(:name => '_', :group_by => 'cf_8')
+    count_by_group = q.issue_count_by_group
+    assert_kind_of Hash, count_by_group
+    assert_equal %w(Date NilClass), count_by_group.keys.collect {|k| k.class.name}.uniq.sort
+    assert_equal %w(Fixnum), count_by_group.values.collect {|k| k.class.name}.uniq
   end
   
   def test_label_for

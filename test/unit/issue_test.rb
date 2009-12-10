@@ -164,6 +164,23 @@ class IssueTest < ActiveSupport::TestCase
     assert_equal custom_value.id, issue.custom_value_for(field).id
   end
   
+  def test_assigning_tracker_id_should_reload_custom_fields_values
+    issue = Issue.new(:project => Project.find(1))
+    assert issue.custom_field_values.empty?
+    issue.tracker_id = 1
+    assert issue.custom_field_values.any?
+  end
+  
+  def test_assigning_attributes_should_assign_tracker_id_first
+    attributes = ActiveSupport::OrderedHash.new
+    attributes['custom_field_values'] = { '1' => 'MySQL' }
+    attributes['tracker_id'] = '1'
+    issue = Issue.new(:project => Project.find(1))
+    issue.attributes = attributes
+    assert_not_nil issue.custom_value_for(1)
+    assert_equal 'MySQL', issue.custom_value_for(1).value
+  end
+  
   def test_should_update_issue_with_disabled_tracker
     p = Project.find(1)
     issue = Issue.find(1)
@@ -329,6 +346,46 @@ class IssueTest < ActiveSupport::TestCase
     assert_nil issue.category_id
   end
   
+  def test_move_to_another_project_should_clear_fixed_version_when_not_shared
+    issue = Issue.find(1)
+    issue.update_attribute(:fixed_version_id, 1)
+    assert issue.move_to(Project.find(2))
+    issue.reload
+    assert_equal 2, issue.project_id
+    # Cleared fixed_version
+    assert_equal nil, issue.fixed_version
+  end
+  
+  def test_move_to_another_project_should_keep_fixed_version_when_shared_with_the_target_project
+    issue = Issue.find(1)
+    issue.update_attribute(:fixed_version_id, 4)
+    assert issue.move_to(Project.find(5))
+    issue.reload
+    assert_equal 5, issue.project_id
+    # Keep fixed_version
+    assert_equal 4, issue.fixed_version_id
+  end
+  
+  def test_move_to_another_project_should_clear_fixed_version_when_not_shared_with_the_target_project
+    issue = Issue.find(1)
+    issue.update_attribute(:fixed_version_id, 1)
+    assert issue.move_to(Project.find(5))
+    issue.reload
+    assert_equal 5, issue.project_id
+    # Cleared fixed_version
+    assert_equal nil, issue.fixed_version
+  end
+  
+  def test_move_to_another_project_should_keep_fixed_version_when_shared_systemwide
+    issue = Issue.find(1)
+    issue.update_attribute(:fixed_version_id, 7)
+    assert issue.move_to(Project.find(2))
+    issue.reload
+    assert_equal 2, issue.project_id
+    # Keep fixed_version
+    assert_equal 7, issue.fixed_version_id
+  end
+  
   def test_copy_to_the_same_project
     issue = Issue.find(1)
     copy = nil
@@ -351,6 +408,55 @@ class IssueTest < ActiveSupport::TestCase
     assert_equal Tracker.find(2), copy.tracker
     # Custom field #2 is not associated with target tracker
     assert_nil copy.custom_value_for(2)
+  end
+
+  context "#move_to" do
+    context "as a copy" do
+      setup do
+        @issue = Issue.find(1)
+        @copy = nil
+      end
+
+      should "allow assigned_to changes" do
+        @copy = @issue.move_to(Project.find(3), Tracker.find(2), {:copy => true, :attributes => {:assigned_to_id => 3}})
+        assert_equal 3, @copy.assigned_to_id
+      end
+
+      should "allow status changes" do
+        @copy = @issue.move_to(Project.find(3), Tracker.find(2), {:copy => true, :attributes => {:status_id => 2}})
+        assert_equal 2, @copy.status_id
+      end
+
+      should "allow start date changes" do
+        date = Date.today
+        @copy = @issue.move_to(Project.find(3), Tracker.find(2), {:copy => true, :attributes => {:start_date => date}})
+        assert_equal date, @copy.start_date
+      end
+
+      should "allow due date changes" do
+        date = Date.today
+        @copy = @issue.move_to(Project.find(3), Tracker.find(2), {:copy => true, :attributes => {:due_date => date}})
+
+        assert_equal date, @copy.due_date
+      end
+    end
+  end
+  
+  def test_recipients_should_not_include_users_that_cannot_view_the_issue
+    issue = Issue.find(12)
+    assert issue.recipients.include?(issue.author.mail)
+    # move the issue to a private project
+    copy  = issue.move_to(Project.find(5), Tracker.find(2), :copy => true)
+    # author is not a member of project anymore
+    assert !copy.recipients.include?(copy.author.mail)
+  end
+
+  def test_watcher_recipients_should_not_include_users_that_cannot_view_the_issue
+    user = User.find(3)
+    issue = Issue.find(9)
+    Watcher.create!(:user => user, :watchable => issue)
+    assert issue.watched_by?(user)
+    assert !issue.watcher_recipients.include?(user.mail)
   end
   
   def test_issue_destroy

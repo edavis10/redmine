@@ -242,6 +242,29 @@ class ProjectsControllerTest < ActionController::TestCase
     )
   end
   
+  def test_add_version
+    @request.session[:user_id] = 2 # manager
+    assert_difference 'Version.count' do
+      post :add_version, :id => '1', :version => {:name => 'test_add_version'}
+    end
+    assert_redirected_to '/projects/ecookbook/settings/versions'
+    version = Version.find_by_name('test_add_version')
+    assert_not_nil version
+    assert_equal 1, version.project_id
+  end
+  
+  def test_add_version_from_issue_form
+    @request.session[:user_id] = 2 # manager
+    assert_difference 'Version.count' do
+      xhr :post, :add_version, :id => '1', :version => {:name => 'test_add_version_from_issue_form'}
+    end
+    assert_response :success
+    assert_select_rjs :replace, 'issue_fixed_version_id'
+    version = Version.find_by_name('test_add_version_from_issue_form')
+    assert_not_nil version
+    assert_equal 1, version.project_id
+  end
+  
   def test_add_issue_category_routing
     assert_routing(
       {:method => :get, :path => 'projects/test/categories/new'},
@@ -364,6 +387,15 @@ class ProjectsControllerTest < ActionController::TestCase
     assert_not_nil assigns(:versions)
   end
   
+  def test_changelog_showing_subprojects_versions
+    get :changelog, :id => 1, :with_subprojects => 1
+    assert_response :success
+    assert_template 'changelog'
+    assert_not_nil assigns(:versions)
+    # Version on subproject appears
+    assert assigns(:versions).include?(Version.find(4))
+  end
+
   def test_roadmap_routing
     assert_routing(
       {:method => :get, :path => 'projects/33/roadmap'},
@@ -391,6 +423,15 @@ class ProjectsControllerTest < ActionController::TestCase
     assert assigns(:versions).include?(Version.find(3))
     # Completed version appears
     assert assigns(:versions).include?(Version.find(1))
+  end
+
+  def test_roadmap_showing_subprojects_versions
+    get :roadmap, :id => 1, :with_subprojects => 1
+    assert_response :success
+    assert_template 'roadmap'
+    assert_not_nil assigns(:versions)
+    # Version on subproject appears
+    assert assigns(:versions).include?(Version.find(4))
   end
   
   def test_project_activity_routing
