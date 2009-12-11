@@ -867,12 +867,12 @@ pt-BR:
   button_move_and_follow: Mover e seguir
   setting_default_projects_modules: Módulos habilitados por padrão para novos projetos
   setting_gravatar_default: Imagem Gravatar padrão
-  field_sharing: Sharing
-  label_version_sharing_hierarchy: With project hierarchy
-  label_version_sharing_system: With all projects
-  label_version_sharing_descendants: With subprojects
-  label_version_sharing_tree: With project tree
-  label_version_sharing_none: Not shared
-  error_can_not_archive_project: This project can not be archived
-  button_duplicate: Duplicate
-  button_copy_and_follow: Copy and follow
+  field_sharing: Compartilhamento
+  label_version_sharing_hierarchy: Com a hierarquia do projeto
+  label_version_sharing_system: Com todos os projetos
+  label_version_sharing_descendants: Com sub-projetos
+  label_version_sharing_tree: Com a árvore do projeto
+  label_version_sharing_none: Sem compartilhamento
+  error_can_not_archive_project: Este projeto não pode ser arquivado
+  button_duplicate: Duplicado
+  button_copy_and_follow: Copiar e seguir
