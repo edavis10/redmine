@@ -223,7 +223,6 @@ pt:
   field_homepage: Página
   field_is_public: Público
   field_parent: Sub-projecto de
-  field_is_in_chlog: Tarefas mostradas no changelog
   field_is_in_roadmap: Tarefas mostradas no roadmap
   field_login: Nome de utilizador
   field_mail_notification: Notificações por e-mail
@@ -417,7 +416,6 @@ pt:
   label_news_latest: Últimas notícias
   label_news_view_all: Ver todas as notícias
   label_news_added: Notícia adicionada
-  label_change_log: Change log
   label_settings: Configurações
   label_overview: Visão geral
   label_version: Versão
@@ -862,3 +860,15 @@ pt:
   error_can_not_archive_project: This project can not be archived
   button_duplicate: Duplicate
   button_copy_and_follow: Copy and follow
+  label_copy_source: Source
+  setting_issue_done_ratio: Calculate the issue done ratio with
+  setting_issue_done_ratio_issue_status: Use the issue status
+  error_issue_done_ratios_not_updated: Issue done ratios not updated.
+  error_workflow_copy_target: Please select target tracker(s) and role(s)
+  setting_issue_done_ratio_issue_field: Use the issue field
+  label_copy_same_as_target: Same as target
+  label_copy_target: Target
+  notice_issue_done_ratios_updated: Issue done ratios updated.
+  error_workflow_copy_source: Please select a source tracker or role
+  label_update_issue_done_ratios: Update issue done ratios
+  setting_start_of_week: Start calendars on

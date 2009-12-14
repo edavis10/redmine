@@ -27,12 +27,17 @@ class Principal < ActiveRecord::Base
   
   named_scope :like, lambda {|q| 
     s = "%#{q.to_s.strip.downcase}%"
-    {:conditions => ["LOWER(login) LIKE ? OR LOWER(firstname) LIKE ? OR LOWER(lastname) LIKE ?", s, s, s],
-     :order => 'type, login, lastname, firstname'
+    {:conditions => ["LOWER(login) LIKE :s OR LOWER(firstname) LIKE :s OR LOWER(lastname) LIKE :s OR LOWER(mail) LIKE :s", {:s => s}],
+     :order => 'type, login, lastname, firstname, mail'
     }
   }
   
   def <=>(principal)
-    self.to_s.downcase <=> principal.to_s.downcase
+    if self.class.name == principal.class.name
+      self.to_s.downcase <=> principal.to_s.downcase
+    else
+      # groups after users
+      principal.class.name <=> self.class.name
+    end
   end
 end

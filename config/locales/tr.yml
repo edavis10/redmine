@@ -234,7 +234,6 @@ tr:
   field_homepage: Anasayfa
   field_is_public: Genel
   field_parent: 'Üst proje: '
-  field_is_in_chlog: Değişim günlüğünde gösterilen iletiler
   field_is_in_roadmap: Yol haritasında gösterilen iletiler
   field_login: Giriş
   field_mail_notification: E-posta uyarıları
@@ -421,7 +420,6 @@ tr:
   label_news_latest: Son Haberler
   label_news_view_all: Tüm haberleri oku
   label_news_added: Haber eklendi
-  label_change_log: Değişim Günlüğü
   label_settings: Ayarlar
   label_overview: Genel
   label_version: Versiyon
@@ -877,3 +875,15 @@ tr:
   error_can_not_archive_project: This project can not be archived
   button_duplicate: Duplicate
   button_copy_and_follow: Copy and follow
+  label_copy_source: Source
+  setting_issue_done_ratio: Calculate the issue done ratio with
+  setting_issue_done_ratio_issue_status: Use the issue status
+  error_issue_done_ratios_not_updated: Issue done ratios not updated.
+  error_workflow_copy_target: Please select target tracker(s) and role(s)
+  setting_issue_done_ratio_issue_field: Use the issue field
+  label_copy_same_as_target: Same as target
+  label_copy_target: Target
+  notice_issue_done_ratios_updated: Issue done ratios updated.
+  error_workflow_copy_source: Please select a source tracker or role
+  label_update_issue_done_ratios: Update issue done ratios
+  setting_start_of_week: Start calendars on

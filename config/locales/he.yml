@@ -204,7 +204,6 @@ he:
   field_homepage: דף הבית
   field_is_public: פומבי
   field_parent: תת פרויקט של
-  field_is_in_chlog: נושאים המוצגים בדו"ח השינויים
   field_is_in_roadmap: נושאים המוצגים במפת הדרכים
   field_login: שם משתמש
   field_mail_notification: הודעות דוא"ל
@@ -362,7 +361,6 @@ he:
   label_news_plural: חדשות
   label_news_latest: חדשות אחרונות
   label_news_view_all: צפה בכל החדשות
-  label_change_log: דו"ח שינויים
   label_settings: הגדרות
   label_overview: מבט רחב
   label_version: גירסא
@@ -854,3 +852,15 @@ he:
   error_can_not_archive_project: This project can not be archived
   button_duplicate: Duplicate
   button_copy_and_follow: Copy and follow
+  label_copy_source: Source
+  setting_issue_done_ratio: Calculate the issue done ratio with
+  setting_issue_done_ratio_issue_status: Use the issue status
+  error_issue_done_ratios_not_updated: Issue done ratios not updated.
+  error_workflow_copy_target: Please select target tracker(s) and role(s)
+  setting_issue_done_ratio_issue_field: Use the issue field
+  label_copy_same_as_target: Same as target
+  label_copy_target: Target
+  notice_issue_done_ratios_updated: Issue done ratios updated.
+  error_workflow_copy_source: Please select a source tracker or role
+  label_update_issue_done_ratios: Update issue done ratios
+  setting_start_of_week: Start calendars on

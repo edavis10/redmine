@@ -45,6 +45,8 @@ class Issue < ActiveRecord::Base
   
   acts_as_activity_provider :find_options => {:include => [:project, :author, :tracker]},
                             :author_key => :author_id
+
+  DONE_RATIO_OPTIONS = %w(issue_field issue_status)
   
   validates_presence_of :subject, :priority, :project, :tracker, :author, :status
   validates_length_of :subject, :maximum => 255
@@ -55,7 +57,8 @@ class Issue < ActiveRecord::Base
                                           :conditions => Project.allowed_to_condition(args.first || User.current, :view_issues) } }
   
   named_scope :open, :conditions => ["#{IssueStatus.table_name}.is_closed = ?", false], :include => :status
-  
+
+  before_save :update_done_ratio_from_issue_status
   after_save :create_journal
   
   # Returns true if usr or current user is allowed to view the issue
@@ -162,6 +165,22 @@ class Issue < ActiveRecord::Base
     write_attribute :estimated_hours, (h.is_a?(String) ? h.to_hours : h)
   end
   
+  def done_ratio
+    if Issue.use_status_for_done_ratio? && status && status.default_done_ratio?
+      status.default_done_ratio
+    else
+      read_attribute(:done_ratio)
+    end
+  end
+
+  def self.use_status_for_done_ratio?
+    Setting.issue_done_ratio == 'issue_status'
+  end
+
+  def self.use_field_for_done_ratio?
+    Setting.issue_done_ratio == 'issue_field'
+  end
+  
   def validate
     if self.due_date.nil? && @attributes['due_date'] && !@attributes['due_date'].empty?
       errors.add :due_date, :not_a_date
@@ -195,6 +214,14 @@ class Issue < ActiveRecord::Base
     # default assignment based on category
     if assigned_to.nil? && category && category.assigned_to
       self.assigned_to = category.assigned_to
+    end
+  end
+  
+  # Set the done_ratio using the status if that setting is set.  This will keep the done_ratios
+  # even if the user turns off the setting later
+  def update_done_ratio_from_issue_status
+    if Issue.use_status_for_done_ratio? && status && status.default_done_ratio?
+      self.done_ratio = status.default_done_ratio
     end
   end
   
@@ -284,13 +311,6 @@ class Issue < ActiveRecord::Base
     notified.uniq!
     # Remove users that can not view the issue
     notified.reject! {|user| !visible?(user)}
-    notified.collect(&:mail)
-  end
-  
-  # Returns the mail adresses of watchers that should be notified
-  def watcher_recipients
-    notified = watcher_users
-    notified.reject! {|user| !user.active? || !visible?(user)}
     notified.collect(&:mail)
   end
   

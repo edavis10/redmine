@@ -197,7 +197,6 @@ uk:
   field_homepage: Домашня сторінка
   field_is_public: Публічний
   field_parent: Підпроект
-  field_is_in_chlog: Питання, що відображаються в журналі змін
   field_is_in_roadmap: Питання, що відображаються в оперативному плані
   field_login: Вхід 
   field_mail_notification: Повідомлення за електронною поштою
@@ -362,7 +361,6 @@ uk:
   label_news_plural: Новини
   label_news_latest: Останні новини
   label_news_view_all: Подивитися всі новини
-  label_change_log: Журнал змін
   label_settings: Налаштування
   label_overview: Перегляд
   label_version: Версія
@@ -846,3 +844,15 @@ uk:
   error_can_not_archive_project: This project can not be archived
   button_duplicate: Duplicate
   button_copy_and_follow: Copy and follow
+  label_copy_source: Source
+  setting_issue_done_ratio: Calculate the issue done ratio with
+  setting_issue_done_ratio_issue_status: Use the issue status
+  error_issue_done_ratios_not_updated: Issue done ratios not updated.
+  error_workflow_copy_target: Please select target tracker(s) and role(s)
+  setting_issue_done_ratio_issue_field: Use the issue field
+  label_copy_same_as_target: Same as target
+  label_copy_target: Target
+  notice_issue_done_ratios_updated: Issue done ratios updated.
+  error_workflow_copy_source: Please select a source tracker or role
+  label_update_issue_done_ratios: Update issue done ratios
+  setting_start_of_week: Start calendars on

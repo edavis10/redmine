@@ -182,7 +182,7 @@ pt-BR:
   error_scm_command_failed: "Ocorreu um erro ao tentar acessar o repositório: {{value}}"
   error_scm_annotate: "Esta entrada não existe ou não pode ser anotada."
   error_issue_not_found_in_project: 'A tarefa não foi encontrada ou não pertence a este projeto'
-  error_no_tracker_in_project: 'Não há um tipo de tarefa associado a este projeto. favor verificar as configurações do projeto.'
+  error_no_tracker_in_project: 'Não há um tipo de tarefa associado a este projeto. Favor verificar as configurações do projeto.'
   error_no_default_issue_status: 'A situação padrão para tarefa não está definida. Favor verificar sua configuração (Vá em "Administração -> Situação da tarefa").'
 
   mail_subject_lost_password: "Sua senha do {{value}}."
@@ -238,7 +238,6 @@ pt-BR:
   field_homepage: Página inicial
   field_is_public: Público
   field_parent: Sub-projeto de
-  field_is_in_chlog: Exibir na lista de alterações
   field_is_in_roadmap: Exibir no planejamento
   field_login: Usuário
   field_mail_notification: Notificações por e-mail
@@ -432,7 +431,6 @@ pt-BR:
   label_news_latest: Últimas notícias
   label_news_view_all: Ver todas as notícias
   label_news_added: Notícia adicionada
-  label_change_log: Registro de alterações
   label_settings: Configurações
   label_overview: Visão geral
   label_version: Versão
@@ -876,3 +874,15 @@ pt-BR:
   error_can_not_archive_project: Este projeto não pode ser arquivado
   button_duplicate: Duplicado
   button_copy_and_follow: Copiar e seguir
+  label_copy_source: Origem
+  setting_issue_done_ratio: Calcular o percentual de conclusão da tarefa
+  setting_issue_done_ratio_issue_status: Usar a situação da tarefa
+  error_issue_done_ratios_not_updated: O pecentual de conclusão das tarefas não foi atualizado.
+  error_workflow_copy_target: Por favor, selecione os tipos de tarefa e os papéis alvo
+  setting_issue_done_ratio_issue_field: Use the issue field
+  label_copy_same_as_target: Mesmo alvo
+  label_copy_target: Alvo
+  notice_issue_done_ratios_updated: Percentual de conslusão atualizados.
+  error_workflow_copy_source: Por favor, selecione um tipo de tarefa e papel de origem
+  label_update_issue_done_ratios: Atualizar percentual de conclusão das tarefas
+  setting_start_of_week: Início da semana

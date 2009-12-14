@@ -42,6 +42,10 @@ class Message < ActiveRecord::Base
   
   after_create :add_author_as_watcher
   
+  def visible?(user=User.current)
+    !user.nil? && user.allowed_to?(:view_messages, project)
+  end
+  
   def validate_on_create
     # Can not reply to a locked topic
     errors.add_to_base 'Topic is locked' if root.locked? && self != root
@@ -84,6 +88,13 @@ class Message < ActiveRecord::Base
 
   def destroyable_by?(usr)
     usr && usr.logged? && (usr.allowed_to?(:delete_messages, project) || (self.author == usr && usr.allowed_to?(:delete_own_messages, project)))
+  end
+  
+  # Returns the mail adresses of users that should be notified
+  def recipients
+    notified = project.notified_users
+    notified.reject! {|user| !visible?(user)}
+    notified.collect(&:mail)
   end
   
   private

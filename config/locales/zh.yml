@@ -240,7 +240,6 @@ zh:
   field_homepage: 主页
   field_is_public: 公开
   field_parent: 上级项目
-  field_is_in_chlog: 在更新日志中显示问题
   field_is_in_roadmap: 在路线图中显示问题
   field_login: 登录名
   field_mail_notification: 邮件通知
@@ -501,7 +500,6 @@ zh:
   label_news_latest: 最近的新闻
   label_news_view_all: 查看所有新闻
   label_news_added: 新闻已添加
-  label_change_log: 更新日志
   label_settings: 配置
   label_overview: 概述
   label_version: 版本
@@ -874,3 +872,15 @@ zh:
   error_can_not_archive_project: This project can not be archived
   button_duplicate: Duplicate
   button_copy_and_follow: Copy and follow
+  label_copy_source: Source
+  setting_issue_done_ratio: Calculate the issue done ratio with
+  setting_issue_done_ratio_issue_status: Use the issue status
+  error_issue_done_ratios_not_updated: Issue done ratios not updated.
+  error_workflow_copy_target: Please select target tracker(s) and role(s)
+  setting_issue_done_ratio_issue_field: Use the issue field
+  label_copy_same_as_target: Same as target
+  label_copy_target: Target
+  notice_issue_done_ratios_updated: Issue done ratios updated.
+  error_workflow_copy_source: Please select a source tracker or role
+  label_update_issue_done_ratios: Update issue done ratios
+  setting_start_of_week: Start calendars on

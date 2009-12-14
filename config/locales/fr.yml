@@ -171,6 +171,7 @@ fr:
   notice_account_pending: "Votre compte a été créé et attend l'approbation de l'administrateur."
   notice_default_data_loaded: Paramétrage par défaut chargé avec succès.
   notice_unable_delete_version: Impossible de supprimer cette version.
+  notice_issue_done_ratios_updated: L'avancement des demandes a été mis à jour.
   
   error_can_t_load_default_data: "Une erreur s'est produite lors du chargement du paramétrage: {{value}}"
   error_scm_not_found: "L'entrée et/ou la révision demandée n'existe pas dans le dépôt."
@@ -179,6 +180,9 @@ fr:
   error_issue_not_found_in_project: "La demande n'existe pas ou n'appartient pas à ce projet"
   error_can_not_reopen_issue_on_closed_version: 'Une demande assignée à une version fermée ne peut pas être réouverte'
   error_can_not_archive_project: "Ce projet ne peut pas être archivé"
+  error_workflow_copy_source: 'Veuillez sélectionner un tracker et/ou un rôle source'
+  error_workflow_copy_target: 'Veuillez sélectionner les trackers et rôles cibles'
+  error_issue_done_ratios_not_updated: L'avancement des demandes n'a pas pu être mis à jour.
   
   warning_attachments_not_saved: "{{count}} fichier(s) n'ont pas pu être sauvegardés."
   
@@ -239,7 +243,6 @@ fr:
   field_homepage: Site web
   field_is_public: Public
   field_parent: Sous-projet de
-  field_is_in_chlog: Demandes affichées dans l'historique
   field_is_in_roadmap: Demandes affichées dans la roadmap
   field_login: Identifiant
   field_mail_notification: Notifications par mail
@@ -337,6 +340,9 @@ fr:
   setting_password_min_length: Longueur minimum des mots de passe
   setting_new_project_user_role_id: Rôle donné à un utilisateur non-administrateur qui crée un projet
   setting_default_projects_modules: Modules activés par défaut pour les nouveaux projets
+  setting_issue_done_ratio: Calcul de l'avancement des demandes
+  setting_issue_done_ratio_issue_status: Utiliser le statut
+  setting_issue_done_ratio_issue_field: 'Utiliser le champ % effectué'
   
   permission_add_project: Créer un projet
   permission_edit_project: Modifier le projet
@@ -502,7 +508,6 @@ fr:
   label_news_latest: Dernières annonces
   label_news_view_all: Voir toutes les annonces
   label_news_added: Annonce ajoutée
-  label_change_log: Historique
   label_settings: Configuration
   label_overview: Aperçu
   label_version: Version
@@ -732,6 +737,10 @@ fr:
   label_version_sharing_hierarchy: Avec toute la hiérarchie
   label_version_sharing_tree: Avec tout l'arbre
   label_version_sharing_system: Avec tous les projets
+  label_copy_source: Source
+  label_copy_target: Cible
+  label_copy_same_as_target: Comme la cible
+  label_update_issue_done_ratios: Mettre à jour l'avancement des demandes
   
   button_login: Connexion
   button_submit: Soumettre
@@ -873,3 +882,4 @@ fr:
   field_active: Actif
   enumeration_system_activity: Activité système
   setting_gravatar_default: Default Gravatar image
+  setting_start_of_week: Start calendars on

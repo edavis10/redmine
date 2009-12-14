@@ -129,6 +129,8 @@ issue_list_default_columns:
   - updated_on
 display_subprojects_issues:
   default: 1
+issue_done_ratio:
+  default: 'issue_field'
 default_projects_public:
   default: 1
 default_projects_modules:
@@ -169,4 +171,6 @@ gravatar_enabled:
 openid:
   default: 0
 gravatar_default:
+  default: ''
+start_of_week:
   default: ''

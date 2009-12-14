@@ -147,6 +147,7 @@ en:
   notice_account_pending: "Your account was created and is now pending administrator approval."
   notice_default_data_loaded: Default configuration successfully loaded.
   notice_unable_delete_version: Unable to delete version.
+  notice_issue_done_ratios_updated: Issue done ratios updated.
   
   error_can_t_load_default_data: "Default configuration could not be loaded: {{value}}"
   error_scm_not_found: "The entry or revision was not found in the repository."
@@ -157,6 +158,9 @@ en:
   error_no_default_issue_status: 'No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").'
   error_can_not_reopen_issue_on_closed_version: 'An issue assigned to a closed version can not be reopened'
   error_can_not_archive_project: This project can not be archived
+  error_issue_done_ratios_not_updated: "Issue done ratios not updated."
+  error_workflow_copy_source: 'Please select a source tracker or role'
+  error_workflow_copy_target: 'Please select target tracker(s) and role(s)'
   
   warning_attachments_not_saved: "{{count}} file(s) could not be saved."
   
@@ -217,7 +221,6 @@ en:
   field_homepage: Homepage
   field_is_public: Public
   field_parent: Subproject of
-  field_is_in_chlog: Issues displayed in changelog
   field_is_in_roadmap: Issues displayed in roadmap
   field_login: Login
   field_mail_notification: Email notifications
@@ -316,6 +319,10 @@ en:
   setting_password_min_length: Minimum password length
   setting_new_project_user_role_id: Role given to a non-admin user who creates a project
   setting_default_projects_modules: Default enabled modules for new projects
+  setting_issue_done_ratio: Calculate the issue done ratio with
+  setting_issue_done_ratio_issue_field: Use the issue field
+  setting_issue_done_ratio_issue_status: Use the issue status
+  setting_start_of_week: Start calendars on
   
   permission_add_project: Create project
   permission_edit_project: Edit project
@@ -481,7 +488,6 @@ en:
   label_news_latest: Latest news
   label_news_view_all: View all news
   label_news_added: News added
-  label_change_log: Change log
   label_settings: Settings
   label_overview: Overview
   label_version: Version
@@ -716,6 +722,10 @@ en:
   label_version_sharing_hierarchy: With project hierarchy
   label_version_sharing_tree: With project tree
   label_version_sharing_system: With all projects
+  label_update_issue_done_ratios: Update issue done ratios
+  label_copy_source: Source
+  label_copy_target: Target
+  label_copy_same_as_target: Same as target
   
   button_login: Login
   button_submit: Submit
