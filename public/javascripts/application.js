@@ -114,7 +114,7 @@ function displayTabsButtons() {
 				tabsWidth += lis[i].getWidth() + 6;
 			}
 		}
-		if (tabsWidth < el.getWidth() - 60) {
+		if ((tabsWidth < el.getWidth() - 60) && (lis[0].visible())) {
 			el.down('div.tabs-buttons').hide();
 		} else {
 			el.down('div.tabs-buttons').show();
@@ -124,7 +124,7 @@ function displayTabsButtons() {
 
 function setPredecessorFieldsVisibility() {
     relationType = $('relation_relation_type');
-    if (relationType && relationType.value == "precedes") {
+    if (relationType && (relationType.value == "precedes" || relationType.value == "follows")) {
         Element.show('predecessor_fields');
     } else {
         Element.hide('predecessor_fields');

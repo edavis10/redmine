@@ -16,6 +16,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class AdminController < ApplicationController
+  layout 'admin'
+  
   before_filter :require_admin
 
   helper :sort
@@ -74,11 +76,11 @@ class AdminController < ApplicationController
   
   def info
     @db_adapter_name = ActiveRecord::Base.connection.adapter_name
-    @flags = {
-      :default_admin_changed => User.find(:first, :conditions => ["login=? and hashed_password=?", 'admin', User.hash_password('admin')]).nil?,
-      :file_repository_writable => File.writable?(Attachment.storage_path),
-      :plugin_assets_writable => File.writable?(Engines.public_directory),
-      :rmagick_available => Object.const_defined?(:Magick)
-    }
+    @checklist = [
+      [:text_default_administrator_account_changed, User.find(:first, :conditions => ["login=? and hashed_password=?", 'admin', User.hash_password('admin')]).nil?],
+      [:text_file_repository_writable, File.writable?(Attachment.storage_path)],
+      [:text_plugin_assets_writable, File.writable?(Engines.public_directory)],
+      [:text_rmagick_available, Object.const_defined?(:Magick)]
+    ]
   end  
 end

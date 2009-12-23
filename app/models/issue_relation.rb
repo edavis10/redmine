@@ -23,11 +23,13 @@ class IssueRelation < ActiveRecord::Base
   TYPE_DUPLICATES   = "duplicates"
   TYPE_BLOCKS       = "blocks"
   TYPE_PRECEDES     = "precedes"
+  TYPE_FOLLOWS      = "follows"
   
   TYPES = { TYPE_RELATES =>     { :name => :label_relates_to, :sym_name => :label_relates_to, :order => 1 },
             TYPE_DUPLICATES =>  { :name => :label_duplicates, :sym_name => :label_duplicated_by, :order => 2 },
             TYPE_BLOCKS =>      { :name => :label_blocks, :sym_name => :label_blocked_by, :order => 3 },
             TYPE_PRECEDES =>    { :name => :label_precedes, :sym_name => :label_follows, :order => 4 },
+            TYPE_FOLLOWS =>     { :name => :label_follows, :sym_name => :label_precedes, :order => 5 }
           }.freeze
   
   validates_presence_of :issue_from, :issue_to, :relation_type
@@ -54,6 +56,8 @@ class IssueRelation < ActiveRecord::Base
   end
   
   def before_save
+    reverse_if_needed
+    
     if TYPE_PRECEDES == relation_type
       self.delay ||= 0
     else
@@ -77,5 +81,16 @@ class IssueRelation < ActiveRecord::Base
   
   def <=>(relation)
     TYPES[self.relation_type][:order] <=> TYPES[relation.relation_type][:order]
+  end
+  
+  private
+  
+  def reverse_if_needed
+    if (TYPE_FOLLOWS == relation_type)
+      issue_tmp = issue_to
+      self.issue_to = issue_from
+      self.issue_from = issue_tmp
+      self.relation_type = TYPE_PRECEDES
+    end
   end
 end

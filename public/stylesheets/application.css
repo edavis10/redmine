@@ -48,6 +48,23 @@ h4, .wiki h3 {font-size: 13px;padding: 2px 10px 1px 0px;margin-bottom: 5px; bord
 #main-menu li a:hover {background:#759FCF; color:#fff;}
 #main-menu li a.selected, #main-menu li a.selected:hover {background:#fff; color:#555;}
 
+#admin-menu ul {margin: 0;  padding: 0;}
+#admin-menu li {margin: 0;  padding: 0 0 12px 0; list-style-type:none;}
+
+#admin-menu a { background-position: 0% 40%; background-repeat: no-repeat; padding-left: 20px; padding-top: 2px; padding-bottom: 3px;}
+#admin-menu a.projects { background-image: url(../images/projects.png); }
+#admin-menu a.users { background-image: url(../images/user.png); }
+#admin-menu a.groups { background-image: url(../images/group.png); }
+#admin-menu a.roles { background-image: url(../images/database_key.png); }
+#admin-menu a.trackers { background-image: url(../images/ticket.png); }
+#admin-menu a.issue_statuses { background-image: url(../images/ticket_edit.png); }
+#admin-menu a.workflows { background-image: url(../images/ticket_go.png); }
+#admin-menu a.custom_fields { background-image: url(../images/textfield.png); }
+#admin-menu a.enumerations { background-image: url(../images/text_list_bullets.png); }
+#admin-menu a.settings { background-image: url(../images/changeset.png); }
+#admin-menu a.plugins { background-image: url(../images/plugin.png); }
+#admin-menu a.info { background-image: url(../images/help.png); }
+
 #main {background-color:#EEEEEE;}
 
 #sidebar{ float: right; width: 17%; position: relative; z-index: 9; min-height: 600px; padding: 0; margin: 0;}
@@ -58,7 +75,7 @@ h4, .wiki h3 {font-size: 13px;padding: 2px 10px 1px 0px;margin-bottom: 5px; bord
 
 #content { width: 80%; background-color: #fff; margin: 0px; border-right: 1px solid #ddd; padding: 6px 10px 10px 10px; z-index: 10; }
 * html #content{ width: 80%; padding-left: 0; margin-top: 0px; padding: 6px 10px 10px 10px;}
-html>body #content { min-height: 600px; } 
+html>body #content { min-height: 600px; overflow: auto; } 
 * html body #content { height: 600px; } /* IE */
 
 #main.nosidebar #sidebar{ display: none; }
@@ -164,7 +181,16 @@ table.attributes { width: 100% }
 table.attributes th { vertical-align: top; text-align: left; }
 table.attributes td { vertical-align: top; }
 
+table.boards a.board, h3.comments { background: url(../images/comment.png) no-repeat 0% 50%; padding-left: 20px; }
+
 td.center {text-align:center;}
+
+h3.version { background: url(../images/package.png) no-repeat 0% 50%; padding-left: 20px; }
+
+div.issues h3 { background: url(../images/ticket.png) no-repeat 0% 50%; padding-left: 20px; }
+div.members h3 { background: url(../images/group.png) no-repeat 0% 50%; padding-left: 20px; }
+div.news h3 { background: url(../images/news.png) no-repeat 0% 50%; padding-left: 20px; }
+div.projects h3 { background: url(../images/projects.png) no-repeat 0% 50%; padding-left: 20px; }
 
 .highlight { background-color: #FCFD8D;}
 .highlight.token-1 { background-color: #faa;}
@@ -345,6 +371,8 @@ input#time_entry_comments { width: 90%;}
 .tabular.settings p{ padding-left: 300px; }
 .tabular.settings label{ margin-left: -300px; width: 295px; }
 
+fieldset.settings label { display: block; }
+
 .required {color: #bb0000;}
 .summary {font-style: italic;}
 
@@ -368,7 +396,7 @@ div#tab-content-members fieldset legend, div#tab-content-memberships fieldset le
 div#tab-content-members fieldset label, div#tab-content-memberships fieldset label, div#tab-content-users fieldset label { display: block; }
 div#tab-content-members fieldset div, div#tab-content-users fieldset div { max-height: 400px; overflow:auto; }
 
-table.members td.group { padding-left: 20px; background: url(../images/users.png) no-repeat 0% 0%; }
+table.members td.group { padding-left: 20px; background: url(../images/group.png) no-repeat 0% 50%; }
 
 * html div#tab-content-members fieldset div { height: 450px; }
 
@@ -383,10 +411,10 @@ table.members td.group { padding-left: 20px; background: url(../images/users.png
 div.flash {margin-top: 8px;}
 
 div.flash.error, #errorExplanation {
-    background: url(../images/false.png) 8px 5px no-repeat;
+	background: url(../images/exclamation.png) 8px 50% no-repeat;
 	background-color: #ffe3e3;
 	border-color: #dd0000;
-	color: #550000;
+	color: #880000;
 }
 
 div.flash.notice {
@@ -706,19 +734,11 @@ background-image:url('../images/close_hl.png');
 
 /***** Icons *****/
 .icon {
-background-position: 0% 40%;
+background-position: 0% 50%;
 background-repeat: no-repeat;
 padding-left: 20px;
 padding-top: 2px;
 padding-bottom: 3px;
-}
-
-.icon22 {
-background-position: 0% 40%;
-background-repeat: no-repeat;
-padding-left: 26px;
-line-height: 22px;
-vertical-align: middle;
 }
 
 .icon-add { background-image: url(../images/add.png); }
@@ -735,12 +755,9 @@ vertical-align: middle;
 .icon-package { background-image: url(../images/package.png); }
 .icon-home { background-image: url(../images/home.png); }
 .icon-user { background-image: url(../images/user.png); }
-.icon-mypage { background-image: url(../images/user_page.png); }
-.icon-admin { background-image: url(../images/admin.png); }
 .icon-projects { background-image: url(../images/projects.png); }
 .icon-help { background-image: url(../images/help.png); }
 .icon-attachment  { background-image: url(../images/attachment.png); }
-.icon-index  { background-image: url(../images/index.png); }
 .icon-history  { background-image: url(../images/history.png); }
 .icon-time  { background-image: url(../images/time.png); }
 .icon-time-add  { background-image: url(../images/time_add.png); }
@@ -771,21 +788,6 @@ vertical-align: middle;
 .icon-file.application-pdf { background-image: url(../images/files/pdf.png); }
 .icon-file.application-zip { background-image: url(../images/files/zip.png); }
 .icon-file.application-x-gzip { background-image: url(../images/files/zip.png); }
-
-.icon22-projects { background-image: url(../images/22x22/projects.png); }
-.icon22-users { background-image: url(../images/22x22/users.png); }
-.icon22-groups { background-image: url(../images/22x22/groups.png); }
-.icon22-tracker { background-image: url(../images/22x22/tracker.png); }
-.icon22-role { background-image: url(../images/22x22/role.png); }
-.icon22-workflow { background-image: url(../images/22x22/workflow.png); }
-.icon22-options { background-image: url(../images/22x22/options.png); }
-.icon22-notifications { background-image: url(../images/22x22/notifications.png); }
-.icon22-authent { background-image: url(../images/22x22/authent.png); }
-.icon22-info { background-image: url(../images/22x22/info.png); }
-.icon22-comment { background-image: url(../images/22x22/comment.png); }
-.icon22-package { background-image: url(../images/22x22/package.png); }
-.icon22-settings { background-image: url(../images/22x22/settings.png); }
-.icon22-plugin { background-image: url(../images/22x22/plugin.png); }
 
 img.gravatar { 
 	padding: 2px;
@@ -834,6 +836,7 @@ td.username img.gravatar {
 
 h2 img { vertical-align:middle; }
 
+.hascontextmenu { cursor: context-menu; }
 
 /***** Media print specific styles *****/
 @media print {

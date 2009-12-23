@@ -30,7 +30,8 @@ class ApplicationController < ActionController::Base
   def delete_broken_cookies
     if cookies['_redmine_session'] && cookies['_redmine_session'] !~ /--/
       cookies.delete '_redmine_session'    
-      redirect_to home_path and return false
+      redirect_to home_path
+      return false
     end
   end
   
@@ -69,9 +70,19 @@ class ApplicationController < ActionController::Base
     elsif params[:format] == 'atom' && params[:key] && accept_key_auth_actions.include?(params[:action])
       # RSS key authentication does not start a session
       User.find_by_rss_key(params[:key])
+    elsif Setting.rest_api_enabled? && ['xml', 'json'].include?(params[:format]) && accept_key_auth_actions.include?(params[:action])
+      if params[:key].present?
+        # Use API key
+        User.find_by_api_key(params[:key])
+      else
+        # HTTP Basic, either username/password or API key/random
+        authenticate_with_http_basic do |username, password|
+          User.try_to_login(username, password) || User.find_by_api_key(username)
+        end
+      end
     end
   end
-  
+
   # Sets the logged in user
   def logged_user=(user)
     reset_session
@@ -113,7 +124,12 @@ class ApplicationController < ActionController::Base
       else
         url = url_for(:controller => params[:controller], :action => params[:action], :id => params[:id], :project_id => params[:project_id])
       end
-      redirect_to :controller => "account", :action => "login", :back_url => url
+      respond_to do |format|
+        format.html { redirect_to :controller => "account", :action => "login", :back_url => url }
+        format.atom { redirect_to :controller => "account", :action => "login", :back_url => url }
+        format.xml { head :unauthorized }
+        format.json { head :unauthorized }
+      end
       return false
     end
     true
@@ -166,7 +182,8 @@ class ApplicationController < ActionController::Base
         uri = URI.parse(back_url)
         # do not redirect user to another host or to the login or register page
         if (uri.relative? || (uri.host == request.host)) && !uri.path.match(%r{/(login|account/register)})
-          redirect_to(back_url) and return
+          redirect_to(back_url)
+          return
         end
       rescue URI::InvalidURIError
         # redirect to default
@@ -177,7 +194,7 @@ class ApplicationController < ActionController::Base
   
   def render_403
     @project = nil
-    render :template => "common/403", :layout => !request.xhr?, :status => 403
+    render :template => "common/403", :layout => (request.xhr? ? false : 'base'), :status => 403
     return false
   end
     
