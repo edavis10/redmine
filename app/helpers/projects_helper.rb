@@ -36,7 +36,16 @@ module ProjectsHelper
   end
   
   def parent_project_select_tag(project)
-    options = '<option></option>' + project_tree_options_for_select(project.allowed_parents, :selected => project.parent)
+    selected = project.parent
+    # retrieve the requested parent project
+    parent_id = (params[:project] && params[:project][:parent_id]) || params[:parent_id]
+    if parent_id
+      selected = (parent_id.blank? ? nil : Project.find(parent_id))
+    end
+    
+    options = ''
+    options << "<option value=''></option>" if project.allowed_parents.include?(nil)
+    options << project_tree_options_for_select(project.allowed_parents.compact, :selected => selected)
     content_tag('select', options, :name => 'project[parent_id]')
   end
   
@@ -74,11 +83,11 @@ module ProjectsHelper
   def version_options_for_select(versions, selected=nil)
     grouped = Hash.new {|h,k| h[k] = []}
     versions.each do |version|
-      grouped[version.project.name] << [h(version.name), version.id]
+      grouped[version.project.name] << [version.name, version.id]
     end
     # Add in the selected
     if selected && !versions.include?(selected)
-      grouped[selected.project.name] << [h(selected.name), selected.id]
+      grouped[selected.project.name] << [selected.name, selected.id]
     end
     
     if grouped.keys.size > 1

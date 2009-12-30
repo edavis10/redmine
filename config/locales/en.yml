@@ -308,6 +308,7 @@ en:
   setting_activity_days_default: Days displayed on project activity
   setting_display_subprojects_issues: Display subprojects issues on main projects by default
   setting_enabled_scm: Enabled SCM
+  setting_mail_handler_body_delimiters: "Truncate emails after one of these lines"
   setting_mail_handler_api_enabled: Enable WS for incoming emails
   setting_mail_handler_api_key: API key
   setting_sequential_project_identifiers: Generate sequential project identifiers
@@ -327,6 +328,7 @@ en:
   setting_rest_api_enabled: Enable REST web service
   
   permission_add_project: Create project
+  permission_add_subprojects: Create subprojects
   permission_edit_project: Edit project
   permission_select_project_modules: Select project modules
   permission_manage_members: Manage members
@@ -462,6 +464,7 @@ en:
   label_auth_source_new: New authentication mode
   label_auth_source_plural: Authentication modes
   label_subproject_plural: Subprojects
+  label_subproject_new: New subproject
   label_and_its_subprojects: "{{value}} and its subprojects"
   label_min_max_length: Min - Max length
   label_list: List
@@ -779,6 +782,7 @@ en:
   button_configure: Configure
   button_quote: Quote
   button_duplicate: Duplicate
+  button_show: Show
   
   status_active: active
   status_registered: registered
@@ -811,6 +815,7 @@ en:
   text_tracker_no_workflow: No workflow defined for this tracker
   text_unallowed_characters: Unallowed characters
   text_comma_separated: Multiple values allowed (comma separated).
+  text_line_separated: Multiple values allowed (one line for each value).
   text_issues_ref_in_commit_messages: Referencing and fixing issues in commit messages
   text_issue_added: "Issue {{id}} has been reported by {{author}}."
   text_issue_updated: "Issue {{id}} has been updated by {{author}}."
@@ -843,7 +848,7 @@ en:
   text_wiki_page_nullify_children: "Keep child pages as root pages"
   text_wiki_page_destroy_children: "Delete child pages and all their descendants"
   text_wiki_page_reassign_children: "Reassign child pages to this parent page"
-  text_show: Show
+  text_own_membership_delete_confirmation: "You are about to remove some or all of your permissions and may no longer be able to edit this project after that.\nAre you sure you want to continue?"
   
   default_role_manager: Manager
   default_role_developper: Developer

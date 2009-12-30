@@ -282,7 +282,7 @@ class ProjectTest < ActiveSupport::TestCase
     user = User.find(9)
     assert user.memberships.empty?
     User.current = user
-    assert Project.new.allowed_parents.empty?
+    assert Project.new.allowed_parents.compact.empty?
   end
   
   def test_users_by_role
@@ -521,6 +521,17 @@ class ProjectTest < ActiveSupport::TestCase
 
     assert project.activities(true).include?(overridden_activity), "Inactive Project specific Activity not found"
   end
+
+  test 'activities should not include active System activities if the project has an override that is inactive' do
+    project = Project.find(1)
+    system_activity = TimeEntryActivity.find_by_name('Design')
+    assert system_activity.active?
+    overridden_activity = TimeEntryActivity.generate!(:project => project, :parent => system_activity, :active => false)
+    assert overridden_activity.save!
+    
+    assert !project.activities.include?(overridden_activity), "Inactive Project specific Activity not found"
+    assert !project.activities.include?(system_activity), "System activity found when the project has an inactive override"
+  end
   
   def test_close_completed_versions
     Version.update_all("status = 'open'")
@@ -622,15 +633,15 @@ class ProjectTest < ActiveSupport::TestCase
       assert_not_equal source_relation_cross_project.id, copied_relation.id
     end
 
-    should "copy members" do
+    should "copy memberships" do
       assert @project.valid?
       assert @project.members.empty?
       assert @project.copy(@source_project)
 
-      assert_equal @source_project.members.size, @project.members.size
-      @project.members.each do |member|
-        assert member
-        assert_equal @project, member.project
+      assert_equal @source_project.memberships.size, @project.memberships.size
+      @project.memberships.each do |membership|
+        assert membership
+        assert_equal @project, membership.project
       end
     end
 

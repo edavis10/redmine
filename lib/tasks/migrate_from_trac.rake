@@ -37,7 +37,7 @@ namespace :redmine do
                           'closed' => closed_status
                           }
 
-        priorities = Enumeration.priorities
+        priorities = IssuePriority.all
         DEFAULT_PRIORITY = priorities[0]
         PRIORITY_MAPPING = {'lowest' => priorities[0],
                             'low' => priorities[0],
@@ -128,7 +128,7 @@ namespace :redmine do
         end
 
         def content_type
-          Redmine::MimeType.of(filename) || ''
+          ''
         end
 
         def exist?
