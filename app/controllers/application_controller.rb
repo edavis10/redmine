@@ -22,6 +22,7 @@ class ApplicationController < ActionController::Base
   include Redmine::I18n
 
   layout 'base'
+  exempt_from_layout 'builder'
   
   # Remove broken cookie after upgrade from 0.8.x (#4292)
   # See https://rails.lighthouseapp.com/projects/8994/tickets/3360
@@ -70,8 +71,8 @@ class ApplicationController < ActionController::Base
     elsif params[:format] == 'atom' && params[:key] && accept_key_auth_actions.include?(params[:action])
       # RSS key authentication does not start a session
       User.find_by_rss_key(params[:key])
-    elsif Setting.rest_api_enabled? && ['xml', 'json'].include?(params[:format]) && accept_key_auth_actions.include?(params[:action])
-      if params[:key].present?
+    elsif Setting.rest_api_enabled? && ['xml', 'json'].include?(params[:format])
+      if params[:key].present? && accept_key_auth_actions.include?(params[:action])
         # Use API key
         User.find_by_api_key(params[:key])
       else
@@ -194,21 +195,41 @@ class ApplicationController < ActionController::Base
   
   def render_403
     @project = nil
-    render :template => "common/403", :layout => (request.xhr? ? false : 'base'), :status => 403
+    respond_to do |format|
+      format.html { render :template => "common/403", :layout => (request.xhr? ? false : 'base'), :status => 403 }
+      format.atom { head 403 }
+      format.xml { head 403 }
+      format.json { head 403 }
+    end
     return false
   end
     
   def render_404
-    render :template => "common/404", :layout => !request.xhr?, :status => 404
+    respond_to do |format|
+      format.html { render :template => "common/404", :layout => !request.xhr?, :status => 404 }
+      format.atom { head 404 }
+      format.xml { head 404 }
+      format.json { head 404 }
+    end
     return false
   end
   
   def render_error(msg)
-    flash.now[:error] = msg
-    render :text => '', :layout => !request.xhr?, :status => 500
+    respond_to do |format|
+      format.html { 
+        flash.now[:error] = msg
+        render :text => '', :layout => !request.xhr?, :status => 500
+      }
+      format.atom { head 500 }
+      format.xml { head 500 }
+      format.json { head 500 }
+    end
   end
   
   def invalid_authenticity_token
+    if api_request?
+      logger.error "Form authenticity token is missing or is invalid. API calls must include a proper Content-type header (text/xml or text/json)."
+    end
     render_error "Invalid form authenticity token."
   end
   
@@ -289,5 +310,9 @@ class ApplicationController < ActionController::Base
   # Returns a string that can be used as filename value in Content-Disposition header
   def filename_for_content_disposition(name)
     request.env['HTTP_USER_AGENT'] =~ %r{MSIE} ? ERB::Util.url_encode(name) : name
+  end
+  
+  def api_request?
+    %w(xml json).include? params[:format]
   end
 end

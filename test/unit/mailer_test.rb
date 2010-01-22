@@ -20,7 +20,7 @@ require File.dirname(__FILE__) + '/../test_helper'
 class MailerTest < ActiveSupport::TestCase
   include Redmine::I18n
   include ActionController::Assertions::SelectorAssertions
-  fixtures :projects, :issues, :users, :members, :member_roles, :documents, :attachments, :news, :tokens, :journals, :journal_details, :changesets, :trackers, :issue_statuses, :enumerations, :messages, :boards, :repositories
+  fixtures :projects, :enabled_modules, :issues, :users, :members, :member_roles, :roles, :documents, :attachments, :news, :tokens, :journals, :journal_details, :changesets, :trackers, :issue_statuses, :enumerations, :messages, :boards, :repositories
   
   def test_generated_links_in_emails
     ActionMailer::Base.deliveries.clear
@@ -184,6 +184,12 @@ class MailerTest < ActiveSupport::TestCase
     
     should "notify issue watchers" do
       user = User.find(9)
+      # minimal email notification options
+      user.pref[:no_self_notified] = '1'
+      user.pref.save
+      user.mail_notification = false
+      user.save
+      
       Watcher.create!(:watchable => @issue, :user => user)
       assert Mailer.deliver_issue_add(@issue)
       assert last_email.bcc.include?(user.mail)
@@ -295,5 +301,19 @@ class MailerTest < ActiveSupport::TestCase
     mail = ActionMailer::Base.deliveries.last
     assert_not_nil mail
     mail
+  end
+  
+  def test_mailer_should_not_change_locale
+    Setting.default_language = 'en'
+    # Set current language to italian
+    set_language_if_valid 'it'
+    # Send an email to a french user
+    user = User.find(1)
+    user.language = 'fr'
+    Mailer.deliver_account_activated(user)
+    mail = ActionMailer::Base.deliveries.last
+    assert mail.body.include?('Votre compte')
+    
+    assert_equal :it, current_language
   end
 end

@@ -236,6 +236,14 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal 'application/pdf', @response.content_type
   end
   
+  def test_index_pdf_with_query_grouped_by_list_custom_field
+    get :index, :project_id => 1, :query_id => 9, :format => 'pdf'
+    assert_response :success
+    assert_not_nil assigns(:issues)
+    assert_not_nil assigns(:issue_count_by_group)
+    assert_equal 'application/pdf', @response.content_type
+  end
+  
   def test_index_sort
     get :index, :sort => 'tracker,id:desc'
     assert_response :success
@@ -641,6 +649,13 @@ class IssuesControllerTest < ActionController::TestCase
                                         :value => 'Value for field 2'}
   end
   
+  def test_post_new_should_ignore_non_safe_attributes
+    @request.session[:user_id] = 2
+    assert_nothing_raised do
+      post :new, :project_id => 1, :issue => { :tracker => "A param can not be a Tracker" }
+    end
+  end
+  
   def test_copy_routing
     assert_routing(
       {:method => :get, :path => '/projects/world_domination/issues/567/copy'},
@@ -940,6 +955,36 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal 4, issue.fixed_version_id
     assert_not_equal issue.project_id, issue.fixed_version.project_id
   end
+
+  def test_post_edit_should_redirect_back_using_the_back_url_parameter
+    issue = Issue.find(2)
+    @request.session[:user_id] = 2
+
+    post :edit,
+         :id => issue.id,
+         :issue => {
+           :fixed_version_id => 4
+         },
+         :back_url => '/issues'
+
+    assert_response :redirect
+    assert_redirected_to '/issues'
+  end
+  
+  def test_post_edit_should_not_redirect_back_using_the_back_url_parameter_off_the_host
+    issue = Issue.find(2)
+    @request.session[:user_id] = 2
+
+    post :edit,
+         :id => issue.id,
+         :issue => {
+           :fixed_version_id => 4
+         },
+         :back_url => 'http://google.com'
+
+    assert_response :redirect
+    assert_redirected_to :controller => 'issues', :action => 'show', :id => issue.id
+  end
   
   def test_get_bulk_edit
     @request.session[:user_id] = 2
@@ -1044,6 +1089,22 @@ class IssuesControllerTest < ActionController::TestCase
       assert_equal 4, issue.fixed_version_id
       assert_not_equal issue.project_id, issue.fixed_version.project_id
     end
+  end
+
+  def test_post_bulk_edit_should_redirect_back_using_the_back_url_parameter
+    @request.session[:user_id] = 2
+    post :bulk_edit, :ids => [1,2], :back_url => '/issues'
+
+    assert_response :redirect
+    assert_redirected_to '/issues'
+  end
+
+  def test_post_bulk_edit_should_not_redirect_back_using_the_back_url_parameter_off_the_host
+    @request.session[:user_id] = 2
+    post :bulk_edit, :ids => [1,2], :back_url => 'http://google.com'
+
+    assert_response :redirect
+    assert_redirected_to :controller => 'issues', :action => 'index', :project_id => Project.find(1).identifier
   end
 
   def test_move_routing
