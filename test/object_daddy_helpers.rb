@@ -1,15 +1,16 @@
 module ObjectDaddyHelpers
-  # TODO: The gem or official version of ObjectDaddy doesn't set
-  # protected attributes so they need to be wrapped.
+  # TODO: Remove these three once everyone has ported their code to use the
+  # new object_daddy version with protected attribute support
+  def User.generate_with_protected(attributes={})
+    User.generate(attributes)
+  end
+
   def User.generate_with_protected!(attributes={})
-    user = User.spawn(attributes) do |user|
-      user.login = User.next_login
-      attributes.each do |attr,v|
-        user.send("#{attr}=", v)
-      end
-    end
-    user.save!
-    user
+    User.generate!(attributes)
+  end
+
+  def User.spawn_with_protected(attributes={})
+    User.spawn(attributes)
   end
 
   # Generate the default Query

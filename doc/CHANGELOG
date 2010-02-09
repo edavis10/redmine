@@ -4,11 +4,35 @@ Redmine - project management software
 Copyright (C) 2006-2010  Jean-Philippe Lang
 http://www.redmine.org/
 
-== 0.9.1
+== 2010-02-07 v0.9.2
+
+* Fixed: Sub-project repository commits not displayed on parent project issues
+* Fixed: Potential security leak on my page calendar
+* Fixed: Project tree structure is broken by deleting the project with the subproject
+* Fixed: Error message shown duplicated when creating a new group
+* Fixed: Firefox cuts off large pages
+* Fixed: Invalid format parameter returns a DoubleRenderError on issues index
+* Fixed: Unnecessary Quote button on locked forum message
+* Fixed: Error raised when trying to view the gantt or calendar with a grouped query
+* Fixed: PDF support for Korean locale
+* Fixed: Deprecation warning in extra/svn/reposman.rb
+
+
+== 2010-01-30 v0.9.1
 
 * Vertical alignment for inline images in formatted text set to 'middle'
 * Fixed: Redmine.pm error "closing dbh with active statement handles at /usr/lib/perl5/Apache/Redmine.pm"
 * Fixed: copyright year in footer set to 2010
+* Fixed: Trac migration script may not output query lines
+* Fixed: Email notifications may affect language of notice messages on the UI
+* Fixed: Can not search for 2 letters word
+* Fixed: Attachments get saved on issue update even if validation fails
+* Fixed: Tab's 'border-bottom' not absent when selected
+* Fixed: Issue summary tables that list by user are not sorted
+* Fixed: Issue pdf export fails if target version is set
+* Fixed: Issue list export to PDF breaks when issues are sorted by a custom field
+* Fixed: SQL error when adding a group
+* Fixes: Min password length during password reset always displays as 4 chars
 
 
 == 2010-01-09 v0.9.0 (Release candidate)

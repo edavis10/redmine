@@ -57,13 +57,13 @@ class IssuesController < ApplicationController
     sort_update({'id' => "#{Issue.table_name}.id"}.merge(@query.available_columns.inject({}) {|h, c| h[c.name.to_s] = c.sortable; h}))
     
     if @query.valid?
-      limit = per_page_option
-      respond_to do |format|
-        format.html { }
-        format.xml { }
-        format.atom { limit = Setting.feeds_limit.to_i }
-        format.csv  { limit = Setting.issues_export_limit.to_i }
-        format.pdf  { limit = Setting.issues_export_limit.to_i }
+      limit = case params[:format]
+      when 'csv', 'pdf'
+        Setting.issues_export_limit.to_i
+      when 'atom'
+        Setting.feeds_limit.to_i
+      else
+        per_page_option
       end
       
       @issue_count = @query.issue_count
@@ -108,7 +108,7 @@ class IssuesController < ApplicationController
     @journals = @issue.journals.find(:all, :include => [:user, :details], :order => "#{Journal.table_name}.created_on ASC")
     @journals.each_with_index {|j,i| j.indice = i+1}
     @journals.reverse! if User.current.wants_comments_in_reverse_order?
-    @changesets = @issue.changesets
+    @changesets = @issue.changesets.visible.all
     @changesets.reverse! if User.current.wants_comments_in_reverse_order?
     @allowed_statuses = @issue.new_statuses_allowed_to(User.current)
     @edit_allowed = User.current.allowed_to?(:edit_issues, @project)
@@ -173,7 +173,7 @@ class IssuesController < ApplicationController
           format.xml  { render(:xml => @issue.errors, :status => :unprocessable_entity); return }
         end
       end
-    end	
+    end 
     @priorities = IssuePriority.all
     render :layout => !request.xhr?
   end
@@ -387,6 +387,7 @@ class IssuesController < ApplicationController
   def gantt
     @gantt = Redmine::Helpers::Gantt.new(params)
     retrieve_query
+    @query.group_by = nil
     if @query.valid?
       events = []
       # Issues that have start and due dates
@@ -426,6 +427,7 @@ class IssuesController < ApplicationController
     
     @calendar = Redmine::Helpers::Calendar.new(Date.civil(@year, @month, 1), current_language, :month)
     retrieve_query
+    @query.group_by = nil
     if @query.valid?
       events = []
       events += @query.issues(:include => [:tracker, :assigned_to, :priority],

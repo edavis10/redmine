@@ -30,7 +30,7 @@ class Message < ActiveRecord::Base
                 :description => :content,
                 :type => Proc.new {|o| o.parent_id.nil? ? 'message' : 'reply'},
                 :url => Proc.new {|o| {:controller => 'messages', :action => 'show', :board_id => o.board_id}.merge(o.parent_id.nil? ? {:id => o.id} : 
-                                                                                                                                       {:id => o.parent_id, :anchor => "message-#{o.id}"})}
+                                                                                                                                       {:id => o.parent_id, :r => o.id, :anchor => "message-#{o.id}"})}
 
   acts_as_activity_provider :find_options => {:include => [{:board => :project}, :author]},
                             :author_key => :author_id
@@ -88,13 +88,6 @@ class Message < ActiveRecord::Base
 
   def destroyable_by?(usr)
     usr && usr.logged? && (usr.allowed_to?(:delete_messages, project) || (self.author == usr && usr.allowed_to?(:delete_own_messages, project)))
-  end
-  
-  # Returns the mail adresses of users that should be notified
-  def recipients
-    notified = project.notified_users
-    notified.reject! {|user| !visible?(user)}
-    notified.collect(&:mail)
   end
   
   private

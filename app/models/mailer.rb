@@ -284,7 +284,21 @@ class Mailer < ActionMailer::Base
     if @references_objects
       mail.references = @references_objects.collect {|o| self.class.message_id_for(o)}
     end
-    super(mail)
+    
+    # Log errors when raise_delivery_errors is set to false, Rails does not
+    raise_errors = self.class.raise_delivery_errors
+    self.class.raise_delivery_errors = true
+    begin
+      return super(mail)
+    rescue Exception => e
+      if raise_errors
+        raise e
+      elsif mylogger
+        mylogger.error "The following error occured while sending email notification: \"#{e.message}\". Check your configuration in config/email.yml."
+      end
+    ensure
+      self.class.raise_delivery_errors = raise_errors
+    end
   end
 
   # Sends reminders to issue assignees
@@ -340,9 +354,14 @@ class Mailer < ActionMailer::Base
       recipients.delete(@author.mail) if recipients
       cc.delete(@author.mail) if cc
     end
+    
+    notified_users = [recipients, cc].flatten.compact.uniq
+    # Rails would log recipients only, not cc and bcc
+    mylogger.info "Sending email notification to: #{notified_users.join(', ')}" if mylogger
+    
     # Blind carbon copy recipients
     if Setting.bcc_recipients?
-      bcc([recipients, cc].flatten.compact.uniq)
+      bcc(notified_users)
       recipients []
       cc []
     end
@@ -392,6 +411,10 @@ class Mailer < ActionMailer::Base
   def references(object)
     @references_objects ||= []
     @references_objects << object
+  end
+    
+  def mylogger
+    RAILS_DEFAULT_LOGGER
   end
 end
 

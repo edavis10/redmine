@@ -32,29 +32,48 @@ class ReportsControllerTest < ActionController::TestCase
     User.current = nil
   end
   
-  def test_issue_report_routing
-    assert_routing(
-      {:method => :get, :path => '/projects/567/issues/report'},
-      :controller => 'reports', :action => 'issue_report', :id => '567'
-    )
-    assert_routing(
-      {:method => :get, :path => '/projects/567/issues/report/assigned_to'},
-      :controller => 'reports', :action => 'issue_report', :id => '567', :detail => 'assigned_to'
-    )
+  context "GET :issue_report without details" do
+    setup do
+      get :issue_report, :id => 1
+    end
+
+    should_respond_with :success
+    should_render_template :issue_report
+
+    [:issues_by_tracker, :issues_by_version, :issues_by_category, :issues_by_assigned_to,
+     :issues_by_author, :issues_by_subproject].each do |ivar|
+      should_assign_to ivar
+      should "set a value for #{ivar}" do
+        assert assigns[ivar.to_s].present?
+      end
+    end
+  end
+
+  context "GET :issue_report_details" do
+    %w(tracker version priority category assigned_to author subproject).each do |detail|
+      context "for #{detail}" do
+        setup do
+          get :issue_report_details, :id => 1, :detail => detail
+        end
+
+        should_respond_with :success
+        should_render_template :issue_report_details
+        should_assign_to :field
+        should_assign_to :rows
+        should_assign_to :data
+        should_assign_to :report_title
+      end
+    end
+
+    context "with an invalid detail" do
+      setup do
+        get :issue_report_details, :id => 1, :detail => 'invalid'
+      end
+
+      should_respond_with :redirect
+      should_redirect_to('the issue report') {{:controller => 'reports', :action => 'issue_report', :id => 'ecookbook'}}
+    end
     
   end
   
-  def test_issue_report
-    get :issue_report, :id => 1
-    assert_response :success
-    assert_template 'issue_report'
-  end
-  
-  def test_issue_report_details
-    %w(tracker version priority category assigned_to author subproject).each do |detail|
-      get :issue_report, :id => 1, :detail => detail
-      assert_response :success
-      assert_template 'issue_report_details'
-    end
-  end
 end

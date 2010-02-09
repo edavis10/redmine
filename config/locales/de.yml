@@ -755,8 +755,8 @@ de:
   text_unallowed_characters: Nicht erlaubte Zeichen
   text_comma_separated: Mehrere Werte erlaubt (durch Komma getrennt).
   text_issues_ref_in_commit_messages: Ticket-Beziehungen und -Status in Commit-Log-Meldungen
-  text_issue_added: "Ticket {{id}} wurde erstellt by {{author}}."
-  text_issue_updated: "Ticket {{id}} wurde aktualisiert by {{author}}."
+  text_issue_added: "Ticket {{id}} wurde erstellt von {{author}}."
+  text_issue_updated: "Ticket {{id}} wurde aktualisiert von {{author}}."
   text_wiki_destroy_confirmation: Sind Sie sicher, dass Sie dieses Wiki mit sämtlichem Inhalt löschen möchten?
   text_issue_category_destroy_question: "Einige Tickets ({{count}}) sind dieser Kategorie zugeodnet. Was möchten Sie tun?"
   text_issue_category_destroy_assignments: Kategorie-Zuordnung entfernen
@@ -902,3 +902,8 @@ de:
     Sie sind dabei, einige oder alle ihre Berechtigungen zu entfernen. Es ist möglich, dass Sie danach das Projekt nicht mehr sehen oder editieren dürfen. 
     Sind Sie wirklich sicher, dass Sie dies tun möchten?
   label_close_versions: Vollständige Versionen schließen
+  label_board_sticky: Sticky
+  label_board_locked: Locked
+  permission_export_wiki_pages: Export wiki pages
+  setting_cache_formatted_text: Cache formatted text
+  permission_manage_project_activities: Manage project activities
