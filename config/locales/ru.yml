@@ -138,8 +138,10 @@ ru:
         many:  "больше {{count}} лет"
         other: "больше {{count}} лет"
       almost_x_years:
-        one:   "almost 1 year"
-        other: "almost {{count}} years"
+        one:   "почти 1 год"
+        few:   "почти {{count}} года"
+        many:  "почти {{count}} лет"
+        other: "почти {{count}} года"
     prompts:
       year: "Год"
       month: "Месяц"
@@ -279,6 +281,7 @@ ru:
   error_scm_annotate: "Данные отсутствуют или не могут быть подписаны."
   error_scm_command_failed: "Ошибка доступа к хранилищу: {{value}}"
   error_scm_not_found: Хранилище не содержит записи и/или исправления.
+  error_unable_delete_issue_status: Невозможно удалить статус задачи
 
   field_account: Учетная запись
   field_activity: Деятельность
@@ -702,24 +705,34 @@ ru:
   label_wiki_page_plural: Страницы Wiki
   label_workflow: Последовательность действий
   label_x_closed_issues_abbr:
-    zero:  0 закрыто
-    one:   1 закрыт
+    zero:  "0 закрыто"
+    one:   "1 закрыт"
+    few:   "{{count}} закрыто"
+    many:  "{{count}} закрыто"
     other: "{{count}} закрыто"
   label_x_comments:
-    zero: нет комментариев
-    one: 1 комментарий
+    zero:  "нет комментариев"
+    one:   "1 комментарий"
+    few:   "{{count}} комментария"
+    many:  "{{count}} комментариев"
     other: "{{count}} комментариев"
   label_x_open_issues_abbr:
-    zero:  0 открыто
-    one:   1 открыт
+    zero:  "0 открыто"
+    one:   "1 открыт"
+    few:   "{{count} открыто"
+    many:  "{{count} открыто"
     other: "{{count}} открыто"
   label_x_open_issues_abbr_on_total:
-    zero:  0 открыто / {{total}}
-    one:   1 открыт / {{total}}
+    zero:  "0 открыто / {{total}}"
+    one:   "1 открыт / {{total}}"
+    few:   "{{count}} открыто / {{total}}"
+    many:  "{{count}} открыто / {{total}}"
     other: "{{count}} открыто / {{total}}"
   label_x_projects:
-    zero:  нет проектов
-    one:   1 проект
+    zero:  "нет проектов"
+    one:   "1 проект"
+    few:   "{{count}} проекта"
+    many:  "{{count}} проектов"
     other: "{{count}} проектов"
   label_year: Год
   label_yesterday: вчера
@@ -995,5 +1008,4 @@ ru:
   label_close_versions: Закрыть завершенные версии
   label_board_sticky: Прикреплена
   label_board_locked: Заблокирована
-  permission_export_wiki_pages: Экспорт wiki-страниц
 

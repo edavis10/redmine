@@ -53,13 +53,6 @@ class IssuesControllerTest < ActionController::TestCase
     User.current = nil
   end
   
-  def test_index_routing
-    assert_routing(
-      {:method => :get, :path => '/issues'},
-      :controller => 'issues', :action => 'index'
-    )
-  end
-
   def test_index
     Setting.default_language = 'en'
     
@@ -88,13 +81,6 @@ class IssuesControllerTest < ActionController::TestCase
     assert_tag :tag => 'a', :content => /Subproject issue/
   end
 
-  def test_index_with_project_routing
-    assert_routing(
-      {:method => :get, :path => '/projects/23/issues'},
-      :controller => 'issues', :action => 'index', :project_id => '23'
-    )
-  end
-  
   def test_index_should_not_list_issues_when_module_disabled
     EnabledModule.delete_all("name = 'issue_tracking' AND project_id = 1")
     get :index
@@ -104,13 +90,6 @@ class IssuesControllerTest < ActionController::TestCase
     assert_nil assigns(:project)
     assert_no_tag :tag => 'a', :content => /Can't print recipes/
     assert_tag :tag => 'a', :content => /Subproject issue/
-  end
-
-  def test_index_with_project_routing
-    assert_routing(
-      {:method => :get, :path => 'projects/23/issues'},
-      :controller => 'issues', :action => 'index', :project_id => '23'
-    )
   end
   
   def test_index_with_project
@@ -144,17 +123,6 @@ class IssuesControllerTest < ActionController::TestCase
     assert_tag :tag => 'a', :content => /Can't print recipes/
     assert_tag :tag => 'a', :content => /Subproject issue/
     assert_tag :tag => 'a', :content => /Issue of a private subproject/
-  end
-  
-  def test_index_with_project_routing_formatted
-    assert_routing(
-      {:method => :get, :path => 'projects/23/issues.pdf'},
-      :controller => 'issues', :action => 'index', :project_id => '23', :format => 'pdf'
-    )
-    assert_routing(
-      {:method => :get, :path => 'projects/23/issues.atom'},
-      :controller => 'issues', :action => 'index', :project_id => '23', :format => 'atom'
-    )
   end
   
   def test_index_with_project_and_filter
@@ -206,17 +174,6 @@ class IssuesControllerTest < ActionController::TestCase
     assert_response :success
     assert_not_nil assigns(:issues)
     assert_equal 'text/csv', @response.content_type
-  end
-  
-  def test_index_formatted
-    assert_routing(
-      {:method => :get, :path => 'issues.pdf'},
-      :controller => 'issues', :action => 'index', :format => 'pdf'
-    )
-    assert_routing(
-      {:method => :get, :path => 'issues.atom'},
-      :controller => 'issues', :action => 'index', :format => 'atom'
-    )
   end
   
   def test_index_pdf
@@ -347,24 +304,6 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal 'application/atom+xml', @response.content_type
   end
   
-  def test_show_routing
-    assert_routing(
-      {:method => :get, :path => '/issues/64'},
-      :controller => 'issues', :action => 'show', :id => '64'
-    )
-  end
-  
-  def test_show_routing_formatted
-    assert_routing(
-      {:method => :get, :path => '/issues/2332.pdf'},
-      :controller => 'issues', :action => 'show', :id => '2332', :format => 'pdf'
-    )
-    assert_routing(
-      {:method => :get, :path => '/issues/23123.atom'},
-      :controller => 'issues', :action => 'show', :id => '23123', :format => 'atom'
-    )
-  end
-  
   def test_show_by_anonymous
     get :show, :id => 1
     assert_response :success
@@ -439,17 +378,6 @@ class IssuesControllerTest < ActionController::TestCase
     assert @response.body.include?("&lt;img src=\"http://test.host/attachments/download/10\" alt=\"\" /&gt;"), "Body did not match. Body: #{@response.body}"
   end
   
-  def test_new_routing
-    assert_routing(
-      {:method => :get, :path => '/projects/1/issues/new'},
-      :controller => 'issues', :action => 'new', :project_id => '1'
-    )
-    assert_recognizes(
-      {:controller => 'issues', :action => 'new', :project_id => '1'},
-      {:method => :post, :path => '/projects/1/issues'}
-    )
-  end
-
   def test_show_export_to_pdf
     get :show, :id => 3, :format => 'pdf'
     assert_response :success
@@ -656,13 +584,6 @@ class IssuesControllerTest < ActionController::TestCase
     end
   end
   
-  def test_copy_routing
-    assert_routing(
-      {:method => :get, :path => '/projects/world_domination/issues/567/copy'},
-      :controller => 'issues', :action => 'new', :project_id => 'world_domination', :copy_from => '567'
-    )
-  end
-  
   def test_copy_issue
     @request.session[:user_id] = 2
     get :new, :project_id => 1, :copy_from => 1
@@ -670,17 +591,6 @@ class IssuesControllerTest < ActionController::TestCase
     assert_not_nil assigns(:issue)
     orig = Issue.find(1)
     assert_equal orig.subject, assigns(:issue).subject
-  end
-  
-  def test_edit_routing
-    assert_routing(
-      {:method => :get, :path => '/issues/1/edit'},
-      :controller => 'issues', :action => 'edit', :id => '1'
-    )
-    assert_recognizes( #TODO: use a PUT on the issue URI isntead, need to adjust form
-      {:controller => 'issues', :action => 'edit', :id => '1'},
-      {:method => :post, :path => '/issues/1/edit'}
-    )
   end
   
   def test_get_edit
@@ -733,13 +643,6 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal 'This is the test_new issue', issue.subject
   end
   
-  def test_reply_routing
-    assert_routing(
-      {:method => :post, :path => '/issues/1/quoted'},
-      :controller => 'issues', :action => 'reply', :id => '1'
-    )
-  end
-  
   def test_reply_to_issue
     @request.session[:user_id] = 2
     get :reply, :id => 1
@@ -754,7 +657,7 @@ class IssuesControllerTest < ActionController::TestCase
     assert_select_rjs :show, "update"
   end
 
-  def test_post_edit_without_custom_fields_param
+  def test_put_update_without_custom_fields_param
     @request.session[:user_id] = 2
     ActionMailer::Base.deliveries.clear
     
@@ -765,7 +668,7 @@ class IssuesControllerTest < ActionController::TestCase
     
     assert_difference('Journal.count') do
       assert_difference('JournalDetail.count', 2) do
-        post :edit, :id => 1, :issue => {:subject => new_subject,
+        put :update, :id => 1, :issue => {:subject => new_subject,
                                          :priority_id => '6',
                                          :category_id => '1' # no change
                                         }
@@ -783,14 +686,14 @@ class IssuesControllerTest < ActionController::TestCase
     assert mail.body.include?("Subject changed from #{old_subject} to #{new_subject}")
   end
   
-  def test_post_edit_with_custom_field_change
+  def test_put_update_with_custom_field_change
     @request.session[:user_id] = 2
     issue = Issue.find(1)
     assert_equal '125', issue.custom_value_for(2).value
     
     assert_difference('Journal.count') do
       assert_difference('JournalDetail.count', 3) do
-        post :edit, :id => 1, :issue => {:subject => 'Custom field change',
+        put :update, :id => 1, :issue => {:subject => 'Custom field change',
                                          :priority_id => '6',
                                          :category_id => '1', # no change
                                          :custom_field_values => { '2' => 'New custom value' }
@@ -806,12 +709,12 @@ class IssuesControllerTest < ActionController::TestCase
     assert mail.body.include?("Searchable field changed from 125 to New custom value")
   end
   
-  def test_post_edit_with_status_and_assignee_change
+  def test_put_update_with_status_and_assignee_change
     issue = Issue.find(1)
     assert_equal 1, issue.status_id
     @request.session[:user_id] = 2
     assert_difference('TimeEntry.count', 0) do
-      post :edit,
+      put :update,
            :id => 1,
            :issue => { :status_id => 2, :assigned_to_id => 3 },
            :notes => 'Assigned to dlopper',
@@ -830,10 +733,10 @@ class IssuesControllerTest < ActionController::TestCase
     assert mail.subject.include?("(#{ IssueStatus.find(2).name })")
   end
   
-  def test_post_edit_with_note_only
+  def test_put_update_with_note_only
     notes = 'Note added by IssuesControllerTest#test_update_with_note_only'
     # anonymous user
-    post :edit,
+    put :update,
          :id => 1,
          :notes => notes
     assert_redirected_to :action => 'show', :id => '1'
@@ -846,11 +749,11 @@ class IssuesControllerTest < ActionController::TestCase
     assert mail.body.include?(notes)
   end
   
-  def test_post_edit_with_note_and_spent_time
+  def test_put_update_with_note_and_spent_time
     @request.session[:user_id] = 2
     spent_hours_before = Issue.find(1).spent_hours
     assert_difference('TimeEntry.count') do
-      post :edit,
+      put :update,
            :id => 1,
            :notes => '2.5 hours added',
            :time_entry => { :hours => '2.5', :comments => '', :activity_id => TimeEntryActivity.first }
@@ -869,7 +772,7 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal spent_hours_before + 2.5, issue.spent_hours
   end
   
-  def test_post_edit_with_attachment_only
+  def test_put_update_with_attachment_only
     set_tmp_attachments_directory
     
     # Delete all fixtured journals, a race condition can occur causing the wrong
@@ -877,7 +780,7 @@ class IssuesControllerTest < ActionController::TestCase
     Journal.delete_all
 
     # anonymous user
-    post :edit,
+    put :update,
          :id => 1,
          :notes => '',
          :attachments => {'1' => {'file' => uploaded_test_file('testfile.txt', 'text/plain')}}
@@ -892,12 +795,12 @@ class IssuesControllerTest < ActionController::TestCase
     assert mail.body.include?('testfile.txt')
   end
   
-  def test_post_edit_with_no_change
+  def test_put_update_with_no_change
     issue = Issue.find(1)
     issue.journals.clear
     ActionMailer::Base.deliveries.clear
     
-    post :edit,
+    put :update,
          :id => 1,
          :notes => ''
     assert_redirected_to :action => 'show', :id => '1'
@@ -908,26 +811,26 @@ class IssuesControllerTest < ActionController::TestCase
     assert ActionMailer::Base.deliveries.empty?
   end
 
-  def test_post_edit_should_send_a_notification
+  def test_put_update_should_send_a_notification
     @request.session[:user_id] = 2
     ActionMailer::Base.deliveries.clear
     issue = Issue.find(1)
     old_subject = issue.subject
     new_subject = 'Subject modified by IssuesControllerTest#test_post_edit'
     
-    post :edit, :id => 1, :issue => {:subject => new_subject,
+    put :update, :id => 1, :issue => {:subject => new_subject,
                                      :priority_id => '6',
                                      :category_id => '1' # no change
                                     }
     assert_equal 1, ActionMailer::Base.deliveries.size
   end
   
-  def test_post_edit_with_invalid_spent_time
+  def test_put_update_with_invalid_spent_time
     @request.session[:user_id] = 2
     notes = 'Note added by IssuesControllerTest#test_post_edit_with_invalid_spent_time'
     
     assert_no_difference('Journal.count') do
-      post :edit,
+      put :update,
            :id => 1,
            :notes => notes,
            :time_entry => {"comments"=>"", "activity_id"=>"", "hours"=>"2z"}
@@ -940,11 +843,11 @@ class IssuesControllerTest < ActionController::TestCase
     assert_tag :input, :attributes => { :name => 'time_entry[hours]', :value => "2z" }
   end
   
-  def test_post_edit_should_allow_fixed_version_to_be_set_to_a_subproject
+  def test_put_update_should_allow_fixed_version_to_be_set_to_a_subproject
     issue = Issue.find(2)
     @request.session[:user_id] = 2
 
-    post :edit,
+    put :update,
          :id => issue.id,
          :issue => {
            :fixed_version_id => 4
@@ -956,11 +859,11 @@ class IssuesControllerTest < ActionController::TestCase
     assert_not_equal issue.project_id, issue.fixed_version.project_id
   end
 
-  def test_post_edit_should_redirect_back_using_the_back_url_parameter
+  def test_put_update_should_redirect_back_using_the_back_url_parameter
     issue = Issue.find(2)
     @request.session[:user_id] = 2
 
-    post :edit,
+    put :update,
          :id => issue.id,
          :issue => {
            :fixed_version_id => 4
@@ -971,11 +874,11 @@ class IssuesControllerTest < ActionController::TestCase
     assert_redirected_to '/issues'
   end
   
-  def test_post_edit_should_not_redirect_back_using_the_back_url_parameter_off_the_host
+  def test_put_update_should_not_redirect_back_using_the_back_url_parameter_off_the_host
     issue = Issue.find(2)
     @request.session[:user_id] = 2
 
-    post :edit,
+    put :update,
          :id => issue.id,
          :issue => {
            :fixed_version_id => 4
@@ -996,20 +899,21 @@ class IssuesControllerTest < ActionController::TestCase
     field = CustomField.find(9)
     assert !field.is_for_all?
     assert_equal 'date', field.field_format
-    assert_tag :input, :attributes => {:name => 'custom_field_values[9]'}
+    assert_tag :input, :attributes => {:name => 'issue[custom_field_values][9]'}
     
     # System wide custom field
     assert CustomField.find(1).is_for_all?
-    assert_tag :select, :attributes => {:name => 'custom_field_values[1]'}
+    assert_tag :select, :attributes => {:name => 'issue[custom_field_values][1]'}
   end
 
   def test_bulk_edit
     @request.session[:user_id] = 2
     # update issues priority
-    post :bulk_edit, :ids => [1, 2], :priority_id => 7,
-                                     :assigned_to_id => '',
-                                     :custom_field_values => {'2' => ''},
-                                     :notes => 'Bulk editing'
+    post :bulk_edit, :ids => [1, 2], :notes => 'Bulk editing',
+                                     :issue => {:priority_id => 7,
+                                                :assigned_to_id => '',
+                                                :custom_field_values => {'2' => ''}}
+                                     
     assert_response 302
     # check that the issues were updated
     assert_equal [7, 7], Issue.find_all_by_id([1, 2]).collect {|i| i.priority.id}
@@ -1027,10 +931,12 @@ class IssuesControllerTest < ActionController::TestCase
     post(:bulk_edit,
          {
            :ids => [1, 2],
-           :priority_id => 7,
-           :assigned_to_id => '',
-           :custom_field_values => {'2' => ''},
-           :notes => 'Bulk editing'
+           :notes => 'Bulk editing',
+           :issue => {
+             :priority_id => 7,
+             :assigned_to_id => '',
+             :custom_field_values => {'2' => ''}
+           }
          })
 
     assert_response 302
@@ -1040,10 +946,11 @@ class IssuesControllerTest < ActionController::TestCase
   def test_bulk_edit_status
     @request.session[:user_id] = 2
     # update issues priority
-    post :bulk_edit, :ids => [1, 2], :priority_id => '',
-                                     :assigned_to_id => '',
-                                     :status_id => '5',
-                                     :notes => 'Bulk editing status'
+    post :bulk_edit, :ids => [1, 2], :notes => 'Bulk editing status',
+                                     :issue => {:priority_id => '',
+                                                :assigned_to_id => '',
+                                                :status_id => '5'}
+                                     
     assert_response 302
     issue = Issue.find(1)
     assert issue.closed?
@@ -1052,10 +959,11 @@ class IssuesControllerTest < ActionController::TestCase
   def test_bulk_edit_custom_field
     @request.session[:user_id] = 2
     # update issues priority
-    post :bulk_edit, :ids => [1, 2], :priority_id => '',
-                                     :assigned_to_id => '',
-                                     :custom_field_values => {'2' => '777'},
-                                     :notes => 'Bulk editing custom field'
+    post :bulk_edit, :ids => [1, 2], :notes => 'Bulk editing custom field',
+                                     :issue => {:priority_id => '',
+                                                :assigned_to_id => '',
+                                                :custom_field_values => {'2' => '777'}}
+                                     
     assert_response 302
     
     issue = Issue.find(1)
@@ -1070,7 +978,7 @@ class IssuesControllerTest < ActionController::TestCase
     assert_not_nil Issue.find(2).assigned_to
     @request.session[:user_id] = 2
     # unassign issues
-    post :bulk_edit, :ids => [1, 2], :notes => 'Bulk unassigning', :assigned_to_id => 'none'
+  post :bulk_edit, :ids => [1, 2], :notes => 'Bulk unassigning', :issue => {:assigned_to_id => 'none'}
     assert_response 302
     # check that the issues were updated
     assert_nil Issue.find(2).assigned_to
@@ -1079,9 +987,7 @@ class IssuesControllerTest < ActionController::TestCase
   def test_post_bulk_edit_should_allow_fixed_version_to_be_set_to_a_subproject
     @request.session[:user_id] = 2
 
-    post :bulk_edit,
-         :ids => [1,2],
-         :fixed_version_id => 4
+    post :bulk_edit, :ids => [1,2], :issue => {:fixed_version_id => 4}
 
     assert_response :redirect
     issues = Issue.find([1,2])
@@ -1107,17 +1013,6 @@ class IssuesControllerTest < ActionController::TestCase
     assert_redirected_to :controller => 'issues', :action => 'index', :project_id => Project.find(1).identifier
   end
 
-  def test_move_routing
-    assert_routing(
-      {:method => :get, :path => '/issues/1/move'},
-      :controller => 'issues', :action => 'move', :id => '1'
-    )
-    assert_recognizes(
-      {:controller => 'issues', :action => 'move', :id => '1'},
-      {:method => :post, :path => '/issues/1/move'}
-    )
-  end
-  
   def test_move_one_issue_to_another_project
     @request.session[:user_id] = 2
     post :move, :id => 1, :new_project_id => 2, :tracker_id => '', :assigned_to_id => '', :status_id => '', :start_date => '', :due_date => ''
@@ -1284,13 +1179,6 @@ class IssuesControllerTest < ActionController::TestCase
     assert_tag :tag => 'a', :content => 'Delete',
                             :attributes => { :href => '#',
                                              :class => 'icon-del disabled' }
-  end
-  
-  def test_destroy_routing
-    assert_recognizes( #TODO: use DELETE on issue URI (need to change forms)
-      {:controller => 'issues', :action => 'destroy', :id => '1'},
-      {:method => :post, :path => '/issues/1/destroy'}
-    )
   end
   
   def test_destroy_issue_with_no_time_entries

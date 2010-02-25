@@ -136,6 +136,7 @@ class Repository < ActiveRecord::Base
         end
       end
       @committers = nil
+      @found_committer_users = nil
       true
     else
       false
@@ -146,24 +147,34 @@ class Repository < ActiveRecord::Base
   # It will return nil if the committer is not yet mapped and if no User
   # with the same username or email was found
   def find_committer_user(committer)
-    if committer
+    unless committer.blank?
+      @found_committer_users ||= {}
+      return @found_committer_users[committer] if @found_committer_users.has_key?(committer)
+      
+      user = nil
       c = changesets.find(:first, :conditions => {:committer => committer}, :include => :user)
       if c && c.user
-        c.user
+        user = c.user
       elsif committer.strip =~ /^([^<]+)(<(.*)>)?$/
         username, email = $1.strip, $3
         u = User.find_by_login(username)
         u ||= User.find_by_mail(email) unless email.blank?
-        u
+        user = u
       end
+      @found_committer_users[committer] = user
+      user
     end
   end
   
-  # fetch new changesets for all repositories
-  # can be called periodically by an external script
+  # Fetches new changesets for all repositories of active projects
+  # Can be called periodically by an external script
   # eg. ruby script/runner "Repository.fetch_changesets"
   def self.fetch_changesets
-    find(:all).each(&:fetch_changesets)
+    Project.active.has_module(:repository).find(:all, :include => :repository).each do |project|
+      if project.repository
+        project.repository.fetch_changesets
+      end
+    end
   end
   
   # scan changeset comments to find related and fixed issues for all repositories

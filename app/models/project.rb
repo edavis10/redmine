@@ -56,9 +56,9 @@ class Project < ActiveRecord::Base
                      :delete_permission => :manage_files
 
   acts_as_customizable
-  acts_as_searchable :columns => ['name', 'description'], :project_key => 'id', :permission => nil
+  acts_as_searchable :columns => ['name', 'identifier', 'description'], :project_key => 'id', :permission => nil
   acts_as_event :title => Proc.new {|o| "#{l(:label_project)}: #{o.name}"},
-                :url => Proc.new {|o| {:controller => 'projects', :action => 'show', :id => o.id}},
+                :url => Proc.new {|o| {:controller => 'projects', :action => 'show', :id => o}},
                 :author => nil
 
   attr_protected :status, :enabled_module_names
@@ -249,7 +249,7 @@ class Project < ActiveRecord::Base
     return @allowed_parents if @allowed_parents
     @allowed_parents = Project.find(:all, :conditions => Project.allowed_to_condition(User.current, :add_subprojects))
     @allowed_parents = @allowed_parents - self_and_descendants
-    if User.current.allowed_to?(:add_project, nil, :global => true)
+    if User.current.allowed_to?(:add_project, nil, :global => true) || (!new_record? && parent.nil?)
       @allowed_parents << nil
     end
     unless parent.nil? || @allowed_parents.empty? || @allowed_parents.include?(parent)
@@ -512,11 +512,23 @@ class Project < ActiveRecord::Base
     unless project.wiki.nil?
       self.wiki ||= Wiki.new
       wiki.attributes = project.wiki.attributes.dup.except("id", "project_id")
+      wiki_pages_map = {}
       project.wiki.pages.each do |page|
+        # Skip pages without content
+        next if page.content.nil?
         new_wiki_content = WikiContent.new(page.content.attributes.dup.except("id", "page_id", "updated_on"))
         new_wiki_page = WikiPage.new(page.attributes.dup.except("id", "wiki_id", "created_on", "parent_id"))
         new_wiki_page.content = new_wiki_content
         wiki.pages << new_wiki_page
+        wiki_pages_map[page.id] = new_wiki_page
+      end
+      wiki.save
+      # Reproduce page hierarchy
+      project.wiki.pages.each do |page|
+        if page.parent_id && wiki_pages_map[page.id]
+          wiki_pages_map[page.id].parent = wiki_pages_map[page.parent_id]
+          wiki_pages_map[page.id].save
+        end
       end
     end
   end
@@ -627,7 +639,7 @@ class Project < ActiveRecord::Base
   
   def allowed_permissions
     @allowed_permissions ||= begin
-      module_names = enabled_modules.collect {|m| m.name}
+      module_names = enabled_modules.all(:select => :name).collect {|m| m.name}
       Redmine::AccessControl.modules_permissions(module_names).collect {|p| p.name}
     end
   end

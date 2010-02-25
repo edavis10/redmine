@@ -144,7 +144,6 @@ class Issue < ActiveRecord::Base
 
   def tracker_id=(tid)
     self.tracker = nil
-    write_attribute(:tracker_id, tid)
     result = write_attribute(:tracker_id, tid)
     @custom_field_values = nil
     result
@@ -159,7 +158,8 @@ class Issue < ActiveRecord::Base
     end
     send :attributes_without_tracker_first=, new_attributes, *args
   end
-  alias_method_chain :attributes=, :tracker_first
+  # Do not redefine alias chain on reload (see #4838)
+  alias_method_chain(:attributes=, :tracker_first) unless method_defined?(:attributes_without_tracker_first=)
   
   def estimated_hours=(h)
     write_attribute :estimated_hours, (h.is_a?(String) ? h.to_hours : h)
@@ -188,7 +188,13 @@ class Issue < ActiveRecord::Base
   # TODO: move workflow/permission checks from controllers to here
   def safe_attributes=(attrs, user=User.current)
     return if attrs.nil?
-    self.attributes = attrs.reject {|k,v| !SAFE_ATTRIBUTES.include?(k)}
+    attrs = attrs.reject {|k,v| !SAFE_ATTRIBUTES.include?(k)}
+    if attrs['status_id']
+      unless new_statuses_allowed_to(user).collect(&:id).include?(attrs['status_id'].to_i)
+        attrs.delete('status_id')
+      end
+    end
+    self.attributes = attrs
   end
   
   def done_ratio

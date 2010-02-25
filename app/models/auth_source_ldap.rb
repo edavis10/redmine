@@ -33,30 +33,12 @@ class AuthSourceLdap < AuthSource
   
   def authenticate(login, password)
     return nil if login.blank? || password.blank?
-    attrs = []
-    # get user's DN
-    ldap_con = initialize_ldap_con(self.account, self.account_password)
-    login_filter = Net::LDAP::Filter.eq( self.attr_login, login ) 
-    object_filter = Net::LDAP::Filter.eq( "objectClass", "*" ) 
-    dn = String.new
-    ldap_con.search( :base => self.base_dn, 
-                     :filter => object_filter & login_filter, 
-                     # only ask for the DN if on-the-fly registration is disabled
-                     :attributes=> (onthefly_register? ? ['dn', self.attr_firstname, self.attr_lastname, self.attr_mail] : ['dn'])) do |entry|
-      dn = entry.dn
-      attrs = [:firstname => AuthSourceLdap.get_attr(entry, self.attr_firstname),
-               :lastname => AuthSourceLdap.get_attr(entry, self.attr_lastname),
-               :mail => AuthSourceLdap.get_attr(entry, self.attr_mail),
-               :auth_source_id => self.id ] if onthefly_register?
+    attrs = get_user_dn(login)
+    
+    if attrs.first && attrs.first[:dn] && authenticate_dn(attrs.first[:dn], password)
+      logger.debug "Authentication successful for '#{login}'" if logger && logger.debug?
+      return attrs
     end
-    return nil if dn.empty?
-    logger.debug "DN found for #{login}: #{dn}" if logger && logger.debug?
-    # authenticate user
-    ldap_con = initialize_ldap_con(dn, password)
-    return nil unless ldap_con.bind
-    # return user's attributes
-    logger.debug "Authentication successful for '#{login}'" if logger && logger.debug?
-    attrs    
   rescue  Net::LDAP::LdapError => text
     raise "LdapError: " + text
   end
@@ -88,6 +70,56 @@ class AuthSourceLdap < AuthSource
               }
     options.merge!(:auth => { :method => :simple, :username => ldap_user, :password => ldap_password }) unless ldap_user.blank? && ldap_password.blank?
     Net::LDAP.new options
+  end
+
+  def get_user_attributes_from_ldap_entry(entry)
+    [
+     :dn => entry.dn,
+     :firstname => AuthSourceLdap.get_attr(entry, self.attr_firstname),
+     :lastname => AuthSourceLdap.get_attr(entry, self.attr_lastname),
+     :mail => AuthSourceLdap.get_attr(entry, self.attr_mail),
+     :auth_source_id => self.id
+    ]
+  end
+
+  # Return the attributes needed for the LDAP search.  It will only
+  # include the user attributes if on-the-fly registration is enabled
+  def search_attributes
+    if onthefly_register?
+      ['dn', self.attr_firstname, self.attr_lastname, self.attr_mail]
+    else
+      ['dn']
+    end
+  end
+
+  # Check if a DN (user record) authenticates with the password
+  def authenticate_dn(dn, password)
+    if dn.present? && password.present?
+      initialize_ldap_con(dn, password).bind
+    end
+  end
+
+  # Get the user's dn and any attributes for them, given their login
+  def get_user_dn(login)
+    ldap_con = initialize_ldap_con(self.account, self.account_password)
+    login_filter = Net::LDAP::Filter.eq( self.attr_login, login ) 
+    object_filter = Net::LDAP::Filter.eq( "objectClass", "*" ) 
+    attrs = []
+    
+    ldap_con.search( :base => self.base_dn, 
+                     :filter => object_filter & login_filter, 
+                     :attributes=> search_attributes) do |entry|
+
+      if onthefly_register?
+        attrs = get_user_attributes_from_ldap_entry(entry)
+      else
+        attrs = [:dn => entry.dn]
+      end
+
+      logger.debug "DN found for #{login}: #{attrs.first[:dn]}" if logger && logger.debug?
+    end
+
+    attrs
   end
   
   def self.get_attr(entry, attr_name)

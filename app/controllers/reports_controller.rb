@@ -17,11 +17,9 @@
 
 class ReportsController < ApplicationController
   menu_item :issues
-  before_filter :find_project, :authorize
+  before_filter :find_project, :authorize, :find_issue_statuses
 
   def issue_report
-    @statuses = IssueStatus.find(:all, :order => 'position')
-    
     @trackers = @project.trackers
     @versions = @project.shared_versions.sort
     @priorities = IssuePriority.all
@@ -29,95 +27,69 @@ class ReportsController < ApplicationController
     @assignees = @project.members.collect { |m| m.user }.sort
     @authors = @project.members.collect { |m| m.user }.sort
     @subprojects = @project.descendants.active
-    issues_by_tracker
-    issues_by_version
-    issues_by_priority
-    issues_by_category
-    issues_by_assigned_to
-    issues_by_author
-    issues_by_subproject
-      
+
+    @issues_by_tracker = Issue.by_tracker(@project)
+    @issues_by_version = Issue.by_version(@project)
+    @issues_by_priority = Issue.by_priority(@project)
+    @issues_by_category = Issue.by_category(@project)
+    @issues_by_assigned_to = Issue.by_assigned_to(@project)
+    @issues_by_author = Issue.by_author(@project)
+    @issues_by_subproject = Issue.by_subproject(@project) || []
+
     render :template => "reports/issue_report"
   end  
 
   def issue_report_details
-    @statuses = IssueStatus.find(:all, :order => 'position')
-
     case params[:detail]
     when "tracker"
       @field = "tracker_id"
       @rows = @project.trackers
-      @data = issues_by_tracker
+      @data = Issue.by_tracker(@project)
       @report_title = l(:field_tracker)
-      render :template => "reports/issue_report_details"
     when "version"
       @field = "fixed_version_id"
       @rows = @project.shared_versions.sort
-      @data = issues_by_version
+      @data = Issue.by_version(@project)
       @report_title = l(:field_version)
-      render :template => "reports/issue_report_details"
     when "priority"
       @field = "priority_id"
       @rows = IssuePriority.all
-      @data = issues_by_priority
+      @data = Issue.by_priority(@project)
       @report_title = l(:field_priority)
-      render :template => "reports/issue_report_details"   
     when "category"
       @field = "category_id"
       @rows = @project.issue_categories
-      @data = issues_by_category
+      @data = Issue.by_category(@project)
       @report_title = l(:field_category)
-      render :template => "reports/issue_report_details"   
     when "assigned_to"
       @field = "assigned_to_id"
       @rows = @project.members.collect { |m| m.user }.sort
-      @data = issues_by_assigned_to
+      @data = Issue.by_assigned_to(@project)
       @report_title = l(:field_assigned_to)
-      render :template => "reports/issue_report_details"
     when "author"
       @field = "author_id"
       @rows = @project.members.collect { |m| m.user }.sort
-      @data = issues_by_author
+      @data = Issue.by_author(@project)
       @report_title = l(:field_author)
-      render :template => "reports/issue_report_details"  
     when "subproject"
       @field = "project_id"
       @rows = @project.descendants.active
-      @data = issues_by_subproject
+      @data = Issue.by_subproject(@project) || []
       @report_title = l(:field_subproject)
-      render :template => "reports/issue_report_details"  
-    else
-      redirect_to :action => 'issue_report', :id => @project
     end
 
-  end
-private
-  def issues_by_tracker
-    @issues_by_tracker ||= Issue.by_tracker(@project)
+    respond_to do |format|
+      if @field
+        format.html {}
+      else
+        format.html { redirect_to :action => 'issue_report', :id => @project }
+      end
+    end
   end
 
-  def issues_by_version
-    @issues_by_version ||= Issue.by_version(@project)
-  end
-  	
-  def issues_by_priority    
-    @issues_by_priority ||= Issue.by_priority(@project)
-  end
-	
-  def issues_by_category   
-    @issues_by_category ||= Issue.by_category(@project)
-  end
-  
-  def issues_by_assigned_to
-    @issues_by_assigned_to ||= Issue.by_assigned_to(@project)
-  end
-  
-  def issues_by_author
-    @issues_by_author ||= Issue.by_author(@project)
-  end
-  
-  def issues_by_subproject
-    @issues_by_subproject ||= Issue.by_subproject(@project)
-    @issues_by_subproject ||= []
+  private
+
+  def find_issue_statuses
+    @statuses = IssueStatus.find(:all, :order => 'position')
   end
 end

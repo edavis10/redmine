@@ -7,7 +7,11 @@ http://www.redmine.org/
 
 == Requirements
 
-* Ruby on Rails 2.3.5
+* Ruby 1.8.6 or 1.8.7
+
+* Ruby on Rails 2.3.5 (official downloadable Redmine releases are packaged with
+  the appropriate Rails version)
+  
 * A database:
   * MySQL (tested with MySQL 5)
   * PostgreSQL (tested with PostgreSQL 8.1)
@@ -26,15 +30,15 @@ Optional:
 3. Configure database parameters in config/database.yml
    for "production" environment (default database is MySQL)
 
-4. Create the database structure. Under the application main directory:
-   rake db:migrate RAILS_ENV="production"
-   It will create tables and an administrator account.
-   
-5. Generate a session store secret
+4. Generate a session store secret
    Redmine stores session data in cookies by default, which requires
    a secret to be generated. Run:
    rake config/initializers/session_store.rb
-
+   
+5. Create the database structure. Under the application main directory:
+   rake db:migrate RAILS_ENV="production"
+   It will create tables and an administrator account.
+   
 6. Setting up permissions
    The user who runs Redmine must have write permission on the following
    subdirectories: files, log, tmp (create the last one if not present).

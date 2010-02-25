@@ -1,12 +1,14 @@
 require 'redmine/access_control'
 require 'redmine/menu_manager'
 require 'redmine/activity'
+require 'redmine/search'
 require 'redmine/mime_type'
 require 'redmine/core_ext'
 require 'redmine/themes'
 require 'redmine/hook'
 require 'redmine/plugin'
 require 'redmine/wiki_formatting'
+require 'redmine/scm/base'
 
 begin
   require_library_or_gem 'RMagick' unless Object.const_defined?(:Magick)
@@ -21,7 +23,13 @@ else
   FCSV = CSV
 end
 
-REDMINE_SUPPORTED_SCM = %w( Subversion Darcs Mercurial Cvs Bazaar Git Filesystem )
+Redmine::Scm::Base.add "Subversion"
+Redmine::Scm::Base.add "Darcs"
+Redmine::Scm::Base.add "Mercurial"
+Redmine::Scm::Base.add "Cvs"
+Redmine::Scm::Base.add "Bazaar"
+Redmine::Scm::Base.add "Git"
+Redmine::Scm::Base.add "Filesystem"
 
 # Permissions
 Redmine::AccessControl.map do |map|
@@ -44,9 +52,9 @@ Redmine::AccessControl.map do |map|
                                   :queries => :index,
                                   :reports => [:issue_report, :issue_report_details]}
     map.permission :add_issues, {:issues => [:new, :update_form]}
-    map.permission :edit_issues, {:issues => [:edit, :reply, :bulk_edit, :update_form]}
+    map.permission :edit_issues, {:issues => [:edit, :update, :reply, :bulk_edit, :update_form]}
     map.permission :manage_issue_relations, {:issue_relations => [:new, :destroy]}
-    map.permission :add_issue_notes, {:issues => [:edit, :reply]}
+    map.permission :add_issue_notes, {:issues => [:edit, :update, :reply]}
     map.permission :edit_issue_notes, {:journals => :edit}, :require => :loggedin
     map.permission :edit_own_issue_notes, {:journals => :edit}, :require => :loggedin
     map.permission :move_issues, {:issues => :move}, :require => :loggedin
@@ -169,6 +177,16 @@ Redmine::Activity.map do |activity|
   activity.register :wiki_edits, :class_name => 'WikiContent::Version', :default => false
   activity.register :messages, :default => false
   activity.register :time_entries, :default => false
+end
+
+Redmine::Search.map do |search|
+  search.register :issues
+  search.register :news
+  search.register :documents
+  search.register :changesets
+  search.register :wiki_pages
+  search.register :messages
+  search.register :projects
 end
 
 Redmine::WikiFormatting.map do |format|

@@ -19,7 +19,7 @@ class IssuesController < ApplicationController
   menu_item :new_issue, :only => :new
   default_search_scope :issues
   
-  before_filter :find_issue, :only => [:show, :edit, :reply]
+  before_filter :find_issue, :only => [:show, :edit, :update, :reply]
   before_filter :find_issues, :only => [:bulk_edit, :move, :destroy]
   before_filter :find_project, :only => [:new, :update_form, :preview]
   before_filter :authorize, :except => [:index, :changes, :gantt, :calendar, :preview, :context_menu]
@@ -226,7 +226,7 @@ class IssuesController < ApplicationController
       end
       # failure
       respond_to do |format|
-        format.html { }
+        format.html { render :action => 'edit' }
         format.xml  { render :xml => @issue.errors, :status => :unprocessable_entity }
       end
     end
@@ -235,6 +235,13 @@ class IssuesController < ApplicationController
     flash.now[:error] = l(:notice_locking_conflict)
     # Remove the previously added attachments if issue was not updated
     attachments.each(&:destroy)
+  end
+
+  #--
+  # Start converting to the Rails REST controllers
+  #++
+  def update
+    edit
   end
 
   def reply
@@ -260,29 +267,16 @@ class IssuesController < ApplicationController
   # Bulk edit a set of issues
   def bulk_edit
     if request.post?
-      tracker = params[:tracker_id].blank? ? nil : @project.trackers.find_by_id(params[:tracker_id])
-      status = params[:status_id].blank? ? nil : IssueStatus.find_by_id(params[:status_id])
-      priority = params[:priority_id].blank? ? nil : IssuePriority.find_by_id(params[:priority_id])
-      assigned_to = (params[:assigned_to_id].blank? || params[:assigned_to_id] == 'none') ? nil : User.find_by_id(params[:assigned_to_id])
-      category = (params[:category_id].blank? || params[:category_id] == 'none') ? nil : @project.issue_categories.find_by_id(params[:category_id])
-      fixed_version = (params[:fixed_version_id].blank? || params[:fixed_version_id] == 'none') ? nil : @project.shared_versions.find_by_id(params[:fixed_version_id])
-      custom_field_values = params[:custom_field_values] ? params[:custom_field_values].reject {|k,v| v.blank?} : nil
+      attributes = (params[:issue] || {}).reject {|k,v| v.blank?}
+      attributes.keys.each {|k| attributes[k] = '' if attributes[k] == 'none'}
+      attributes[:custom_field_values].reject! {|k,v| v.blank?} if attributes[:custom_field_values]
       
-      unsaved_issue_ids = []      
+      unsaved_issue_ids = []
       @issues.each do |issue|
         journal = issue.init_journal(User.current, params[:notes])
-        issue.tracker = tracker if tracker
-        issue.priority = priority if priority
-        issue.assigned_to = assigned_to if assigned_to || params[:assigned_to_id] == 'none'
-        issue.category = category if category || params[:category_id] == 'none'
-        issue.fixed_version = fixed_version if fixed_version || params[:fixed_version_id] == 'none'
-        issue.start_date = params[:start_date] unless params[:start_date].blank?
-        issue.due_date = params[:due_date] unless params[:due_date].blank?
-        issue.done_ratio = params[:done_ratio] unless params[:done_ratio].blank?
-        issue.custom_field_values = custom_field_values if custom_field_values && !custom_field_values.empty?
+        issue.safe_attributes = attributes
         call_hook(:controller_issues_bulk_edit_before_save, { :params => params, :issue => issue })
-        # Don't save any change to the issue if the user is not authorized to apply the requested status
-        unless (status.nil? || (issue.new_statuses_allowed_to(User.current).include?(status) && issue.status = status)) && issue.save
+        unless issue.save
           # Keep unsaved issue ids to display them in flash error
           unsaved_issue_ids << issue.id
         end
@@ -327,6 +321,7 @@ class IssuesController < ApplicationController
           end 
         end
         issue.init_journal(User.current)
+        call_hook(:controller_issues_move_before_save, { :params => params, :issue => issue, :target_project => @target_project, :copy => !!@copy })
         if r = issue.move_to(@target_project, new_tracker, {:copy => @copy, :attributes => changed_attributes})
           moved_issues << r
         else

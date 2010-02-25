@@ -137,9 +137,11 @@ table.files tr.file td.digest { font-size: 80%; }
 table.members td.roles, table.memberships td.roles { width: 45%; }
 
 tr.message { height: 2.6em; }
-tr.message td.last_message { font-size: 80%; }
-tr.message.locked td.subject a { background-image: url(../images/locked.png); }
-tr.message.sticky td.subject a { background-image: url(../images/sticky.png); font-weight: bold; }
+tr.message td.subject { padding-left: 20px; }
+tr.message td.created_on { white-space: nowrap; }
+tr.message td.last_message { font-size: 80%; white-space: nowrap; }
+tr.message.locked td.subject { background: url(../images/locked.png) no-repeat 0 1px; }
+tr.message.sticky td.subject { background: url(../images/bullet_go.png) no-repeat 0 1px; font-weight: bold; }
 
 tr.version.closed, tr.version.closed a { color: #999; }
 tr.version td.name { padding-left: 20px; }
@@ -297,9 +299,9 @@ table#time-report tbody tr.last-level { font-style: normal; color: #555; }
 table#time-report tbody tr.total { font-style: normal; font-weight: bold; color: #555; background-color:#EEEEEE; }
 table#time-report .hours-dec { font-size: 0.9em; }
 
-form#issue-form .attributes { margin-bottom: 8px; }
-form#issue-form .attributes p { padding-top: 1px; padding-bottom: 2px; }
-form#issue-form .attributes select { min-width: 30%; }
+form .attributes { margin-bottom: 8px; }
+form .attributes p { padding-top: 1px; padding-bottom: 2px; }
+form .attributes select { min-width: 50%; }
 
 ul.projects { margin: 0; padding-left: 1em; }
 ul.projects.root { margin: 0;  padding: 0; }
@@ -479,6 +481,10 @@ table.cal td p.day-num {font-size: 1.1em; text-align:right;}
 table.cal td.odd p.day-num {color: #bbb;}
 table.cal td.today {background:#ffffdd;}
 table.cal td.today p.day-num {font-weight: bold;}
+table.cal .starting a, p.cal.legend .starting {background: url(../images/bullet_go.png) no-repeat -1px -2px; padding-left:16px;}
+table.cal .ending a, p.cal.legend .ending {background: url(../images/bullet_end.png) no-repeat -1px -2px; padding-left:16px;}
+table.cal .starting.ending a, p.cal.legend .starting.ending {background: url(../images/bullet_diamond.png) no-repeat -1px -2px; padding-left:16px;}
+p.cal.legend span {display:block;}
 
 /***** Tooltips ******/
 .tooltip{position:relative;z-index:24;}
@@ -728,6 +734,7 @@ background-image:url('../images/close_hl.png');
   padding:0;
   margin:0;
   line-height:0.8em;
+  white-space:nowrap;
 }
 
 .task_late { background:#f66 url(../images/task_late.png); border: 1px solid #f66; }
