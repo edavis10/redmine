@@ -47,6 +47,15 @@ class Changeset < ActiveRecord::Base
   def revision=(r)
     write_attribute :revision, (r.nil? ? nil : r.to_s)
   end
+
+  # Returns the identifier of this changeset; depending on repository backends
+  def identifier
+    if repository.class.respond_to? :changeset_identifier
+      repository.class.changeset_identifier self
+    else
+      revision.to_s
+    end
+  end
   
   def comments=(comment)
     write_attribute(:comments, Changeset.normalize_comments(comment))

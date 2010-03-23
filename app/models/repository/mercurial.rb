@@ -31,6 +31,11 @@ class Repository::Mercurial < Repository
   def self.scm_name
     'Mercurial'
   end
+
+  # Returns the identifier for the given mercurial changeset
+  def self.changeset_identifier(changeset)
+    changeset.scmid
+  end
   
   def entries(path=nil, identifier=nil)
     entries=scm.entries(path, identifier)
