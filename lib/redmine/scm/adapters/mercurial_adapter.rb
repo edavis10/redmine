@@ -178,21 +178,18 @@ module Redmine
         end
         
         def annotate(path, identifier=nil)
-          path ||= ''
-          cmd = "#{HG_BIN} -R #{target('')}"
-          cmd << " annotate -n -u"
-          cmd << " -r " + (identifier ? identifier.to_s : "tip")
-          cmd << " -r #{identifier.to_i}" if identifier
-          cmd << " #{target(path)}"
           blame = Annotate.new
-          shellout(cmd) do |io|
-            io.each_line do |line|
-              next unless line =~ %r{^([^:]+)\s(\d+):(.*)$}
-              blame.add_line($3.rstrip, Revision.new(:identifier => $2.to_i, :author => $1.strip))
+          hg 'annotate', '-ncu', '-r', hgrev(identifier), without_leading_slash(path) do |io|
+            io.each do |line|
+              next unless line =~ %r{^([^:]+)\s(\d+)\s([0-9a-f]+):(.*)$}
+              r = Revision.new(:author => $1.strip, :revision => $2, :scmid => $3,
+                               :identifier => $3)
+              blame.add_line($4.rstrip, r)
             end
           end
-          return nil if $? && $?.exitstatus != 0
           blame
+        rescue HgCommandAborted
+          nil  # means not found or cannot be annotated
         end
 
         class Revision < Redmine::Scm::Adapters::Revision
