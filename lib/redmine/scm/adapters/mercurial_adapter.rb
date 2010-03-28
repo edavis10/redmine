@@ -65,19 +65,17 @@ module Redmine
         end
         
         def info
-          cmd = "#{HG_BIN} -R #{target('')} root"
-          root_url = nil
-          shellout(cmd) do |io|
-            root_url = io.read
-          end
-          return nil if $? && $?.exitstatus != 0
-          info = Info.new({:root_url => root_url.chomp,
-                            :lastrev => revisions(nil,nil,nil,{:limit => 1}).last
-                          })
-          info
-        rescue CommandFailed
-          return nil
+          tip = summary['tip'].first
+          Info.new(:root_url => summary['root'].first['path'],
+                   :lastrev => Revision.new(:identifier => tip['rev'],
+                                            :revision => tip['rev'],
+                                            :scmid => tip['node']))
         end
+
+        def summary
+          @summary ||= fetchg 'rhsummary'
+        end
+        private :summary
         
         def entries(path=nil, identifier=nil)
           path ||= ''
@@ -210,6 +208,32 @@ module Redmine
           ret
         end
         private :hg
+
+        # Runs 'hg' helper, then parses output to return
+        def fetchg(*args)
+          # command output example:
+          #   :tip: rev node
+          #   100 abcdef012345
+          #   :tags: rev node name
+          #   100 abcdef012345 tip
+          #   ...
+          data = Hash.new { |h, k| h[k] = [] }
+          hg(*args) do |io|
+            key, attrs = nil, nil
+            io.each do |line|
+              next if line.chomp.empty?
+              if /^:(\w+): ([\w ]+)/ =~ line
+                key = $1
+                attrs = $2.split(/ /)
+              elsif key
+                alist = attrs.zip(line.chomp.split(/ /, attrs.size))
+                data[key] << Hash[*alist.flatten]
+              end
+            end
+          end
+          data
+        end
+        private :fetchg
 
         # Returns correct revision identifier
         def hgrev(identifier)
