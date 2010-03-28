@@ -24,10 +24,14 @@ module Redmine
         
         # Mercurial executable name
         HG_BIN = "hg"
+        HG_HELPER_EXT = "#{RAILS_ROOT}/extra/mercurial/redminehelper.py"
         TEMPLATES_DIR = File.dirname(__FILE__) + "/mercurial"
         TEMPLATE_NAME = "hg-template"
         TEMPLATE_EXTENSION = "tmpl"
         
+        # raised if hg command exited with error, e.g. unknown revision.
+        class HgCommandAborted < CommandFailed; end
+
         class << self
           def client_version
             @client_version ||= hgversion
@@ -168,16 +172,12 @@ module Redmine
         end
         
         def cat(path, identifier=nil)
-          cmd = "#{HG_BIN} -R #{target('')} cat"
-          cmd << " -r " + (identifier ? identifier.to_s : "tip")
-          cmd << " #{target(path)}"
-          cat = nil
-          shellout(cmd) do |io|
+          hg 'cat', '-r', hgrev(identifier), without_leading_slash(path) do |io|
             io.binmode
-            cat = io.read
+            io.read
           end
-          return nil if $? && $?.exitstatus != 0
-          cat
+        rescue HgCommandAborted
+          nil  # means not found
         end
         
         def annotate(path, identifier=nil)
@@ -204,6 +204,25 @@ module Redmine
             "#{revision}:#{scmid}"
           end
         end
+
+        # Runs 'hg' command with the given args
+        def hg(*args, &block)
+          full_args = [HG_BIN, '--cwd', url, '--encoding', 'utf-8']
+          full_args << '--config' << "extensions.redminehelper=#{HG_HELPER_EXT}"
+          full_args += args
+          ret = shellout(full_args.map { |e| shell_quote e.to_s }.join(' '), &block)
+          if $? && $?.exitstatus != 0
+            raise HgCommandAborted, "hg exited with non-zero status: #{$?.exitstatus}"
+          end
+          ret
+        end
+        private :hg
+
+        # Returns correct revision identifier
+        def hgrev(identifier)
+          identifier.blank? ? 'tip' : identifier.to_s
+        end
+        private :hgrev
       end
     end
   end
