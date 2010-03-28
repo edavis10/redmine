@@ -153,22 +153,19 @@ module Redmine
         end
         
         def diff(path, identifier_from, identifier_to=nil)
-          path ||= ''
+          hg_args = ['diff', '--nodates']
           if identifier_to
-            identifier_to = identifier_to.to_i 
+            hg_args << '-r' << hgrev(identifier_to) << '-r' << hgrev(identifier_from)
           else
-            identifier_to = identifier_from.to_i - 1
+            hg_args << '-c' << hgrev(identifier_from)
           end
-          cmd = "#{HG_BIN} -R #{target('')} diff -r #{identifier_to} -r #{identifier_from} --nodates"
-          cmd << " -I #{target(path)}" unless path.empty?
-          diff = []
-          shellout(cmd) do |io|
-            io.each_line do |line|
-              diff << line
-            end
+          hg_args << without_leading_slash(path) unless path.blank?
+
+          hg *hg_args do |io|
+            io.collect
           end
-          return nil if $? && $?.exitstatus != 0
-          diff
+        rescue HgCommandAborted
+          nil  # means not found
         end
         
         def cat(path, identifier=nil)
