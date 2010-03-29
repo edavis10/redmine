@@ -60,12 +60,14 @@ class ApplicationHelperTest < HelperTestCase
       'sftp://foo.bar' => '<a class="external" href="sftp://foo.bar">sftp://foo.bar</a>',
       # two exclamation marks
       'http://example.net/path!602815048C7B5C20!302.html' => '<a class="external" href="http://example.net/path!602815048C7B5C20!302.html">http://example.net/path!602815048C7B5C20!302.html</a>',
+      # escaping
+      'http://foo"bar' => '<a class="external" href="http://foo&quot;bar">http://foo"bar</a>',
     }
     to_test.each { |text, result| assert_equal "<p>#{result}</p>", textilizable(text) }
   end
   
   def test_auto_mailto
-    assert_equal '<p><a href="mailto:test@foo.bar" class="email">test@foo.bar</a></p>', 
+    assert_equal '<p><a class="email" href="mailto:test@foo.bar">test@foo.bar</a></p>', 
       textilizable('test@foo.bar')
   end
   
@@ -130,6 +132,8 @@ RAW
       "\"system administrator\":mailto:sysadmin@example.com?subject=redmine%20permissions" => "<a href=\"mailto:sysadmin@example.com?subject=redmine%20permissions\">system administrator</a>",
       # two exclamation marks
       '"a link":http://example.net/path!602815048C7B5C20!302.html' => '<a href="http://example.net/path!602815048C7B5C20!302.html" class="external">a link</a>',
+      # escaping
+      '"test":http://foo"bar' => '<a href="http://foo&quot;bar" class="external">test</a>',
     }
     to_test.each { |text, result| assert_equal "<p>#{result}</p>", textilizable(text) }
   end
@@ -158,7 +162,7 @@ RAW
     
     to_test = {
       # tickets
-      '#3, #3 and #3.'              => "#{issue_link}, #{issue_link} and #{issue_link}.",
+      '#3, [#3], (#3) and #3.'      => "#{issue_link}, [#{issue_link}], (#{issue_link}) and #{issue_link}.",
       # changesets
       'r1'                          => changeset_link,
       'r1.'                         => "#{changeset_link}.",
@@ -209,6 +213,14 @@ RAW
     }
     @project = Project.find(1)
     to_test.each { |text, result| assert_equal "<p>#{result}</p>", textilizable(text), "#{text} failed" }
+  end
+  
+  def test_attachment_links
+    attachment_link = link_to('error281.txt', {:controller => 'attachments', :action => 'download', :id => '1'}, :class => 'attachment')
+    to_test = {
+      'attachment:error281.txt'      => attachment_link
+    }
+    to_test.each { |text, result| assert_equal "<p>#{result}</p>", textilizable(text, :attachments => Issue.find(3).attachments), "#{text} failed" }
   end
   
   def test_wiki_links
@@ -289,16 +301,57 @@ EXPECTED
     assert_equal expected.gsub(%r{[\r\n\t]}, ''), textilizable(raw).gsub(%r{[\r\n\t]}, '')
   end
   
+  def test_pre_content_should_not_parse_wiki_and_redmine_links
+    raw = <<-RAW
+[[CookBook documentation]]
+  
+#1
+
+<pre>
+[[CookBook documentation]]
+  
+#1
+</pre>
+RAW
+
+    expected = <<-EXPECTED
+<p><a href="/projects/ecookbook/wiki/CookBook_documentation" class="wiki-page">CookBook documentation</a></p>
+<p><a href="/issues/1" class="issue status-1 priority-1" title="Can't print recipes (New)">#1</a></p>
+<pre>
+[[CookBook documentation]]
+
+#1
+</pre>
+EXPECTED
+                                 
+    @project = Project.find(1)
+    assert_equal expected.gsub(%r{[\r\n\t]}, ''), textilizable(raw).gsub(%r{[\r\n\t]}, '')
+  end
+  
+  def test_non_closing_pre_blocks_should_be_closed
+    raw = <<-RAW
+<pre><code>
+RAW
+
+    expected = <<-EXPECTED
+<pre><code>
+</code></pre>
+EXPECTED
+                                 
+    @project = Project.find(1)
+    assert_equal expected.gsub(%r{[\r\n\t]}, ''), textilizable(raw).gsub(%r{[\r\n\t]}, '')
+  end
+  
   def test_syntax_highlight
     raw = <<-RAW
 <pre><code class="ruby">
 # Some ruby code here
-</pre></code>
+</code></pre>
 RAW
 
     expected = <<-EXPECTED
-<pre><code class="ruby CodeRay"><span class="no">1</span> <span class="c"># Some ruby code here</span>
-</pre></code>
+<pre><code class="ruby syntaxhl"><span class=\"CodeRay\"><span class="no">1</span> <span class="c"># Some ruby code here</span></span>
+</code></pre>
 EXPECTED
 
     assert_equal expected.gsub(%r{[\r\n\t]}, ''), textilizable(raw).gsub(%r{[\r\n\t]}, '')

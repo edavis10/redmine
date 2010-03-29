@@ -17,10 +17,41 @@
 
 class IssueCategoriesController < ApplicationController
   menu_item :settings
-  before_filter :find_project, :authorize
+  model_object IssueCategory
+  before_filter :find_model_object, :except => :new
+  before_filter :find_project_from_association, :except => :new
+  before_filter :find_project, :only => :new
+  before_filter :authorize
   
   verify :method => :post, :only => :destroy
 
+  def new
+    @category = @project.issue_categories.build(params[:category])
+    if request.post?
+      if @category.save
+        respond_to do |format|
+          format.html do
+            flash[:notice] = l(:notice_successful_create)
+            redirect_to :controller => 'projects', :action => 'settings', :tab => 'categories', :id => @project
+          end
+          format.js do
+            # IE doesn't support the replace_html rjs method for select box options
+            render(:update) {|page| page.replace "issue_category_id",
+              content_tag('select', '<option></option>' + options_from_collection_for_select(@project.issue_categories, 'id', 'name', @category.id), :id => 'issue_category_id', :name => 'issue[category_id]')
+            }
+          end
+        end
+      else
+        respond_to do |format|
+          format.html
+          format.js do
+            render(:update) {|page| page.alert(@category.errors.full_messages.join('\n')) }
+          end
+        end
+      end
+    end
+  end
+  
   def edit
     if request.post? and @category.update_attributes(params[:category])
       flash[:notice] = l(:notice_successful_update)
@@ -43,10 +74,16 @@ class IssueCategoriesController < ApplicationController
   end
 
 private
+  # Wrap ApplicationController's find_model_object method to set
+  # @category instead of just @issue_category
+  def find_model_object
+    super
+    @category = @object
+  end    
+  
   def find_project
-    @category = IssueCategory.find(params[:id])
-    @project = @category.project
+    @project = Project.find(params[:project_id])
   rescue ActiveRecord::RecordNotFound
     render_404
-  end    
+  end
 end

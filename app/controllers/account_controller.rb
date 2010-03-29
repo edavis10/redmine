@@ -25,23 +25,15 @@ class AccountController < ApplicationController
   # Login request and validation
   def login
     if request.get?
-      # Logout user
-      self.logged_user = nil
+      logout_user
     else
-      # Authenticate user
-      if Setting.openid? && using_open_id?
-        open_id_authenticate(params[:openid_url])
-      else
-        password_authentication
-      end
+      authenticate_user
     end
   end
 
   # Log out current user and redirect to welcome page
   def logout
-    cookies.delete :autologin
-    Token.delete_all(["user_id = ? AND action = ?", User.current.id, 'autologin']) if User.current.logged?
-    self.logged_user = nil
+    logout_user
     redirect_to home_url
   end
   
@@ -134,6 +126,22 @@ class AccountController < ApplicationController
   end
   
   private
+  
+  def logout_user
+    if User.current.logged?
+      cookies.delete :autologin
+      Token.delete_all(["user_id = ? AND action = ?", User.current.id, 'autologin'])
+      self.logged_user = nil
+    end
+  end
+  
+  def authenticate_user
+    if Setting.openid? && using_open_id?
+      open_id_authenticate(params[:openid_url])
+    else
+      password_authentication
+    end
+  end
 
   def password_authentication
     user = User.try_to_login(params[:username], params[:password])

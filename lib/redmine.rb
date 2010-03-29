@@ -39,21 +39,22 @@ Redmine::AccessControl.map do |map|
   map.permission :edit_project, {:projects => [:settings, :edit]}, :require => :member
   map.permission :select_project_modules, {:projects => :modules}, :require => :member
   map.permission :manage_members, {:projects => :settings, :members => [:new, :edit, :destroy, :autocomplete_for_member]}, :require => :member
-  map.permission :manage_versions, {:projects => [:settings, :add_version], :versions => [:edit, :close_completed, :destroy]}, :require => :member
+  map.permission :manage_versions, {:projects => :settings, :versions => [:new, :edit, :close_completed, :destroy]}, :require => :member
   map.permission :add_subprojects, {:projects => :add}, :require => :member
   
   map.project_module :issue_tracking do |map|
     # Issue categories
-    map.permission :manage_categories, {:projects => [:settings, :add_issue_category], :issue_categories => [:edit, :destroy]}, :require => :member
+    map.permission :manage_categories, {:projects => :settings, :issue_categories => [:new, :edit, :destroy]}, :require => :member
     # Issues
     map.permission :view_issues, {:projects => :roadmap, 
-                                  :issues => [:index, :changes, :show, :context_menu],
+                                  :issues => [:index, :changes, :show, :context_menu, :auto_complete],
                                   :versions => [:show, :status_by],
                                   :queries => :index,
                                   :reports => [:issue_report, :issue_report_details]}
     map.permission :add_issues, {:issues => [:new, :update_form]}
     map.permission :edit_issues, {:issues => [:edit, :update, :reply, :bulk_edit, :update_form]}
     map.permission :manage_issue_relations, {:issue_relations => [:new, :destroy]}
+    map.permission :manage_subtasks, {}
     map.permission :add_issue_notes, {:issues => [:edit, :update, :reply]}
     map.permission :edit_issue_notes, {:journals => :edit}, :require => :loggedin
     map.permission :edit_own_issue_notes, {:journals => :edit}, :require => :loggedin

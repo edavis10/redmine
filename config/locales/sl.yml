@@ -64,6 +64,9 @@ sl:
         other: "almost {{count}} years"
 
   number: 
+    format:
+      separator: ','
+      delimiter: '.'
     human: 
       format: 
         precision: 1
@@ -121,8 +124,8 @@ sl:
   general_lang_name: 'Slovenščina'
   general_csv_separator: ','
   general_csv_decimal_separator: '.'
-  general_csv_encoding: ISO-8859-1
-  general_pdf_encoding: ISO-8859-1
+  general_csv_encoding: UTF-8
+  general_pdf_encoding: UFT-8
   general_first_day_of_week: '1'
   
   notice_account_updated: Račun je bil uspešno posodobljen.
@@ -884,3 +887,8 @@ sl:
   setting_cache_formatted_text: Cache formatted text
   permission_manage_project_activities: Manage project activities
   error_unable_delete_issue_status: Unable to delete issue status
+  label_profile: Profile
+  permission_manage_subtasks: Manage subtasks
+  field_parent_issue: Parent task
+  label_subtask_plural: Subtasks
+  label_project_copy_notifications: Send email notifications during the project copy

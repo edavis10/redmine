@@ -18,7 +18,8 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class AuthSourceLdapTest < ActiveSupport::TestCase
-
+  fixtures :auth_sources
+  
   def setup
   end
   
@@ -37,38 +38,20 @@ class AuthSourceLdapTest < ActiveSupport::TestCase
   if ldap_configured?
     context '#authenticate' do
       setup do
-        @auth = AuthSourceLdap.generate!(:name => 'on the fly',
-                                         :host => '127.0.0.1',
-                                         :port => 389,
-                                         :base_dn => 'OU=Person,DC=redmine,DC=org',
-                                         :attr_login => 'uid',
-                                         :attr_firstname => 'givenName',
-                                         :attr_lastname => 'sn',
-                                         :attr_mail => 'mail',
-                                         :onthefly_register => true)
-
+        @auth = AuthSourceLdap.find(1)
       end
 
       context 'with a valid LDAP user' do
-        should 'return the firstname user attributes' do
-          response =  @auth.authenticate('example1','123456')
-          assert response.is_a?(Array), "An array was not returned"
-          assert response.first.present?, "No user data returned"
-          assert_equal 'Example', response.first[:firstname]
-        end
-
-        should 'return the lastname user attributes' do
-          response =  @auth.authenticate('example1','123456')
-          assert response.is_a?(Array), "An array was not returned"
-          assert response.first.present?, "No user data returned"
-          assert_equal 'One', response.first[:lastname]
-        end
-
-        should 'return mail user attributes' do
-          response =  @auth.authenticate('example1','123456')
-          assert response.is_a?(Array), "An array was not returned"
-          assert response.first.present?, "No user data returned"
-          assert_equal 'example1@redmine.org', response.first[:mail]
+        should 'return the user attributes' do
+          attributes =  @auth.authenticate('example1','123456')
+          assert attributes.is_a?(Hash), "An hash was not returned"
+          assert_equal 'Example', attributes[:firstname]
+          assert_equal 'One', attributes[:lastname]
+          assert_equal 'example1@redmine.org', attributes[:mail]
+          assert_equal @auth.id, attributes[:auth_source_id]
+          attributes.keys.each do |attribute|
+            assert User.new.respond_to?("#{attribute}="), "Unexpected :#{attribute} attribute returned"
+          end
         end
       end
 

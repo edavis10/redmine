@@ -115,18 +115,20 @@ class ProjectsController < ApplicationController
         redirect_to :controller => 'admin', :action => 'projects'
       end  
     else
-      @project = Project.new(params[:project])
-      @project.enabled_module_names = params[:enabled_modules]
-      if validate_parent_id && @project.copy(@source_project, :only => params[:only])
-        @project.set_allowed_parent!(params[:project]['parent_id']) if params[:project].has_key?('parent_id')
-        flash[:notice] = l(:notice_successful_create)
-        redirect_to :controller => 'admin', :action => 'projects'
-      elsif !@project.new_record?
-        # Project was created
-        # But some objects were not copied due to validation failures
-        # (eg. issues from disabled trackers)
-        # TODO: inform about that
-        redirect_to :controller => 'admin', :action => 'projects'
+      Mailer.with_deliveries(params[:notifications] == '1') do
+        @project = Project.new(params[:project])
+        @project.enabled_module_names = params[:enabled_modules]
+        if validate_parent_id && @project.copy(@source_project, :only => params[:only])
+          @project.set_allowed_parent!(params[:project]['parent_id']) if params[:project].has_key?('parent_id')
+          flash[:notice] = l(:notice_successful_create)
+          redirect_to :controller => 'admin', :action => 'projects'
+        elsif !@project.new_record?
+          # Project was created
+          # But some objects were not copied due to validation failures
+          # (eg. issues from disabled trackers)
+          # TODO: inform about that
+          redirect_to :controller => 'admin', :action => 'projects'
+        end
       end
     end
   rescue ActiveRecord::RecordNotFound
@@ -204,6 +206,7 @@ class ProjectsController < ApplicationController
   
   def modules
     @project.enabled_module_names = params[:enabled_modules]
+    flash[:notice] = l(:notice_successful_update)
     redirect_to :action => 'settings', :id => @project, :tab => 'modules'
   end
 
@@ -238,74 +241,15 @@ class ProjectsController < ApplicationController
     # hide project in layout
     @project = nil
   end
-	
-  # Add a new issue category to @project
-  def add_issue_category
-    @category = @project.issue_categories.build(params[:category])
-    if request.post?
-      if @category.save
-    	  respond_to do |format|
-          format.html do
-            flash[:notice] = l(:notice_successful_create)
-            redirect_to :action => 'settings', :tab => 'categories', :id => @project
-          end
-          format.js do
-            # IE doesn't support the replace_html rjs method for select box options
-            render(:update) {|page| page.replace "issue_category_id",
-              content_tag('select', '<option></option>' + options_from_collection_for_select(@project.issue_categories, 'id', 'name', @category.id), :id => 'issue_category_id', :name => 'issue[category_id]')
-            }
-          end
-        end
-      else
-        respond_to do |format|
-          format.html
-          format.js do
-            render(:update) {|page| page.alert(@category.errors.full_messages.join('\n')) }
-          end
-        end
-      end
-    end
-  end
-	
-  # Add a new version to @project
-  def add_version
-    @version = @project.versions.build
-    if params[:version]
-      attributes = params[:version].dup
-      attributes.delete('sharing') unless attributes.nil? || @version.allowed_sharings.include?(attributes['sharing'])
-      @version.attributes = attributes
-    end
-  	if request.post?
-  	  if @version.save
-        respond_to do |format|
-          format.html do
-            flash[:notice] = l(:notice_successful_create)
-            redirect_to :action => 'settings', :tab => 'versions', :id => @project
-          end
-          format.js do
-            # IE doesn't support the replace_html rjs method for select box options
-            render(:update) {|page| page.replace "issue_fixed_version_id",
-              content_tag('select', '<option></option>' + version_options_for_select(@project.shared_versions.open, @version), :id => 'issue_fixed_version_id', :name => 'issue[fixed_version_id]')
-            }
-          end
-        end
-      else
-        respond_to do |format|
-          format.html
-          format.js do
-            render(:update) {|page| page.alert(@version.errors.full_messages.join('\n')) }
-          end
-        end
-  	  end
-  	end
-  end
 
   def add_file
     if request.post?
       container = (params[:version_id].blank? ? @project : @project.versions.find_by_id(params[:version_id]))
-      attachments = attach_files(container, params[:attachments])
+      attachments = Attachment.attach_files(container, params[:attachments])
+      render_attachment_warning_if_needed(container)
+
       if !attachments.empty? && Setting.notified_events.include?('file_added')
-        Mailer.deliver_attachments_added(attachments)
+        Mailer.deliver_attachments_added(attachments[:files])
       end
       redirect_to :controller => 'projects', :action => 'list_files', :id => @project
       return
@@ -320,6 +264,7 @@ class ProjectsController < ApplicationController
           @project.update_or_create_time_entry_activity(id, activity)
         end
       end
+      flash[:notice] = l(:notice_successful_update)
     end
     
     redirect_to :controller => 'projects', :action => 'settings', :tab => 'activities', :id => @project
@@ -329,6 +274,7 @@ class ProjectsController < ApplicationController
     @project.time_entry_activities.each do |time_entry_activity|
       time_entry_activity.destroy(time_entry_activity.parent)
     end
+    flash[:notice] = l(:notice_successful_update)
     redirect_to :controller => 'projects', :action => 'settings', :tab => 'activities', :id => @project
   end
   
@@ -363,7 +309,7 @@ class ProjectsController < ApplicationController
         @issues_by_version[version] = issues
       end
     end
-    @versions.reject! {|version| !project_ids.include?(version.project_id) && @issues_by_version[version].empty?}
+    @versions.reject! {|version| !project_ids.include?(version.project_id) && @issues_by_version[version].blank?}
   end
   
   def activity

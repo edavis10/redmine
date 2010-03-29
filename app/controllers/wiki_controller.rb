@@ -76,6 +76,8 @@ class WikiController < ApplicationController
       @content.version = @page.content.version
     else
       if !@page.new_record? && @content.text == params[:content][:text]
+        attachments = Attachment.attach_files(@page, params[:attachments])
+        render_attachment_warning_if_needed(@page)
         # don't save if text wasn't changed
         redirect_to :action => 'index', :id => @project, :page => @page.title
         return
@@ -86,6 +88,8 @@ class WikiController < ApplicationController
       @content.author = User.current
       # if page is new @page.save will also save content, but not if page isn't a new record
       if (@page.new_record? ? @page.save : @content.save)
+        attachments = Attachment.attach_files(@page, params[:attachments])
+        render_attachment_warning_if_needed(@page)
         call_hook(:controller_wiki_edit_after_save, { :params => params, :page => @page})
         redirect_to :action => 'index', :id => @project, :page => @page.title
       end
@@ -209,7 +213,8 @@ class WikiController < ApplicationController
 
   def add_attachment
     return render_403 unless editable?
-    attach_files(@page, params[:attachments])
+    attachments = Attachment.attach_files(@page, params[:attachments])
+    render_attachment_warning_if_needed(@page)
     redirect_to :action => 'index', :page => @page.title
   end
 

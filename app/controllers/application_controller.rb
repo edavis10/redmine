@@ -166,7 +166,30 @@ class ApplicationController < ActionController::Base
   rescue ActiveRecord::RecordNotFound
     render_404
   end
-  
+
+  # Finds and sets @project based on @object.project
+  def find_project_from_association
+    render_404 unless @object.present?
+    
+    @project = @object.project
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+
+  def find_model_object
+    model = self.class.read_inheritable_attribute('model_object')
+    if model
+      @object = model.find(params[:id])
+      self.instance_variable_set('@' + controller_name.singularize, @object) if @object
+    end
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+
+  def self.model_object(model)
+    write_inheritable_attribute('model_object', model)
+  end
+    
   # make sure that the user is a member of the project (or admin) if project is private
   # used as a before_filter for actions that do not require any particular permission on the project
   def check_project_privacy
@@ -257,27 +280,6 @@ class ApplicationController < ActionController::Base
     self.class.read_inheritable_attribute('accept_key_auth_actions') || []
   end
   
-  # TODO: move to model
-  def attach_files(obj, attachments)
-    attached = []
-    unsaved = []
-    if attachments && attachments.is_a?(Hash)
-      attachments.each_value do |attachment|
-        file = attachment['file']
-        next unless file && file.size > 0
-        a = Attachment.create(:container => obj, 
-                              :file => file,
-                              :description => attachment['description'].to_s.strip,
-                              :author => User.current)
-        a.new_record? ? (unsaved << a) : (attached << a)
-      end
-      if unsaved.any?
-        flash[:warning] = l(:warning_attachments_not_saved, unsaved.size)
-      end
-    end
-    attached
-  end
-
   # Returns the number of objects that should be displayed
   # on the paginated list
   def per_page_option
@@ -321,5 +323,10 @@ class ApplicationController < ActionController::Base
   
   def api_request?
     %w(xml json).include? params[:format]
+  end
+
+  # Renders a warning flash if obj has unsaved attachments
+  def render_attachment_warning_if_needed(obj)
+    flash[:warning] = l(:warning_attachments_not_saved, obj.unsaved_attachments.size) if obj.unsaved_attachments.present?
   end
 end

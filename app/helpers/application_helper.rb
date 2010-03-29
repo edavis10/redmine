@@ -15,8 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require 'coderay'
-require 'coderay/helpers/file_type'
 require 'forwardable'
 require 'cgi'
 
@@ -205,7 +203,12 @@ module ApplicationHelper
     s = ''
     project_tree(projects) do |project, level|
       name_prefix = (level > 0 ? ('&nbsp;' * 2 * level + '&#187; ') : '')
-      tag_options = {:value => project.id, :selected => ((project == options[:selected]) ? 'selected' : nil)}
+      tag_options = {:value => project.id}
+      if project == options[:selected] || (options[:selected].respond_to?(:include?) && options[:selected].include?(project))
+        tag_options[:selected] = 'selected'
+      else
+        tag_options[:selected] = nil
+      end
       tag_options.merge!(yield(project)) if block_given?
       s << content_tag('option', name_prefix + h(project), tag_options)
     end
@@ -260,6 +263,16 @@ module ApplicationHelper
   def truncate_single_line(string, *args)
     truncate(string.to_s, *args).gsub(%r{[\r\n]+}m, ' ')
   end
+  
+  # Truncates at line break after 250 characters or options[:length]
+  def truncate_lines(string, options={})
+    length = options[:length] || 250
+    if string.to_s =~ /\A(.{#{length}}.*?)$/m
+      "#{$1}..."
+    else
+      string
+    end
+  end
 
   def html_hours(text)
     text.gsub(%r{(\d+)\.(\d+)}, '<span class="hours hours-int">\1</span><span class="hours hours-dec">.\2</span>')
@@ -279,8 +292,7 @@ module ApplicationHelper
   end
 
   def syntax_highlight(name, content)
-    type = CodeRay::FileType[name]
-    type ? CodeRay.scan(content, type).html : h(content)
+    Redmine::SyntaxHighlighting.highlight_by_filename(content, name)
   end
 
   def to_path_param(path)
@@ -403,19 +415,54 @@ module ApplicationHelper
       raise ArgumentError, 'invalid arguments to textilizable'
     end
     return '' if text.blank?
-
-    text = Redmine::WikiFormatting.to_html(Setting.text_formatting, text, :object => obj, :attribute => attr) { |macro, args| exec_macro(macro, obj, args) }
-    
+    project = options[:project] || @project || (obj && obj.respond_to?(:project) ? obj.project : nil)
     only_path = options.delete(:only_path) == false ? false : true
 
+    text = Redmine::WikiFormatting.to_html(Setting.text_formatting, text, :object => obj, :attribute => attr) { |macro, args| exec_macro(macro, obj, args) }
+      
+    parse_non_pre_blocks(text) do |text|
+      [:parse_inline_attachments, :parse_wiki_links, :parse_redmine_links].each do |method_name|
+        send method_name, text, project, obj, attr, only_path, options
+      end
+    end
+  end
+  
+  def parse_non_pre_blocks(text)
+    s = StringScanner.new(text)
+    tags = []
+    parsed = ''
+    while !s.eos?
+      s.scan(/(.*?)(<(\/)?(pre|code)(.*?)>|\z)/im)
+      text, full_tag, closing, tag = s[1], s[2], s[3], s[4]
+      if tags.empty?
+        yield text
+      end
+      parsed << text
+      if tag
+        if closing
+          if tags.last == tag.downcase
+            tags.pop
+          end
+        else
+          tags << tag.downcase
+        end
+        parsed << full_tag
+      end
+    end
+    # Close any non closing tags
+    while tag = tags.pop
+      parsed << "</#{tag}>"
+    end
+    parsed
+  end
+  
+  def parse_inline_attachments(text, project, obj, attr, only_path, options)
     # when using an image link, try to use an attachment, if possible
-    attachments = options[:attachments] || (obj && obj.respond_to?(:attachments) ? obj.attachments : nil)
-
-    if attachments
-      attachments = attachments.sort_by(&:created_on).reverse
+    if options[:attachments] || (obj && obj.respond_to?(:attachments))
+      attachments = nil
       text.gsub!(/src="([^\/"]+\.(bmp|gif|jpg|jpeg|png))"(\s+alt="([^"]*)")?/i) do |m|
         filename, ext, alt, alttext = $1.downcase, $2, $3, $4 
-        
+        attachments ||= (options[:attachments] || obj.attachments).sort_by(&:created_on).reverse
         # search for the picture in attachments
         if found = attachments.detect { |att| att.filename.downcase == filename }
           image_url = url_for :only_path => only_path, :controller => 'attachments', :action => 'download', :id => found
@@ -429,33 +476,20 @@ module ApplicationHelper
         end
       end
     end
+  end
 
-
-    # different methods for formatting wiki links
-    case options[:wiki_links]
-    when :local
-      # used for local links to html files
-      format_wiki_link = Proc.new {|project, title, anchor| "#{title}.html" }
-    when :anchor
-      # used for single-file wiki export
-      format_wiki_link = Proc.new {|project, title, anchor| "##{title}" }
-    else
-      format_wiki_link = Proc.new {|project, title, anchor| url_for(:only_path => only_path, :controller => 'wiki', :action => 'index', :id => project, :page => title, :anchor => anchor) }
-    end
-
-    project = options[:project] || @project || (obj && obj.respond_to?(:project) ? obj.project : nil)
-
-    # Wiki links
-    #
-    # Examples:
-    #   [[mypage]]
-    #   [[mypage|mytext]]
-    # wiki links can refer other project wikis, using project name or identifier:
-    #   [[project:]] -> wiki starting page
-    #   [[project:|mytext]]
-    #   [[project:mypage]]
-    #   [[project:mypage|mytext]]
-    text = text.gsub(/(!)?(\[\[([^\]\n\|]+)(\|([^\]\n\|]+))?\]\])/) do |m|
+  # Wiki links
+  #
+  # Examples:
+  #   [[mypage]]
+  #   [[mypage|mytext]]
+  # wiki links can refer other project wikis, using project name or identifier:
+  #   [[project:]] -> wiki starting page
+  #   [[project:|mytext]]
+  #   [[project:mypage]]
+  #   [[project:mypage|mytext]]
+  def parse_wiki_links(text, project, obj, attr, only_path, options)
+    text.gsub!(/(!)?(\[\[([^\]\n\|]+)(\|([^\]\n\|]+))?\]\])/) do |m|
       link_project = project
       esc, all, page, title = $1, $2, $3, $5
       if esc.nil?
@@ -473,8 +507,13 @@ module ApplicationHelper
           end
           # check if page exists
           wiki_page = link_project.wiki.find_page(page)
-          link_to((title || page), format_wiki_link.call(link_project, Wiki.titleize(page), anchor),
-                                   :class => ('wiki-page' + (wiki_page ? '' : ' new')))
+          url = case options[:wiki_links]
+            when :local; "#{title}.html"
+            when :anchor; "##{title}"   # used for single-file wiki export
+            else
+              url_for(:only_path => only_path, :controller => 'wiki', :action => 'index', :id => link_project, :page => Wiki.titleize(page), :anchor => anchor)
+            end
+          link_to((title || page), url, :class => ('wiki-page' + (wiki_page ? '' : ' new')))
         else
           # project or wiki doesn't exist
           all
@@ -483,34 +522,36 @@ module ApplicationHelper
         all
       end
     end
-
-    # Redmine links
-    #
-    # Examples:
-    #   Issues:
-    #     #52 -> Link to issue #52
-    #   Changesets:
-    #     r52 -> Link to revision 52
-    #     commit:a85130f -> Link to scmid starting with a85130f
-    #   Documents:
-    #     document#17 -> Link to document with id 17
-    #     document:Greetings -> Link to the document with title "Greetings"
-    #     document:"Some document" -> Link to the document with title "Some document"
-    #   Versions:
-    #     version#3 -> Link to version with id 3
-    #     version:1.0.0 -> Link to version named "1.0.0"
-    #     version:"1.0 beta 2" -> Link to version named "1.0 beta 2"
-    #   Attachments:
-    #     attachment:file.zip -> Link to the attachment of the current object named file.zip
-    #   Source files:
-    #     source:some/file -> Link to the file located at /some/file in the project's repository
-    #     source:some/file@52 -> Link to the file's revision 52
-    #     source:some/file#L120 -> Link to line 120 of the file
-    #     source:some/file@52#L120 -> Link to line 120 of the file's revision 52
-    #     export:some/file -> Force the download of the file
-    #  Forum messages:
-    #     message#1218 -> Link to message with id 1218
-    text = text.gsub(%r{([\s\(,\-\>]|^)(!)?(attachment|document|version|commit|source|export|message|project)?((#|r)(\d+)|(:)([^"\s<>][^\s<>]*?|"[^"]+?"))(?=(?=[[:punct:]]\W)|,|\s|<|$)}) do |m|
+  end
+  
+  # Redmine links
+  #
+  # Examples:
+  #   Issues:
+  #     #52 -> Link to issue #52
+  #   Changesets:
+  #     r52 -> Link to revision 52
+  #     commit:a85130f -> Link to scmid starting with a85130f
+  #   Documents:
+  #     document#17 -> Link to document with id 17
+  #     document:Greetings -> Link to the document with title "Greetings"
+  #     document:"Some document" -> Link to the document with title "Some document"
+  #   Versions:
+  #     version#3 -> Link to version with id 3
+  #     version:1.0.0 -> Link to version named "1.0.0"
+  #     version:"1.0 beta 2" -> Link to version named "1.0 beta 2"
+  #   Attachments:
+  #     attachment:file.zip -> Link to the attachment of the current object named file.zip
+  #   Source files:
+  #     source:some/file -> Link to the file located at /some/file in the project's repository
+  #     source:some/file@52 -> Link to the file's revision 52
+  #     source:some/file#L120 -> Link to line 120 of the file
+  #     source:some/file@52#L120 -> Link to line 120 of the file's revision 52
+  #     export:some/file -> Force the download of the file
+  #  Forum messages:
+  #     message#1218 -> Link to message with id 1218
+  def parse_redmine_links(text, project, obj, attr, only_path, options)
+    text.gsub!(%r{([\s\(,\-\[\>]|^)(!)?(attachment|document|version|commit|source|export|message|project)?((#|r)(\d+)|(:)([^"\s<>][^\s<>]*?|"[^"]+?"))(?=(?=[[:punct:]]\W)|,|\s|\]|<|$)}) do |m|
       leading, esc, prefix, sep, identifier = $1, $2, $3, $5 || $7, $6 || $8
       link = nil
       if esc.nil?
@@ -587,6 +628,7 @@ module ApplicationHelper
                                                      :class => (prefix == 'export' ? 'source download' : 'source')
             end
           when 'attachment'
+            attachments = options[:attachments] || (obj && obj.respond_to?(:attachments) ? obj.attachments : nil)
             if attachments && attachment = attachments.detect {|a| a.filename == name }
               link = link_to h(attachment.filename), {:only_path => only_path, :controller => 'attachments', :action => 'download', :id => attachment},
                                                      :class => 'attachment'
@@ -601,8 +643,6 @@ module ApplicationHelper
       end
       leading + (link || "#{prefix}#{sep}#{identifier}")
     end
-
-    text
   end
 
   # Same as Rails' simple_format helper without using paragraphs
@@ -655,6 +695,23 @@ module ApplicationHelper
         (pcts[2] > 0 ? content_tag('td', '', :style => "width: #{pcts[2]}%;", :class => 'todo') : '')
       ), :class => 'progress', :style => "width: #{width};") +
       content_tag('p', legend, :class => 'pourcent')
+  end
+  
+  def checked_image(checked=true)
+    if checked
+      image_tag 'toggle_check.png'
+    end
+  end
+  
+  def context_menu(url)
+    unless @context_menu_included
+      content_for :header_tags do
+        javascript_include_tag('context_menu') +
+          stylesheet_link_tag('context_menu')
+      end
+      @context_menu_included = true
+    end
+    javascript_tag "new ContextMenu('#{ url_for(url) }')"
   end
 
   def context_menu_link(name, url, options={})

@@ -7,13 +7,7 @@ ContextMenu = Class.create();
 ContextMenu.prototype = {
 	initialize: function (url) {
 	this.url = url;
-
-	// prevent text selection in the issue list
-	var tables = $$('table.issues');
-	for (i=0; i<tables.length; i++) {
-		tables[i].onselectstart = function () { return false; } // ie
-		tables[i].onmousedown = function () { return false; } // mozilla
-	}
+	this.createMenu();
 
 	if (!observingContextMenuClick) {
 		Event.observe(document, 'click', this.Click.bindAsEventListener(this));
@@ -85,13 +79,26 @@ ContextMenu.prototype = {
       } else {
         // click is outside the rows
         var t = Event.findElement(e, 'a');
-        if ((t != document) && (Element.hasClassName(t, 'disabled') || Element.hasClassName(t, 'submenu'))) {
-          Event.stop(e);
+        if (t == document || t == undefined) {
+          this.unselectAll();
+        } else {
+          if (Element.hasClassName(t, 'disabled') || Element.hasClassName(t, 'submenu')) {
+            Event.stop(e);
+          }
         }
       }
     }
     else{
       this.RightClick(e);
+    }
+  },
+  
+  createMenu: function() {
+    if (!$('context-menu')) {
+      var menu = document.createElement("div");
+      menu.setAttribute("id", "context-menu");
+      menu.setAttribute("style", "display:none;");
+      document.getElementById("content").appendChild(menu);
     }
   },
   
@@ -157,6 +164,7 @@ ContextMenu.prototype = {
   addSelection: function(tr) {
     tr.addClassName('context-menu-selection');
     this.checkSelectionBox(tr, true);
+    this.clearDocumentSelection();
   },
   
   toggleSelection: function(tr) {
@@ -186,6 +194,14 @@ ContextMenu.prototype = {
   
   isSelected: function(tr) {
     return Element.hasClassName(tr, 'context-menu-selection');
+  },
+  
+  clearDocumentSelection: function() {
+    if (document.selection) {
+      document.selection.clear(); // IE
+    } else {
+      window.getSelection().removeAllRanges();
+    }
   }
 }
 

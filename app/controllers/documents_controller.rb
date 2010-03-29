@@ -17,8 +17,10 @@
 
 class DocumentsController < ApplicationController
   default_search_scope :documents
+  model_object Document
   before_filter :find_project, :only => [:index, :new]
-  before_filter :find_document, :except => [:index, :new]
+  before_filter :find_model_object, :except => [:index, :new]
+  before_filter :find_project_from_association, :except => [:index, :new]
   before_filter :authorize
   
   helper :attachments
@@ -47,7 +49,8 @@ class DocumentsController < ApplicationController
   def new
     @document = @project.documents.build(params[:document])    
     if request.post? and @document.save	
-      attach_files(@document, params[:attachments])
+      attachments = Attachment.attach_files(@document, params[:attachments])
+      render_attachment_warning_if_needed(@document)
       flash[:notice] = l(:notice_successful_create)
       redirect_to :action => 'index', :project_id => @project
     end
@@ -67,21 +70,16 @@ class DocumentsController < ApplicationController
   end
   
   def add_attachment
-    attachments = attach_files(@document, params[:attachments])
-    Mailer.deliver_attachments_added(attachments) if !attachments.empty? && Setting.notified_events.include?('document_added')
+    attachments = Attachment.attach_files(@document, params[:attachments])
+    render_attachment_warning_if_needed(@document)
+
+    Mailer.deliver_attachments_added(attachments[:files]) if attachments.present? && attachments[:files].present? && Setting.notified_events.include?('document_added')
     redirect_to :action => 'show', :id => @document
   end
 
 private
   def find_project
     @project = Project.find(params[:project_id])
-  rescue ActiveRecord::RecordNotFound
-    render_404
-  end
-
-  def find_document
-    @document = Document.find(params[:id])
-    @project = @document.project
   rescue ActiveRecord::RecordNotFound
     render_404
   end

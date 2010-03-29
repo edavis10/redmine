@@ -50,7 +50,7 @@ class UsersController < ApplicationController
   end
   
   def show
-    @user = User.active.find(params[:id])
+    @user = User.find(params[:id])
     @custom_values = @user.custom_values
     
     # show only public projects and private projects that the logged in user is also a member of
@@ -61,9 +61,11 @@ class UsersController < ApplicationController
     events = Redmine::Activity::Fetcher.new(User.current, :author => @user).events(nil, nil, :limit => 10)
     @events_by_day = events.group_by(&:event_date)
     
-    if @user != User.current && !User.current.admin? && @memberships.empty? && events.empty?
-      render_404
-      return
+    unless User.current.admin?
+      if !@user.active? || (@user != User.current  && @memberships.empty? && events.empty?)
+        render_404
+        return
+      end
     end
     render :layout => 'base'
 
@@ -118,8 +120,7 @@ class UsersController < ApplicationController
   
   def edit_membership
     @user = User.find(params[:id])
-    @membership = params[:membership_id] ? Member.find(params[:membership_id]) : Member.new(:principal => @user)
-    @membership.attributes = params[:membership]
+    @membership = Member.edit_membership(params[:membership_id], params[:membership], @user)
     @membership.save if request.post?
     respond_to do |format|
        format.html { redirect_to :controller => 'users', :action => 'edit', :id => @user, :tab => 'memberships' }

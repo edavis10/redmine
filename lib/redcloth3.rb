@@ -373,17 +373,21 @@ class RedCloth3 < String
         ['^', 'sup', :limit],
         ['~', 'sub', :limit]
     ] 
+    QTAGS_JOIN = QTAGS.map {|rc, ht, rtype| Regexp::quote rc}.join('|')
+    
     QTAGS.collect! do |rc, ht, rtype|
         rcq = Regexp::quote rc
         re =
             case rtype
             when :limit
-                /(^|[>\s\(])
-                (#{rcq})
-                (#{C})
-                (?::(\S+?))?
-                (\w|[^\s\-].*?[^\s\-])
+                /(^|[>\s\(])          # sta
+                (?!\-\-)
+                (#{QTAGS_JOIN}|)      # oqs
+                (#{rcq})              # qtag
+                (\w|[^\s].*?[^\s])    # content
+                (?!\-\-)
                 #{rcq}
+                (#{QTAGS_JOIN}|)      # oqa
                 (?=[[:punct:]]|\s|\)|$)/x
             else
                 /(#{rcq})
@@ -611,7 +615,7 @@ class RedCloth3 < String
         text.gsub!( CODE_RE ) do |m|
             before,lang,code,after = $~[1..4]
             lang = " lang=\"#{ lang }\"" if lang
-            rip_offtags( "#{ before }<code#{ lang }>#{ code }</code>#{ after }" )
+            rip_offtags( "#{ before }<code#{ lang }>#{ code }</code>#{ after }", false )
         end
     end
 
@@ -768,16 +772,19 @@ class RedCloth3 < String
              
                 case rtype
                 when :limit
-                    sta,qtag,atts,cite,content = $~[1..5]
+                    sta,oqs,qtag,content,oqa = $~[1..6]
+                    atts = nil
+                    if content =~ /^(#{C})(.+)$/
+                      atts, content = $~[1..2]
+                    end
                 else
                     qtag,atts,cite,content = $~[1..4]
                     sta = ''
                 end
                 atts = pba( atts )
-                atts << " cite=\"#{ cite }\"" if cite
                 atts = shelve( atts ) if atts
 
-                "#{ sta }<#{ ht }#{ atts }>#{ content }</#{ ht }>"
+                "#{ sta }#{ oqs }<#{ ht }#{ atts }>#{ content }</#{ ht }>#{ oqa }"
 
             end
         end
@@ -818,7 +825,7 @@ class RedCloth3 < String
               post = ")"+post # add closing parenth to post
             end
             atts = pba( atts )
-            atts = " href=\"#{ url }#{ slash }\"#{ atts }"
+            atts = " href=\"#{ htmlesc url }#{ slash }\"#{ atts }"
             atts << " title=\"#{ htmlesc title }\"" if title
             atts = shelve( atts ) if atts
             
@@ -1049,13 +1056,13 @@ class RedCloth3 < String
         end
     end
 
-    def rip_offtags( text )
+    def rip_offtags( text, escape_aftertag=true )
         if text =~ /<.*>/
             ## strip and encode <pre> content
             codepre, used_offtags = 0, {}
             text.gsub!( OFFTAG_MATCH ) do |line|
                 if $3
-                    offtag, aftertag = $4, $5
+                    first, offtag, aftertag = $3, $4, $5
                     codepre += 1
                     used_offtags[offtag] = true
                     if codepre - used_offtags.length > 0
@@ -1063,9 +1070,13 @@ class RedCloth3 < String
                         @pre_list.last << line
                         line = ""
                     else
-                        htmlesc( aftertag, :NoQuotes ) if aftertag
+                        ### htmlesc is disabled between CODE tags which will be parsed with highlighter
+                        ### Regexp in formatter.rb is : /<code\s+class="(\w+)">\s?(.+)/m
+                        ### NB: some changes were made not to use $N variables, because we use "match"
+                        ###   and it breaks following lines
+                        htmlesc( aftertag, :NoQuotes ) if aftertag && escape_aftertag && !first.match(/<code\s+class="(\w+)">/)
                         line = "<redpre##{ @pre_list.length }>"
-                        $3.match(/<#{ OFFTAGS }([^>]*)>/)
+                        first.match(/<#{ OFFTAGS }([^>]*)>/)
                         tag = $1
                         $2.to_s.match(/(class\=\S+)/i)
                         tag << " #{$1}" if $1

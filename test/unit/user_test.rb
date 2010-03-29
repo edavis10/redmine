@@ -18,7 +18,7 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class UserTest < ActiveSupport::TestCase
-  fixtures :users, :members, :projects, :roles, :member_roles
+  fixtures :users, :members, :projects, :roles, :member_roles, :auth_sources
 
   def setup
     @admin = User.find(1)
@@ -118,6 +118,27 @@ class UserTest < ActiveSupport::TestCase
     
     user = User.try_to_login("jsmith", "jsmith")
     assert_equal nil, user  
+  end
+  
+  if ldap_configured?
+    context "#try_to_login using LDAP" do
+      context "on the fly registration" do
+        setup do
+          @auth_source = AuthSourceLdap.find(1)
+        end
+
+        context "with a successful authentication" do
+          should "create a new user account" do
+            assert_difference('User.count') do
+              User.try_to_login('edavis', '123456')
+            end
+          end
+        end
+      end
+    end
+
+  else
+    puts "Skipping LDAP tests."
   end
   
   def test_create_anonymous

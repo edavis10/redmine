@@ -126,7 +126,8 @@ ActionController::Routing::Routes.draw do |map|
       issues_actions.connect 'issues.:format', :action => 'new', :format => /xml/
     end
     issues_routes.with_options :conditions => {:method => :put} do |issues_actions|
-      issues_actions.connect 'issues/:id.:format', :action => 'edit', :id => /\d+/, :format => /xml/
+      issues_actions.connect 'issues/:id/edit', :action => 'update', :id => /\d+/
+      issues_actions.connect 'issues/:id.:format', :action => 'update', :id => /\d+/, :format => /xml/
     end
     issues_routes.with_options :conditions => {:method => :delete} do |issues_actions|
       issues_actions.connect 'issues/:id.:format', :action => 'destroy', :id => /\d+/, :format => /xml/
@@ -190,8 +191,6 @@ ActionController::Routing::Routes.draw do |map|
       project_views.connect 'projects/:id/:action', :action => /roadmap|destroy|settings/
       project_views.connect 'projects/:id/files', :action => 'list_files'
       project_views.connect 'projects/:id/files/new', :action => 'add_file'
-      project_views.connect 'projects/:id/versions/new', :action => 'add_version'
-      project_views.connect 'projects/:id/categories/new', :action => 'add_issue_category'
       project_views.connect 'projects/:id/settings/:tab', :action => 'settings'
     end
 
@@ -208,8 +207,6 @@ ActionController::Routing::Routes.draw do |map|
       project_actions.connect 'projects.:format', :action => 'add', :format => /xml/
       project_actions.connect 'projects/:id/:action', :action => /edit|destroy|archive|unarchive/
       project_actions.connect 'projects/:id/files/new', :action => 'add_file'
-      project_actions.connect 'projects/:id/versions/new', :action => 'add_version'
-      project_actions.connect 'projects/:id/categories/new', :action => 'add_issue_category'
       project_actions.connect 'projects/:id/activities/save', :action => 'save_activities'
     end
 
@@ -224,9 +221,14 @@ ActionController::Routing::Routes.draw do |map|
   end
   
   map.with_options :controller => 'versions' do |versions|
+    versions.connect 'projects/:project_id/versions/new', :action => 'new'
     versions.with_options :conditions => {:method => :post} do |version_actions|
       version_actions.connect 'projects/:project_id/versions/close_completed', :action => 'close_completed'
     end
+  end
+  
+  map.with_options :controller => 'issue_categories' do |categories|
+    categories.connect 'projects/:project_id/issue_categories/new', :action => 'new'
   end
   
   map.with_options :controller => 'repositories' do |repositories|

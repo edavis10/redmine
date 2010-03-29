@@ -114,11 +114,11 @@ class Mailer < ActionMailer::Base
     when 'Project'
       added_to_url = url_for(:controller => 'projects', :action => 'list_files', :id => container)
       added_to = "#{l(:label_project)}: #{container}"
-      recipients container.project.notified_users.select {|user| user.allowed_to?(:view_files, container.project)}
+      recipients container.project.notified_users.select {|user| user.allowed_to?(:view_files, container.project)}.collect  {|u| u.mail}
     when 'Version'
       added_to_url = url_for(:controller => 'projects', :action => 'list_files', :id => container.project_id)
       added_to = "#{l(:label_version)}: #{container.name}"
-      recipients container.project.notified_users.select {|user| user.allowed_to?(:view_files, container.project)}
+      recipients container.project.notified_users.select {|user| user.allowed_to?(:view_files, container.project)}.collect  {|u| u.mail}
     when 'Document'
       added_to_url = url_for(:controller => 'documents', :action => 'show', :id => container.id)
       added_to = "#{l(:label_document)}: #{container.title}"
@@ -323,6 +323,15 @@ class Mailer < ActionMailer::Base
     issues_by_assignee.each do |assignee, issues|
       deliver_reminder(assignee, issues, days) unless assignee.nil?
     end
+  end
+  
+  # Activates/desactivates email deliveries during +block+
+  def self.with_deliveries(enabled = true, &block)
+    was_enabled = ActionMailer::Base.perform_deliveries
+    ActionMailer::Base.perform_deliveries = !!enabled
+    yield
+  ensure
+    ActionMailer::Base.perform_deliveries = was_enabled
   end
 
   private

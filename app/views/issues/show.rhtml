@@ -4,7 +4,10 @@
 
 <div class="<%= @issue.css_classes %> details">
         <%= avatar(@issue.author, :size => "50") %>
-        <h3><%=h @issue.subject %></h3>
+      
+<div class="subject">      
+<%= render_issue_subject_with_tree(@issue) %>
+</div>
         <p class="author">
         <%= authoring @issue.created_on, @issue.author %>.
         <% if @issue.created_on != @issue.updated_on %>
@@ -56,18 +59,21 @@
 
 <%= call_hook(:view_issues_show_description_bottom, :issue => @issue) %>
 
+<% if !@issue.leaf? || User.current.allowed_to?(:manage_subtasks, @project) %>
+<hr />
+<div id="issue_tree">
+<div class="contextual">
+  <%= link_to(l(:button_add), {:controller => 'issues', :action => 'new', :project_id => @project, :issue => {:parent_issue_id => @issue}}) if User.current.allowed_to?(:manage_subtasks, @project) %>
+</div>
+<p><strong><%=l(:label_subtask_plural)%></strong></p>
+<%= render_descendants_tree(@issue) unless @issue.leaf? %>
+</div>
+<% end %>
+
 <% if authorize_for('issue_relations', 'new') || @issue.relations.any? %>
 <hr />
 <div id="relations">
 <%= render :partial => 'relations' %>
-</div>
-<% end %>
-
-<% if User.current.allowed_to?(:add_issue_watchers, @project) ||
-        (@issue.watchers.any? && User.current.allowed_to?(:view_issue_watchers, @project)) %>
-<hr />
-<div id="watchers">
-<%= render :partial => 'watchers/watchers', :locals => {:watched => @issue} %>
 </div>
 <% end %>
 
@@ -83,14 +89,15 @@
 <% if @journals.any? %>
 <div id="history">
 <h3><%=l(:label_history)%></h3>
-<%= render :partial => 'history', :locals => { :journals => @journals } %>
+<%= render :partial => 'history', :locals => { :issue => @issue, :journals => @journals } %>
 </div>
 <% end %>
 
+
+<div style="clear: both;"></div>
 <%= render :partial => 'action_menu', :locals => {:replace_watcher => 'watcher2' } %>
 
 <div style="clear: both;"></div>
-
 <% if authorize_for('issues', 'edit') %>
   <div id="update" style="display:none;">
   <h3><%= l(:button_update) %></h3>
@@ -106,10 +113,21 @@
 <% html_title "#{@issue.tracker.name} ##{@issue.id}: #{@issue.subject}" %>
 
 <% content_for :sidebar do %>
-    <%= render :partial => 'issues/sidebar' %>
+  <%= render :partial => 'issues/sidebar' %>
+
+  <% if User.current.allowed_to?(:add_issue_watchers, @project) ||
+    (@issue.watchers.any? && User.current.allowed_to?(:view_issue_watchers, @project)) %>
+    <div id="watchers">
+      <%= render :partial => 'watchers/watchers', :locals => {:watched => @issue} %>
+    </div>
+  <% end %>
 <% end %>
 
 <% content_for :header_tags do %>
     <%= auto_discovery_link_tag(:atom, {:format => 'atom', :key => User.current.rss_key}, :title => "#{@issue.project} - #{@issue.tracker} ##{@issue.id}: #{@issue.subject}") %>
     <%= stylesheet_link_tag 'scm' %>
+    <%= javascript_include_tag 'context_menu' %>
+    <%= stylesheet_link_tag 'context_menu' %>
 <% end %>
+<div id="context-menu" style="display: none;"></div>
+<%= javascript_tag "new ContextMenu('#{url_for(:controller => 'issues', :action => 'context_menu')}')" %>

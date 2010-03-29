@@ -375,7 +375,7 @@ class IssuesControllerTest < ActionController::TestCase
     assert_response :success
     assert_template 'changes.rxml'
     # Inline image
-    assert @response.body.include?("&lt;img src=\"http://test.host/attachments/download/10\" alt=\"\" /&gt;"), "Body did not match. Body: #{@response.body}"
+    assert_select 'content', :text => Regexp.new(Regexp.quote('http://test.host/attachments/download/10'))
   end
   
   def test_show_export_to_pdf
@@ -451,6 +451,7 @@ class IssuesControllerTest < ActionController::TestCase
     assert_difference 'Issue.count' do
       post :new, :project_id => 1, 
                  :issue => {:tracker_id => 3,
+                            :status_id => 2,
                             :subject => 'This is the test_new issue',
                             :description => 'This is the description',
                             :priority_id => 5,
@@ -463,6 +464,7 @@ class IssuesControllerTest < ActionController::TestCase
     assert_not_nil issue
     assert_equal 2, issue.author_id
     assert_equal 3, issue.tracker_id
+    assert_equal 2, issue.status_id
     assert_nil issue.estimated_hours
     v = issue.custom_values.find(:first, :conditions => {:custom_field_id => 2})
     assert_not_nil v
@@ -476,7 +478,7 @@ class IssuesControllerTest < ActionController::TestCase
                           :subject => 'This is first issue',
                           :priority_id => 5},
                :continue => ''
-    assert_redirected_to :controller => 'issues', :action => 'new', :tracker_id => 3
+    assert_redirected_to :controller => 'issues', :action => 'new', :issue => {:tracker_id => 3}
   end
   
   def test_post_new_without_custom_fields_param
@@ -533,6 +535,20 @@ class IssuesControllerTest < ActionController::TestCase
     assert [mail.bcc, mail.cc].flatten.include?(User.find(3).mail)
   end
   
+  def test_post_new_subissue
+    @request.session[:user_id] = 2
+    
+    assert_difference 'Issue.count' do
+      post :new, :project_id => 1, 
+                 :issue => {:tracker_id => 1,
+                            :subject => 'This is a child issue',
+                            :parent_issue_id => 2}
+    end
+    issue = Issue.find_by_subject('This is a child issue')
+    assert_not_nil issue
+    assert_equal Issue.find(2), issue.parent
+  end
+  
   def test_post_new_should_send_a_notification
     ActionMailer::Base.deliveries.clear
     @request.session[:user_id] = 2
@@ -581,6 +597,47 @@ class IssuesControllerTest < ActionController::TestCase
     @request.session[:user_id] = 2
     assert_nothing_raised do
       post :new, :project_id => 1, :issue => { :tracker => "A param can not be a Tracker" }
+    end
+  end
+  
+  context "without workflow privilege" do
+    setup do
+      Workflow.delete_all(["role_id = ?", Role.anonymous.id])
+      Role.anonymous.add_permission! :add_issues
+    end
+    
+    context "#new" do
+      should "propose default status only" do
+        get :new, :project_id => 1
+        assert_response :success
+        assert_template 'new'
+        assert_tag :tag => 'select',
+          :attributes => {:name => 'issue[status_id]'},
+          :children => {:count => 1},
+          :child => {:tag => 'option', :attributes => {:value => IssueStatus.default.id.to_s}}
+      end
+      
+      should "accept default status" do
+        assert_difference 'Issue.count' do
+          post :new, :project_id => 1, 
+                     :issue => {:tracker_id => 1,
+                                :subject => 'This is an issue',
+                                :status_id => 1}
+        end
+        issue = Issue.last(:order => 'id')
+        assert_equal IssueStatus.default, issue.status
+      end
+      
+      should "ignore unauthorized status" do
+        assert_difference 'Issue.count' do
+          post :new, :project_id => 1, 
+                     :issue => {:tracker_id => 1,
+                                :subject => 'This is an issue',
+                                :status_id => 3}
+        end
+        issue = Issue.last(:order => 'id')
+        assert_equal IssueStatus.default, issue.status
+      end
     end
   end
   
@@ -655,6 +712,20 @@ class IssuesControllerTest < ActionController::TestCase
     get :reply, :id => 1, :journal_id => 2
     assert_response :success
     assert_select_rjs :show, "update"
+  end
+
+  def test_update_using_invalid_http_verbs
+    @request.session[:user_id] = 2
+    subject = 'Updated by an invalid http verb'
+
+    get :update, :id => 1, :issue => {:subject => subject}
+    assert_not_equal subject, Issue.find(1).subject
+
+    post :update, :id => 1, :issue => {:subject => subject}
+    assert_not_equal subject, Issue.find(1).subject
+
+    delete :update, :id => 1, :issue => {:subject => subject}
+    assert_not_equal subject, Issue.find(1).subject
   end
 
   def test_put_update_without_custom_fields_param
@@ -794,7 +865,27 @@ class IssuesControllerTest < ActionController::TestCase
     mail = ActionMailer::Base.deliveries.last
     assert mail.body.include?('testfile.txt')
   end
-  
+
+  def test_put_update_with_attachment_that_fails_to_save
+    set_tmp_attachments_directory
+    
+    # Delete all fixtured journals, a race condition can occur causing the wrong
+    # journal to get fetched in the next find.
+    Journal.delete_all
+
+    # Mock out the unsaved attachment
+    Attachment.any_instance.stubs(:create).returns(Attachment.new)
+    
+    # anonymous user
+    put :update,
+         :id => 1,
+         :notes => '',
+         :attachments => {'1' => {'file' => uploaded_test_file('testfile.txt', 'text/plain')}}
+    assert_redirected_to :action => 'show', :id => '1'
+    assert_equal '1 file(s) could not be saved.', flash[:warning]
+
+  end if Object.const_defined?(:Mocha)
+
   def test_put_update_with_no_change
     issue = Issue.find(1)
     issue.journals.clear
@@ -1110,18 +1201,18 @@ class IssuesControllerTest < ActionController::TestCase
                             :attributes => { :href => '/issues/1/edit?issue%5Bstatus_id%5D=5',
                                              :class => '' }
     assert_tag :tag => 'a', :content => 'Immediate',
-                            :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;priority_id=8',
+                            :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;issue%5Bpriority_id%5D=8',
                                              :class => '' }
     # Versions
     assert_tag :tag => 'a', :content => '2.0',
-                            :attributes => { :href => '/issues/bulk_edit?fixed_version_id=3&amp;ids%5B%5D=1',
+                            :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;issue%5Bfixed_version_id%5D=3',
                                              :class => '' }
     assert_tag :tag => 'a', :content => 'eCookbook Subproject 1 - 2.0',
-                            :attributes => { :href => '/issues/bulk_edit?fixed_version_id=4&amp;ids%5B%5D=1',
+                            :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;issue%5Bfixed_version_id%5D=4',
                                              :class => '' }
 
     assert_tag :tag => 'a', :content => 'Dave Lopper',
-                            :attributes => { :href => '/issues/bulk_edit?assigned_to_id=3&amp;ids%5B%5D=1',
+                            :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;issue%5Bassigned_to_id%5D=3',
                                              :class => '' }
     assert_tag :tag => 'a', :content => 'Duplicate',
                             :attributes => { :href => '/projects/ecookbook/issues/1/copy',
@@ -1155,10 +1246,10 @@ class IssuesControllerTest < ActionController::TestCase
                             :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;ids%5B%5D=2',
                                              :class => 'icon-edit' }
     assert_tag :tag => 'a', :content => 'Immediate',
-                            :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;ids%5B%5D=2&amp;priority_id=8',
+                            :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;ids%5B%5D=2&amp;issue%5Bpriority_id%5D=8',
                                              :class => '' }
     assert_tag :tag => 'a', :content => 'Dave Lopper',
-                            :attributes => { :href => '/issues/bulk_edit?assigned_to_id=3&amp;ids%5B%5D=1&amp;ids%5B%5D=2',
+                            :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;ids%5B%5D=2&amp;issue%5Bassigned_to_id%5D=3',
                                              :class => '' }
     assert_tag :tag => 'a', :content => 'Copy',
                             :attributes => { :href => '/issues/move?copy_options%5Bcopy%5D=t&amp;ids%5B%5D=1&amp;ids%5B%5D=2',
@@ -1179,6 +1270,50 @@ class IssuesControllerTest < ActionController::TestCase
     assert_tag :tag => 'a', :content => 'Delete',
                             :attributes => { :href => '#',
                                              :class => 'icon-del disabled' }
+  end
+  
+  def test_preview_new_issue
+    @request.session[:user_id] = 2
+    post :preview, :project_id => '1', :issue => {:description => 'Foo'}
+    assert_response :success
+    assert_template 'preview'
+    assert_not_nil assigns(:description)
+  end
+                              
+  def test_preview_notes
+    @request.session[:user_id] = 2
+    post :preview, :project_id => '1', :id => 1, :issue => {:description => Issue.find(1).description}, :notes => 'Foo'
+    assert_response :success
+    assert_template 'preview'
+    assert_not_nil assigns(:notes)
+  end
+
+  def test_auto_complete_routing
+    assert_routing(
+      {:method => :get, :path => '/issues/auto_complete'},
+      :controller => 'issues', :action => 'auto_complete'
+    )
+  end
+  
+  def test_auto_complete_should_not_be_case_sensitive
+    get :auto_complete, :project_id => 'ecookbook', :q => 'ReCiPe'
+    assert_response :success
+    assert_not_nil assigns(:issues)
+    assert assigns(:issues).detect {|issue| issue.subject.match /recipe/}
+  end
+  
+  def test_auto_complete_should_return_issue_with_given_id
+    get :auto_complete, :project_id => 'subproject1', :q => '13'
+    assert_response :success
+    assert_not_nil assigns(:issues)
+    assert assigns(:issues).include?(Issue.find(13))
+  end
+  
+  def test_destroy_routing
+    assert_recognizes( #TODO: use DELETE on issue URI (need to change forms)
+      {:controller => 'issues', :action => 'destroy', :id => '1'},
+      {:method => :post, :path => '/issues/1/destroy'}
+    )
   end
   
   def test_destroy_issue_with_no_time_entries

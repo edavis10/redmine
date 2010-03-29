@@ -134,6 +134,27 @@ class MailerTest < ActiveSupport::TestCase
     assert_not_nil mail
     assert_equal 'Redmine app', mail.from_addrs.first.name
   end
+  
+  def test_should_not_send_email_without_recipient
+    news = News.find(:first)
+    user = news.author
+    # Remove members except news author
+    news.project.memberships.each {|m| m.destroy unless m.user == user}
+    
+    user.pref[:no_self_notified] = false
+    user.pref.save
+    User.current = user
+    Mailer.deliver_news_added(news.reload)
+    assert_equal 1, last_email.bcc.size
+
+    # nobody to notify
+    user.pref[:no_self_notified] = true
+    user.pref.save
+    User.current = user
+    ActionMailer::Base.deliveries.clear
+    Mailer.deliver_news_added(news.reload)
+    assert ActionMailer::Base.deliveries.empty?
+  end
 
   def test_issue_add_message_id
     issue = Issue.find(1)
@@ -252,6 +273,20 @@ class MailerTest < ActiveSupport::TestCase
     end
   end
   
+  def test_version_file_added
+    attachements = [ Attachment.find_by_container_type('Version') ]
+    assert Mailer.deliver_attachments_added(attachements)
+    assert_not_nil last_email.bcc
+    assert last_email.bcc.any?
+  end
+  
+  def test_project_file_added
+    attachements = [ Attachment.find_by_container_type('Project') ]
+    assert Mailer.deliver_attachments_added(attachements)
+    assert_not_nil last_email.bcc
+    assert last_email.bcc.any?
+  end
+  
   def test_news_added
     news = News.find(:first)
     valid_languages.each do |lang|
@@ -303,6 +338,14 @@ class MailerTest < ActiveSupport::TestCase
     end
   end
   
+  def test_test
+    user = User.find(1)
+    valid_languages.each do |lang|
+      user.update_attribute :language, lang.to_s
+      assert Mailer.deliver_test(user)
+    end
+  end
+  
   def test_reminders
     Mailer.reminders(:days => 42)
     assert_equal 1, ActionMailer::Base.deliveries.size
@@ -329,5 +372,14 @@ class MailerTest < ActiveSupport::TestCase
     assert mail.body.include?('Votre compte')
     
     assert_equal :it, current_language
+  end
+  
+  def test_with_deliveries_off
+    Mailer.with_deliveries false do
+      Mailer.deliver_test(User.find(1))
+    end
+    assert ActionMailer::Base.deliveries.empty?
+    # should restore perform_deliveries
+    assert ActionMailer::Base.perform_deliveries
   end
 end

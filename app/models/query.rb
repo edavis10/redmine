@@ -27,10 +27,11 @@ class QueryColumn
       self.groupable = name.to_s
     end
     self.default_order = options[:default_order]
+    @caption_key = options[:caption] || "field_#{name}"
   end
   
   def caption
-    l("field_#{name}")
+    l(@caption_key)
   end
   
   # Returns true if the column is sortable, otherwise false
@@ -120,6 +121,7 @@ class Query < ActiveRecord::Base
   @@available_columns = [
     QueryColumn.new(:project, :sortable => "#{Project.table_name}.name", :groupable => true),
     QueryColumn.new(:tracker, :sortable => "#{Tracker.table_name}.position", :groupable => true),
+    QueryColumn.new(:parent, :sortable => ["#{Issue.table_name}.root_id", "#{Issue.table_name}.lft ASC"], :default_order => 'desc', :caption => :field_parent_issue),
     QueryColumn.new(:status, :sortable => "#{IssueStatus.table_name}.position", :groupable => true),
     QueryColumn.new(:priority, :sortable => "#{IssuePriority.table_name}.position", :default_order => 'desc', :groupable => true),
     QueryColumn.new(:subject, :sortable => "#{Issue.table_name}.subject"),
@@ -185,9 +187,11 @@ class Query < ActiveRecord::Base
     if project
       user_values += project.users.sort.collect{|s| [s.name, s.id.to_s] }
     else
-      # members of the user's projects
-      # OPTIMIZE: Is selecting from users per project (N+1)
-      user_values += User.current.projects.collect(&:users).flatten.uniq.sort.collect{|s| [s.name, s.id.to_s] }
+      project_ids = User.current.projects.collect(&:id)
+      if project_ids.any?
+        # members of the user's projects
+        user_values += User.active.find(:all, :conditions => ["#{User.table_name}.id IN (SELECT DISTINCT user_id FROM members WHERE project_id IN (?))", project_ids]).sort.collect{|s| [s.name, s.id.to_s] }
+      end
     end
     @available_filters["assigned_to_id"] = { :type => :list_optional, :order => 4, :values => user_values } unless user_values.empty?
     @available_filters["author_id"] = { :type => :list, :order => 5, :values => user_values } unless user_values.empty?
@@ -269,6 +273,14 @@ class Query < ActiveRecord::Base
   # Returns an array of columns that can be used to group the results
   def groupable_columns
     available_columns.select {|c| c.groupable}
+  end
+
+  # Returns a Hash of columns and the key for sorting
+  def sortable_columns
+    {'id' => "#{Issue.table_name}.id"}.merge(available_columns.inject({}) {|h, column|
+                                               h[column.name.to_s] = column.sortable
+                                               h
+                                             })
   end
   
   def columns
