@@ -1,5 +1,5 @@
 xml.instruct!
-xml.issues :type => 'array', :count => @issue_count do
+xml.issues :type => 'array' do
   @issues.each do |issue|
 	  xml.issue do
 	    xml.id					issue.id
@@ -11,6 +11,7 @@ xml.issues :type => 'array', :count => @issue_count do
 		 	xml.assigned_to(:id => issue.assigned_to_id, :name => issue.assigned_to.name) unless issue.assigned_to.nil?
 		  xml.category(:id => issue.category_id, :name => issue.category.name) unless issue.category.nil?
 		  xml.fixed_version(:id => issue.fixed_version_id, :name => issue.fixed_version.name) unless issue.fixed_version.nil?
+      xml.parent(:id => issue.parent_id) unless issue.parent.nil?
       
       xml.subject 		issue.subject
       xml.description issue.description

@@ -827,7 +827,7 @@ class IssuesControllerTest < ActionController::TestCase
       put :update,
            :id => 1,
            :notes => '2.5 hours added',
-           :time_entry => { :hours => '2.5', :comments => '', :activity_id => TimeEntryActivity.first }
+           :time_entry => { :hours => '2.5', :comments => 'test_put_update_with_note_and_spent_time', :activity_id => TimeEntryActivity.first }
     end
     assert_redirected_to :action => 'show', :id => '1'
     
@@ -837,7 +837,7 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal '2.5 hours added', j.notes
     assert_equal 0, j.details.size
     
-    t = issue.time_entries.find(:first, :order => 'id DESC')
+    t = issue.time_entries.find_by_comments('test_put_update_with_note_and_spent_time')
     assert_not_nil t
     assert_equal 2.5, t.hours
     assert_equal spent_hours_before + 2.5, issue.spent_hours
