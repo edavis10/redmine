@@ -243,6 +243,13 @@ class Query < ActiveRecord::Base
     parms = expression.scan(/^(o|c|!\*|!|\*)?(.*)$/).first
     add_filter field, (parms[0] || "="), [parms[1] || ""]
   end
+
+  # Add multiple filters using +add_filter+
+  def add_filters(fields, operators, values)
+    fields.each do |field|
+      add_filter(field, operators[field], values[field])
+    end
+  end
   
   def has_filter?(field)
     filters and filters[field]
@@ -268,6 +275,14 @@ class Query < ActiveRecord::Base
                             project.all_issue_custom_fields :
                             IssueCustomField.find(:all)
                            ).collect {|cf| QueryCustomFieldColumn.new(cf) }      
+  end
+
+  def self.available_columns=(v)
+    self.available_columns = (v)
+  end
+  
+  def self.add_available_column(column)
+    self.available_columns << (column) if column.is_a?(QueryColumn)
   end
   
   # Returns an array of columns that can be used to group the results

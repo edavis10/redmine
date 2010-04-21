@@ -35,8 +35,9 @@ module CustomFieldsHelper
     custom_field = custom_value.custom_field
     field_name = "#{name}[custom_field_values][#{custom_field.id}]"
     field_id = "#{name}_custom_field_values_#{custom_field.id}"
-    
-    case custom_field.field_format
+
+    field_format = Redmine::CustomFieldFormat.find_by_name(custom_field.field_format)
+    case field_format.edit_as
     when "date"
       text_field_tag(field_name, custom_value.value, :id => field_id, :size => 10) + 
       calendar_for(field_id)
@@ -70,7 +71,8 @@ module CustomFieldsHelper
   def custom_field_tag_for_bulk_edit(name, custom_field)
     field_name = "#{name}[custom_field_values][#{custom_field.id}]"
     field_id = "#{name}_custom_field_values_#{custom_field.id}"
-    case custom_field.field_format
+    field_format = Redmine::CustomFieldFormat.find_by_name(custom_field.field_format)
+    case field_format.edit_as
       when "date"
         text_field_tag(field_name, '', :id => field_id, :size => 10) + 
         calendar_for(field_id)
@@ -95,19 +97,11 @@ module CustomFieldsHelper
   
   # Return a string used to display a custom value
   def format_value(value, field_format)
-    return "" unless value && !value.empty?
-    case field_format
-    when "date"
-      begin; format_date(value.to_date); rescue; value end
-    when "bool"
-      l(value == "1" ? :general_text_Yes : :general_text_No)
-    else
-      value
-    end
+    Redmine::CustomFieldFormat.format_value(value, field_format) # Proxy
   end
 
   # Return an array of custom field formats which can be used in select_tag
   def custom_field_formats_for_select
-    CustomField::FIELD_FORMATS.sort {|a,b| a[1][:order]<=>b[1][:order]}.collect { |k| [ l(k[1][:name]), k[0] ] }
+    Redmine::CustomFieldFormat.as_select
   end
 end
