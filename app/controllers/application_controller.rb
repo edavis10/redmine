@@ -108,8 +108,9 @@ class ApplicationController < ActionController::Base
       lang = find_language(User.current.language)
     end
     if lang.nil? && request.env['HTTP_ACCEPT_LANGUAGE']
-      accept_lang = parse_qvalues(request.env['HTTP_ACCEPT_LANGUAGE']).first.downcase
+      accept_lang = parse_qvalues(request.env['HTTP_ACCEPT_LANGUAGE']).first
       if !accept_lang.blank?
+        accept_lang = accept_lang.downcase
         lang = find_language(accept_lang) || find_language(accept_lang.split('-').first)
       end
     end
@@ -163,6 +164,16 @@ class ApplicationController < ActionController::Base
   # Find project of id params[:id]
   def find_project
     @project = Project.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+
+  # Find a project based on params[:project_id]
+  # TODO: some subclasses override this, see about merging their logic
+  def find_optional_project
+    @project = Project.find(params[:project_id]) unless params[:project_id].blank?
+    allowed = User.current.allowed_to?({:controller => params[:controller], :action => params[:action]}, @project, :global => true)
+    allowed ? true : deny_access
   rescue ActiveRecord::RecordNotFound
     render_404
   end
@@ -329,4 +340,13 @@ class ApplicationController < ActionController::Base
   def render_attachment_warning_if_needed(obj)
     flash[:warning] = l(:warning_attachments_not_saved, obj.unsaved_attachments.size) if obj.unsaved_attachments.present?
   end
+
+  # Rescues an invalid query statement. Just in case...
+  def query_statement_invalid(exception)
+    logger.error "Query::StatementInvalid: #{exception.message}" if logger
+    session.delete(:query)
+    sort_clear if respond_to?(:sort_clear)
+    render_error "An error occurred while executing the query and has been logged. Please report this error to your Redmine administrator."
+  end
+
 end
