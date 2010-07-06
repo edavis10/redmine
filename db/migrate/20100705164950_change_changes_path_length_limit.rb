@@ -5,7 +5,7 @@ class ChangeChangesPathLengthLimit < ActiveRecord::Migration
   end
 
   def self.down
-    change_column :changes, :from_path, :string, :default => "", :null => false
+    change_column :changes, :path, :string, :default => "", :null => false
     change_column :changes, :from_path, :string
   end
 end
