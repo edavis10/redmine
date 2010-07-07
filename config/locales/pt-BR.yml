@@ -915,7 +915,7 @@ pt-BR:
   permission_export_wiki_pages: Exportar páginas wiki
   setting_cache_formatted_text: Realizar cache de texto formatado
   permission_manage_project_activities: Gerenciar atividades do projeto
-  error_unable_delete_issue_status: Impossível excluir situação da tarefa
+  error_unable_delete_issue_status: Não foi possível excluir situação da tarefa
   label_profile: Perfil
   permission_manage_subtasks: Gerenciar subtarefas
   field_parent_issue: Tarefa pai
@@ -930,5 +930,5 @@ pt-BR:
   notice_failed_to_save_members: "Falha ao gravar membro(s): {{errors}}."
   text_zoom_out: Afastar zoom
   text_zoom_in: Aproximar zoom
-  notice_unable_delete_time_entry: Unable to delete time log entry.
-  label_overall_spent_time: Overall spent time
+  notice_unable_delete_time_entry: Não foi possível excluir horas de trabalho
+  label_overall_spent_time: Tempo gasto total
