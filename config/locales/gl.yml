@@ -205,7 +205,7 @@ gl:
   default_priority_low: Baixa
   default_priority_normal: Normal
   default_priority_urgent: Urxente
-  default_role_developper: Desenvolvedor
+  default_role_developer: Desenvolvedor
   default_role_manager: Xefe de proxecto
   default_role_reporter: Informador
   default_tracker_bug: Erros
@@ -917,3 +917,10 @@ gl:
   error_unable_to_connect: Unable to connect ({{value}})
   error_can_not_remove_role: This role is in use and can not be deleted.
   error_can_not_delete_tracker: This tracker contains issues and can't be deleted.
+  field_principal: Principal
+  label_my_page_block: My page block
+  notice_failed_to_save_members: "Failed to save member(s): {{errors}}."
+  text_zoom_out: Zoom out
+  text_zoom_in: Zoom in
+  notice_unable_delete_time_entry: Unable to delete time log entry.
+  label_overall_spent_time: Overall spent time

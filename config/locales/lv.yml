@@ -856,7 +856,7 @@ lv:
   text_own_membership_delete_confirmation: "Jūs tūlīt dzēsīsiet dažas vai visas atļaujas, un Jums pēc tam var nebūt atļauja labot šo projektu.\nVai turpināt?"
   
   default_role_manager: Menedžeris
-  default_role_developper: Izstrādātājs
+  default_role_developer: Izstrādātājs
   default_role_reporter: Ziņotājs
   default_tracker_bug: Kļūda
   default_tracker_feature: Iezīme
@@ -892,3 +892,10 @@ lv:
   label_subtask_plural: Subtasks
   error_can_not_delete_tracker: This tracker contains issues and can't be deleted.
   label_project_copy_notifications: Send email notifications during the project copy
+  field_principal: Principal
+  label_my_page_block: My page block
+  notice_failed_to_save_members: "Failed to save member(s): {{errors}}."
+  text_zoom_out: Zoom out
+  text_zoom_in: Zoom in
+  notice_unable_delete_time_entry: Unable to delete time log entry.
+  label_overall_spent_time: Overall spent time

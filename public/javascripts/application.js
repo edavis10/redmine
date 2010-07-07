@@ -52,11 +52,17 @@ function addFileField() {
     d.type = "text";
     d.name = "attachments[" + fileFieldCount + "][description]";
     d.size = 60;
+    var dLabel = document.createElement("label");
+    dLabel.addClassName('inline');
+    // Pulls the languge value used for Optional Description
+    dLabel.update($('attachment_description_label_content').innerHTML)
     
     p = document.getElementById("attachments_fields");
     p.appendChild(document.createElement("br"));
     p.appendChild(f);
-    p.appendChild(d);
+    p.appendChild(dLabel);
+    dLabel.appendChild(d);
+
 }
 
 function showTab(name) {
@@ -220,8 +226,10 @@ Ajax.Responders.register({
     }
 });
 
-Event.observe(window, 'load', function() {
+function hideOnLoad() {
   $$('.hol').each(function(el) {
   	el.hide();
 	});
-});
+}
+
+Event.observe(window, 'load', hideOnLoad);

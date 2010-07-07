@@ -49,7 +49,7 @@ class MailHandler < ActionMailer::Base
       logger.info  "MailHandler: ignoring email from Redmine emission address [#{sender_email}]" if logger && logger.info
       return false
     end
-    @user = User.find_by_mail(sender_email)
+    @user = User.find_by_mail(sender_email) if sender_email.present?
     if @user && !@user.active?
       logger.info  "MailHandler: ignoring email from non-active user [#{@user.login}]" if logger && logger.info
       return false
@@ -120,18 +120,21 @@ class MailHandler < ActionMailer::Base
     category = (get_keyword(:category) && project.issue_categories.find_by_name(get_keyword(:category)))
     priority = (get_keyword(:priority) && IssuePriority.find_by_name(get_keyword(:priority)))
     status =  (get_keyword(:status) && IssueStatus.find_by_name(get_keyword(:status)))
+    assigned_to = (get_keyword(:assigned_to, :override => true) && find_user_from_keyword(get_keyword(:assigned_to, :override => true)))
+    due_date = get_keyword(:due_date, :override => true)
+    start_date = get_keyword(:start_date, :override => true)
 
     # check permission
     unless @@handler_options[:no_permission_check]
       raise UnauthorizedAction unless user.allowed_to?(:add_issues, project)
     end
-    
-    issue = Issue.new(:author => user, :project => project, :tracker => tracker, :category => category, :priority => priority)
+
+    issue = Issue.new(:author => user, :project => project, :tracker => tracker, :category => category, :priority => priority, :due_date => due_date, :start_date => start_date, :assigned_to => assigned_to)
     # check workflow
     if status && issue.new_statuses_allowed_to(user).include?(status)
       issue.status = status
     end
-    issue.subject = email.subject.chomp
+    issue.subject = email.subject.chomp[0,255]
     if issue.subject.blank?
       issue.subject = '(no subject)'
     end
@@ -163,6 +166,9 @@ class MailHandler < ActionMailer::Base
   # Adds a note to an existing issue
   def receive_issue_reply(issue_id)
     status =  (get_keyword(:status) && IssueStatus.find_by_name(get_keyword(:status)))
+    due_date = get_keyword(:due_date, :override => true)
+    start_date = get_keyword(:start_date, :override => true)
+    assigned_to = (get_keyword(:assigned_to, :override => true) && find_user_from_keyword(get_keyword(:assigned_to, :override => true)))
     
     issue = Issue.find_by_id(issue_id)
     return unless issue
@@ -179,6 +185,10 @@ class MailHandler < ActionMailer::Base
     if status && issue.new_statuses_allowed_to(user).include?(status)
       issue.status = status
     end
+    issue.start_date = start_date if start_date
+    issue.due_date = due_date if due_date
+    issue.assigned_to = assigned_to if assigned_to
+    
     issue.save!
     logger.info "MailHandler: issue ##{issue.id} updated by #{user}" if logger && logger.info
     journal
@@ -245,7 +255,7 @@ class MailHandler < ActionMailer::Base
       @keywords[attr]
     else
       @keywords[attr] = begin
-        if (options[:override] || @@handler_options[:allow_override].include?(attr.to_s)) && plain_text_body.gsub!(/^#{attr}[ \t]*:[ \t]*(.+)\s*$/i, '')
+        if (options[:override] || @@handler_options[:allow_override].include?(attr.to_s)) && plain_text_body.gsub!(/^#{attr.to_s.humanize}[ \t]*:[ \t]*(.+)\s*$/i, '')
           $1.strip
         elsif !@@handler_options[:issue][attr].blank?
           @@handler_options[:issue][attr]
@@ -312,5 +322,15 @@ class MailHandler < ActionMailer::Base
       body = body.gsub(regex, '')
     end
     body.strip
+  end
+
+  def find_user_from_keyword(keyword)
+    user ||= User.find_by_mail(keyword)
+    user ||= User.find_by_login(keyword)
+    if user.nil? && keyword.match(/ /)
+      firstname, lastname = *(keyword.split) # "First Last Throwaway"
+      user ||= User.find_by_firstname_and_lastname(firstname, lastname)
+    end
+    user
   end
 end

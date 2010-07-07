@@ -730,7 +730,7 @@ pt-BR:
   text_email_delivery_not_configured: "O envio de e-mail não está configurado, e as notificações estão inativas.\nConfigure seu servidor SMTP no arquivo config/email.yml e reinicie a aplicação para ativá-las."
 
   default_role_manager: Gerente
-  default_role_developper: Desenvolvedor
+  default_role_developer: Desenvolvedor
   default_role_reporter: Informante
   default_tracker_bug: Defeito
   default_tracker_feature: Funcionalidade
@@ -925,3 +925,10 @@ pt-BR:
   error_unable_to_connect: Não foi possível conectar ({{value}})
   error_can_not_remove_role: Este papel está em uso e não pode ser excluído.
   error_can_not_delete_tracker: Este tipo de tarefa está atribuído a alguma(s) tarefa(s) e não pode ser excluído.
+  field_principal: Principal
+  label_my_page_block: Meu bloco de página
+  notice_failed_to_save_members: "Falha ao gravar membro(s): {{errors}}."
+  text_zoom_out: Afastar zoom
+  text_zoom_in: Aproximar zoom
+  notice_unable_delete_time_entry: Unable to delete time log entry.
+  label_overall_spent_time: Overall spent time

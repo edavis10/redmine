@@ -861,7 +861,7 @@ eu:
   text_own_membership_delete_confirmation: "Zure baimen batzuk (edo guztiak) kentzera zoaz eta baliteke horren ondoren proiektu hau ezin editatzea.\n Ziur zaude jarraitu nahi duzula?"
   
   default_role_manager: Kudeatzailea
-  default_role_developper: Garatzailea
+  default_role_developer: Garatzailea
   default_role_reporter: Berriemailea
   default_tracker_bug: Errorea
   default_tracker_feature: Eginbidea
@@ -901,3 +901,10 @@ eu:
   error_unable_to_connect: Ezin da konektatu ({{value}})
   error_can_not_remove_role: Rol hau erabiltzen hari da eta ezin da ezabatu.
   error_can_not_delete_tracker: Aztarnari honek zereginak ditu eta ezin da ezabatu.
+  field_principal: Principal
+  label_my_page_block: My page block
+  notice_failed_to_save_members: "Failed to save member(s): {{errors}}."
+  text_zoom_out: Zoom out
+  text_zoom_in: Zoom in
+  notice_unable_delete_time_entry: Unable to delete time log entry.
+  label_overall_spent_time: Overall spent time

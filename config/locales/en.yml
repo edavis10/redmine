@@ -148,10 +148,12 @@ en:
   notice_feeds_access_key_reseted: Your RSS access key was reset.
   notice_api_access_key_reseted: Your API access key was reset.
   notice_failed_to_save_issues: "Failed to save {{count}} issue(s) on {{total}} selected: {{ids}}."
+  notice_failed_to_save_members: "Failed to save member(s): {{errors}}."
   notice_no_issue_selected: "No issue is selected! Please, check the issues you want to edit."
   notice_account_pending: "Your account was created and is now pending administrator approval."
   notice_default_data_loaded: Default configuration successfully loaded.
   notice_unable_delete_version: Unable to delete version.
+  notice_unable_delete_time_entry: Unable to delete time log entry.
   notice_issue_done_ratios_updated: Issue done ratios updated.
   
   error_can_t_load_default_data: "Default configuration could not be loaded: {{value}}"
@@ -226,6 +228,7 @@ en:
   field_priority: Priority
   field_fixed_version: Target version
   field_user: User
+  field_principal: Principal
   field_role: Role
   field_homepage: Homepage
   field_is_public: Public
@@ -458,6 +461,7 @@ en:
   label_my_page: My page
   label_my_account: My account
   label_my_projects: My projects
+  label_my_page_block: My page block
   label_administration: Administration
   label_login: Sign in
   label_logout: Sign out
@@ -635,6 +639,7 @@ en:
   label_changes_details: Details of all changes
   label_issue_tracking: Issue tracking
   label_spent_time: Spent time
+  label_overall_spent_time: Overall spent time
   label_f_hour: "{{value}} hour"
   label_f_hour_plural: "{{value}} hours"
   label_time_tracking: Time tracking
@@ -868,9 +873,11 @@ en:
   text_wiki_page_destroy_children: "Delete child pages and all their descendants"
   text_wiki_page_reassign_children: "Reassign child pages to this parent page"
   text_own_membership_delete_confirmation: "You are about to remove some or all of your permissions and may no longer be able to edit this project after that.\nAre you sure you want to continue?"
+  text_zoom_in: Zoom in
+  text_zoom_out: Zoom out
   
   default_role_manager: Manager
-  default_role_developper: Developer
+  default_role_developer: Developer
   default_role_reporter: Reporter
   default_tracker_bug: Bug
   default_tracker_feature: Feature

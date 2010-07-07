@@ -710,7 +710,7 @@ tr:
   text_reassign_time_entries: 'Raporlanmış saatleri bu iletiye tekrar ata:'
   
   default_role_manager: Yönetici
-  default_role_developper: Geliştirici
+  default_role_developer: Geliştirici
   default_role_reporter: Raporlayıcı
   default_tracker_bug: Hata
   default_tracker_feature: ÖZellik
@@ -924,3 +924,10 @@ tr:
   error_unable_to_connect: Unable to connect ({{value}})
   error_can_not_remove_role: This role is in use and can not be deleted.
   error_can_not_delete_tracker: This tracker contains issues and can't be deleted.
+  field_principal: Principal
+  label_my_page_block: My page block
+  notice_failed_to_save_members: "Failed to save member(s): {{errors}}."
+  text_zoom_out: Zoom out
+  text_zoom_in: Zoom in
+  notice_unable_delete_time_entry: Unable to delete time log entry.
+  label_overall_spent_time: Overall spent time

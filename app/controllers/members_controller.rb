@@ -36,13 +36,30 @@ class MembersController < ApplicationController
       @project.members << members
     end
     respond_to do |format|
-      format.html { redirect_to :controller => 'projects', :action => 'settings', :tab => 'members', :id => @project }
-      format.js { 
-        render(:update) {|page| 
-          page.replace_html "tab-content-members", :partial => 'projects/settings/members'
-          members.each {|member| page.visual_effect(:highlight, "member-#{member.id}") }
+      if members.present? && members.all? {|m| m.valid? }
+
+        format.html { redirect_to :controller => 'projects', :action => 'settings', :tab => 'members', :id => @project }
+
+        format.js { 
+          render(:update) {|page| 
+            page.replace_html "tab-content-members", :partial => 'projects/settings/members'
+            page << 'hideOnLoad()'
+            members.each {|member| page.visual_effect(:highlight, "member-#{member.id}") }
+          }
         }
-      }
+      else
+
+        format.js {
+          render(:update) {|page|
+            errors = members.collect {|m|
+              m.errors.full_messages
+            }.flatten.uniq
+
+            page.alert(l(:notice_failed_to_save_members, :errors => errors.join(', ')))
+          }
+        }
+        
+      end
     end
   end
   
@@ -53,6 +70,7 @@ class MembersController < ApplicationController
         format.js { 
           render(:update) {|page| 
             page.replace_html "tab-content-members", :partial => 'projects/settings/members'
+            page << 'hideOnLoad()'
             page.visual_effect(:highlight, "member-#{@member.id}")
           }
         }
@@ -66,7 +84,11 @@ class MembersController < ApplicationController
     end
     respond_to do |format|
       format.html { redirect_to :controller => 'projects', :action => 'settings', :tab => 'members', :id => @project }
-      format.js { render(:update) {|page| page.replace_html "tab-content-members", :partial => 'projects/settings/members'} }
+      format.js { render(:update) {|page|
+          page.replace_html "tab-content-members", :partial => 'projects/settings/members'
+          page << 'hideOnLoad()'
+        }
+      }
     end
   end
   

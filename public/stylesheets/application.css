@@ -343,10 +343,9 @@ form .attributes select { min-width: 50%; }
 
 ul.projects { margin: 0; padding-left: 1em; }
 ul.projects.root { margin: 0;  padding: 0; }
-ul.projects ul { border-left: 3px solid #e0e0e0; }
-ul.projects li { list-style-type:none; } 
-ul.projects li.root { margin-bottom: 1em; }
-ul.projects li.child { margin-top: 1em;}
+ul.projects ul.projects { border-left: 3px solid #e0e0e0; }
+ul.projects li.root { list-style-type:none; margin-bottom: 1em; }
+ul.projects li.child { list-style-type:none; margin-top: 1em;}
 ul.projects div.root a.project { font-family: "Trebuchet MS", Verdana, sans-serif; font-weight: bold; font-size: 16px; margin: 0 0 10px 0; }
 .my-project { padding-left: 18px; background: url(../images/fav.png) no-repeat 0 50%; }
 
@@ -401,6 +400,12 @@ margin-left: 0px !important;
 text-align: left;
 float: none;
 display: block;
+width: auto;
+}
+
+.tabular label.inline{
+float:none;
+margin-left: 5px !important;
 width: auto;
 }
 
@@ -513,10 +518,11 @@ vertical-align: bottom;
 
 /***** Calendar *****/
 table.cal {border-collapse: collapse; width: 100%; margin: 0px 0 6px 0;border: 1px solid #d7d7d7;}
-table.cal thead th {width: 14%;}
+table.cal thead th {width: 14%; background-color:#EEEEEE; padding: 4px; }
+table.cal thead th.week-number {width: auto;}
 table.cal tbody tr {height: 100px;}
-table.cal th { background-color:#EEEEEE; padding: 4px; }
 table.cal td {border: 1px solid #d7d7d7; vertical-align: top; font-size: 0.9em;}
+table.cal td.week-number { background-color:#EEEEEE; padding: 4px; border:none; font-size: 1em;}
 table.cal td p.day-num {font-size: 1.1em; text-align:right;}
 table.cal td.odd p.day-num {color: #bbb;}
 table.cal td.today {background:#ffffdd;}
@@ -904,4 +910,5 @@ h2 img { vertical-align:middle; }
   #main { background: #fff; }
   #content { width: 99%; margin: 0; padding: 0; border: 0; background: #fff; overflow: visible !important;}
 	#wiki_add_attachment { display:none; }
+  .hide-when-print { display: none; }
 }

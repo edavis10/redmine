@@ -762,7 +762,7 @@ vi:
   text_email_delivery_not_configured: "Email delivery is not configured, and notifications are disabled.\nConfigure your SMTP server in config/email.yml and restart the application to enable them."
   
   default_role_manager: Điều hành
-  default_role_developper: Phát triển
+  default_role_developer: Phát triển
   default_role_reporter: Báo cáo
   default_tracker_bug: Lỗi
   default_tracker_feature: Tính năng
@@ -956,3 +956,10 @@ vi:
   error_unable_to_connect: Unable to connect ({{value}})
   error_can_not_remove_role: This role is in use and can not be deleted.
   error_can_not_delete_tracker: This tracker contains issues and can't be deleted.
+  field_principal: Principal
+  label_my_page_block: My page block
+  notice_failed_to_save_members: "Failed to save member(s): {{errors}}."
+  text_zoom_out: Zoom out
+  text_zoom_in: Zoom in
+  notice_unable_delete_time_entry: Unable to delete time log entry.
+  label_overall_spent_time: Overall spent time

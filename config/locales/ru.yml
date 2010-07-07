@@ -265,7 +265,7 @@ ru:
   default_priority_low: Низкий
   default_priority_normal: Нормальный
   default_priority_urgent: Срочный
-  default_role_developper: Разработчик
+  default_role_developer: Разработчик
   default_role_manager: Менеджер
   default_role_reporter: Генератор отчетов
   default_tracker_bug: Ошибка
@@ -576,6 +576,7 @@ ru:
   label_more: Больше
   label_my_account: Моя учетная запись
   label_my_page: Моя страница
+  label_my_page_block: Блок моей страницы
   label_my_projects: Мои проекты
   label_new: Новый
   label_new_statuses_allowed: Разрешены новые статусы
@@ -770,6 +771,7 @@ ru:
   notice_email_error: "Во время отправки письма произошла ошибка ({{value}})"
   notice_email_sent: "Отправлено письмо {{value}}"
   notice_failed_to_save_issues: "Не удалось сохранить {{count}} пункт(ов) из {{total}} выбранных: {{ids}}."
+  notice_failed_to_save_members: "Не удалось сохранить участника(ов): {{errors}}."
   notice_feeds_access_key_reseted: Ваш ключ доступа RSS был перезапущен.
   notice_file_not_found: Страница, на которую Вы пытаетесь зайти, не существует или удалена.
   notice_locking_conflict: Информация обновлена другим пользователем.
@@ -923,7 +925,7 @@ ru:
   text_project_identifier_info: 'Допустимы строчные буквы (a-z), цифры и дефис.<br />Сохраненный идентификатор не может быть изменен.'
   text_reassign_time_entries: 'Перенести зарегистрированное время на следующую задачу:'
   text_regexp_info: напр. ^[A-Z0-9]+$
-  text_repository_usernames_mapping: "Выберите или обновите пользователя Redmine, связанного с найденными именами в журнале хранилица.\nПользователи с одинаковыми именами или email в Redmine и хранилище связываются автоматически."
+  text_repository_usernames_mapping: "Выберите или обновите пользователя Redmine, связанного с найденными именами в журнале хранилища.\nПользователи с одинаковыми именами или email в Redmine и хранилище связываются автоматически."
   text_rmagick_available: Доступно использование RMagick (опционально)
   text_select_mail_notifications: Выберите действия, на которые будет отсылаться уведомление на электронную почту.
   text_select_project_modules: 'Выберите модули, которые будут использованы в проекте:'
@@ -1017,3 +1019,8 @@ ru:
   label_close_versions: Закрыть завершенные версии
   label_board_sticky: Прикреплена
   label_board_locked: Заблокирована
+  field_principal: Глава
+  text_zoom_out: Отдалить
+  text_zoom_in: Приблизить
+  notice_unable_delete_time_entry: Unable to delete time log entry.
+  label_overall_spent_time: Overall spent time

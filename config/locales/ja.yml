@@ -178,10 +178,12 @@ ja:
   notice_feeds_access_key_reseted: RSSアクセスキーを初期化しました。
   notice_api_access_key_reseted: APIアクセスキーを初期化しました。
   notice_failed_to_save_issues: "{{total}}件のうち{{count}}件のチケットが保存できませんでした: {{ids}}."
+  notice_failed_to_save_members: "メンバーの保存に失敗しました: {{errors}}."
   notice_no_issue_selected: "チケットが選択されていません! 更新対象のチケットを選択してください。"
   notice_account_pending: アカウントは作成済みで、管理者の承認待ちです。
   notice_default_data_loaded: デフォルト設定をロードしました。
   notice_unable_delete_version: バージョンを削除できません
+  notice_unable_delete_time_entry: 作業時間を削除できません
   notice_issue_done_ratios_updated: チケットの進捗が更新されました。
   
   error_can_t_load_default_data: "デフォルト設定がロードできませんでした: {{value}}"
@@ -257,6 +259,7 @@ ja:
   field_priority: 優先度
   field_fixed_version: 対象バージョン
   field_user: ユーザ
+  field_principal: 主体
   field_role: ロール
   field_homepage: ホームページ
   field_is_public: 公開
@@ -490,6 +493,7 @@ ja:
   label_my_page: マイページ
   label_my_account: 個人設定
   label_my_projects: マイプロジェクト
+  label_my_page_block: マイページパーツ
   label_administration: 管理
   label_login: ログイン
   label_logout: ログアウト
@@ -667,6 +671,7 @@ ja:
   label_changes_details: 全変更の詳細
   label_issue_tracking: チケットトラッキング
   label_spent_time: 作業時間の記録
+  label_overall_spent_time: 全ての作業時間の記録
   label_f_hour: "{{value}}時間"
   label_f_hour_plural: "{{value}}時間"
   label_time_tracking: 時間トラッキング
@@ -899,9 +904,11 @@ ja:
   text_wiki_page_destroy_children: "配下の子孫ページも削除する"
   text_wiki_page_reassign_children: "子ページを次の親ページの配下に移動する"
   text_own_membership_delete_confirmation: "いくつかまたはすべての権限をあなた自身から剥奪しようとしているため、このプロジェクトを編集できなくなるかもしれません。\n本当に続けてもよろしいですか？"
+  text_zoom_in: 拡大
+  text_zoom_out: 縮小
   
   default_role_manager: 管理者
-  default_role_developper: 開発者
+  default_role_developer: 開発者
   default_role_reporter: 報告者
   default_tracker_bug: バグ
   default_tracker_feature: 機能

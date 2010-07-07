@@ -861,7 +861,7 @@ mn:
   text_own_membership_delete_confirmation: "You are about to remove some or all of your permissions and may no longer be able to edit this project after that.\nAre you sure you want to continue?"
   
   default_role_manager: Менежер
-  default_role_developper: Хөгжүүлэгч
+  default_role_developer: Хөгжүүлэгч
   default_role_reporter: Мэдэгдэгч
   default_tracker_bug: Алдаа
   default_tracker_feature: Онцлог
@@ -898,3 +898,10 @@ mn:
   error_unable_to_connect: Unable to connect ({{value}})
   error_can_not_remove_role: This role is in use and can not be deleted.
   error_can_not_delete_tracker: This tracker contains issues and can't be deleted.
+  field_principal: Principal
+  label_my_page_block: My page block
+  notice_failed_to_save_members: "Failed to save member(s): {{errors}}."
+  text_zoom_out: Zoom out
+  text_zoom_in: Zoom in
+  notice_unable_delete_time_entry: Unable to delete time log entry.
+  label_overall_spent_time: Overall spent time

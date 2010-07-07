@@ -53,7 +53,7 @@ class User < Principal
   attr_protected :login, :admin, :password, :password_confirmation, :hashed_password, :group_ids
 	
   validates_presence_of :login, :firstname, :lastname, :mail, :if => Proc.new { |user| !user.is_a?(AnonymousUser) }
-  validates_uniqueness_of :login, :if => Proc.new { |user| !user.login.blank? }
+  validates_uniqueness_of :login, :if => Proc.new { |user| !user.login.blank? }, :case_sensitive => false
   validates_uniqueness_of :mail, :if => Proc.new { |user| !user.mail.blank? }, :case_sensitive => false
   # Login must contain lettres, numbers, underscores only
   validates_format_of :login, :with => /^[a-z0-9_\-@\.]*$/i
@@ -71,7 +71,7 @@ class User < Principal
   
   def before_save
     # update hashed_password if password was set
-    self.hashed_password = User.hash_password(self.password) if self.password
+    self.hashed_password = User.hash_password(self.password) if self.password && self.auth_source_id.blank?
   end
   
   def reload(*args)
@@ -96,7 +96,7 @@ class User < Principal
   def self.try_to_login(login, password)
     # Make sure no one can sign in with an empty password
     return nil if password.to_s.empty?
-    user = find(:first, :conditions => ["login=?", login])
+    user = find_by_login(login)
     if user
       # user is already in local database
       return nil if !user.active?
@@ -116,7 +116,7 @@ class User < Principal
         user.language = Setting.default_language
         if user.save
           user.reload
-          logger.info("User '#{user.login}' created from the LDAP") if logger
+          logger.info("User '#{user.login}' created from external auth source: #{user.auth_source.type} - #{user.auth_source.name}") if logger && user.auth_source
         end
       end
     end    
@@ -161,7 +161,17 @@ class User < Principal
   end
 
   def check_password?(clear_password)
-    User.hash_password(clear_password) == self.hashed_password
+    if auth_source_id.present?
+      auth_source.authenticate(self.login, clear_password)
+    else
+      User.hash_password(clear_password) == self.hashed_password
+    end
+  end
+
+  # Does the backend storage allow this user to change their password?
+  def change_password_allowed?
+    return true if auth_source_id.blank?
+    return auth_source.allow_password_changes?
   end
 
   # Generate and set a random password.  Useful for automated user creation
@@ -211,7 +221,19 @@ class User < Principal
     @notified_projects_ids = nil
     notified_projects_ids
   end
-  
+
+  # Find a user account by matching the exact login and then a case-insensitive
+  # version.  Exact matches will be given priority.
+  def self.find_by_login(login)
+    # force string comparison to be case sensitive on MySQL
+    type_cast = (ActiveRecord::Base.connection.adapter_name == 'MySQL') ? 'BINARY' : ''
+    
+    # First look for an exact match
+    user = first(:conditions => ["#{type_cast} login = ?", login])
+    # Fail over to case-insensitive if none was found
+    user ||= first(:conditions => ["#{type_cast} LOWER(login) = ?", login.to_s.downcase])
+  end
+
   def self.find_by_rss_key(key)
     token = Token.find_by_value(key)
     token && token.user.active? ? token.user : nil
