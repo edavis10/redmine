@@ -265,7 +265,7 @@ ru:
   default_priority_low: Низкий
   default_priority_normal: Нормальный
   default_priority_urgent: Срочный
-  default_role_developper: Разработчик
+  default_role_developer: Разработчик
   default_role_manager: Менеджер
   default_role_reporter: Генератор отчетов
   default_tracker_bug: Ошибка
@@ -1022,5 +1022,5 @@ ru:
   field_principal: Глава
   text_zoom_out: Отдалить
   text_zoom_in: Приблизить
-  notice_unable_delete_time_entry: Unable to delete time log entry.
-  label_overall_spent_time: Overall spent time
+  notice_unable_delete_time_entry: Невозможно удалить запись журнала.
+  label_overall_spent_time: Всего затрачено времени

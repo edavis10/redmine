@@ -227,9 +227,38 @@ sub authen_handler {
   }
 }
 
+# check if authentication is forced
+sub is_authentication_forced {
+  my $r = shift;
+
+  my $dbh = connect_database($r);
+  my $sth = $dbh->prepare(
+    "SELECT value FROM settings where settings.name = 'login_required';"
+  );
+
+  $sth->execute();
+  my $ret = 0;
+  if (my @row = $sth->fetchrow_array) {
+    if ($row[0] eq "1" || $row[0] eq "t") {
+      $ret = 1;
+    }
+  }
+  $sth->finish();
+  undef $sth;
+  
+  $dbh->disconnect();
+  undef $dbh;
+
+  $ret;
+}
+
 sub is_public_project {
     my $project_id = shift;
     my $r = shift;
+    
+    if (is_authentication_forced($r)) {
+      return 0;
+    }
 
     my $dbh = connect_database($r);
     my $sth = $dbh->prepare(
@@ -309,7 +338,9 @@ sub is_member {
                 bindpw  =>      $rowldap[4] ? $rowldap[4] : "",
                 filter  =>      "(".$rowldap[6]."=%s)"
             );
-            $ret = 1 if ($ldap->authenticate($redmine_user, $redmine_pass));
+            my $method = $r->method;
+            $ret = 1 if ($ldap->authenticate($redmine_user, $redmine_pass) && ((defined $read_only_methods{$method} && $permissions =~ /:browse_repository/) || $permissions =~ /:commit_access/));
+
           }
           $sthldap->finish();
           undef $sthldap;

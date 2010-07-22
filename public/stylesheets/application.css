@@ -64,6 +64,7 @@ h4, .wiki h3 {font-size: 13px;padding: 2px 10px 1px 0px;margin-bottom: 5px; bord
 #admin-menu a.settings { background-image: url(../images/changeset.png); }
 #admin-menu a.plugins { background-image: url(../images/plugin.png); }
 #admin-menu a.info { background-image: url(../images/help.png); }
+#admin-menu a.server_authentication { background-image: url(../images/server_key.png); }
 
 #main {background-color:#EEEEEE;}
 
@@ -343,10 +344,9 @@ form .attributes select { min-width: 50%; }
 
 ul.projects { margin: 0; padding-left: 1em; }
 ul.projects.root { margin: 0;  padding: 0; }
-ul.projects ul { border-left: 3px solid #e0e0e0; }
-ul.projects li { list-style-type:none; } 
-ul.projects li.root { margin-bottom: 1em; }
-ul.projects li.child { margin-top: 1em;}
+ul.projects ul.projects { border-left: 3px solid #e0e0e0; }
+ul.projects li.root { list-style-type:none; margin-bottom: 1em; }
+ul.projects li.child { list-style-type:none; margin-top: 1em;}
 ul.projects div.root a.project { font-family: "Trebuchet MS", Verdana, sans-serif; font-weight: bold; font-size: 16px; margin: 0 0 10px 0; }
 .my-project { padding-left: 18px; background: url(../images/fav.png) no-repeat 0 50%; }
 
@@ -838,6 +838,7 @@ padding-bottom: 3px;
 .icon-report  { background-image: url(../images/report.png); }
 .icon-comment  { background-image: url(../images/comment.png); }
 .icon-summary  { background-image: url(../images/lightning.png); }
+.icon-server-authentication { background-image: url(../images/server_key.png); }
 
 .icon-file { background-image: url(../images/files/default.png); }
 .icon-file.text-plain { background-image: url(../images/files/text.png); }
