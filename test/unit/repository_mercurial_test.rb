@@ -75,6 +75,16 @@ class RepositoryMercurialTest < ActiveSupport::TestCase
       assert_equal @repository.changesets.find_by_revision('0').committed_on, rev0_committed_on
     end
 
+    def test_changeset_order_by_revision
+      @repository.fetch_changesets
+      @repository.reload
+      c0 = @repository.latest_changeset
+      c1 = @repository.changesets(nil, nil)[1]
+      # sorted by revision (id), not by date
+      assert c0.revision.to_i > c1.revision.to_i
+      assert c0.committed_on < c1.committed_on
+    end
+
   else
     puts "Mercurial test repository NOT FOUND. Skipping unit tests !!!"
     def test_fake; assert true end
