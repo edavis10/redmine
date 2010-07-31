@@ -697,6 +697,7 @@ div.wiki pre {
     border: 1px solid #dadada;
     width:auto;
     overflow-x: auto;
+    overflow-y: hidden;
 }
 
 div.wiki ul.toc {
@@ -900,6 +901,10 @@ td.username img.gravatar {
 #activity dt,
 .journal {
 	clear: left;
+}
+
+.journal-link {
+	float: right;
 }
 
 h2 img { vertical-align:middle; }

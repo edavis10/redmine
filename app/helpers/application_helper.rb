@@ -783,6 +783,10 @@ module ApplicationHelper
     end
   end
 
+  def favicon
+    "<link rel='shortcut icon' href='#{image_path('/favicon.ico')}' />"
+  end
+
   private
 
   def wiki_helper
