@@ -153,4 +153,65 @@ class AccountControllerTest < ActionController::TestCase
     assert_redirected_to ''
     assert_nil @request.session[:user_id]
   end
+
+  context "GET #register" do
+    context "with self registration on" do
+      setup do
+        Setting.self_registration = '3'
+        get :register
+      end
+      
+      should_respond_with :success
+      should_render_template :register
+      should_assign_to :user
+    end
+    
+    context "with self registration off" do
+      setup do
+        Setting.self_registration = '0'
+        get :register
+      end
+
+      should_redirect_to('/') { home_url }
+    end
+  end
+
+  # See integration/account_test.rb for the full test
+  context "POST #register" do
+    context "with self registration on automatic" do
+      setup do
+        Setting.self_registration = '3'
+        post :register, :user => {
+          :login => 'register',
+          :password => 'test',
+          :password_confirmation => 'test',
+          :firstname => 'John',
+          :lastname => 'Doe',
+          :mail => 'register@example.com'
+        }
+      end
+      
+      should_respond_with :redirect
+      should_assign_to :user
+      should_redirect_to('my page') { {:controller => 'my', :action => 'account'} }
+
+      should_create_a_new_user { User.last(:conditions => {:login => 'register'}) }
+
+      should 'set the user status to active' do
+        user = User.last(:conditions => {:login => 'register'})
+        assert user
+        assert_equal User::STATUS_ACTIVE, user.status
+      end
+    end
+    
+    context "with self registration off" do
+      setup do
+        Setting.self_registration = '0'
+        post :register
+      end
+
+      should_redirect_to('/') { home_url }
+    end
+  end
+
 end
