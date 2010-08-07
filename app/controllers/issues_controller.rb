@@ -20,7 +20,7 @@ class IssuesController < ApplicationController
   default_search_scope :issues
   
   before_filter :find_issue, :only => [:show, :edit, :update, :reply]
-  before_filter :find_issues, :only => [:bulk_edit, :move, :destroy]
+  before_filter :find_issues, :only => [:bulk_edit, :move, :perform_move, :destroy]
   before_filter :find_project, :only => [:new, :create, :update_form, :preview, :auto_complete]
   before_filter :authorize, :except => [:index, :changes, :preview, :context_menu]
   before_filter :find_optional_project, :only => [:index, :changes]
@@ -264,15 +264,9 @@ class IssuesController < ApplicationController
       moved_issues = []
       @issues.each do |issue|
         issue.reload
-        changed_attributes = {}
-        [:assigned_to_id, :status_id, :start_date, :due_date].each do |valid_attribute|
-          unless params[valid_attribute].blank?
-            changed_attributes[valid_attribute] = (params[valid_attribute] == 'none' ? nil : params[valid_attribute])
-          end 
-        end
         issue.init_journal(User.current)
         call_hook(:controller_issues_move_before_save, { :params => params, :issue => issue, :target_project => @target_project, :copy => !!@copy })
-        if r = issue.move_to_project(@target_project, new_tracker, {:copy => @copy, :attributes => changed_attributes})
+        if r = issue.move_to_project(@target_project, new_tracker, {:copy => @copy, :attributes => extract_changed_attributes_for_move(params)})
           moved_issues << r
         else
           unsaved_issue_ids << issue.id
@@ -292,6 +286,11 @@ class IssuesController < ApplicationController
       return
     end
     render :layout => false if request.xhr?
+  end
+
+  # TODO: more descriptive name? move to separate controller like IssueMovesController?
+  def perform_move
+    move
   end
   
   def destroy
@@ -483,5 +482,15 @@ private
       render_error l(:error_no_default_issue_status)
       return false
     end
+  end
+
+  def extract_changed_attributes_for_move(params)
+    changed_attributes = {}
+    [:assigned_to_id, :status_id, :start_date, :due_date].each do |valid_attribute|
+      unless params[valid_attribute].blank?
+        changed_attributes[valid_attribute] = (params[valid_attribute] == 'none' ? nil : params[valid_attribute])
+      end
+    end
+    changed_attributes
   end
 end
