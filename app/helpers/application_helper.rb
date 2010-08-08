@@ -103,6 +103,23 @@ module ApplicationHelper
     link_to(text, {:controller => 'repositories', :action => 'revision', :id => project, :rev => revision}, :title => l(:label_revision_id, revision))
   end
 
+  # Generates a link to a project if active
+  # Examples:
+  # 
+  #   link_to_project(project)                          # => link to the specified project overview
+  #   link_to_project(project, :action=>'settings')     # => link to project settings
+  #   link_to_project(project, {:only_path => false}, :class => "project") # => 3rd arg adds html options
+  #   link_to_project(project, {}, :class => "project") # => html options with default url (project overview)
+  #
+  def link_to_project(project, options={}, html_options = nil)
+    if project.active?
+      url = {:controller => 'projects', :action => 'show', :id => project}.merge(options)
+      link_to(h(project), url, html_options)
+    else
+      h(project)
+    end
+  end
+
   def toggle_link(name, id, options={})
     onclick = "Element.toggle('#{id}'); "
     onclick << (options[:focus] ? "Form.Element.focus('#{options[:focus]}'); " : "this.blur(); ")
@@ -368,12 +385,12 @@ module ApplicationHelper
       ancestors = (@project.root? ? [] : @project.ancestors.visible)
       if ancestors.any?
         root = ancestors.shift
-        b << link_to(h(root), {:controller => 'projects', :action => 'show', :id => root, :jump => current_menu_item}, :class => 'root')
+        b << link_to_project(root, {:jump => current_menu_item}, :class => 'root')
         if ancestors.size > 2
           b << '&#8230;'
           ancestors = ancestors[-2, 2]
         end
-        b += ancestors.collect {|p| link_to(h(p), {:controller => 'projects', :action => 'show', :id => p, :jump => current_menu_item}, :class => 'ancestor') }
+        b += ancestors.collect {|p| link_to_project(p, {:jump => current_menu_item}, :class => 'ancestor') }
       end
       b << h(@project)
       b.join(' &#187; ')
@@ -391,6 +408,19 @@ module ApplicationHelper
       @html_title ||= []
       @html_title += args
     end
+  end
+
+  # Returns the theme, controller name, and action as css classes for the
+  # HTML body.
+  def body_css_classes
+    css = []
+    if theme = Redmine::Themes.theme(Setting.ui_theme)
+      css << 'theme-' + theme.name
+    end
+
+    css << 'controller-' + params[:controller]
+    css << 'action-' + params[:action]
+    css.join(' ')
   end
 
   def accesskey(s)
@@ -592,8 +622,7 @@ module ApplicationHelper
             end
           when 'project'
             if p = Project.visible.find_by_id(oid)
-              link = link_to h(p.name), {:only_path => only_path, :controller => 'projects', :action => 'show', :id => p},
-                                              :class => 'project'
+              link = link_to_project(p, {:only_path => only_path}, :class => 'project')
             end
           end
         elsif sep == ':'
@@ -635,8 +664,7 @@ module ApplicationHelper
             end
           when 'project'
             if p = Project.visible.find(:first, :conditions => ["identifier = :s OR LOWER(name) = :s", {:s => name.downcase}])
-              link = link_to h(p.name), {:only_path => only_path, :controller => 'projects', :action => 'show', :id => p},
-                                              :class => 'project'
+              link = link_to_project(p, {:only_path => only_path}, :class => 'project')
             end
           end
         end
