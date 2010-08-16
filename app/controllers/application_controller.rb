@@ -201,7 +201,23 @@ class ApplicationController < ActionController::Base
   def self.model_object(model)
     write_inheritable_attribute('model_object', model)
   end
-    
+
+  # Filter for bulk issue operations
+  def find_issues
+    @issues = Issue.find_all_by_id(params[:id] || params[:ids])
+    raise ActiveRecord::RecordNotFound if @issues.empty?
+    projects = @issues.collect(&:project).compact.uniq
+    if projects.size == 1
+      @project = projects.first
+    else
+      # TODO: let users bulk edit/move/destroy issues from different projects
+      render_error 'Can not bulk edit/move/destroy issues from different projects'
+      return false
+    end
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+  
   # make sure that the user is a member of the project (or admin) if project is private
   # used as a before_filter for actions that do not require any particular permission on the project
   def check_project_privacy
@@ -347,6 +363,21 @@ class ApplicationController < ActionController::Base
   # Renders a warning flash if obj has unsaved attachments
   def render_attachment_warning_if_needed(obj)
     flash[:warning] = l(:warning_attachments_not_saved, obj.unsaved_attachments.size) if obj.unsaved_attachments.present?
+  end
+
+  # Sets the `flash` notice or error based the number of issues that did not save
+  #
+  # @param [Array, Issue] issues all of the saved and unsaved Issues
+  # @param [Array, Integer] unsaved_issue_ids the issue ids that were not saved
+  def set_flash_from_bulk_issue_save(issues, unsaved_issue_ids)
+    if unsaved_issue_ids.empty?
+      flash[:notice] = l(:notice_successful_update) unless issues.empty?
+    else
+      flash[:error] = l(:notice_failed_to_save_issues,
+                        :count => unsaved_issue_ids.size,
+                        :total => issues.size,
+                        :ids => '#' + unsaved_issue_ids.join(', #'))
+    end
   end
 
   # Rescues an invalid query statement. Just in case...
