@@ -58,7 +58,8 @@ Redmine::AccessControl.map do |map|
     map.permission :manage_categories, {:projects => :settings, :issue_categories => [:new, :edit, :destroy]}, :require => :member
     # Issues
     map.permission :view_issues, {:projects => :roadmap, 
-                                  :issues => [:index, :changes, :show, :context_menu, :auto_complete],
+                                  :issues => [:index, :changes, :show, :context_menu],
+                                  :auto_complete => [:issues],
                                   :versions => [:show, :status_by],
                                   :queries => :index,
                                   :reports => [:issue_report, :issue_report_details]}
@@ -183,6 +184,8 @@ Redmine::MenuManager.map :project_menu do |menu|
   menu.push :issues, { :controller => 'issues', :action => 'index' }, :param => :project_id, :caption => :label_issue_plural
   menu.push :new_issue, { :controller => 'issues', :action => 'new' }, :param => :project_id, :caption => :label_issue_new,
               :html => { :accesskey => Redmine::AccessKeys.key_for(:new_issue) }
+  menu.push :gantt, { :controller => 'gantts', :action => 'show' }, :param => :project_id, :caption => :label_gantt
+  menu.push :calendar, { :controller => 'calendars', :action => 'show' }, :param => :project_id, :caption => :label_calendar
   menu.push :news, { :controller => 'news', :action => 'index' }, :param => :project_id, :caption => :label_news_plural
   menu.push :documents, { :controller => 'documents', :action => 'index' }, :param => :project_id, :caption => :label_document_plural
   menu.push :wiki, { :controller => 'wiki', :action => 'index', :page => nil }, 

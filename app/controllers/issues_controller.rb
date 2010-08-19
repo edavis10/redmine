@@ -21,8 +21,8 @@ class IssuesController < ApplicationController
   
   before_filter :find_issue, :only => [:show, :edit, :update]
   before_filter :find_issues, :only => [:bulk_edit, :move, :perform_move, :destroy]
-  before_filter :find_project, :only => [:new, :create, :update_form, :preview, :auto_complete]
-  before_filter :authorize, :except => [:index, :changes, :preview, :context_menu]
+  before_filter :find_project, :only => [:new, :create, :update_form]
+  before_filter :authorize, :except => [:index, :changes, :context_menu]
   before_filter :find_optional_project, :only => [:index, :changes]
   before_filter :check_for_default_issue_status, :only => [:new, :create]
   before_filter :build_new_issue_from_params, :only => [:new, :create]
@@ -299,33 +299,6 @@ class IssuesController < ApplicationController
     @priorities = IssuePriority.all
     
     render :partial => 'attributes'
-  end
-  
-  def preview
-    @issue = @project.issues.find_by_id(params[:id]) unless params[:id].blank?
-    if @issue
-      @attachements = @issue.attachments
-      @description = params[:issue] && params[:issue][:description]
-      if @description && @description.gsub(/(\r?\n|\n\r?)/, "\n") == @issue.description.to_s.gsub(/(\r?\n|\n\r?)/, "\n")
-        @description = nil
-      end
-      @notes = params[:notes]
-    else
-      @description = (params[:issue] ? params[:issue][:description] : nil)
-    end
-    render :layout => false
-  end
-  
-  def auto_complete
-    @issues = []
-    q = params[:q].to_s
-    if q.match(/^\d+$/)
-      @issues << @project.issues.visible.find_by_id(q.to_i)
-    end
-    unless q.blank?
-      @issues += @project.issues.visible.find(:all, :conditions => ["LOWER(#{Issue.table_name}.subject) LIKE ?", "%#{q.downcase}%"], :limit => 10)
-    end
-    render :layout => false
   end
   
 private

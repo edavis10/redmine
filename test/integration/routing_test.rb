@@ -100,7 +100,10 @@ class RoutingTest < ActionController::IntegrationTest
     should_route :get, "/projects/project-name/issues/gantt", :controller => 'gantts', :action => 'show', :project_id => 'project-name'
     should_route :post, "/projects/project-name/issues/gantt", :controller => 'gantts', :action => 'show', :project_id => 'project-name'
 
-    should_route :get, "/issues/auto_complete", :controller => 'issues', :action => 'auto_complete'
+    should_route :get, "/issues/auto_complete", :controller => 'auto_completes', :action => 'issues'
+
+    should_route :get, "/issues/preview/123", :controller => 'previews', :action => 'issue', :id => '123'
+    should_route :post, "/issues/preview/123", :controller => 'previews', :action => 'issue', :id => '123'
   end
 
   context "issue categories" do
