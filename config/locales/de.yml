@@ -2,6 +2,7 @@
 # by Clemens Kofler (clemens@railway.at)
 
 de:
+  direction: ltr
   date:
     formats:
       # Use the strftime parameters for formats.
@@ -839,7 +840,7 @@ de:
   version_status_locked: gesperrt
   version_status_closed: abgeschlossen
 
-  field_active: Activ
+  field_active: Aktiv
   
   text_select_mail_notifications: Bitte wählen Sie die Aktionen aus, für die eine Mailbenachrichtigung gesendet werden soll.
   text_regexp_info: z. B. ^[A-Z0-9]+$
@@ -926,3 +927,4 @@ de:
   enumeration_activities: Aktivitäten (Zeiterfassung)
   enumeration_system_activity: System-Aktivität
 
+  field_time_entries: Log time
