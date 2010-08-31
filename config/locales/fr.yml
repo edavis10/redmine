@@ -4,6 +4,7 @@
 # contributor: Thibaut Cuvelier - Developpez.com
 
 fr:
+  direction: ltr
   date:
     formats:
       default: "%d/%m/%Y"
@@ -927,3 +928,6 @@ fr:
   text_zoom_in: Zoom avant
   notice_unable_delete_time_entry: Impossible de supprimer le temps passé.
   label_overall_spent_time: Temps passé global
+  field_time_entries: Log time
+  project_module_gantt: Gantt
+  project_module_calendar: Calendar

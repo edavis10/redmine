@@ -1,4 +1,5 @@
 class GanttsController < ApplicationController
+  menu_item :gantt
   before_filter :find_optional_project
 
   rescue_from Query::StatementInvalid, :with => :query_statement_invalid
@@ -40,6 +41,10 @@ class GanttsController < ApplicationController
       format.png  { send_data(@gantt.to_image(@project), :disposition => 'inline', :type => 'image/png', :filename => "#{basename}.png") } if @gantt.respond_to?('to_image')
       format.pdf  { send_data(gantt_to_pdf(@gantt, @project), :type => 'application/pdf', :filename => "#{basename}.pdf") }
     end
+  end
+
+  def update
+    show
   end
 
 end

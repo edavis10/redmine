@@ -231,13 +231,6 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal columns, session[:query][:column_names].map(&:to_s)
   end
 
-  def test_changes
-    get :changes, :project_id => 1
-    assert_response :success
-    assert_not_nil assigns(:journals)
-    assert_equal 'application/atom+xml', @response.content_type
-  end
-  
   def test_show_by_anonymous
     get :show, :id => 1
     assert_response :success
@@ -307,7 +300,7 @@ class IssuesControllerTest < ActionController::TestCase
   def test_show_atom
     get :show, :id => 2, :format => 'atom'
     assert_response :success
-    assert_template 'changes.rxml'
+    assert_template 'journals/index.rxml'
     # Inline image
     assert_select 'content', :text => Regexp.new(Regexp.quote('http://test.host/attachments/download/10'))
   end
@@ -365,7 +358,7 @@ class IssuesControllerTest < ActionController::TestCase
   
   def test_update_new_form
     @request.session[:user_id] = 2
-    xhr :post, :update_form, :project_id => 1,
+    xhr :post, :new, :project_id => 1,
                      :issue => {:tracker_id => 2, 
                                 :subject => 'This is the test_new issue',
                                 :description => 'This is the description',
@@ -617,7 +610,7 @@ class IssuesControllerTest < ActionController::TestCase
 
   def test_update_edit_form
     @request.session[:user_id] = 2
-    xhr :post, :update_form, :project_id => 1,
+    xhr :post, :new, :project_id => 1,
                              :id => 1,
                              :issue => {:tracker_id => 2, 
                                         :subject => 'This is the test_new issue',
@@ -634,20 +627,6 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal 'This is the test_new issue', issue.subject
   end
   
-  def test_reply_to_issue
-    @request.session[:user_id] = 2
-    get :reply, :id => 1
-    assert_response :success
-    assert_select_rjs :show, "update"
-  end
-
-  def test_reply_to_note
-    @request.session[:user_id] = 2
-    get :reply, :id => 1, :journal_id => 2
-    assert_response :success
-    assert_select_rjs :show, "update"
-  end
-
   def test_update_using_invalid_http_verbs
     @request.session[:user_id] = 2
     subject = 'Updated by an invalid http verb'
@@ -931,10 +910,10 @@ class IssuesControllerTest < ActionController::TestCase
     assert_tag :select, :attributes => {:name => 'issue[custom_field_values][1]'}
   end
 
-  def test_bulk_edit
+  def test_bulk_update
     @request.session[:user_id] = 2
     # update issues priority
-    post :bulk_edit, :ids => [1, 2], :notes => 'Bulk editing',
+    post :bulk_update, :ids => [1, 2], :notes => 'Bulk editing',
                                      :issue => {:priority_id => 7,
                                                 :assigned_to_id => '',
                                                 :custom_field_values => {'2' => ''}}
@@ -950,10 +929,10 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal 1, journal.details.size
   end
 
-  def test_bullk_edit_should_send_a_notification
+  def test_bullk_update_should_send_a_notification
     @request.session[:user_id] = 2
     ActionMailer::Base.deliveries.clear
-    post(:bulk_edit,
+    post(:bulk_update,
          {
            :ids => [1, 2],
            :notes => 'Bulk editing',
@@ -968,10 +947,10 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal 2, ActionMailer::Base.deliveries.size
   end
 
-  def test_bulk_edit_status
+  def test_bulk_update_status
     @request.session[:user_id] = 2
     # update issues priority
-    post :bulk_edit, :ids => [1, 2], :notes => 'Bulk editing status',
+    post :bulk_update, :ids => [1, 2], :notes => 'Bulk editing status',
                                      :issue => {:priority_id => '',
                                                 :assigned_to_id => '',
                                                 :status_id => '5'}
@@ -981,10 +960,10 @@ class IssuesControllerTest < ActionController::TestCase
     assert issue.closed?
   end
 
-  def test_bulk_edit_custom_field
+  def test_bulk_update_custom_field
     @request.session[:user_id] = 2
     # update issues priority
-    post :bulk_edit, :ids => [1, 2], :notes => 'Bulk editing custom field',
+    post :bulk_update, :ids => [1, 2], :notes => 'Bulk editing custom field',
                                      :issue => {:priority_id => '',
                                                 :assigned_to_id => '',
                                                 :custom_field_values => {'2' => '777'}}
@@ -999,20 +978,20 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal '777', journal.details.first.value
   end
 
-  def test_bulk_unassign
+  def test_bulk_update_unassign
     assert_not_nil Issue.find(2).assigned_to
     @request.session[:user_id] = 2
     # unassign issues
-  post :bulk_edit, :ids => [1, 2], :notes => 'Bulk unassigning', :issue => {:assigned_to_id => 'none'}
+    post :bulk_update, :ids => [1, 2], :notes => 'Bulk unassigning', :issue => {:assigned_to_id => 'none'}
     assert_response 302
     # check that the issues were updated
     assert_nil Issue.find(2).assigned_to
   end
   
-  def test_post_bulk_edit_should_allow_fixed_version_to_be_set_to_a_subproject
+  def test_post_bulk_update_should_allow_fixed_version_to_be_set_to_a_subproject
     @request.session[:user_id] = 2
 
-    post :bulk_edit, :ids => [1,2], :issue => {:fixed_version_id => 4}
+    post :bulk_update, :ids => [1,2], :issue => {:fixed_version_id => 4}
 
     assert_response :redirect
     issues = Issue.find([1,2])
@@ -1022,222 +1001,20 @@ class IssuesControllerTest < ActionController::TestCase
     end
   end
 
-  def test_post_bulk_edit_should_redirect_back_using_the_back_url_parameter
+  def test_post_bulk_update_should_redirect_back_using_the_back_url_parameter
     @request.session[:user_id] = 2
-    post :bulk_edit, :ids => [1,2], :back_url => '/issues'
+    post :bulk_update, :ids => [1,2], :back_url => '/issues'
 
     assert_response :redirect
     assert_redirected_to '/issues'
   end
 
-  def test_post_bulk_edit_should_not_redirect_back_using_the_back_url_parameter_off_the_host
+  def test_post_bulk_update_should_not_redirect_back_using_the_back_url_parameter_off_the_host
     @request.session[:user_id] = 2
-    post :bulk_edit, :ids => [1,2], :back_url => 'http://google.com'
+    post :bulk_update, :ids => [1,2], :back_url => 'http://google.com'
 
     assert_response :redirect
     assert_redirected_to :controller => 'issues', :action => 'index', :project_id => Project.find(1).identifier
-  end
-
-  def test_perform_move_one_issue_to_another_project
-    @request.session[:user_id] = 2
-    post :perform_move, :id => 1, :new_project_id => 2, :tracker_id => '', :assigned_to_id => '', :status_id => '', :start_date => '', :due_date => ''
-    assert_redirected_to :action => 'index', :project_id => 'ecookbook'
-    assert_equal 2, Issue.find(1).project_id
-  end
-
-  def test_perform_move_one_issue_to_another_project_should_follow_when_needed
-    @request.session[:user_id] = 2
-    post :perform_move, :id => 1, :new_project_id => 2, :follow => '1'
-    assert_redirected_to '/issues/1'
-  end
-
-  def test_bulk_perform_move_to_another_project
-    @request.session[:user_id] = 2
-    post :perform_move, :ids => [1, 2], :new_project_id => 2
-    assert_redirected_to :action => 'index', :project_id => 'ecookbook'
-    # Issues moved to project 2
-    assert_equal 2, Issue.find(1).project_id
-    assert_equal 2, Issue.find(2).project_id
-    # No tracker change
-    assert_equal 1, Issue.find(1).tracker_id
-    assert_equal 2, Issue.find(2).tracker_id
-  end
- 
-  def test_bulk_perform_move_to_another_tracker
-    @request.session[:user_id] = 2
-    post :perform_move, :ids => [1, 2], :new_tracker_id => 2
-    assert_redirected_to :action => 'index', :project_id => 'ecookbook'
-    assert_equal 2, Issue.find(1).tracker_id
-    assert_equal 2, Issue.find(2).tracker_id
-  end
-
-  def test_bulk_copy_to_another_project
-    @request.session[:user_id] = 2
-    assert_difference 'Issue.count', 2 do
-      assert_no_difference 'Project.find(1).issues.count' do
-        post :perform_move, :ids => [1, 2], :new_project_id => 2, :copy_options => {:copy => '1'}
-      end
-    end
-    assert_redirected_to 'projects/ecookbook/issues'
-  end
-
-  context "#perform_move via bulk copy" do
-    should "allow not changing the issue's attributes" do
-      @request.session[:user_id] = 2
-      issue_before_move = Issue.find(1)
-      assert_difference 'Issue.count', 1 do
-        assert_no_difference 'Project.find(1).issues.count' do
-          post :perform_move, :ids => [1], :new_project_id => 2, :copy_options => {:copy => '1'}, :new_tracker_id => '', :assigned_to_id => '', :status_id => '', :start_date => '', :due_date => ''
-        end
-      end
-      issue_after_move = Issue.first(:order => 'id desc', :conditions => {:project_id => 2})
-      assert_equal issue_before_move.tracker_id, issue_after_move.tracker_id
-      assert_equal issue_before_move.status_id, issue_after_move.status_id
-      assert_equal issue_before_move.assigned_to_id, issue_after_move.assigned_to_id
-    end
-    
-    should "allow changing the issue's attributes" do
-      # Fixes random test failure with Mysql
-      # where Issue.all(:limit => 2, :order => 'id desc', :conditions => {:project_id => 2}) doesn't return the expected results
-      Issue.delete_all("project_id=2")
-      
-      @request.session[:user_id] = 2
-      assert_difference 'Issue.count', 2 do
-        assert_no_difference 'Project.find(1).issues.count' do
-          post :perform_move, :ids => [1, 2], :new_project_id => 2, :copy_options => {:copy => '1'}, :new_tracker_id => '', :assigned_to_id => 4, :status_id => 3, :start_date => '2009-12-01', :due_date => '2009-12-31'
-        end
-      end
-
-      copied_issues = Issue.all(:limit => 2, :order => 'id desc', :conditions => {:project_id => 2})
-      assert_equal 2, copied_issues.size
-      copied_issues.each do |issue|
-        assert_equal 2, issue.project_id, "Project is incorrect"
-        assert_equal 4, issue.assigned_to_id, "Assigned to is incorrect"
-        assert_equal 3, issue.status_id, "Status is incorrect"
-        assert_equal '2009-12-01', issue.start_date.to_s, "Start date is incorrect"
-        assert_equal '2009-12-31', issue.due_date.to_s, "Due date is incorrect"
-      end
-    end
-  end
-  
-  def test_copy_to_another_project_should_follow_when_needed
-    @request.session[:user_id] = 2
-    post :perform_move, :ids => [1], :new_project_id => 2, :copy_options => {:copy => '1'}, :follow => '1'
-    issue = Issue.first(:order => 'id DESC')
-    assert_redirected_to :controller => 'issues', :action => 'show', :id => issue
-  end
-  
-  def test_context_menu_one_issue
-    @request.session[:user_id] = 2
-    get :context_menu, :ids => [1]
-    assert_response :success
-    assert_template 'context_menu'
-    assert_tag :tag => 'a', :content => 'Edit',
-                            :attributes => { :href => '/issues/1/edit',
-                                             :class => 'icon-edit' }
-    assert_tag :tag => 'a', :content => 'Closed',
-                            :attributes => { :href => '/issues/1/edit?issue%5Bstatus_id%5D=5',
-                                             :class => '' }
-    assert_tag :tag => 'a', :content => 'Immediate',
-                            :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;issue%5Bpriority_id%5D=8',
-                                             :class => '' }
-    # Versions
-    assert_tag :tag => 'a', :content => '2.0',
-                            :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;issue%5Bfixed_version_id%5D=3',
-                                             :class => '' }
-    assert_tag :tag => 'a', :content => 'eCookbook Subproject 1 - 2.0',
-                            :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;issue%5Bfixed_version_id%5D=4',
-                                             :class => '' }
-
-    assert_tag :tag => 'a', :content => 'Dave Lopper',
-                            :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;issue%5Bassigned_to_id%5D=3',
-                                             :class => '' }
-    assert_tag :tag => 'a', :content => 'Duplicate',
-                            :attributes => { :href => '/projects/ecookbook/issues/1/copy',
-                                             :class => 'icon-duplicate' }
-    assert_tag :tag => 'a', :content => 'Copy',
-                            :attributes => { :href => '/issues/move?copy_options%5Bcopy%5D=t&amp;ids%5B%5D=1',
-                                             :class => 'icon-copy' }
-    assert_tag :tag => 'a', :content => 'Move',
-                            :attributes => { :href => '/issues/move?ids%5B%5D=1',
-                                             :class => 'icon-move' }
-    assert_tag :tag => 'a', :content => 'Delete',
-                            :attributes => { :href => '/issues/destroy?ids%5B%5D=1',
-                                             :class => 'icon-del' }
-  end
-
-  def test_context_menu_one_issue_by_anonymous
-    get :context_menu, :ids => [1]
-    assert_response :success
-    assert_template 'context_menu'
-    assert_tag :tag => 'a', :content => 'Delete',
-                            :attributes => { :href => '#',
-                                             :class => 'icon-del disabled' }
-  end
-  
-  def test_context_menu_multiple_issues_of_same_project
-    @request.session[:user_id] = 2
-    get :context_menu, :ids => [1, 2]
-    assert_response :success
-    assert_template 'context_menu'
-    assert_tag :tag => 'a', :content => 'Edit',
-                            :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;ids%5B%5D=2',
-                                             :class => 'icon-edit' }
-    assert_tag :tag => 'a', :content => 'Immediate',
-                            :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;ids%5B%5D=2&amp;issue%5Bpriority_id%5D=8',
-                                             :class => '' }
-    assert_tag :tag => 'a', :content => 'Dave Lopper',
-                            :attributes => { :href => '/issues/bulk_edit?ids%5B%5D=1&amp;ids%5B%5D=2&amp;issue%5Bassigned_to_id%5D=3',
-                                             :class => '' }
-    assert_tag :tag => 'a', :content => 'Copy',
-                            :attributes => { :href => '/issues/move?copy_options%5Bcopy%5D=t&amp;ids%5B%5D=1&amp;ids%5B%5D=2',
-                                             :class => 'icon-copy' }
-    assert_tag :tag => 'a', :content => 'Move',
-                            :attributes => { :href => '/issues/move?ids%5B%5D=1&amp;ids%5B%5D=2',
-                                             :class => 'icon-move' }
-    assert_tag :tag => 'a', :content => 'Delete',
-                            :attributes => { :href => '/issues/destroy?ids%5B%5D=1&amp;ids%5B%5D=2',
-                                             :class => 'icon-del' }
-  end
-
-  def test_context_menu_multiple_issues_of_different_project
-    @request.session[:user_id] = 2
-    get :context_menu, :ids => [1, 2, 4]
-    assert_response :success
-    assert_template 'context_menu'
-    assert_tag :tag => 'a', :content => 'Delete',
-                            :attributes => { :href => '#',
-                                             :class => 'icon-del disabled' }
-  end
-  
-  def test_preview_new_issue
-    @request.session[:user_id] = 2
-    post :preview, :project_id => '1', :issue => {:description => 'Foo'}
-    assert_response :success
-    assert_template 'preview'
-    assert_not_nil assigns(:description)
-  end
-                              
-  def test_preview_notes
-    @request.session[:user_id] = 2
-    post :preview, :project_id => '1', :id => 1, :issue => {:description => Issue.find(1).description}, :notes => 'Foo'
-    assert_response :success
-    assert_template 'preview'
-    assert_not_nil assigns(:notes)
-  end
-
-  def test_auto_complete_should_not_be_case_sensitive
-    get :auto_complete, :project_id => 'ecookbook', :q => 'ReCiPe'
-    assert_response :success
-    assert_not_nil assigns(:issues)
-    assert assigns(:issues).detect {|issue| issue.subject.match /recipe/}
-  end
-  
-  def test_auto_complete_should_return_issue_with_given_id
-    get :auto_complete, :project_id => 'subproject1', :q => '13'
-    assert_response :success
-    assert_not_nil assigns(:issues)
-    assert assigns(:issues).include?(Issue.find(13))
   end
   
   def test_destroy_issue_with_no_time_entries

@@ -3,6 +3,7 @@
 # Jul 2010 - Updated by Orgad Shaneh (orgads@gmail.com)
 
 he:
+  direction: rtl
   date:
     formats:
       default: "%d/%m/%Y"
@@ -913,3 +914,6 @@ he:
   enumeration_doc_categories: קטגוריות מסמכים
   enumeration_activities: פעילויות (מעקב אחר זמנים)
   enumeration_system_activity: פעילות מערכת
+  field_time_entries: Log time
+  project_module_gantt: Gantt
+  project_module_calendar: Calendar

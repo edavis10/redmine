@@ -1,4 +1,5 @@
 en-GB:
+  direction: ltr
   date:
     formats:
       # Use the strftime parameters for formats.
@@ -64,6 +65,11 @@ en-GB:
         other: "almost {{count}} years"
 
   number:
+    format:
+      separator: "."
+      delimiter: " "
+      precision: 3
+
     currency:
       format:
         format: "%u%n"
@@ -907,3 +913,6 @@ en-GB:
   error_can_not_delete_tracker: This tracker contains issues and can't be deleted.
   notice_failed_to_save_members: "Failed to save member(s): {{errors}}."
   label_project_copy_notifications: Send email notifications during the project copy
+  field_time_entries: Log time
+  project_module_gantt: Gantt
+  project_module_calendar: Calendar

@@ -6,6 +6,7 @@ pt:
       sentence_connector: "e"
       skip_last_comma: true
     
+  direction: ltr
   date:
     formats:
       default: "%d/%m/%Y"
@@ -916,3 +917,6 @@ pt:
   text_zoom_in: Zoom in
   notice_unable_delete_time_entry: Unable to delete time log entry.
   label_overall_spent_time: Overall spent time
+  field_time_entries: Log time
+  project_module_gantt: Gantt
+  project_module_calendar: Calendar

@@ -1,4 +1,5 @@
 class CalendarsController < ApplicationController
+  menu_item :calendar
   before_filter :find_optional_project
 
   rescue_from Query::StatementInvalid, :with => :query_statement_invalid
@@ -31,8 +32,11 @@ class CalendarsController < ApplicationController
       @calendar.events = events
     end
     
-    render :layout => false if request.xhr?
+    render :action => 'show', :layout => false if request.xhr?
   end
   
+  def update
+    show
+  end
 
 end

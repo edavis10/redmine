@@ -1,4 +1,6 @@
 en:
+  # Text direction: Left-to-Right (ltr) or Right-to-Left (rtl)
+  direction: ltr
   date:
     formats:
       # Use the strftime parameters for formats.
@@ -64,6 +66,11 @@ en:
         other: "almost {{count}} years"
 
   number:
+    # Default format for numbers
+    format:
+      separator: "." 
+      delimiter: ""
+      precision: 3
     human:
       format:
         delimiter: ""
@@ -273,6 +280,7 @@ en:
   field_redirect_existing_links: Redirect existing links
   field_estimated_hours: Estimated time
   field_column_names: Columns
+  field_time_entries: Log time
   field_time_zone: Time zone
   field_searchable: Searchable
   field_default_value: Default value
@@ -404,6 +412,8 @@ en:
   project_module_wiki: Wiki
   project_module_repository: Repository
   project_module_boards: Boards
+  project_module_calendar: Calendar
+  project_module_gantt: Gantt
   
   label_user: User
   label_user_plural: Users

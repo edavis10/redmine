@@ -3,6 +3,7 @@
 # 2010-01-25
 # Distributed under the same terms as the Redmine itself.
 eu:
+  direction: ltr
   date:
     formats:
       # Use the strftime parameters for formats.
@@ -68,6 +69,10 @@ eu:
         other: "ia {{count}} urte"
 
   number:
+    format:
+      separator: "."
+      delimiter: ""
+      precision: 3
     human:
       format:
         delimiter: ""
@@ -908,3 +913,6 @@ eu:
   text_zoom_in: Zoom in
   notice_unable_delete_time_entry: Unable to delete time log entry.
   label_overall_spent_time: Overall spent time
+  field_time_entries: Log time
+  project_module_gantt: Gantt
+  project_module_calendar: Calendar
