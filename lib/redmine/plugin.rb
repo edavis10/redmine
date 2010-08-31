@@ -63,6 +63,9 @@ module Redmine #:nodoc:
     
     # Plugin constructor
     def self.register(id, &block)
+      # check if the plugin is in the correct location
+      puts "WARNING: Wrong plugin path" unless Engines.plugins.collect(&:name).include? id
+      
       p = new(id)
       p.instance_eval(&block)
       # Set a default name if it was not provided during registration
