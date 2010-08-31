@@ -64,9 +64,12 @@ module Redmine #:nodoc:
     # Plugin constructor
     def self.register(id, &block)
       # check if the plugin is in the correct location
-      # FIXME: Fail on Redmine >= 1.1
       unless Engines.plugins.collect(&:name).include? id
-        ActiveSupport::Deprecation.warn "The #{id} plugin needs to be inside this exact directory"
+        if Redmine::VERSION::MAJOR <= 1 && Redmine::VERSION::MINOR < 1
+          ActiveSupport::Deprecation.warn "WARNING: The #{id} plugin needs to be inside #{File.join(RAILS_ROOT, 'vendor', 'plugins', id.to_s)}"
+        else
+          raise "ERROR: The #{id} plugin needs to be inside #{File.join(RAILS_ROOT, 'vendor', 'plugins', id.to_s)}"
+        end
       end
       
       p = new(id)
