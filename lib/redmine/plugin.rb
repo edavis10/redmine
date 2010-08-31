@@ -64,7 +64,10 @@ module Redmine #:nodoc:
     # Plugin constructor
     def self.register(id, &block)
       # check if the plugin is in the correct location
-      puts "WARNING: Wrong plugin path" unless Engines.plugins.collect(&:name).include? id
+      # FIXME: Fail on Redmine >= 1.1
+      unless Engines.plugins.collect(&:name).include? id
+        ActiveSupport::Deprecation.warn "The #{id} plugin needs to be inside this exact directory"
+      end
       
       p = new(id)
       p.instance_eval(&block)
