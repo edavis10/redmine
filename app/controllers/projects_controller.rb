@@ -17,17 +17,14 @@
 
 class ProjectsController < ApplicationController
   menu_item :overview
-  menu_item :activity, :only => :activity
   menu_item :roadmap, :only => :roadmap
-  menu_item :files, :only => [:list_files, :add_file]
   menu_item :settings, :only => :settings
   
-  before_filter :find_project, :except => [ :index, :list, :add, :copy, :activity ]
-  before_filter :find_optional_project, :only => :activity
-  before_filter :authorize, :except => [ :index, :list, :add, :copy, :archive, :unarchive, :destroy, :activity ]
+  before_filter :find_project, :except => [ :index, :list, :add, :copy ]
+  before_filter :authorize, :except => [ :index, :list, :add, :copy, :archive, :unarchive, :destroy]
   before_filter :authorize_global, :only => :add
   before_filter :require_admin, :only => [ :copy, :archive, :unarchive, :destroy ]
-  accept_key_auth :activity, :index
+  accept_key_auth :index
   
   after_filter :only => [:add, :edit, :archive, :unarchive, :destroy] do |controller|
     if controller.request.post?
@@ -241,120 +238,6 @@ class ProjectsController < ApplicationController
     @project = nil
   end
 
-  def add_file
-    if request.post?
-      container = (params[:version_id].blank? ? @project : @project.versions.find_by_id(params[:version_id]))
-      attachments = Attachment.attach_files(container, params[:attachments])
-      render_attachment_warning_if_needed(container)
-
-      if !attachments.empty? && Setting.notified_events.include?('file_added')
-        Mailer.deliver_attachments_added(attachments[:files])
-      end
-      redirect_to :controller => 'projects', :action => 'list_files', :id => @project
-      return
-    end
-    @versions = @project.versions.sort
-  end
-
-  def save_activities
-    if request.post? && params[:enumerations]
-      Project.transaction do
-        params[:enumerations].each do |id, activity|
-          @project.update_or_create_time_entry_activity(id, activity)
-        end
-      end
-      flash[:notice] = l(:notice_successful_update)
-    end
-    
-    redirect_to :controller => 'projects', :action => 'settings', :tab => 'activities', :id => @project
-  end
-
-  def reset_activities
-    @project.time_entry_activities.each do |time_entry_activity|
-      time_entry_activity.destroy(time_entry_activity.parent)
-    end
-    flash[:notice] = l(:notice_successful_update)
-    redirect_to :controller => 'projects', :action => 'settings', :tab => 'activities', :id => @project
-  end
-  
-  def list_files
-    sort_init 'filename', 'asc'
-    sort_update 'filename' => "#{Attachment.table_name}.filename",
-                'created_on' => "#{Attachment.table_name}.created_on",
-                'size' => "#{Attachment.table_name}.filesize",
-                'downloads' => "#{Attachment.table_name}.downloads"
-                
-    @containers = [ Project.find(@project.id, :include => :attachments, :order => sort_clause)]
-    @containers += @project.versions.find(:all, :include => :attachments, :order => sort_clause).sort.reverse
-    render :layout => !request.xhr?
-  end
-
-  def roadmap
-    @trackers = @project.trackers.find(:all, :order => 'position')
-    retrieve_selected_tracker_ids(@trackers, @trackers.select {|t| t.is_in_roadmap?})
-    @with_subprojects = params[:with_subprojects].nil? ? Setting.display_subprojects_issues? : (params[:with_subprojects] == '1')
-    project_ids = @with_subprojects ? @project.self_and_descendants.collect(&:id) : [@project.id]
-    
-    @versions = @project.shared_versions || []
-    @versions += @project.rolled_up_versions.visible if @with_subprojects
-    @versions = @versions.uniq.sort
-    @versions.reject! {|version| version.closed? || version.completed? } unless params[:completed]
-    
-    @issues_by_version = {}
-    unless @selected_tracker_ids.empty?
-      @versions.each do |version|
-        issues = version.fixed_issues.visible.find(:all,
-                                                   :include => [:project, :status, :tracker, :priority],
-                                                   :conditions => {:tracker_id => @selected_tracker_ids, :project_id => project_ids},
-                                                   :order => "#{Project.table_name}.lft, #{Tracker.table_name}.position, #{Issue.table_name}.id")
-        @issues_by_version[version] = issues
-      end
-    end
-    @versions.reject! {|version| !project_ids.include?(version.project_id) && @issues_by_version[version].blank?}
-  end
-  
-  def activity
-    @days = Setting.activity_days_default.to_i
-    
-    if params[:from]
-      begin; @date_to = params[:from].to_date + 1; rescue; end
-    end
-
-    @date_to ||= Date.today + 1
-    @date_from = @date_to - @days
-    @with_subprojects = params[:with_subprojects].nil? ? Setting.display_subprojects_issues? : (params[:with_subprojects] == '1')
-    @author = (params[:user_id].blank? ? nil : User.active.find(params[:user_id]))
-    
-    @activity = Redmine::Activity::Fetcher.new(User.current, :project => @project, 
-                                                             :with_subprojects => @with_subprojects,
-                                                             :author => @author)
-    @activity.scope_select {|t| !params["show_#{t}"].nil?}
-    @activity.scope = (@author.nil? ? :default : :all) if @activity.scope.empty?
-
-    events = @activity.events(@date_from, @date_to)
-    
-    if events.empty? || stale?(:etag => [events.first, User.current])
-      respond_to do |format|
-        format.html { 
-          @events_by_day = events.group_by(&:event_date)
-          render :layout => false if request.xhr?
-        }
-        format.atom {
-          title = l(:label_activity)
-          if @author
-            title = @author.name
-          elsif @activity.scope.size == 1
-            title = l("label_#{@activity.scope.first.singularize}_plural")
-          end
-          render_feed(events, :title => "#{@project || Setting.app_title}: #{title}")
-        }
-      end
-    end
-    
-  rescue ActiveRecord::RecordNotFound
-    render_404
-  end
-  
 private
   def find_optional_project
     return true unless params[:id]
@@ -364,14 +247,6 @@ private
     render_404
   end
 
-  def retrieve_selected_tracker_ids(selectable_trackers, default_trackers=nil)
-    if ids = params[:tracker_ids]
-      @selected_tracker_ids = (ids.is_a? Array) ? ids.collect { |id| id.to_i.to_s } : ids.split('/').collect { |id| id.to_i.to_s }
-    else
-      @selected_tracker_ids = (default_trackers || selectable_trackers).collect {|t| t.id.to_s }
-    end
-  end
-  
   # Validates parent_id param according to user's permissions
   # TODO: move it to Project model in a validation that depends on User.current
   def validate_parent_id

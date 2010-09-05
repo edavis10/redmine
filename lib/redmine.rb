@@ -44,7 +44,7 @@ end
 
 # Permissions
 Redmine::AccessControl.map do |map|
-  map.permission :view_project, {:projects => [:show, :activity]}, :public => true
+  map.permission :view_project, {:projects => [:show], :activities => [:index]}, :public => true
   map.permission :search_project, {:search => :index}, :public => true
   map.permission :add_project, {:projects => :add}, :require => :loggedin
   map.permission :edit_project, {:projects => [:settings, :edit]}, :require => :member
@@ -57,16 +57,15 @@ Redmine::AccessControl.map do |map|
     # Issue categories
     map.permission :manage_categories, {:projects => :settings, :issue_categories => [:new, :edit, :destroy]}, :require => :member
     # Issues
-    map.permission :view_issues, {:projects => :roadmap, 
-                                  :issues => [:index, :show],
+    map.permission :view_issues, {:issues => [:index, :show],
                                   :auto_complete => [:issues],
                                   :context_menus => [:issues],
-                                  :versions => [:show, :status_by],
+                                  :versions => [:index, :show, :status_by],
                                   :journals => :index,
                                   :queries => :index,
                                   :reports => [:issue_report, :issue_report_details]}
     map.permission :add_issues, {:issues => [:new, :create, :update_form]}
-    map.permission :edit_issues, {:issues => [:edit, :update, :bulk_edit, :update_form], :journals => [:new]}
+    map.permission :edit_issues, {:issues => [:edit, :update, :bulk_edit, :bulk_update, :update_form], :journals => [:new]}
     map.permission :manage_issue_relations, {:issue_relations => [:new, :destroy]}
     map.permission :manage_subtasks, {}
     map.permission :add_issue_notes, {:issues => [:edit, :update], :journals => [:new]}
@@ -88,7 +87,7 @@ Redmine::AccessControl.map do |map|
     map.permission :view_time_entries, :timelog => [:details, :report]
     map.permission :edit_time_entries, {:timelog => [:edit, :destroy]}, :require => :member
     map.permission :edit_own_time_entries, {:timelog => [:edit, :destroy]}, :require => :loggedin
-    map.permission :manage_project_activities, {:projects => [:save_activities, :reset_activities]}, :require => :member
+    map.permission :manage_project_activities, {:project_enumerations => [:save, :destroy]}, :require => :member
   end
   
   map.project_module :news do |map|
@@ -103,8 +102,8 @@ Redmine::AccessControl.map do |map|
   end
   
   map.project_module :files do |map|
-    map.permission :manage_files, {:projects => :add_file}, :require => :loggedin
-    map.permission :view_files, :projects => :list_files, :versions => :download
+    map.permission :manage_files, {:files => :new}, :require => :loggedin
+    map.permission :view_files, :files => :index, :versions => :download
   end
     
   map.project_module :wiki do |map|
@@ -137,11 +136,11 @@ Redmine::AccessControl.map do |map|
   end
 
   map.project_module :calendar do |map|
-    map.permission :view_calendar, :calendars => :show
+    map.permission :view_calendar, :calendars => [:show, :update]
   end
 
   map.project_module :gantt do |map|
-    map.permission :view_gantt, :gantts => :show
+    map.permission :view_gantt, :gantts => [:show, :update]
   end
 end
 
@@ -185,8 +184,8 @@ end
 
 Redmine::MenuManager.map :project_menu do |menu|
   menu.push :overview, { :controller => 'projects', :action => 'show' }
-  menu.push :activity, { :controller => 'projects', :action => 'activity' }
-  menu.push :roadmap, { :controller => 'projects', :action => 'roadmap' }, 
+  menu.push :activity, { :controller => 'activities', :action => 'index' }
+  menu.push :roadmap, { :controller => 'versions', :action => 'index' }, :param => :project_id,
               :if => Proc.new { |p| p.shared_versions.any? }
   menu.push :issues, { :controller => 'issues', :action => 'index' }, :param => :project_id, :caption => :label_issue_plural
   menu.push :new_issue, { :controller => 'issues', :action => 'new' }, :param => :project_id, :caption => :label_issue_new,
@@ -199,7 +198,7 @@ Redmine::MenuManager.map :project_menu do |menu|
               :if => Proc.new { |p| p.wiki && !p.wiki.new_record? }
   menu.push :boards, { :controller => 'boards', :action => 'index', :id => nil }, :param => :project_id,
               :if => Proc.new { |p| p.boards.any? }, :caption => :label_board_plural
-  menu.push :files, { :controller => 'projects', :action => 'list_files' }, :caption => :label_file_plural
+  menu.push :files, { :controller => 'files', :action => 'index' }, :caption => :label_file_plural
   menu.push :repository, { :controller => 'repositories', :action => 'show' },
               :if => Proc.new { |p| p.repository && !p.repository.new_record? }
   menu.push :settings, { :controller => 'projects', :action => 'settings' }, :last => true

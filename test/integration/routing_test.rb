@@ -19,8 +19,8 @@ require "#{File.dirname(__FILE__)}/../test_helper"
 
 class RoutingTest < ActionController::IntegrationTest
   context "activities" do
-    should_route :get, "/activity", :controller => 'projects', :action => 'activity', :id => nil
-    should_route :get, "/activity.atom", :controller => 'projects', :action => 'activity', :id => nil, :format => 'atom'
+    should_route :get, "/activity", :controller => 'activities', :action => 'index', :id => nil
+    should_route :get, "/activity.atom", :controller => 'activities', :action => 'index', :id => nil, :format => 'atom'
   end
 
   context "attachments" do
@@ -91,14 +91,14 @@ class RoutingTest < ActionController::IntegrationTest
     should_route :post, "/issues/1/quoted", :controller => 'journals', :action => 'new', :id => '1'
 
     should_route :get, "/issues/calendar", :controller => 'calendars', :action => 'show'
-    should_route :post, "/issues/calendar", :controller => 'calendars', :action => 'show'
+    should_route :put, "/issues/calendar", :controller => 'calendars', :action => 'update'
     should_route :get, "/projects/project-name/issues/calendar", :controller => 'calendars', :action => 'show', :project_id => 'project-name'
-    should_route :post, "/projects/project-name/issues/calendar", :controller => 'calendars', :action => 'show', :project_id => 'project-name'
+    should_route :put, "/projects/project-name/issues/calendar", :controller => 'calendars', :action => 'update', :project_id => 'project-name'
 
     should_route :get, "/issues/gantt", :controller => 'gantts', :action => 'show'
-    should_route :post, "/issues/gantt", :controller => 'gantts', :action => 'show'
+    should_route :put, "/issues/gantt", :controller => 'gantts', :action => 'update'
     should_route :get, "/projects/project-name/issues/gantt", :controller => 'gantts', :action => 'show', :project_id => 'project-name'
-    should_route :post, "/projects/project-name/issues/gantt", :controller => 'gantts', :action => 'show', :project_id => 'project-name'
+    should_route :put, "/projects/project-name/issues/gantt", :controller => 'gantts', :action => 'update', :project_id => 'project-name'
 
     should_route :get, "/issues/auto_complete", :controller => 'auto_completes', :action => 'issues'
 
@@ -108,6 +108,9 @@ class RoutingTest < ActionController::IntegrationTest
     should_route :post, "/issues/context_menu", :controller => 'context_menus', :action => 'issues'
 
     should_route :get, "/issues/changes", :controller => 'journals', :action => 'index'
+
+    should_route :get, "/issues/bulk_edit", :controller => 'issues', :action => 'bulk_edit'
+    should_route :post, "/issues/bulk_edit", :controller => 'issues', :action => 'bulk_update'
   end
 
   context "issue categories" do
@@ -169,25 +172,25 @@ class RoutingTest < ActionController::IntegrationTest
     should_route :get, "/projects/4223/settings", :controller => 'projects', :action => 'settings', :id => '4223'
     should_route :get, "/projects/4223/settings/members", :controller => 'projects', :action => 'settings', :id => '4223', :tab => 'members'
     should_route :get, "/projects/567/destroy", :controller => 'projects', :action => 'destroy', :id => '567'
-    should_route :get, "/projects/33/files", :controller => 'projects', :action => 'list_files', :id => '33'
-    should_route :get, "/projects/33/files/new", :controller => 'projects', :action => 'add_file', :id => '33'
-    should_route :get, "/projects/33/roadmap", :controller => 'projects', :action => 'roadmap', :id => '33'
-    should_route :get, "/projects/33/activity", :controller => 'projects', :action => 'activity', :id => '33'
-    should_route :get, "/projects/33/activity.atom", :controller => 'projects', :action => 'activity', :id => '33', :format => 'atom'
+    should_route :get, "/projects/33/files", :controller => 'files', :action => 'index', :id => '33'
+    should_route :get, "/projects/33/files/new", :controller => 'files', :action => 'new', :id => '33'
+    should_route :get, "/projects/33/roadmap", :controller => 'versions', :action => 'index', :project_id => '33'
+    should_route :get, "/projects/33/activity", :controller => 'activities', :action => 'index', :id => '33'
+    should_route :get, "/projects/33/activity.atom", :controller => 'activities', :action => 'index', :id => '33', :format => 'atom'
     
     should_route :post, "/projects/new", :controller => 'projects', :action => 'add'
     should_route :post, "/projects.xml", :controller => 'projects', :action => 'add', :format => 'xml'
     should_route :post, "/projects/4223/edit", :controller => 'projects', :action => 'edit', :id => '4223'
     should_route :post, "/projects/64/destroy", :controller => 'projects', :action => 'destroy', :id => '64'
-    should_route :post, "/projects/33/files/new", :controller => 'projects', :action => 'add_file', :id => '33'
+    should_route :post, "/projects/33/files/new", :controller => 'files', :action => 'new', :id => '33'
     should_route :post, "/projects/64/archive", :controller => 'projects', :action => 'archive', :id => '64'
     should_route :post, "/projects/64/unarchive", :controller => 'projects', :action => 'unarchive', :id => '64'
-    should_route :post, "/projects/64/activities/save", :controller => 'projects', :action => 'save_activities', :id => '64'
+    should_route :post, "/projects/64/activities/save", :controller => 'project_enumerations', :action => 'save', :id => '64'
 
     should_route :put, "/projects/1.xml", :controller => 'projects', :action => 'edit', :id => '1', :format => 'xml'
 
     should_route :delete, "/projects/1.xml", :controller => 'projects', :action => 'destroy', :id => '1', :format => 'xml'
-    should_route :delete, "/projects/64/reset_activities", :controller => 'projects', :action => 'reset_activities', :id => '64'
+    should_route :delete, "/projects/64/reset_activities", :controller => 'project_enumerations', :action => 'destroy', :id => '64'
   end
 
   context "repositories" do
