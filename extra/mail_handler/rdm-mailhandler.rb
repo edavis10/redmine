@@ -35,6 +35,9 @@
 #   -o, --allow-override=ATTRS     allow email content to override attributes
 #                                  specified by previous options
 #                                  ATTRS is a comma separated list of attributes
+#                                  Overridable attributes are:
+#                                    tracker, category, priority
+#                                    assigned_to, start_date, due_date
 #       
 # == Examples
 # No project specified. Emails MUST contain the 'Project' keyword:
