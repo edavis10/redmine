@@ -116,6 +116,7 @@ th:
         greater_than_start_date: "ต้องมากกว่าวันเริ่ม"
         not_same_project: "ไม่ได้อยู่ในโครงการเดียวกัน"
         circular_dependency: "ความสัมพันธ์อ้างอิงเป็นวงกลม"
+        cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
 
   actionview_instancetag_blank_option: กรุณาเลือก
   
@@ -909,3 +910,5 @@ th:
   field_time_entries: Log time
   project_module_gantt: Gantt
   project_module_calendar: Calendar
+  field_member_of_group: Member of Group
+  field_assigned_to_role: Member of Role

@@ -143,7 +143,7 @@ lt:
           other:  "Išsaugant objektą {{model}} rastos {{count}} klaidos"
         body: "Šiuose laukuose yra klaidų:"
 
-      pranešimus:
+      messages:
         inclusion: "nenumatyta reikšmė"
         exclusion: "užimtas"
         invalid: "neteisingas"
@@ -179,6 +179,7 @@ lt:
         greater_than_start_date: "turi būti didesnė negu pradžios data"
         not_same_project: "nepriklauso tam pačiam projektui"
         circular_dependency: "Šis ryšys sukurtų ciklinę priklausomybę"
+        cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
     
   actionview_instancetag_blank_option: prašom parinkti
   
@@ -976,3 +977,5 @@ lt:
   field_time_entries: Log time
   project_module_gantt: Gantt
   project_module_calendar: Calendar
+  field_member_of_group: Member of Group
+  field_assigned_to_role: Member of Role

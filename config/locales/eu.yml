@@ -121,6 +121,7 @@ eu:
         greater_than_start_date: "hasiera data baino handiagoa izan behar du"
         not_same_project: "ez dago proiektu berdinean"
         circular_dependency: "Erlazio honek mendekotasun zirkular bat sortuko luke"
+        cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
 
   actionview_instancetag_blank_option: Hautatu mesedez
   
@@ -916,3 +917,5 @@ eu:
   field_time_entries: Log time
   project_module_gantt: Gantt
   project_module_calendar: Calendar
+  field_member_of_group: Member of Group
+  field_assigned_to_role: Member of Role

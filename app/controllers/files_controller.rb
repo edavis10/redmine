@@ -1,7 +1,7 @@
 class FilesController < ApplicationController
   menu_item :files
 
-  before_filter :find_project
+  before_filter :find_project_by_project_id
   before_filter :authorize
 
   helper :sort
@@ -19,4 +19,18 @@ class FilesController < ApplicationController
     render :layout => !request.xhr?
   end
 
+  def new
+    @versions = @project.versions.sort
+  end
+
+  def create
+    container = (params[:version_id].blank? ? @project : @project.versions.find_by_id(params[:version_id]))
+    attachments = Attachment.attach_files(container, params[:attachments])
+    render_attachment_warning_if_needed(container)
+
+    if !attachments.empty? && Setting.notified_events.include?('file_added')
+      Mailer.deliver_attachments_added(attachments[:files])
+    end
+    redirect_to project_files_path(@project)
+  end
 end

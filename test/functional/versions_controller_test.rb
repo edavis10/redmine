@@ -40,6 +40,8 @@ class VersionsControllerTest < ActionController::TestCase
     assert assigns(:versions).include?(Version.find(3))
     # Completed version doesn't appear
     assert !assigns(:versions).include?(Version.find(1))
+    # Context menu on issues
+    assert_select "script", :text => Regexp.new(Regexp.escape("new ContextMenu('/issues/context_menu')"))
   end
   
   def test_index_with_completed_versions
@@ -73,10 +75,10 @@ class VersionsControllerTest < ActionController::TestCase
     assert_tag :tag => 'h2', :content => /1.0/
   end
   
-  def test_new
+  def test_create
     @request.session[:user_id] = 2 # manager
     assert_difference 'Version.count' do
-      post :new, :project_id => '1', :version => {:name => 'test_add_version'}
+      post :create, :project_id => '1', :version => {:name => 'test_add_version'}
     end
     assert_redirected_to '/projects/ecookbook/settings/versions'
     version = Version.find_by_name('test_add_version')
@@ -84,10 +86,10 @@ class VersionsControllerTest < ActionController::TestCase
     assert_equal 1, version.project_id
   end
   
-  def test_new_from_issue_form
+  def test_create_from_issue_form
     @request.session[:user_id] = 2 # manager
     assert_difference 'Version.count' do
-      xhr :post, :new, :project_id => '1', :version => {:name => 'test_add_version_from_issue_form'}
+      xhr :post, :create, :project_id => '1', :version => {:name => 'test_add_version_from_issue_form'}
     end
     assert_response :success
     assert_select_rjs :replace, 'issue_fixed_version_id'
@@ -106,14 +108,14 @@ class VersionsControllerTest < ActionController::TestCase
   def test_close_completed
     Version.update_all("status = 'open'")
     @request.session[:user_id] = 2
-    post :close_completed, :project_id => 'ecookbook'
+    put :close_completed, :project_id => 'ecookbook'
     assert_redirected_to :controller => 'projects', :action => 'settings', :tab => 'versions', :id => 'ecookbook'
     assert_not_nil Version.find_by_status('closed')
   end
   
-  def test_post_edit
+  def test_post_update
     @request.session[:user_id] = 2
-    post :edit, :id => 2, 
+    put :update, :id => 2, 
                 :version => { :name => 'New version name', 
                               :effective_date => Date.today.strftime("%Y-%m-%d")}
     assert_redirected_to :controller => 'projects', :action => 'settings', :tab => 'versions', :id => 'ecookbook'
@@ -124,7 +126,7 @@ class VersionsControllerTest < ActionController::TestCase
 
   def test_destroy
     @request.session[:user_id] = 2
-    post :destroy, :id => 3
+    delete :destroy, :id => 3
     assert_redirected_to :controller => 'projects', :action => 'settings', :tab => 'versions', :id => 'ecookbook'
     assert_nil Version.find_by_id(3)
   end

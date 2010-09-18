@@ -192,11 +192,12 @@ ru:
         equal_to: "может иметь лишь значение, равное {{count}}"
         less_than: "может иметь значение меньшее чем {{count}}"
         less_than_or_equal_to: "может иметь значение меньшее или равное {{count}}"
-        odd: "может иметь лишь четное значение"
-        even: "может иметь лишь нечетное значение"
+        odd: "может иметь лишь нечетное значение"
+        even: "может иметь лишь четное значение"
         greater_than_start_date: "должна быть позднее даты начала"
-        not_same_project: "не относятся к одному проекту"
+        not_same_project: "не относится к одному проекту"
         circular_dependency: "Такая связь приведет к циклической зависимости"
+        cant_link_an_issue_with_a_descendant: "Задача не может быть связана со своей подзадачей"
 
   support:
     array:
@@ -293,6 +294,7 @@ ru:
   field_admin: Администратор
   field_assignable: Задача может быть назначена этой роли
   field_assigned_to: Назначена
+  field_assigned_to_role: Роль участника
   field_attr_firstname: Имя
   field_attr_lastname: Фамилия
   field_attr_login: Атрибут Регистрация
@@ -342,6 +344,7 @@ ru:
   field_mail: Email
   field_mail_notification: Уведомления по email
   field_max_length: Максимальная длина
+  field_member_of_group: Группа участника
   field_min_length: Минимальная длина
   field_name: Имя
   field_new_password: Новый пароль

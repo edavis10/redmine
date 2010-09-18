@@ -46,12 +46,12 @@ end
 Redmine::AccessControl.map do |map|
   map.permission :view_project, {:projects => [:show], :activities => [:index]}, :public => true
   map.permission :search_project, {:search => :index}, :public => true
-  map.permission :add_project, {:projects => :add}, :require => :loggedin
-  map.permission :edit_project, {:projects => [:settings, :edit]}, :require => :member
+  map.permission :add_project, {:projects => [:new, :create]}, :require => :loggedin
+  map.permission :edit_project, {:projects => [:settings, :edit, :update]}, :require => :member
   map.permission :select_project_modules, {:projects => :modules}, :require => :member
   map.permission :manage_members, {:projects => :settings, :members => [:new, :edit, :destroy, :autocomplete_for_member]}, :require => :member
-  map.permission :manage_versions, {:projects => :settings, :versions => [:new, :edit, :close_completed, :destroy]}, :require => :member
-  map.permission :add_subprojects, {:projects => :add}, :require => :member
+  map.permission :manage_versions, {:projects => :settings, :versions => [:new, :create, :edit, :update, :close_completed, :destroy]}, :require => :member
+  map.permission :add_subprojects, {:projects => [:new, :create]}, :require => :member
   
   map.project_module :issue_tracking do |map|
     # Issue categories
@@ -87,7 +87,7 @@ Redmine::AccessControl.map do |map|
     map.permission :view_time_entries, :timelog => [:details, :report]
     map.permission :edit_time_entries, {:timelog => [:edit, :destroy]}, :require => :member
     map.permission :edit_own_time_entries, {:timelog => [:edit, :destroy]}, :require => :loggedin
-    map.permission :manage_project_activities, {:projects => [:save_activities, :reset_activities]}, :require => :member
+    map.permission :manage_project_activities, {:project_enumerations => [:update, :destroy]}, :require => :member
   end
   
   map.project_module :news do |map|
@@ -102,7 +102,7 @@ Redmine::AccessControl.map do |map|
   end
   
   map.project_module :files do |map|
-    map.permission :manage_files, {:projects => :add_file}, :require => :loggedin
+    map.permission :manage_files, {:files => [:new, :create]}, :require => :loggedin
     map.permission :view_files, :files => :index, :versions => :download
   end
     
@@ -198,7 +198,7 @@ Redmine::MenuManager.map :project_menu do |menu|
               :if => Proc.new { |p| p.wiki && !p.wiki.new_record? }
   menu.push :boards, { :controller => 'boards', :action => 'index', :id => nil }, :param => :project_id,
               :if => Proc.new { |p| p.boards.any? }, :caption => :label_board_plural
-  menu.push :files, { :controller => 'files', :action => 'index' }, :caption => :label_file_plural
+  menu.push :files, { :controller => 'files', :action => 'index' }, :caption => :label_file_plural, :param => :project_id
   menu.push :repository, { :controller => 'repositories', :action => 'show' },
               :if => Proc.new { |p| p.repository && !p.repository.new_record? }
   menu.push :settings, { :controller => 'projects', :action => 'settings' }, :last => true

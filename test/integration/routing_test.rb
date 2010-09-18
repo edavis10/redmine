@@ -166,31 +166,30 @@ class RoutingTest < ActionController::IntegrationTest
     should_route :get, "/projects", :controller => 'projects', :action => 'index'
     should_route :get, "/projects.atom", :controller => 'projects', :action => 'index', :format => 'atom'
     should_route :get, "/projects.xml", :controller => 'projects', :action => 'index', :format => 'xml'
-    should_route :get, "/projects/new", :controller => 'projects', :action => 'add'
+    should_route :get, "/projects/new", :controller => 'projects', :action => 'new'
     should_route :get, "/projects/test", :controller => 'projects', :action => 'show', :id => 'test'
     should_route :get, "/projects/1.xml", :controller => 'projects', :action => 'show', :id => '1', :format => 'xml'
     should_route :get, "/projects/4223/settings", :controller => 'projects', :action => 'settings', :id => '4223'
     should_route :get, "/projects/4223/settings/members", :controller => 'projects', :action => 'settings', :id => '4223', :tab => 'members'
-    should_route :get, "/projects/567/destroy", :controller => 'projects', :action => 'destroy', :id => '567'
-    should_route :get, "/projects/33/files", :controller => 'files', :action => 'index', :id => '33'
-    should_route :get, "/projects/33/files/new", :controller => 'projects', :action => 'add_file', :id => '33'
+    should_route :get, "/projects/33/files", :controller => 'files', :action => 'index', :project_id => '33'
+    should_route :get, "/projects/33/files/new", :controller => 'files', :action => 'new', :project_id => '33'
     should_route :get, "/projects/33/roadmap", :controller => 'versions', :action => 'index', :project_id => '33'
     should_route :get, "/projects/33/activity", :controller => 'activities', :action => 'index', :id => '33'
     should_route :get, "/projects/33/activity.atom", :controller => 'activities', :action => 'index', :id => '33', :format => 'atom'
     
-    should_route :post, "/projects/new", :controller => 'projects', :action => 'add'
-    should_route :post, "/projects.xml", :controller => 'projects', :action => 'add', :format => 'xml'
-    should_route :post, "/projects/4223/edit", :controller => 'projects', :action => 'edit', :id => '4223'
-    should_route :post, "/projects/64/destroy", :controller => 'projects', :action => 'destroy', :id => '64'
-    should_route :post, "/projects/33/files/new", :controller => 'projects', :action => 'add_file', :id => '33'
+    should_route :post, "/projects", :controller => 'projects', :action => 'create'
+    should_route :post, "/projects.xml", :controller => 'projects', :action => 'create', :format => 'xml'
+    should_route :post, "/projects/33/files", :controller => 'files', :action => 'create', :project_id => '33'
     should_route :post, "/projects/64/archive", :controller => 'projects', :action => 'archive', :id => '64'
     should_route :post, "/projects/64/unarchive", :controller => 'projects', :action => 'unarchive', :id => '64'
-    should_route :post, "/projects/64/activities/save", :controller => 'projects', :action => 'save_activities', :id => '64'
 
-    should_route :put, "/projects/1.xml", :controller => 'projects', :action => 'edit', :id => '1', :format => 'xml'
+    should_route :put, "/projects/64/enumerations", :controller => 'project_enumerations', :action => 'update', :project_id => '64'
+    should_route :put, "/projects/4223", :controller => 'projects', :action => 'update', :id => '4223'
+    should_route :put, "/projects/1.xml", :controller => 'projects', :action => 'update', :id => '1', :format => 'xml'
 
+    should_route :delete, "/projects/64", :controller => 'projects', :action => 'destroy', :id => '64'
     should_route :delete, "/projects/1.xml", :controller => 'projects', :action => 'destroy', :id => '1', :format => 'xml'
-    should_route :delete, "/projects/64/reset_activities", :controller => 'projects', :action => 'reset_activities', :id => '64'
+    should_route :delete, "/projects/64/enumerations", :controller => 'project_enumerations', :action => 'destroy', :project_id => '64'
   end
 
   context "repositories" do
@@ -252,10 +251,16 @@ class RoutingTest < ActionController::IntegrationTest
     should_route :post, "/users/567/memberships/12/destroy", :controller => 'users', :action => 'destroy_membership', :id => '567', :membership_id => '12'
   end
 
+  # TODO: should they all be scoped under /projects/:project_id ?
   context "versions" do
     should_route :get, "/projects/foo/versions/new", :controller => 'versions', :action => 'new', :project_id => 'foo'
+    should_route :get, "/versions/show/1", :controller => 'versions', :action => 'show', :id => '1'
+    should_route :get, "/versions/edit/1", :controller => 'versions', :action => 'edit', :id => '1'
 
-    should_route :post, "/projects/foo/versions/new", :controller => 'versions', :action => 'new', :project_id => 'foo'
+    should_route :post, "/projects/foo/versions", :controller => 'versions', :action => 'create', :project_id => 'foo'
+    should_route :post, "/versions/update/1", :controller => 'versions', :action => 'update', :id => '1'
+
+    should_route :delete, "/versions/destroy/1", :controller => 'versions', :action => 'destroy', :id => '1'
   end
 
   context "wiki (singular, project's pages)" do

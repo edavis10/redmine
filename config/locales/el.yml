@@ -119,6 +119,7 @@ el:
         greater_than_start_date: "πρέπει να είναι αργότερα από την ημερομηνία έναρξης"
         not_same_project: "δεν ανήκει στο ίδιο έργο"
         circular_dependency: "Αυτή η σχέση θα δημιουργήσει κυκλικές εξαρτήσεις"
+        cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
 
   actionview_instancetag_blank_option: Παρακαλώ επιλέξτε
   
@@ -912,3 +913,5 @@ el:
   field_time_entries: Log time
   project_module_gantt: Gantt
   project_module_calendar: Calendar
+  field_member_of_group: Member of Group
+  field_assigned_to_role: Member of Role

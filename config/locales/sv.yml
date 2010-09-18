@@ -130,6 +130,7 @@ sv:
         greater_than_start_date: "måste vara senare än startdatumet"
         not_same_project: "tillhör inte samma projekt"
         circular_dependency: "Denna relation skulle skapa ett cirkulärt beroende"
+        cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
 
   direction: ltr
   date:
@@ -957,3 +958,5 @@ sv:
   enumeration_doc_categories: Dokumentkategorier
   enumeration_activities: Aktiviteter (tidsuppföljning)
   enumeration_system_activity: Systemaktivitet
+  field_member_of_group: Member of Group
+  field_assigned_to_role: Member of Role

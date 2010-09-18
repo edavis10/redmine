@@ -18,9 +18,9 @@
 class VersionsController < ApplicationController
   menu_item :roadmap
   model_object Version
-  before_filter :find_model_object, :except => [:index, :new, :close_completed]
-  before_filter :find_project_from_association, :except => [:index, :new, :close_completed]
-  before_filter :find_project, :only => [:index, :new, :close_completed]
+  before_filter :find_model_object, :except => [:index, :new, :create, :close_completed]
+  before_filter :find_project_from_association, :except => [:index, :new, :create, :close_completed]
+  before_filter :find_project, :only => [:index, :new, :create, :close_completed]
   before_filter :authorize
 
   helper :custom_fields
@@ -63,6 +63,17 @@ class VersionsController < ApplicationController
       attributes.delete('sharing') unless attributes.nil? || @version.allowed_sharings.include?(attributes['sharing'])
       @version.attributes = attributes
     end
+  end
+
+  def create
+    # TODO: refactor with code above in #new
+    @version = @project.versions.build
+    if params[:version]
+      attributes = params[:version].dup
+      attributes.delete('sharing') unless attributes.nil? || @version.allowed_sharings.include?(attributes['sharing'])
+      @version.attributes = attributes
+    end
+
     if request.post?
       if @version.save
         respond_to do |format|
@@ -79,7 +90,7 @@ class VersionsController < ApplicationController
         end
       else
         respond_to do |format|
-          format.html
+          format.html { render :action => 'new' }
           format.js do
             render(:update) {|page| page.alert(@version.errors.full_messages.join('\n')) }
           end
@@ -87,9 +98,12 @@ class VersionsController < ApplicationController
       end
     end
   end
-  
+
   def edit
-    if request.post? && params[:version]
+  end
+  
+  def update
+    if request.put? && params[:version]
       attributes = params[:version].dup
       attributes.delete('sharing') unless @version.allowed_sharings.include?(attributes['sharing'])
       if @version.update_attributes(attributes)
@@ -100,7 +114,7 @@ class VersionsController < ApplicationController
   end
   
   def close_completed
-    if request.post?
+    if request.put?
       @project.close_completed_versions
     end
     redirect_to :controller => 'projects', :action => 'settings', :tab => 'versions', :id => @project
