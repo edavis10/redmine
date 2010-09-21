@@ -21,6 +21,7 @@ class VersionsController < ApplicationController
   before_filter :find_model_object, :except => [:index, :new, :create, :close_completed]
   before_filter :find_project_from_association, :except => [:index, :new, :create, :close_completed]
   before_filter :find_project, :only => [:index, :new, :create, :close_completed]
+  before_filter :build_version, :only => [:new, :create]
   before_filter :authorize
 
   helper :custom_fields
@@ -57,23 +58,9 @@ class VersionsController < ApplicationController
   end
   
   def new
-    @version = @project.versions.build
-    if params[:version]
-      attributes = params[:version].dup
-      attributes.delete('sharing') unless attributes.nil? || @version.allowed_sharings.include?(attributes['sharing'])
-      @version.attributes = attributes
-    end
   end
 
   def create
-    # TODO: refactor with code above in #new
-    @version = @project.versions.build
-    if params[:version]
-      attributes = params[:version].dup
-      attributes.delete('sharing') unless attributes.nil? || @version.allowed_sharings.include?(attributes['sharing'])
-      @version.attributes = attributes
-    end
-
     if request.post?
       if @version.save
         respond_to do |format|
@@ -152,4 +139,12 @@ private
     end
   end
 
+  def build_version
+    @version = @project.versions.build
+    if params[:version]
+      attributes = params[:version].dup
+      attributes.delete('sharing') unless attributes.nil? || @version.allowed_sharings.include?(attributes['sharing'])
+      @version.attributes = attributes
+    end
+  end
 end
