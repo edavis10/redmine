@@ -107,6 +107,42 @@ class VersionsControllerTest < ActionController::TestCase
     assert_template 'new'
   end
   
+  def test_create_with_allowed_sharing
+    @request.session[:user_id] = 2 # manager
+    assert_difference 'Version.count' do
+      post :create, :project_id => '1', :version => {:name => 'test_add_version', :sharing => 'descendants'}
+    end
+    assert_redirected_to '/projects/ecookbook/settings/versions'
+    version = Version.find_by_name('test_add_version')
+    assert_not_nil version
+    assert_equal 1, version.project_id
+    assert_equal 'descendants', version.sharing
+  end
+  
+  def test_create_with_not_allowed_sharing
+    @request.session[:user_id] = 2 # manager
+    assert_difference 'Version.count' do
+      post :create, :project_id => '1', :version => {:name => 'test_add_version', :sharing => 'system'}
+    end
+    assert_redirected_to '/projects/ecookbook/settings/versions'
+    version = Version.find_by_name('test_add_version')
+    assert_not_nil version
+    assert_equal 1, version.project_id
+    assert_equal 'none', version.sharing
+  end
+  
+  def test_create_with_unknown_sharing
+    @request.session[:user_id] = 2 # manager
+    assert_difference 'Version.count' do
+      post :create, :project_id => '1', :version => {:name => 'test_add_version', :sharing => 'unknown'}
+    end
+    assert_redirected_to '/projects/ecookbook/settings/versions'
+    version = Version.find_by_name('test_add_version')
+    assert_not_nil version
+    assert_equal 1, version.project_id
+    assert_equal 'none', version.sharing
+  end
+  
   def test_get_edit
     @request.session[:user_id] = 2
     get :edit, :id => 2
