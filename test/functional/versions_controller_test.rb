@@ -98,6 +98,15 @@ class VersionsControllerTest < ActionController::TestCase
     assert_equal 1, version.project_id
   end
   
+  def test_create_without_version_param
+    @request.session[:user_id] = 2 # manager
+    assert_no_difference 'Version.count' do
+      post :create, :project_id => '1'
+    end
+    assert_response :success
+    assert_template 'new'
+  end
+  
   def test_get_edit
     @request.session[:user_id] = 2
     get :edit, :id => 2
