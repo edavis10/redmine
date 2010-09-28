@@ -30,7 +30,7 @@ module Redmine
           cmd = "#{BZR_BIN} revno #{target('')}"
           info = nil
           shellout(cmd) do |io|
-            if io.read =~ %r{^(\d+)\r?$}
+            if io.read =~ %r{^(\d+(\.\d+)*)\r?$}
               info = Info.new({:root_url => url,
                                :lastrev => Revision.new({
                                  :identifier => $1
@@ -50,8 +50,8 @@ module Redmine
           path ||= ''
           entries = Entries.new
           cmd = "#{BZR_BIN} ls -v --show-ids"
-          identifier = -1 unless identifier && identifier.to_i > 0 
-          cmd << " -r#{identifier}" 
+          rev_spec = identifier ? "revid:#{identifier}" : "-1"
+          cmd << " -r #{rev_spec}"
           cmd << " #{target(path)}"
           shellout(cmd) do |io|
             prefix = "#{url}/#{path}".gsub('\\', '/')
@@ -77,7 +77,7 @@ module Redmine
           revisions = Revisions.new
           cmd = "#{BZR_BIN} log -n 0 -v --show-ids"
           if options[:since]
-            cmd << " -r date:#{shell_quote(options[:since].strftime("%Y-%m-%d,%H:%M:%S"))}"
+            cmd << " -r date:#{shell_quote(options[:since].strftime("%Y-%m-%d,%H:%M:%S"))}.."
           else
             from = identifier_from ? "revid:#{identifier_from}" : "last:1"
             to = identifier_to ? "revid:#{identifier_to}" : "1"

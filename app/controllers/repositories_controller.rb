@@ -203,7 +203,7 @@ private
     (render_404; return false) unless @repository
     @path = params[:path].join('/') unless params[:path].nil?
     @path ||= ''
-    @rev = params[:rev].blank? ? @repository.default_branch : params[:rev].strip
+    @rev = params[:rev].blank? ? @repository.default_branch : params[:rev].strip.gsub(/_/, ".")
     @rev_to = params[:rev_to]
   rescue ActiveRecord::RecordNotFound
     render_404

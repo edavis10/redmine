@@ -10,10 +10,10 @@ dirs.each do |dir|
     link_path << '/' unless link_path.empty?
     link_path << "#{dir}" 
     %>
-    / <%= link_to h(dir), :action => 'show', :id => @project, :path => to_path_param(link_path), :rev => @rev %>
+    / <%= link_to h(dir), :action => 'show', :id => @project, :path => to_path_param(link_path), :rev => link_safe_rev(@rev) %>
 <% end %>
 <% if filename %>
-    / <%= link_to h(filename), :action => 'changes', :id => @project, :path => to_path_param("#{link_path}/#{filename}"), :rev => @rev %>
+    / <%= link_to h(filename), :action => 'changes', :id => @project, :path => to_path_param("#{link_path}/#{filename}"), :rev => link_safe_rev(@rev) %>
 <% end %>
 
 <%= "@ #{h revision}" if revision %>

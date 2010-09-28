@@ -21,6 +21,13 @@ module RepositoriesHelper
   def format_revision(txt)
     txt.to_s[0,8]
   end
+
+  # Some VCSes (Bazaar) have a . in the revision number, which causes problems
+  # when it's part of the URL in a link.  Call this on a revision when
+  # including it in a link
+  def link_safe_rev(revision)
+    revision.gsub(/\./, "_")
+  end
   
   def truncate_at_line_break(text, length = 255)
     if text
@@ -87,7 +94,7 @@ module RepositoriesHelper
                              :action => 'show',
                              :id => @project,
                              :path => path_param,
-                             :rev => @changeset.revision)
+                             :rev => link_safe_rev(@changeset.revision))
         output << "<li class='#{style}'>#{text}</li>"
         output << render_changes_tree(s)
       elsif c = tree[file][:c]
@@ -97,13 +104,13 @@ module RepositoriesHelper
                              :action => 'entry',
                              :id => @project,
                              :path => path_param,
-                             :rev => @changeset.revision) unless c.action == 'D'
+                             :rev => link_safe_rev(@changeset.revision)) unless c.action == 'D'
         text << " - #{c.revision}" unless c.revision.blank?
         text << ' (' + link_to('diff', :controller => 'repositories',
                                        :action => 'diff',
                                        :id => @project,
                                        :path => path_param,
-                                       :rev => @changeset.revision) + ') ' if c.action == 'M'
+                                       :rev => link_safe_rev(@changeset.revision)) + ') ' if c.action == 'M'
         text << ' ' + content_tag('span', c.from_path, :class => 'copied-from') unless c.from_path.blank?
         output << "<li class='#{style}'>#{text}</li>"
       end
