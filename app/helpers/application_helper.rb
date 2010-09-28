@@ -119,7 +119,7 @@ module ApplicationHelper
   def link_to_revision(revision, project, options={})
     text = options.delete(:text) || format_revision(revision)
 
-    link_to(text, {:controller => 'repositories', :action => 'revision', :id => project, :rev => revision}, :title => l(:label_revision_id, revision))
+    link_to(text, {:controller => 'repositories', :action => 'revision', :id => project, :rev => h(revision)}, :title => l(:label_revision_id, revision))
   end
   
   def link_to_project(project, options={})
