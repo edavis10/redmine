@@ -180,8 +180,12 @@ class Repository < ActiveRecord::Base
   # Wipes out all changesets for this repository and fetches them new.  Good for
   # VCSes like Bazaar where revision numbers can change.
   def self.clear_and_fetch_changesets
-    clear_changesets
-    fetch_changesets
+    Project.active.has_module(:repository).find(:all, :include => :repository).each do |project|
+      if project.repository
+        project.repository.clear_changesets
+      end
+    end
+    self.fetch_changesets
   end
   
   # scan changeset comments to find related and fixed issues for all repositories
@@ -203,6 +207,14 @@ class Repository < ActiveRecord::Base
   rescue
     nil
   end
+
+  def clear_changesets
+    cs, ch, ci = Changeset.table_name, Change.table_name, "#{table_name_prefix}changesets_issues#{table_name_suffix}"
+    connection.delete("DELETE FROM #{ch} WHERE #{ch}.changeset_id IN (SELECT #{cs}.id FROM #{cs} WHERE #{cs}.repository_id = #{id})")
+    connection.delete("DELETE FROM #{ci} WHERE #{ci}.changeset_id IN (SELECT #{cs}.id FROM #{cs} WHERE #{cs}.repository_id = #{id})")
+    connection.delete("DELETE FROM #{cs} WHERE #{cs}.repository_id = #{id}")
+  end
+  
   
   private
   
@@ -213,10 +225,4 @@ class Repository < ActiveRecord::Base
     true
   end
   
-  def clear_changesets
-    cs, ch, ci = Changeset.table_name, Change.table_name, "#{table_name_prefix}changesets_issues#{table_name_suffix}"
-    connection.delete("DELETE FROM #{ch} WHERE #{ch}.changeset_id IN (SELECT #{cs}.id FROM #{cs} WHERE #{cs}.repository_id = #{id})")
-    connection.delete("DELETE FROM #{ci} WHERE #{ci}.changeset_id IN (SELECT #{cs}.id FROM #{cs} WHERE #{cs}.repository_id = #{id})")
-    connection.delete("DELETE FROM #{cs} WHERE #{cs}.repository_id = #{id}")
-  end
 end
