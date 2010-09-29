@@ -176,6 +176,13 @@ class Repository < ActiveRecord::Base
       end
     end
   end
+
+  # Wipes out all changesets for this repository and fetches them new.  Good for
+  # VCSes like Bazaar where revision numbers can change.
+  def self.clear_and_fetch_changesets
+    clear_changesets
+    fetch_changesets
+  end
   
   # scan changeset comments to find related and fixed issues for all repositories
   def self.scan_changesets_for_issue_ids
