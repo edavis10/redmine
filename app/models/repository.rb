@@ -181,7 +181,7 @@ class Repository < ActiveRecord::Base
   # VCSes like Bazaar where revision numbers can change.
   def self.clear_and_fetch_changesets
     Project.active.has_module(:repository).find(:all, :include => :repository).each do |project|
-      if project.repository
+      if project.repository && project.repository.respond_to?(:clear_changesets)
         project.repository.clear_changesets
       end
     end
