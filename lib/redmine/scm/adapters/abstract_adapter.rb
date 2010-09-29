@@ -271,7 +271,7 @@ module Redmine
       end
       
       class Revision
-        attr_accessor :identifier, :scmid, :name, :author, :time, :message, :paths, :revision, :branch
+        attr_accessor :identifier, :scmid, :name, :author, :time, :message, :paths, :revision, :branch, :display_name
 
         def initialize(attributes={})
           self.identifier = attributes[:identifier]
@@ -283,6 +283,7 @@ module Redmine
           self.paths = attributes[:paths]
           self.revision = attributes[:revision]
           self.branch = attributes[:branch]
+          self.display_name = attributes[:display_name]
         end
 
         def save(repo)
@@ -291,6 +292,7 @@ module Redmine
               :repository => repo,
               :revision => identifier,
               :scmid => scmid,
+              :display_name => display_name,
               :committer => author, 
               :committed_on => time,
               :comments => message)

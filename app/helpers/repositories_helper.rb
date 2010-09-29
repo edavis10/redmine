@@ -18,16 +18,6 @@
 require 'iconv'
 
 module RepositoriesHelper
-  def format_revision(txt)
-    txt.to_s[0,8]
-  end
-
-  # Some VCSes (Bazaar) have a . in the revision number, which causes problems
-  # when it's part of the URL in a link.  Call this on a revision when
-  # including it in a link
-  def link_safe_rev(revision)
-    revision.gsub(/\./, "_")
-  end
   
   def truncate_at_line_break(text, length = 255)
     if text

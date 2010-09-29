@@ -168,7 +168,8 @@ class RepositoriesController < ApplicationController
         User.current.pref[:diff_type] = @diff_type
         User.current.preference.save
       end
-      
+      @start_changeset = @repository.find_changeset_by_name(@rev)
+      @end_changeset = @respository.find_changeset_by_name(@rev_to) if @rev_to
       @cache_key = "repositories/diff/#{@repository.id}/" + Digest::MD5.hexdigest("#{@path}-#{@rev}-#{@rev_to}-#{@diff_type}")    
       unless read_fragment(@cache_key)
         @diff = @repository.diff(@path, @rev, @rev_to)
@@ -201,7 +202,7 @@ private
     @project = Project.find(params[:id])
     @repository = @project.repository
     (render_404; return false) unless @repository
-    @path = params[:path].join('/') unless params[:path].nil?
+    @path = params[:path].join('/') unless params[:path].nil? || params[:path].empty?
     @path ||= ''
     @rev = params[:rev].blank? ? @repository.default_branch : params[:rev].strip.gsub(/_/, ".")
     @rev_to = params[:rev_to]

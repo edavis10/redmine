@@ -117,9 +117,10 @@ module ApplicationHelper
   # Options:
   # * :text - Link text (default to the formatted revision)
   def link_to_revision(revision, project, options={})
-    text = options.delete(:text) || format_revision(revision)
+    revision_identifier = revision.revision.gsub(/\./, "_")
+    text = options.delete(:text) || (revision.respond_to?(:display_name) && revision.display_name ? revision.display_name : format_revision(revision.revision))
 
-    link_to(text, {:controller => 'repositories', :action => 'revision', :id => project, :rev => revision.gsub(/\./, "_")}, :title => l(:label_revision_id, revision))
+    link_to(text, {:controller => 'repositories', :action => 'revision', :id => project, :rev => revision_identifier}, :title => l(:label_revision_id, revision.revision))
   end
   
   def link_to_project(project, options={})
@@ -175,6 +176,21 @@ module ApplicationHelper
   def format_activity_description(text)
     h(truncate(text.to_s, :length => 120).gsub(%r{[\r\n]*<(pre|code)>.*$}m, '...')).gsub(/[\r\n]+/, "<br />")
   end
+
+  def changeset_name(changeset)
+    changeset.display_name ? changeset.display_name : format_revision(changeset.revision)
+  end
+
+  def format_revision(txt)
+    txt.to_s[0,8]
+  end
+
+  # Some VCSes (Bazaar) have a . in the revision number, which causes problems
+  # when it's part of the URL in a link.  Call this on a revision when
+  # including it in a link
+  def link_safe_rev(revision)
+    revision.gsub(/\./, "_")
+  end  
 
   def format_version_name(version)
     if version.project == @project
