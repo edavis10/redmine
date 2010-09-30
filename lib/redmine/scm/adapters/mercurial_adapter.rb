@@ -30,25 +30,23 @@ module Redmine
         
         class << self
           def client_version
-            @@client_version ||= (hgversion || [])
+            @client_version ||= hgversion
           end
           
           def hgversion  
             # The hg version is expressed either as a
             # release number (eg 0.9.5 or 1.0) or as a revision
             # id composed of 12 hexa characters.
-            theversion = hgversion_from_command_line
-            if theversion.match(/^\d+(\.\d+)+/)
-              theversion.split(".").collect(&:to_i)
-            end
+            hgversion_from_command_line[/\d+(\.\d+)+/].to_s.split('.').map { |e| e.to_i }
           end
           
           def hgversion_from_command_line
-            %x{#{HG_BIN} --version}.match(/\(version (.*)\)/)[1]
+            shellout("#{HG_BIN} --version") { |io| io.gets }.to_s
           end
+          private :hgversion_from_command_line
           
           def template_path
-            @@template_path ||= template_path_for(client_version)
+            template_path_for(client_version)
           end
           
           def template_path_for(version)
