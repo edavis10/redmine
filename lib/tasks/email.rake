@@ -165,5 +165,22 @@ END_DESC
       
       Redmine::POP3.check(pop_options, options)
     end
+    
+    desc "Send a test email to the user with the provided login name"
+    task :test, :login, :needs => :environment do |task, args|
+      include Redmine::I18n
+      
+      user = User.find_by_login(args[:login])
+      abort l(:notice_email_error, "User #{args[:login]} not found") unless user
+      
+      ActionMailer::Base.raise_delivery_errors = true
+      begin
+        result = Mailer.deliver_test(User.current)
+        p result
+        puts l(:notice_email_sent, user.mail)
+      rescue Exception => e
+        abort l(:notice_email_error, e.message)
+      end
+    end
   end
 end
