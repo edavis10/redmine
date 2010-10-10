@@ -19,8 +19,8 @@ require "#{File.dirname(__FILE__)}/../test_helper"
 
 class RoutingTest < ActionController::IntegrationTest
   context "activities" do
-    should_route :get, "/activity", :controller => 'projects', :action => 'activity', :id => nil
-    should_route :get, "/activity.atom", :controller => 'projects', :action => 'activity', :id => nil, :format => 'atom'
+    should_route :get, "/activity", :controller => 'activities', :action => 'index', :id => nil
+    should_route :get, "/activity.atom", :controller => 'activities', :action => 'index', :id => nil, :format => 'atom'
   end
 
   context "attachments" do
@@ -85,22 +85,32 @@ class RoutingTest < ActionController::IntegrationTest
     # Extra actions
     should_route :get, "/projects/23/issues/64/copy", :controller => 'issues', :action => 'new', :project_id => '23', :copy_from => '64'
 
-    should_route :get, "/issues/1/move", :controller => 'issues', :action => 'move', :id => '1'
-    should_route :post, "/issues/1/move", :controller => 'issues', :action => 'move', :id => '1'
+    should_route :get, "/issues/move/new", :controller => 'issue_moves', :action => 'new'
+    should_route :post, "/issues/move", :controller => 'issue_moves', :action => 'create'
     
-    should_route :post, "/issues/1/quoted", :controller => 'issues', :action => 'reply', :id => '1'
+    should_route :post, "/issues/1/quoted", :controller => 'journals', :action => 'new', :id => '1'
 
     should_route :get, "/issues/calendar", :controller => 'calendars', :action => 'show'
-    should_route :post, "/issues/calendar", :controller => 'calendars', :action => 'show'
+    should_route :put, "/issues/calendar", :controller => 'calendars', :action => 'update'
     should_route :get, "/projects/project-name/issues/calendar", :controller => 'calendars', :action => 'show', :project_id => 'project-name'
-    should_route :post, "/projects/project-name/issues/calendar", :controller => 'calendars', :action => 'show', :project_id => 'project-name'
+    should_route :put, "/projects/project-name/issues/calendar", :controller => 'calendars', :action => 'update', :project_id => 'project-name'
 
     should_route :get, "/issues/gantt", :controller => 'gantts', :action => 'show'
-    should_route :post, "/issues/gantt", :controller => 'gantts', :action => 'show'
+    should_route :put, "/issues/gantt", :controller => 'gantts', :action => 'update'
     should_route :get, "/projects/project-name/issues/gantt", :controller => 'gantts', :action => 'show', :project_id => 'project-name'
-    should_route :post, "/projects/project-name/issues/gantt", :controller => 'gantts', :action => 'show', :project_id => 'project-name'
+    should_route :put, "/projects/project-name/issues/gantt", :controller => 'gantts', :action => 'update', :project_id => 'project-name'
 
-    should_route :get, "/issues/auto_complete", :controller => 'issues', :action => 'auto_complete'
+    should_route :get, "/issues/auto_complete", :controller => 'auto_completes', :action => 'issues'
+
+    should_route :get, "/issues/preview/123", :controller => 'previews', :action => 'issue', :id => '123'
+    should_route :post, "/issues/preview/123", :controller => 'previews', :action => 'issue', :id => '123'
+    should_route :get, "/issues/context_menu", :controller => 'context_menus', :action => 'issues'
+    should_route :post, "/issues/context_menu", :controller => 'context_menus', :action => 'issues'
+
+    should_route :get, "/issues/changes", :controller => 'journals', :action => 'index'
+
+    should_route :get, "/issues/bulk_edit", :controller => 'issues', :action => 'bulk_edit'
+    should_route :post, "/issues/bulk_edit", :controller => 'issues', :action => 'bulk_update'
   end
 
   context "issue categories" do
@@ -146,41 +156,46 @@ class RoutingTest < ActionController::IntegrationTest
     should_route :get, "/news/2", :controller => 'news', :action => 'show', :id => '2'
     should_route :get, "/projects/567/news/new", :controller => 'news', :action => 'new', :project_id => '567'
     should_route :get, "/news/234", :controller => 'news', :action => 'show', :id => '234'
+    should_route :get, "/news/567/edit", :controller => 'news', :action => 'edit', :id => '567'
+    should_route :get, "/news/preview", :controller => 'previews', :action => 'news'
+    
+    should_route :post, "/projects/567/news", :controller => 'news', :action => 'create', :project_id => '567'
+    should_route :post, "/news/567/comments", :controller => 'comments', :action => 'create', :id => '567'
 
-    should_route :post, "/projects/567/news/new", :controller => 'news', :action => 'new', :project_id => '567'
-    should_route :post, "/news/567/edit", :controller => 'news', :action => 'edit', :id => '567'
-    should_route :post, "/news/567/destroy", :controller => 'news', :action => 'destroy', :id => '567'
+    should_route :put, "/news/567", :controller => 'news', :action => 'update', :id => '567'
+
+    should_route :delete, "/news/567", :controller => 'news', :action => 'destroy', :id => '567'
+    should_route :delete, "/news/567/comments/15", :controller => 'comments', :action => 'destroy', :id => '567', :comment_id => '15'
   end
 
   context "projects" do
     should_route :get, "/projects", :controller => 'projects', :action => 'index'
     should_route :get, "/projects.atom", :controller => 'projects', :action => 'index', :format => 'atom'
     should_route :get, "/projects.xml", :controller => 'projects', :action => 'index', :format => 'xml'
-    should_route :get, "/projects/new", :controller => 'projects', :action => 'add'
+    should_route :get, "/projects/new", :controller => 'projects', :action => 'new'
     should_route :get, "/projects/test", :controller => 'projects', :action => 'show', :id => 'test'
     should_route :get, "/projects/1.xml", :controller => 'projects', :action => 'show', :id => '1', :format => 'xml'
     should_route :get, "/projects/4223/settings", :controller => 'projects', :action => 'settings', :id => '4223'
     should_route :get, "/projects/4223/settings/members", :controller => 'projects', :action => 'settings', :id => '4223', :tab => 'members'
-    should_route :get, "/projects/567/destroy", :controller => 'projects', :action => 'destroy', :id => '567'
-    should_route :get, "/projects/33/files", :controller => 'projects', :action => 'list_files', :id => '33'
-    should_route :get, "/projects/33/files/new", :controller => 'projects', :action => 'add_file', :id => '33'
-    should_route :get, "/projects/33/roadmap", :controller => 'projects', :action => 'roadmap', :id => '33'
-    should_route :get, "/projects/33/activity", :controller => 'projects', :action => 'activity', :id => '33'
-    should_route :get, "/projects/33/activity.atom", :controller => 'projects', :action => 'activity', :id => '33', :format => 'atom'
+    should_route :get, "/projects/33/files", :controller => 'files', :action => 'index', :project_id => '33'
+    should_route :get, "/projects/33/files/new", :controller => 'files', :action => 'new', :project_id => '33'
+    should_route :get, "/projects/33/roadmap", :controller => 'versions', :action => 'index', :project_id => '33'
+    should_route :get, "/projects/33/activity", :controller => 'activities', :action => 'index', :id => '33'
+    should_route :get, "/projects/33/activity.atom", :controller => 'activities', :action => 'index', :id => '33', :format => 'atom'
     
-    should_route :post, "/projects/new", :controller => 'projects', :action => 'add'
-    should_route :post, "/projects.xml", :controller => 'projects', :action => 'add', :format => 'xml'
-    should_route :post, "/projects/4223/edit", :controller => 'projects', :action => 'edit', :id => '4223'
-    should_route :post, "/projects/64/destroy", :controller => 'projects', :action => 'destroy', :id => '64'
-    should_route :post, "/projects/33/files/new", :controller => 'projects', :action => 'add_file', :id => '33'
+    should_route :post, "/projects", :controller => 'projects', :action => 'create'
+    should_route :post, "/projects.xml", :controller => 'projects', :action => 'create', :format => 'xml'
+    should_route :post, "/projects/33/files", :controller => 'files', :action => 'create', :project_id => '33'
     should_route :post, "/projects/64/archive", :controller => 'projects', :action => 'archive', :id => '64'
     should_route :post, "/projects/64/unarchive", :controller => 'projects', :action => 'unarchive', :id => '64'
-    should_route :post, "/projects/64/activities/save", :controller => 'projects', :action => 'save_activities', :id => '64'
 
-    should_route :put, "/projects/1.xml", :controller => 'projects', :action => 'edit', :id => '1', :format => 'xml'
+    should_route :put, "/projects/64/enumerations", :controller => 'project_enumerations', :action => 'update', :project_id => '64'
+    should_route :put, "/projects/4223", :controller => 'projects', :action => 'update', :id => '4223'
+    should_route :put, "/projects/1.xml", :controller => 'projects', :action => 'update', :id => '1', :format => 'xml'
 
+    should_route :delete, "/projects/64", :controller => 'projects', :action => 'destroy', :id => '64'
     should_route :delete, "/projects/1.xml", :controller => 'projects', :action => 'destroy', :id => '1', :format => 'xml'
-    should_route :delete, "/projects/64/reset_activities", :controller => 'projects', :action => 'reset_activities', :id => '64'
+    should_route :delete, "/projects/64/enumerations", :controller => 'project_enumerations', :action => 'destroy', :project_id => '64'
   end
 
   context "repositories" do
@@ -207,45 +222,58 @@ class RoutingTest < ActionController::IntegrationTest
   end
 
   context "timelogs" do
-    should_route :get, "/issues/567/time_entries/new", :controller => 'timelog', :action => 'edit', :issue_id => '567'
-    should_route :get, "/projects/ecookbook/time_entries/new", :controller => 'timelog', :action => 'edit', :project_id => 'ecookbook'
-    should_route :get, "/projects/ecookbook/issues/567/time_entries/new", :controller => 'timelog', :action => 'edit', :project_id => 'ecookbook', :issue_id => '567'
-    should_route :get, "/time_entries/22/edit", :controller => 'timelog', :action => 'edit', :id => '22'
-    should_route :get, "/time_entries/report", :controller => 'timelog', :action => 'report'
-    should_route :get, "/projects/567/time_entries/report", :controller => 'timelog', :action => 'report', :project_id => '567'
-    should_route :get, "/projects/567/time_entries/report.csv", :controller => 'timelog', :action => 'report', :project_id => '567', :format => 'csv'
-    should_route :get, "/time_entries", :controller => 'timelog', :action => 'details'
-    should_route :get, "/time_entries.csv", :controller => 'timelog', :action => 'details', :format => 'csv'
-    should_route :get, "/time_entries.atom", :controller => 'timelog', :action => 'details', :format => 'atom'
-    should_route :get, "/projects/567/time_entries", :controller => 'timelog', :action => 'details', :project_id => '567'
-    should_route :get, "/projects/567/time_entries.csv", :controller => 'timelog', :action => 'details', :project_id => '567', :format => 'csv'
-    should_route :get, "/projects/567/time_entries.atom", :controller => 'timelog', :action => 'details', :project_id => '567', :format => 'atom'
-    should_route :get, "/issues/234/time_entries", :controller => 'timelog', :action => 'details', :issue_id => '234'
-    should_route :get, "/issues/234/time_entries.csv", :controller => 'timelog', :action => 'details', :issue_id => '234', :format => 'csv'
-    should_route :get, "/issues/234/time_entries.atom", :controller => 'timelog', :action => 'details', :issue_id => '234', :format => 'atom'
-    should_route :get, "/projects/ecookbook/issues/123/time_entries", :controller => 'timelog', :action => 'details', :project_id => 'ecookbook', :issue_id => '123'
+    should_route :get, "/time_entries", :controller => 'timelog', :action => 'index'
+    should_route :get, "/time_entries.csv", :controller => 'timelog', :action => 'index', :format => 'csv'
+    should_route :get, "/time_entries.atom", :controller => 'timelog', :action => 'index', :format => 'atom'
+    should_route :get, "/projects/567/time_entries", :controller => 'timelog', :action => 'index', :project_id => '567'
+    should_route :get, "/projects/567/time_entries.csv", :controller => 'timelog', :action => 'index', :project_id => '567', :format => 'csv'
+    should_route :get, "/projects/567/time_entries.atom", :controller => 'timelog', :action => 'index', :project_id => '567', :format => 'atom'
+    should_route :get, "/issues/234/time_entries", :controller => 'timelog', :action => 'index', :issue_id => '234'
+    should_route :get, "/issues/234/time_entries.csv", :controller => 'timelog', :action => 'index', :issue_id => '234', :format => 'csv'
+    should_route :get, "/issues/234/time_entries.atom", :controller => 'timelog', :action => 'index', :issue_id => '234', :format => 'atom'
+    should_route :get, "/projects/ecookbook/issues/123/time_entries", :controller => 'timelog', :action => 'index', :project_id => 'ecookbook', :issue_id => '123'
 
+    should_route :get, "/issues/567/time_entries/new", :controller => 'timelog', :action => 'new', :issue_id => '567'
+    should_route :get, "/projects/ecookbook/time_entries/new", :controller => 'timelog', :action => 'new', :project_id => 'ecookbook'
+    should_route :get, "/projects/ecookbook/issues/567/time_entries/new", :controller => 'timelog', :action => 'new', :project_id => 'ecookbook', :issue_id => '567'
+    should_route :get, "/time_entries/22/edit", :controller => 'timelog', :action => 'edit', :id => '22'
+
+    should_route :post, "/projects/ecookbook/timelog/edit", :controller => 'timelog', :action => 'create', :project_id => 'ecookbook'
+    should_route :post, "/time_entries/22/edit", :controller => 'timelog', :action => 'edit', :id => '22'
     should_route :post, "/time_entries/55/destroy", :controller => 'timelog', :action => 'destroy', :id => '55'
+  end
+
+  context "time_entry_reports" do
+    should_route :get, "/time_entries/report", :controller => 'time_entry_reports', :action => 'report'
+    should_route :get, "/projects/567/time_entries/report", :controller => 'time_entry_reports', :action => 'report', :project_id => '567'
+    should_route :get, "/projects/567/time_entries/report.csv", :controller => 'time_entry_reports', :action => 'report', :project_id => '567', :format => 'csv'
   end
 
   context "users" do
     should_route :get, "/users", :controller => 'users', :action => 'index'
     should_route :get, "/users/44", :controller => 'users', :action => 'show', :id => '44'
-    should_route :get, "/users/new", :controller => 'users', :action => 'add'
+    should_route :get, "/users/new", :controller => 'users', :action => 'new'
     should_route :get, "/users/444/edit", :controller => 'users', :action => 'edit', :id => '444'
     should_route :get, "/users/222/edit/membership", :controller => 'users', :action => 'edit', :id => '222', :tab => 'membership'
 
-    should_route :post, "/users/new", :controller => 'users', :action => 'add'
-    should_route :post, "/users/444/edit", :controller => 'users', :action => 'edit', :id => '444'
+    should_route :post, "/users", :controller => 'users', :action => 'create'
     should_route :post, "/users/123/memberships", :controller => 'users', :action => 'edit_membership', :id => '123'
     should_route :post, "/users/123/memberships/55", :controller => 'users', :action => 'edit_membership', :id => '123', :membership_id => '55'
     should_route :post, "/users/567/memberships/12/destroy", :controller => 'users', :action => 'destroy_membership', :id => '567', :membership_id => '12'
+
+    should_route :put, "/users/444", :controller => 'users', :action => 'update', :id => '444'
   end
 
+  # TODO: should they all be scoped under /projects/:project_id ?
   context "versions" do
     should_route :get, "/projects/foo/versions/new", :controller => 'versions', :action => 'new', :project_id => 'foo'
+    should_route :get, "/versions/show/1", :controller => 'versions', :action => 'show', :id => '1'
+    should_route :get, "/versions/edit/1", :controller => 'versions', :action => 'edit', :id => '1'
 
-    should_route :post, "/projects/foo/versions/new", :controller => 'versions', :action => 'new', :project_id => 'foo'
+    should_route :post, "/projects/foo/versions", :controller => 'versions', :action => 'create', :project_id => 'foo'
+    should_route :post, "/versions/update/1", :controller => 'versions', :action => 'update', :id => '1'
+
+    should_route :delete, "/versions/destroy/1", :controller => 'versions', :action => 'destroy', :id => '1'
   end
 
   context "wiki (singular, project's pages)" do

@@ -139,7 +139,9 @@ vi:
         greater_than_start_date: "phải đi sau ngày bắt đầu"
         not_same_project: "không thuộc cùng dự án"
         circular_dependency: "quan hệ có thể gây ra lặp vô tận"
+        cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
 
+  direction: ltr
   date:
     formats:
       # Use the strftime parameters for formats.
@@ -226,7 +228,7 @@ vi:
   mail_body_account_information: Thông tin về tài khoản
   mail_subject_account_activation_request: "{{value}}: Yêu cầu chứng thực tài khoản"
   mail_body_account_activation_request: "Người dùng ({{value}}) mới đăng ký và cần bạn xác nhận:"
-  mail_subject_reminder: "{{count}} vấn đề hết hạn trong các ngày tới"
+  mail_subject_reminder: "{{count}} vấn đề hết hạn trong các {{days}} ngày tới"
   mail_body_reminder: "{{count}} vấn đề gán cho bạn sẽ hết hạn trong {{days}} ngày tới:"
   
   gui_validation_error: 1 lỗi
@@ -726,9 +728,9 @@ vi:
   text_subprojects_destroy_warning: "Its subproject(s): {{value}} will be also deleted."
   text_workflow_edit: Select a role and a tracker to edit the workflow
   text_are_you_sure: Bạn chắc chứ?
-  text_tip_task_begin_day: ngày bắt đầu
-  text_tip_task_end_day: ngày kết thúc
-  text_tip_task_begin_end_day: bắt đầu và kết thúc cùng ngày
+  text_tip_issue_begin_day: ngày bắt đầu
+  text_tip_issue_end_day: ngày kết thúc
+  text_tip_issue_begin_end_day: bắt đầu và kết thúc cùng ngày
   text_project_identifier_info: 'Chỉ cho phép chữ cái thường (a-z), con số và dấu gạch ngang.<br />Sau khi lưu, chỉ số ID không thể thay đổi.'
   text_caracters_maximum: "Tối đa {{count}} ký tự."
   text_caracters_minimum: "Phải gồm ít nhất {{count}} ký tự."
@@ -963,3 +965,15 @@ vi:
   text_zoom_in: Zoom in
   notice_unable_delete_time_entry: Unable to delete time log entry.
   label_overall_spent_time: Overall spent time
+  field_time_entries: Log time
+  project_module_gantt: Gantt
+  project_module_calendar: Calendar
+  field_member_of_group: Member of Group
+  field_assigned_to_role: Member of Role
+  button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
+  text_are_you_sure_with_children: Delete issue and all child issues?
+  field_text: Text field
+  label_user_mail_option_only_owner: Only for things I am the owner of
+  setting_default_notification_option: Default notification option
+  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
+  label_user_mail_option_only_assigned: Only for things I am assigned to

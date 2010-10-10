@@ -3,6 +3,7 @@
 # updated and upgraded to 0.9 by Morten Krogh Andersen (http://www.krogh.net)
 
 da:
+  direction: ltr
   date:
     formats:
       default: "%d.%m.%Y"
@@ -129,6 +130,7 @@ da:
         greater_than_start_date: "skal være senere end startdatoen"
         not_same_project: "hører ikke til samme projekt"
         circular_dependency: "Denne relation vil skabe et afhængighedsforhold"
+        cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
 
       template:
         header:
@@ -655,9 +657,9 @@ da:
   text_project_destroy_confirmation: Er du sikker på at du vil slette dette projekt og alle relaterede data?
   text_workflow_edit: Vælg en rolle samt en type, for at redigere arbejdsgangen
   text_are_you_sure: Er du sikker?
-  text_tip_task_begin_day: opgaven begynder denne dag
-  text_tip_task_end_day: opaven slutter denne dag
-  text_tip_task_begin_end_day: opgaven begynder og slutter denne dag
+  text_tip_issue_begin_day: opgaven begynder denne dag
+  text_tip_issue_end_day: opaven slutter denne dag
+  text_tip_issue_begin_end_day: opgaven begynder og slutter denne dag
   text_project_identifier_info: 'Små bogstaver (a-z), numre og bindestreg er tilladt.<br />Denne er en unik identifikation for projektet, og kan defor ikke rettes senere.'
   text_caracters_maximum: "max {{count}} karakterer."
   text_caracters_minimum: "Skal være mindst {{count}} karakterer lang."
@@ -791,7 +793,7 @@ da:
   permission_browse_repository: Gennemse repository
   permission_manage_repository: Administrér repository
   permission_manage_members: Administrér medlemmer
-  mail_subject_reminder: "{{count}} sag(er) har deadline i de kommende dage"
+  mail_subject_reminder: "{{count}} sag(er) har deadline i de kommende dage ({{days}})"
   permission_add_issue_notes: Tilføj noter
   permission_edit_messages: Redigér beskeder
   permission_view_issue_watchers: Se liste over overvågere
@@ -924,3 +926,15 @@ da:
   text_zoom_in: Zoom in
   notice_unable_delete_time_entry: Unable to delete time log entry.
   label_overall_spent_time: Overall spent time
+  field_time_entries: Log time
+  project_module_gantt: Gantt
+  project_module_calendar: Calendar
+  field_member_of_group: Member of Group
+  field_assigned_to_role: Member of Role
+  button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
+  text_are_you_sure_with_children: Delete issue and all child issues?
+  field_text: Text field
+  label_user_mail_option_only_owner: Only for things I am the owner of
+  setting_default_notification_option: Default notification option
+  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
+  label_user_mail_option_only_assigned: Only for things I am assigned to

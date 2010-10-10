@@ -62,10 +62,28 @@ class Issue < ActiveRecord::Base
   
   named_scope :open, :conditions => ["#{IssueStatus.table_name}.is_closed = ?", false], :include => :status
 
-  named_scope :recently_updated, :order => "#{self.table_name}.updated_on DESC"
+  named_scope :recently_updated, :order => "#{Issue.table_name}.updated_on DESC"
   named_scope :with_limit, lambda { |limit| { :limit => limit} }
   named_scope :on_active_project, :include => [:status, :project, :tracker],
                                   :conditions => ["#{Project.table_name}.status=#{Project::STATUS_ACTIVE}"]
+  named_scope :for_gantt, lambda {
+    {
+      :include => [:tracker, :status, :assigned_to, :priority, :project, :fixed_version],
+      :order => "#{Issue.table_name}.due_date ASC, #{Issue.table_name}.start_date ASC, #{Issue.table_name}.id ASC"
+    }
+  }
+
+  named_scope :without_version, lambda {
+    {
+      :conditions => { :fixed_version_id => nil}
+    }
+  }
+
+  named_scope :with_query, lambda {|query|
+    {
+      :conditions => Query.merge_conditions(query.statement)
+    }
+  }
 
   before_create :default_assign
   before_save :reschedule_following_issues, :close_duplicates, :update_done_ratio_from_issue_status
@@ -245,7 +263,7 @@ class Issue < ActiveRecord::Base
   end
   
   def done_ratio
-    if Issue.use_status_for_done_ratio? && status && status.default_done_ratio?
+    if Issue.use_status_for_done_ratio? && status && status.default_done_ratio
       status.default_done_ratio
     else
       read_attribute(:done_ratio)
@@ -308,7 +326,7 @@ class Issue < ActiveRecord::Base
   # Set the done_ratio using the status if that setting is set.  This will keep the done_ratios
   # even if the user turns off the setting later
   def update_done_ratio_from_issue_status
-    if Issue.use_status_for_done_ratio? && status && status.default_done_ratio?
+    if Issue.use_status_for_done_ratio? && status && status.default_done_ratio
       self.done_ratio = status.default_done_ratio
     end
   end
@@ -357,10 +375,24 @@ class Issue < ActiveRecord::Base
   def overdue?
     !due_date.nil? && (due_date < Date.today) && !status.is_closed?
   end
+
+  # Is the amount of work done less than it should for the due date
+  def behind_schedule?
+    return false if start_date.nil? || due_date.nil?
+    done_date = start_date + ((due_date - start_date+1)* done_ratio/100).floor
+    return done_date <= Date.today
+  end
+
+  # Does this issue have children?
+  def children?
+    !leaf?
+  end
   
   # Users the issue can be assigned to
   def assignable_users
-    project.assignable_users
+    users = project.assignable_users
+    users << author if author
+    users.uniq.sort
   end
   
   # Versions that the issue can be assigned to
@@ -385,9 +417,10 @@ class Issue < ActiveRecord::Base
   # Returns the mail adresses of users that should be notified
   def recipients
     notified = project.notified_users
-    # Author and assignee are always notified unless they have been locked
-    notified << author if author && author.active?
-    notified << assigned_to if assigned_to && assigned_to.active?
+    # Author and assignee are always notified unless they have been
+    # locked or don't want to be notified
+    notified << author if author && author.active? && author.notify_about?(self)
+    notified << assigned_to if assigned_to && assigned_to.active? && assigned_to.notify_about?(self)
     notified.uniq!
     # Remove users that can not view the issue
     notified.reject! {|user| !visible?(user)}
@@ -684,7 +717,7 @@ class Issue < ActiveRecord::Base
       end
       
       # done ratio = weighted average ratio of leaves
-      unless Issue.use_status_for_done_ratio? && p.status && p.status.default_done_ratio?
+      unless Issue.use_status_for_done_ratio? && p.status && p.status.default_done_ratio
         leaves_count = p.leaves.count
         if leaves_count > 0
           average = p.leaves.average(:estimated_hours).to_f
@@ -821,7 +854,7 @@ class Issue < ActiveRecord::Base
                                                 j.id as #{select_field},
                                                 count(i.id) as total 
                                               from 
-                                                  #{Issue.table_name} i, #{IssueStatus.table_name} s, #{joins} as j
+                                                  #{Issue.table_name} i, #{IssueStatus.table_name} s, #{joins} j
                                               where 
                                                 i.status_id=s.id 
                                                 and #{where}

@@ -153,7 +153,7 @@ class ApplicationController < ActionController::Base
 
   # Authorize the user for the requested action
   def authorize(ctrl = params[:controller], action = params[:action], global = false)
-    allowed = User.current.allowed_to?({:controller => ctrl, :action => action}, @project, :global => global)
+    allowed = User.current.allowed_to?({:controller => ctrl, :action => action}, @project || @projects, :global => global)
     allowed ? true : deny_access
   end
 
@@ -165,6 +165,13 @@ class ApplicationController < ActionController::Base
   # Find project of id params[:id]
   def find_project
     @project = Project.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+
+  # Find project of id params[:project_id]
+  def find_project_by_project_id
+    @project = Project.find(params[:project_id])
   rescue ActiveRecord::RecordNotFound
     render_404
   end
@@ -201,7 +208,26 @@ class ApplicationController < ActionController::Base
   def self.model_object(model)
     write_inheritable_attribute('model_object', model)
   end
-    
+
+  # Filter for bulk issue operations
+  def find_issues
+    @issues = Issue.find_all_by_id(params[:id] || params[:ids])
+    raise ActiveRecord::RecordNotFound if @issues.empty?
+    @projects = @issues.collect(&:project).compact.uniq
+    @project = @projects.first if @projects.size == 1
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+  
+  # Check if project is unique before bulk operations
+  def check_project_uniqueness
+    unless @project
+      # TODO: let users bulk edit/move/destroy issues from different projects
+      render_error 'Can not bulk edit/move/destroy issues from different projects'
+      return false
+    end
+  end
+  
   # make sure that the user is a member of the project (or admin) if project is private
   # used as a before_filter for actions that do not require any particular permission on the project
   def check_project_privacy
@@ -216,6 +242,10 @@ class ApplicationController < ActionController::Base
       render_404
       false
     end
+  end
+
+  def back_url
+    params[:back_url] || request.env['HTTP_REFERER']
   end
 
   def redirect_back_or_default(default)
@@ -238,7 +268,7 @@ class ApplicationController < ActionController::Base
   def render_403
     @project = nil
     respond_to do |format|
-      format.html { render :template => "common/403", :layout => (request.xhr? ? false : 'base'), :status => 403 }
+      format.html { render :template => "common/403", :layout => use_layout, :status => 403 }
       format.atom { head 403 }
       format.xml { head 403 }
       format.js { head 403 }
@@ -249,7 +279,7 @@ class ApplicationController < ActionController::Base
     
   def render_404
     respond_to do |format|
-      format.html { render :template => "common/404", :layout => !request.xhr?, :status => 404 }
+      format.html { render :template => "common/404", :layout => use_layout, :status => 404 }
       format.atom { head 404 }
       format.xml { head 404 }
       format.js { head 404 }
@@ -262,13 +292,20 @@ class ApplicationController < ActionController::Base
     respond_to do |format|
       format.html { 
         flash.now[:error] = msg
-        render :text => '', :layout => !request.xhr?, :status => 500
+        render :text => '', :layout => use_layout, :status => 500
       }
       format.atom { head 500 }
       format.xml { head 500 }
       format.js { head 500 }
       format.json { head 500 }
     end
+  end
+
+  # Picks which layout to use based on the request
+  #
+  # @return [boolean, string] name of the layout to use or false for no layout
+  def use_layout
+    request.xhr? ? false : 'base'
   end
   
   def invalid_authenticity_token
@@ -343,6 +380,21 @@ class ApplicationController < ActionController::Base
   # Renders a warning flash if obj has unsaved attachments
   def render_attachment_warning_if_needed(obj)
     flash[:warning] = l(:warning_attachments_not_saved, obj.unsaved_attachments.size) if obj.unsaved_attachments.present?
+  end
+
+  # Sets the `flash` notice or error based the number of issues that did not save
+  #
+  # @param [Array, Issue] issues all of the saved and unsaved Issues
+  # @param [Array, Integer] unsaved_issue_ids the issue ids that were not saved
+  def set_flash_from_bulk_issue_save(issues, unsaved_issue_ids)
+    if unsaved_issue_ids.empty?
+      flash[:notice] = l(:notice_successful_update) unless issues.empty?
+    else
+      flash[:error] = l(:notice_failed_to_save_issues,
+                        :count => unsaved_issue_ids.size,
+                        :total => issues.size,
+                        :ids => '#' + unsaved_issue_ids.join(', #'))
+    end
   end
 
   # Rescues an invalid query statement. Just in case...

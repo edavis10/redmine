@@ -20,7 +20,7 @@
 		<% for project in @projects %>
 		  <% @project = project %>
 			<li>
-			<%= link_to h(project.name), :controller => 'projects', :action => 'show', :id => project %> (<%= format_time(project.created_on) %>)
+			<%= link_to_project project %> (<%= format_time(project.created_on) %>)
 			<%= textilizable project.short_description, :project => project %>
 			</li>
 		<% end %>
@@ -34,6 +34,6 @@
 <% content_for :header_tags do %>
 <%= auto_discovery_link_tag(:atom, {:controller => 'news', :action => 'index', :key => User.current.rss_key, :format => 'atom'},
                                    :title => "#{Setting.app_title}: #{l(:label_news_latest)}") %>
-<%= auto_discovery_link_tag(:atom, {:controller => 'projects', :action => 'activity', :key => User.current.rss_key, :format => 'atom'},
+<%= auto_discovery_link_tag(:atom, {:controller => 'activities', :action => 'index', :key => User.current.rss_key, :format => 'atom'},
                                    :title => "#{Setting.app_title}: #{l(:label_activity)}") %>
 <% end %>

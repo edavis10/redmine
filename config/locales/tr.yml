@@ -5,6 +5,7 @@ tr:
   locale:
     native_name: Türkçe
     address_separator: " "
+  direction: ltr
   date:
     formats:
       default: "%d.%m.%Y"
@@ -142,6 +143,7 @@ tr:
         greater_than_start_date: "başlangıç tarihinden büyük olmalı"
         not_same_project: "aynı projeye ait değil"
         circular_dependency: "Bu ilişki döngüsel bağımlılık meydana getirecektir"
+        cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
       models:
   
   actionview_instancetag_blank_option: Lütfen Seçin
@@ -678,9 +680,9 @@ tr:
   text_subprojects_destroy_warning: "Ayrıca {{value}} alt proje silinecek."
   text_workflow_edit: İşakışını düzenlemek için bir rol ve takipçi seçin
   text_are_you_sure: Emin misiniz ?
-  text_tip_task_begin_day: Bugün başlayan görevler
-  text_tip_task_end_day: Bugün sona eren görevler
-  text_tip_task_begin_end_day: Bugün başlayan ve sona eren görevler
+  text_tip_issue_begin_day: Bugün başlayan görevler
+  text_tip_issue_end_day: Bugün sona eren görevler
+  text_tip_issue_begin_end_day: Bugün başlayan ve sona eren görevler
   text_project_identifier_info: 'Küçük harfler (a-z), sayılar ve noktalar kabul edilir.<br />Bir kere kaydedildiğinde,tanımlayıcı değiştirilemez.'
   text_caracters_maximum: "En çok {{count}} karakter."
   text_caracters_minimum: "En az {{count}} karakter uzunluğunda olmalı."
@@ -749,7 +751,7 @@ tr:
   text_user_wrote: "{{value}} wrote:"
   setting_mail_handler_api_enabled: Enable WS for incoming emails
   label_and_its_subprojects: "{{value}} and its subprojects"
-  mail_subject_reminder: "{{count}} issue(s) due in the next days"
+  mail_subject_reminder: "{{count}} issue(s) due in the next {{days}} days"
   setting_mail_handler_api_key: API key
   setting_commit_logs_encoding: Commit messages encoding
   general_csv_decimal_separator: '.'
@@ -931,3 +933,15 @@ tr:
   text_zoom_in: Zoom in
   notice_unable_delete_time_entry: Unable to delete time log entry.
   label_overall_spent_time: Overall spent time
+  field_time_entries: Log time
+  project_module_gantt: Gantt
+  project_module_calendar: Calendar
+  field_member_of_group: Member of Group
+  field_assigned_to_role: Member of Role
+  button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
+  text_are_you_sure_with_children: Delete issue and all child issues?
+  field_text: Text field
+  label_user_mail_option_only_owner: Only for things I am the owner of
+  setting_default_notification_option: Default notification option
+  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
+  label_user_mail_option_only_assigned: Only for things I am assigned to

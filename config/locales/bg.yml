@@ -1,4 +1,5 @@
 bg:
+  direction: ltr
   date:
     formats:
       # Use the strftime parameters for formats.
@@ -63,7 +64,11 @@ bg:
         one:   "almost 1 year"
         other: "almost {{count}} years"
 
-  number: 
+  number:
+    format:
+      separator: "."
+      delimiter: ""
+      precision: 3
     human: 
       format: 
         precision: 1
@@ -71,13 +76,13 @@ bg:
       storage_units: 
         format: "%n %u"
         units: 
-          kb: KB
-          tb: TB
-          gb: GB
           byte: 
             one: Byte
             other: Bytes
-          mb: 'MB'
+          kb: "KB"
+          mb: "MB"
+          gb: "GB"
+          tb: "TB"
       
 # Used in array.to_sentence.
   support:
@@ -111,6 +116,7 @@ bg:
         greater_than_start_date: "трябва да е след началната дата"
         not_same_project: "не е от същия проект"
         circular_dependency: "Тази релация ще доведе до безкрайна зависимост"
+        cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
 
   actionview_instancetag_blank_option: Изберете
   
@@ -556,9 +562,9 @@ bg:
   text_project_destroy_confirmation: Сигурни ли сте, че искате да изтриете проекта и данните в него?
   text_workflow_edit: Изберете роля и тракер за да редактирате работния процес
   text_are_you_sure: Сигурни ли сте?
-  text_tip_task_begin_day: задача започваща този ден
-  text_tip_task_end_day: задача завършваща този ден
-  text_tip_task_begin_end_day: задача започваща и завършваща този ден
+  text_tip_issue_begin_day: задача започваща този ден
+  text_tip_issue_end_day: задача завършваща този ден
+  text_tip_issue_begin_end_day: задача започваща и завършваща този ден
   text_project_identifier_info: 'Позволени са малки букви (a-z), цифри и тирета.<br />Невъзможна промяна след запис.'
   text_caracters_maximum: "До {{count}} символа."
   text_length_between: "От {{min}} до {{max}} символа."
@@ -704,7 +710,7 @@ bg:
   text_subprojects_destroy_warning: "Its subproject(s): {{value}} will be also deleted."
   label_and_its_subprojects: "{{value}} and its subprojects"
   mail_body_reminder: "{{count}} issue(s) that are assigned to you are due in the next {{days}} days:"
-  mail_subject_reminder: "{{count}} issue(s) due in the next days"
+  mail_subject_reminder: "{{count}} issue(s) due in the next {{days}} days"
   text_user_wrote: "{{value}} wrote:"
   label_duplicated_by: duplicated by
   setting_enabled_scm: Enabled SCM
@@ -898,3 +904,15 @@ bg:
   text_zoom_in: Zoom in
   notice_unable_delete_time_entry: Unable to delete time log entry.
   label_overall_spent_time: Overall spent time
+  field_time_entries: Log time
+  project_module_gantt: Gantt
+  project_module_calendar: Calendar
+  field_member_of_group: Member of Group
+  field_assigned_to_role: Member of Role
+  button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
+  text_are_you_sure_with_children: Delete issue and all child issues?
+  field_text: Text field
+  label_user_mail_option_only_owner: Only for things I am the owner of
+  setting_default_notification_option: Default notification option
+  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
+  label_user_mail_option_only_assigned: Only for things I am assigned to

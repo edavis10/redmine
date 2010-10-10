@@ -1,4 +1,5 @@
 th:
+  direction: ltr
   date:
     formats:
       # Use the strftime parameters for formats.
@@ -63,7 +64,11 @@ th:
         one:   "almost 1 year"
         other: "almost {{count}} years"
 
-  number: 
+  number:
+    format:
+      separator: "."
+      delimiter: ""
+      precision: 3
     human: 
       format: 
         precision: 1
@@ -111,6 +116,7 @@ th:
         greater_than_start_date: "ต้องมากกว่าวันเริ่ม"
         not_same_project: "ไม่ได้อยู่ในโครงการเดียวกัน"
         circular_dependency: "ความสัมพันธ์อ้างอิงเป็นวงกลม"
+        cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
 
   actionview_instancetag_blank_option: กรุณาเลือก
   
@@ -649,9 +655,9 @@ th:
   text_subprojects_destroy_warning: "โครงการย่อย: {{value}} จะถูกลบด้วย."
   text_workflow_edit: เลือกบทบาทและการติดตาม เพื่อแก้ไขลำดับงาน
   text_are_you_sure: คุณแน่ใจไหม ?
-  text_tip_task_begin_day: งานที่เริ่มวันนี้
-  text_tip_task_end_day: งานที่จบวันนี้
-  text_tip_task_begin_end_day: งานที่เริ่มและจบวันนี้
+  text_tip_issue_begin_day: งานที่เริ่มวันนี้
+  text_tip_issue_end_day: งานที่จบวันนี้
+  text_tip_issue_begin_end_day: งานที่เริ่มและจบวันนี้
   text_project_identifier_info: 'ภาษาอังกฤษตัวเล็ก(a-z), ตัวเลข(0-9) และขีด (-) เท่านั้น.<br />เมื่อจัดเก็บแล้ว, ชื่อเฉพาะไม่สามารถเปลี่ยนแปลงได้'
   text_caracters_maximum: "สูงสุด {{count}} ตัวอักษร."
   text_caracters_minimum: "ต้องยาวอย่างน้อย {{count}} ตัวอักษร."
@@ -707,7 +713,7 @@ th:
   enumeration_activities: กิจกรรม (ใช้ในการติดตามเวลา)
   label_and_its_subprojects: "{{value}} and its subprojects"
   mail_body_reminder: "{{count}} issue(s) that are assigned to you are due in the next {{days}} days:"
-  mail_subject_reminder: "{{count}} issue(s) due in the next days"
+  mail_subject_reminder: "{{count}} issue(s) due in the next {{days}} days"
   text_user_wrote: "{{value}} wrote:"
   label_duplicated_by: duplicated by
   setting_enabled_scm: Enabled SCM
@@ -901,3 +907,15 @@ th:
   text_zoom_in: Zoom in
   notice_unable_delete_time_entry: Unable to delete time log entry.
   label_overall_spent_time: Overall spent time
+  field_time_entries: Log time
+  project_module_gantt: Gantt
+  project_module_calendar: Calendar
+  field_member_of_group: Member of Group
+  field_assigned_to_role: Member of Role
+  button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
+  text_are_you_sure_with_children: Delete issue and all child issues?
+  field_text: Text field
+  label_user_mail_option_only_owner: Only for things I am the owner of
+  setting_default_notification_option: Default notification option
+  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
+  label_user_mail_option_only_assigned: Only for things I am assigned to

@@ -2,6 +2,7 @@
 # by Helix d.o.o. (info@helix.hr)
 
 hr:
+  direction: ltr
   date:
     formats:
       # Use the strftime parameters for formats.
@@ -64,6 +65,10 @@ hr:
         other: "preko {{count}} godina"
 
   number:
+    format:
+      separator: "."
+      delimiter: ""
+      precision: 3
     human:
       format:
         delimiter: ""
@@ -112,6 +117,7 @@ hr:
         greater_than_start_date: "mora biti veci nego pocetni datum"
         not_same_project: "ne pripada istom projektu"
         circular_dependency: "Ovaj relacija stvara kružnu ovisnost"
+        cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
 
   actionview_instancetag_blank_option: Molimo odaberite
   
@@ -176,7 +182,7 @@ hr:
   mail_body_account_information: Vaši korisnički podaci
   mail_subject_account_activation_request: "{{value}} predmet za aktivaciju korisničkog računa"
   mail_body_account_activation_request: "Novi korisnik ({{value}}) je registriran. Njegov korisnički račun čeka vaše odobrenje:"
-  mail_subject_reminder: "{{count}} predmet(a) dospijeva sljedećih dana"
+  mail_subject_reminder: "{{count}} predmet(a) dospijeva sljedećih {{days}} dana"
   mail_body_reminder: "{{count}} vama dodijeljen(ih) predmet(a) dospijeva u sljedećih {{days}} dana:"
   mail_subject_wiki_content_added: "'{{page}}' wiki page has been added"
   mail_body_wiki_content_added: "The '{{page}}' wiki page has been added by {{author}}."
@@ -809,9 +815,9 @@ hr:
   text_journal_set_to: "{{label}} postavi na {{value}}"
   text_journal_deleted: "{{label}} izbrisano ({{old}})"
   text_journal_added: "{{label}} {{value}} added"  
-  text_tip_task_begin_day: Zadaci koji počinju ovog dana
-  text_tip_task_end_day: zadaci koji se završavaju ovog dana
-  text_tip_task_begin_end_day: Zadaci koji počinju i završavaju se ovog dana
+  text_tip_issue_begin_day: Zadaci koji počinju ovog dana
+  text_tip_issue_end_day: zadaci koji se završavaju ovog dana
+  text_tip_issue_begin_end_day: Zadaci koji počinju i završavaju se ovog dana
   text_project_identifier_info: 'mala slova (a-z), brojevi i crtice su dozvoljeni.<br />Jednom snimljen identifikator se ne može mijenjati!'
   text_caracters_maximum: "Najviše {{count}} znakova."
   text_caracters_minimum: "Mora biti dugačko najmanje {{count}} znakova."
@@ -911,3 +917,15 @@ hr:
   text_zoom_in: Zoom in
   notice_unable_delete_time_entry: Unable to delete time log entry.
   label_overall_spent_time: Overall spent time
+  field_time_entries: Log time
+  project_module_gantt: Gantt
+  project_module_calendar: Calendar
+  field_member_of_group: Member of Group
+  field_assigned_to_role: Member of Role
+  button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
+  text_are_you_sure_with_children: Delete issue and all child issues?
+  field_text: Text field
+  label_user_mail_option_only_owner: Only for things I am the owner of
+  setting_default_notification_option: Default notification option
+  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
+  label_user_mail_option_only_assigned: Only for things I am assigned to

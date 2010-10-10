@@ -33,7 +33,7 @@ module RedmineMenuTestHelper
   end
 end
 
-class RedmineTest < Test::Unit::TestCase
+class RedmineTest < ActiveSupport::TestCase
   include RedmineMenuTestHelper
 
   def test_top_menu
@@ -62,12 +62,14 @@ class RedmineTest < Test::Unit::TestCase
   end
 
   def test_project_menu
-    assert_number_of_items_in_menu :project_menu, 12
+    assert_number_of_items_in_menu :project_menu, 14
     assert_menu_contains_item_named :project_menu, :overview
     assert_menu_contains_item_named :project_menu, :activity
     assert_menu_contains_item_named :project_menu, :roadmap
     assert_menu_contains_item_named :project_menu, :issues
     assert_menu_contains_item_named :project_menu, :new_issue
+    assert_menu_contains_item_named :project_menu, :calendar
+    assert_menu_contains_item_named :project_menu, :gantt
     assert_menu_contains_item_named :project_menu, :news
     assert_menu_contains_item_named :project_menu, :documents
     assert_menu_contains_item_named :project_menu, :wiki

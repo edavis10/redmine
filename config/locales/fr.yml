@@ -4,6 +4,7 @@
 # contributor: Thibaut Cuvelier - Developpez.com
 
 fr:
+  direction: ltr
   date:
     formats:
       default: "%d/%m/%Y"
@@ -200,7 +201,7 @@ fr:
   mail_body_account_information: Paramètres de connexion de votre compte
   mail_subject_account_activation_request: "Demande d'activation d'un compte {{value}}"
   mail_body_account_activation_request: "Un nouvel utilisateur ({{value}}) s'est inscrit. Son compte nécessite votre approbation :"
-  mail_subject_reminder: "{{count}} demande(s) arrivent à échéance"
+  mail_subject_reminder: "{{count}} demande(s) arrivent à échéance ({{days}})"
   mail_body_reminder: "{{count}} demande(s) qui vous sont assignées arrivent à échéance dans les {{days}} prochains jours :"
   mail_subject_wiki_content_added: "Page wiki '{{page}}' ajoutée"
   mail_body_wiki_content_added: "La page wiki '{{page}}' a été ajoutée par {{author}}."
@@ -542,16 +543,16 @@ fr:
   label_closed_issues: fermé
   label_closed_issues_plural: fermés
   label_x_open_issues_abbr_on_total:
-    zero:  zéro ouvert sur {{total}}
-    one:   un ouvert sur {{total}}
+    zero:  0 ouvert sur {{total}}
+    one:   1 ouvert sur {{total}}
     other: "{{count}} ouverts sur {{total}}"
   label_x_open_issues_abbr:
-    zero:  zéro ouvert
-    one:   un ouvert
+    zero:  0 ouvert
+    one:   1 ouvert
     other: "{{count}} ouverts"
   label_x_closed_issues_abbr:
-    zero:  zéro fermé
-    one:   un fermé
+    zero:  0 fermé
+    one:   1 fermé
     other: "{{count}} fermés"
   label_total: Total
   label_permissions: Permissions
@@ -832,9 +833,9 @@ fr:
   text_subprojects_destroy_warning: "Ses sous-projets : {{value}} seront également supprimés."
   text_workflow_edit: Sélectionner un tracker et un rôle pour éditer le workflow
   text_are_you_sure: Êtes-vous sûr ?
-  text_tip_task_begin_day: tâche commençant ce jour
-  text_tip_task_end_day: tâche finissant ce jour
-  text_tip_task_begin_end_day: tâche commençant et finissant ce jour
+  text_tip_issue_begin_day: tâche commençant ce jour
+  text_tip_issue_end_day: tâche finissant ce jour
+  text_tip_issue_begin_end_day: tâche commençant et finissant ce jour
   text_project_identifier_info: 'Seuls les lettres minuscules (a-z), chiffres et tirets sont autorisés.<br />Un fois sauvegardé, l''identifiant ne pourra plus être modifié.'
   text_caracters_maximum: "{{count}} caractères maximum."
   text_caracters_minimum: "{{count}} caractères minimum."
@@ -916,14 +917,26 @@ fr:
   enumeration_system_activity: Activité système
   label_board_sticky: Sticky
   label_board_locked: Verrouillé
-  error_unable_delete_issue_status: Unable to delete issue status
-  error_can_not_delete_custom_field: Unable to delete custom field
-  error_unable_to_connect: Unable to connect ({{value}})
-  error_can_not_remove_role: This role is in use and can not be deleted.
-  error_can_not_delete_tracker: This tracker contains issues and can't be deleted.
+  error_unable_delete_issue_status: Impossible de supprimer le statut de demande
+  error_can_not_delete_custom_field: Impossible de supprimer le champ personnalisé
+  error_unable_to_connect: Connexion impossible ({{value}})
+  error_can_not_remove_role: Ce rôle est utilisé et ne peut pas être supprimé.
+  error_can_not_delete_tracker: Ce tracker contient des demandes et ne peut pas être supprimé.
   field_principal: Principal
-  notice_failed_to_save_members: "Failed to save member(s): {{errors}}."
-  text_zoom_out: Zoom out
-  text_zoom_in: Zoom in
-  notice_unable_delete_time_entry: Unable to delete time log entry.
-  label_overall_spent_time: Overall spent time
+  notice_failed_to_save_members: "Erreur lors de la sauvegarde des membres: {{errors}}."
+  text_zoom_out: Zoom arrière
+  text_zoom_in: Zoom avant
+  notice_unable_delete_time_entry: Impossible de supprimer le temps passé.
+  label_overall_spent_time: Temps passé global
+  field_time_entries: Log time
+  project_module_gantt: Gantt
+  project_module_calendar: Calendar
+  field_member_of_group: Member of Group
+  field_assigned_to_role: Member of Role
+  button_edit_associated_wikipage: "Modifier la page de Wiki associée: {{page_title}}"
+  text_are_you_sure_with_children: Delete issue and all child issues?
+  field_text: Text field
+  label_user_mail_option_only_owner: Only for things I am the owner of
+  setting_default_notification_option: Default notification option
+  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
+  label_user_mail_option_only_assigned: Only for things I am assigned to

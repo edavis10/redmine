@@ -63,7 +63,7 @@ class ActiveSupport::TestCase
   end
 
   # Mock out a file
-  def mock_file
+  def self.mock_file
     file = 'a_file.png'
     file.stubs(:size).returns(32)
     file.stubs(:original_filename).returns('a_file.png')
@@ -71,7 +71,11 @@ class ActiveSupport::TestCase
     file.stubs(:read).returns(false)
     file
   end
-  
+
+  def mock_file
+    self.class.mock_file
+  end
+
   # Use a temporary directory for attachment related tests
   def set_tmp_attachments_directory
     Dir.mkdir "#{RAILS_ROOT}/tmp/test" unless File.directory?("#{RAILS_ROOT}/tmp/test")
@@ -84,6 +88,12 @@ class ActiveSupport::TestCase
     options.each {|k, v| Setting[k] = v}
     yield
     saved_settings.each {|k, v| Setting[k] = v}
+  end
+
+  def change_user_password(login, new_password)
+    user = User.first(:conditions => {:login => login})
+    user.password, user.password_confirmation = new_password, new_password
+    user.save!
   end
 
   def self.ldap_configured?
@@ -160,6 +170,15 @@ class ActiveSupport::TestCase
         
         assert_match @old_value.name, show_detail(@detail, true)
       end
+    end
+  end
+
+  def self.should_create_a_new_user(&block)
+    should "create a new user" do
+      user = instance_eval &block
+      assert user
+      assert_kind_of User, user
+      assert !user.new_record?
     end
   end
 end

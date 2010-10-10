@@ -1,6 +1,7 @@
 # translated by Dzintars Bergs (dzintars.bergs@gmail.com)
 
 lv:
+  direction: ltr
   date:
     formats:
       default: "%d.%m.%Y"
@@ -61,6 +62,10 @@ lv:
         other: "gandrīz {{count}} gadus"
 
   number:
+    format:
+      separator: "."
+      delimiter: ""
+      precision: 3
     human:
       format:
         delimiter: " "
@@ -108,6 +113,7 @@ lv:
         greater_than_start_date: "jābūt vēlākam par sākuma datumu"
         not_same_project: "nepieder pie tā paša projekta"
         circular_dependency: "Šī relācija radītu ciklisku atkarību"
+        cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
 
   actionview_instancetag_blank_option: Izvēlieties
   
@@ -172,7 +178,7 @@ lv:
   mail_body_account_information: Jūsu konta informācija
   mail_subject_account_activation_request: "{{value}} konta aktivizācijas pieprasījums"
   mail_body_account_activation_request: "Jauns lietotājs ({{value}}) ir reģistrēts. Lietotāja konts gaida Jūsu apstiprinājumu:"
-  mail_subject_reminder: "{{count}} uzdevums(i) sagaidāms(i) tuvākajās dienās"
+  mail_subject_reminder: "{{count}} uzdevums(i) sagaidāms(i) tuvākajās {{days}} dienās"
   mail_body_reminder: "{{count}} uzdevums(i), kurš(i) ir nozīmēts(i) Jums, sagaidāms(i) tuvākajās {{days}} dienās:"
   mail_subject_wiki_content_added: "'{{page}}' Wiki lapa pievienota"
   mail_body_wiki_content_added: "The '{{page}}' Wiki lapu pievienojis {{author}}."
@@ -810,9 +816,9 @@ lv:
   text_journal_set_to: "{{label}} iestatīts uz {{value}}"
   text_journal_deleted: "{{label}} dzēsts ({{old}})"
   text_journal_added: "{{label}} {{value}} pievienots"
-  text_tip_task_begin_day: uzdevums sākas šodien
-  text_tip_task_end_day: uzdevums beidzas šodien
-  text_tip_task_begin_end_day: uzdevums sākas un beidzas šodien
+  text_tip_issue_begin_day: uzdevums sākas šodien
+  text_tip_issue_end_day: uzdevums beidzas šodien
+  text_tip_issue_begin_end_day: uzdevums sākas un beidzas šodien
   text_project_identifier_info: 'Tikai mazie burti (a-z), cipari un domuzīmes ir atļauti.<br />Kad saglabāts, identifikators nevar tikt mainīts.'
   text_caracters_maximum: "{{count}} simboli maksimāli."
   text_caracters_minimum: "Jābūt vismaz {{count}} simbolu garumā."
@@ -899,3 +905,15 @@ lv:
   text_zoom_in: Zoom in
   notice_unable_delete_time_entry: Unable to delete time log entry.
   label_overall_spent_time: Overall spent time
+  field_time_entries: Log time
+  project_module_gantt: Gantt
+  project_module_calendar: Calendar
+  field_member_of_group: Member of Group
+  field_assigned_to_role: Member of Role
+  button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
+  text_are_you_sure_with_children: Delete issue and all child issues?
+  field_text: Text field
+  label_user_mail_option_only_owner: Only for things I am the owner of
+  setting_default_notification_option: Default notification option
+  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
+  label_user_mail_option_only_assigned: Only for things I am assigned to

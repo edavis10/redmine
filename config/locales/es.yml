@@ -1,7 +1,7 @@
 # Spanish translations for Rails
 # by Francisco Fernando García Nieto (ffgarcianieto@gmail.com)
 # Redmine spanish translation: 
-# by J. Cayetano Delgado (jcdelgado _at_ ingenia.es)
+# by J. Cayetano Delgado (Cayetano _dot_ Delgado _at_ ioko _dot_ com)
 
 es:
   number:
@@ -132,6 +132,7 @@ es:
         greater_than_start_date: "debe ser posterior a la fecha de comienzo"
         not_same_project: "no pertenece al mismo proyecto"
         circular_dependency: "Esta relación podría crear una dependencia circular"
+        cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
 
         # Append your own errors here or at the model/attributes scope.
 
@@ -141,6 +142,7 @@ es:
       attributes:
         # Overrides model and default messages.
 
+  direction: ltr
   date:
     formats:
       # Use the strftime parameters for formats.
@@ -662,7 +664,7 @@ es:
   mail_subject_account_activation_request: "Petición de activación de cuenta {{value}}"
   mail_subject_lost_password: "Tu contraseña del {{value}}"
   mail_subject_register: "Activación de la cuenta del {{value}}"
-  mail_subject_reminder: "{{count}} peticion(es) finalizan en los próximos días"
+  mail_subject_reminder: "{{count}} peticion(es) finalizan en los próximos {{days}} días"
   notice_account_activated: Su cuenta ha sido activada. Ya puede conectarse.
   notice_account_invalid_creditentials: Usuario o contraseña inválido.
   notice_account_lost_email_sent: Se le ha enviado un correo con instrucciones para elegir una nueva contraseña.
@@ -819,9 +821,9 @@ es:
   text_select_project_modules: 'Seleccione los módulos a activar para este proyecto:'
   text_status_changed_by_changeset: "Aplicado en los cambios {{value}}"
   text_subprojects_destroy_warning: "Los proyectos secundarios: {{value}} también se eliminarán"
-  text_tip_task_begin_day: tarea que comienza este día
-  text_tip_task_begin_end_day: tarea que comienza y termina este día
-  text_tip_task_end_day: tarea que termina este día
+  text_tip_issue_begin_day: tarea que comienza este día
+  text_tip_issue_begin_end_day: tarea que comienza y termina este día
+  text_tip_issue_end_day: tarea que termina este día
   text_tracker_no_workflow: No hay ningún flujo de trabajo definido para este tipo de petición
   text_unallowed_characters: Caracteres no permitidos
   text_user_mail_option: "De los proyectos no seleccionados, sólo recibirá notificaciones sobre elementos monitorizados o elementos en los que esté involucrado (por ejemplo, peticiones de las que usted sea autor o asignadas a usted)."
@@ -926,25 +928,37 @@ es:
     Está a punto de eliminar algún o todos sus permisos y podría perder la posibilidad de modificar este proyecto tras hacerlo.
     ¿Está seguro de querer continuar?
   label_close_versions: Cerrar versiones completadas
-  label_board_sticky: Sticky
-  label_board_locked: Locked
-  permission_export_wiki_pages: Export wiki pages
-  setting_cache_formatted_text: Cache formatted text
-  permission_manage_project_activities: Manage project activities
-  error_unable_delete_issue_status: Unable to delete issue status
-  label_profile: Profile
-  permission_manage_subtasks: Manage subtasks
-  field_parent_issue: Parent task
-  label_subtask_plural: Subtasks
-  label_project_copy_notifications: Send email notifications during the project copy
-  error_can_not_delete_custom_field: Unable to delete custom field
-  error_unable_to_connect: Unable to connect ({{value}})
-  error_can_not_remove_role: This role is in use and can not be deleted.
-  error_can_not_delete_tracker: This tracker contains issues and can't be deleted.
+  label_board_sticky: Pegajoso
+  label_board_locked: Bloqueado
+  permission_export_wiki_pages: Exportar páginas wiki
+  setting_cache_formatted_text: Cachear texto formateado
+  permission_manage_project_activities: Gestionar actividades del proyecto
+  error_unable_delete_issue_status: Fue imposible eliminar el estado de la petición
+  label_profile: Perfil
+  permission_manage_subtasks: Gestionar subtareas
+  field_parent_issue: Tarea padre
+  label_subtask_plural: Subtareas
+  label_project_copy_notifications: Enviar notificaciones por correo electrónico durante la copia del proyecto
+  error_can_not_delete_custom_field: Fue imposible eliminar el campo personalizado
+  error_unable_to_connect: Fue imposible conectar con ({{value}})
+  error_can_not_remove_role: Este rol está en uso y no puede ser eliminado.
+  error_can_not_delete_tracker: Este tipo contiene peticiones y no puede ser eliminado.
   field_principal: Principal
-  label_my_page_block: My page block
-  notice_failed_to_save_members: "Failed to save member(s): {{errors}}."
-  text_zoom_out: Zoom out
-  text_zoom_in: Zoom in
-  notice_unable_delete_time_entry: Unable to delete time log entry.
-  label_overall_spent_time: Overall spent time
+  label_my_page_block: Bloque Mi página
+  notice_failed_to_save_members: "Fallo al guardar miembro(s): {{errors}}."
+  text_zoom_out: Alejar
+  text_zoom_in: Acercar
+  notice_unable_delete_time_entry: Fue imposible eliminar la entrada de tiempo dedicado.
+  label_overall_spent_time: Tiempo total dedicado
+  field_time_entries: Log time
+  project_module_gantt: Gantt
+  project_module_calendar: Calendar
+  field_member_of_group: Member of Group
+  field_assigned_to_role: Member of Role
+  button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
+  text_are_you_sure_with_children: Delete issue and all child issues?
+  field_text: Text field
+  label_user_mail_option_only_owner: Only for things I am the owner of
+  setting_default_notification_option: Default notification option
+  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
+  label_user_mail_option_only_assigned: Only for things I am assigned to
