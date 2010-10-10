@@ -68,6 +68,13 @@ class RepositoryMercurialTest < ActiveSupport::TestCase
       assert_nil @repository.scm.cat("sources/welcome_controller.rb")
     end
 
+    def test_isodatesec
+      @repository.fetch_changesets
+      @repository.reload
+      rev0_committed_on = Time.gm(2007, 12, 14, 9, 22, 52)
+      assert_equal @repository.changesets.find_by_revision('0').committed_on, rev0_committed_on
+    end
+
   else
     puts "Mercurial test repository NOT FOUND. Skipping unit tests !!!"
     def test_fake; assert true end
