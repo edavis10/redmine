@@ -3,16 +3,14 @@ require File.dirname(__FILE__) + '/../../../../../test_helper'
 begin
   require 'mocha'
   
-  class MercurialAdapterTest < ActiveSupport::TestCase
+  class MercurialAdapterClassTest < ActiveSupport::TestCase
     
     TEMPLATES_DIR = Redmine::Scm::Adapters::MercurialAdapter::TEMPLATES_DIR
     TEMPLATE_NAME = Redmine::Scm::Adapters::MercurialAdapter::TEMPLATE_NAME
     TEMPLATE_EXTENSION = Redmine::Scm::Adapters::MercurialAdapter::TEMPLATE_EXTENSION
     
-    REPOSITORY_PATH = RAILS_ROOT.gsub(%r{config\/\.\.}, '') + '/tmp/test/mercurial_repository'
-
     def setup
-      @adapter = Redmine::Scm::Adapters::MercurialAdapter
+      @adapter_class = Redmine::Scm::Adapters::MercurialAdapter
     end
     
     def test_hgversion
@@ -50,21 +48,40 @@ begin
         test_template_path_for(v, template)
       end
     end
-    
+
     private
-    
+
     def test_hgversion_for(hgversion, version)
-      @adapter.expects(:hgversion_from_command_line).returns(hgversion)
-      assert_equal version, @adapter.hgversion
+      @adapter_class.expects(:hgversion_from_command_line).returns(hgversion)
+      assert_equal version, @adapter_class.hgversion
     end
-    
+
     def test_template_path_for(version, template)
       assert_equal "#{TEMPLATES_DIR}/#{TEMPLATE_NAME}-#{template}.#{TEMPLATE_EXTENSION}",
-                   @adapter.template_path_for(version)
-      assert File.exist?(@adapter.template_path_for(version))
+                   @adapter_class.template_path_for(version)
+      assert File.exist?(@adapter_class.template_path_for(version))
     end
   end
   
 rescue LoadError
   def test_fake; assert(false, "Requires mocha to run those tests")  end
+end
+
+class MercurialAdapterTest < ActiveSupport::TestCase
+  REPOSITORY_PATH = RAILS_ROOT.gsub(%r{config\/\.\.}, '') + '/tmp/test/mercurial_repository'
+
+  if File.directory?(REPOSITORY_PATH)  
+    def setup
+      @adapter = Redmine::Scm::Adapters::MercurialAdapter.new(REPOSITORY_PATH)
+    end
+
+    def test_cat
+      assert     @adapter.cat("sources/welcome_controller.rb", 2)
+      assert_nil @adapter.cat("sources/welcome_controller.rb")
+    end
+
+  else
+    puts "Mercurial test repository NOT FOUND. Skipping unit tests !!!"
+    def test_fake; assert true end
+  end
 end

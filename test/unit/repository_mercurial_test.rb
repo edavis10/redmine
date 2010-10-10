@@ -62,12 +62,6 @@ class RepositoryMercurialTest < ActiveSupport::TestCase
       assert_equal 2, @repository.entries("images", 2).size
     end
 
-
-    def test_cat
-      assert @repository.scm.cat("sources/welcome_controller.rb", 2)
-      assert_nil @repository.scm.cat("sources/welcome_controller.rb")
-    end
-
     def test_isodatesec
       @repository.fetch_changesets
       @repository.reload
