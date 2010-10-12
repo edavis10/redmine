@@ -169,7 +169,7 @@ class RepositoriesController < ApplicationController
         User.current.preference.save
       end
       @start_changeset = @repository.find_changeset_by_name(@rev)
-      @end_changeset = @respository.find_changeset_by_name(@rev_to) if @rev_to
+      @end_changeset = @repository.find_changeset_by_name(@rev_to) if @rev_to
       @cache_key = "repositories/diff/#{@repository.id}/" + Digest::MD5.hexdigest("#{@path}-#{@rev}-#{@rev_to}-#{@diff_type}")    
       unless read_fragment(@cache_key)
         @diff = @repository.diff(@path, @rev, @rev_to)

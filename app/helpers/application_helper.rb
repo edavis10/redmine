@@ -189,7 +189,7 @@ module ApplicationHelper
   # when it's part of the URL in a link.  Call this on a revision when
   # including it in a link
   def link_safe_rev(revision)
-    revision.gsub(/\./, "_")
+    revision ? revision.gsub(/\./, "_") : nil
   end  
 
   def format_version_name(version)
