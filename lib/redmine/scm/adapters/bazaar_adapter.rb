@@ -174,16 +174,14 @@ module Redmine
         end
         
         def annotate(path, identifier=nil)
-          cmd = "#{BZR_BIN} annotate --all"
+          cmd = "#{BZR_BIN} annotate --all --show-ids"
           cmd << " -r revid:#{identifier}" if identifier
           cmd << " #{target(path)}"
           blame = Annotate.new
           shellout(cmd) do |io|
-            author = nil
-            identifier = nil
             io.each_line do |line|
-              next unless line =~ %r{^(\d+(\.\d+)*) ([^|]+)\| (.*)$}
-              blame.add_line($3.rstrip, Revision.new(:identifier => $1, :author => $3.strip))
+              next unless line =~ %r{^(.+?)\-(\d+)\-(.+?) \| (.*)$}
+              blame.add_line($4.rstrip, Revision.new(:identifier => "#{$1}-#{$2}-#{$3}", :author => $1.strip))
             end
           end
           return nil if $? && $?.exitstatus != 0
