@@ -117,7 +117,7 @@ module ApplicationHelper
   # Options:
   # * :text - Link text (default to the formatted revision)
   def link_to_revision(revision, project, options={})
-    revision_identifier = revision.revision.gsub(/\./, "_")
+    revision_identifier = revision.revision.gsub(/\./, "___")
     text = options.delete(:text) || (revision.respond_to?(:display_name) && revision.display_name ? revision.display_name : format_revision(revision.revision))
 
     link_to(text, {:controller => 'repositories', :action => 'revision', :id => project, :rev => revision_identifier}, :title => l(:label_revision_id, revision.revision))
@@ -189,7 +189,7 @@ module ApplicationHelper
   # when it's part of the URL in a link.  Call this on a revision when
   # including it in a link
   def link_safe_rev(revision)
-    revision ? revision.gsub(/\./, "_") : nil
+    revision ? revision.gsub(/\./, "___") : nil
   end  
 
   def format_version_name(version)
