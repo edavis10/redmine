@@ -51,7 +51,7 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
       assert_not_nil assigns(:entries)
       assert_equal 2, assigns(:entries).size
       assert assigns(:entries).detect {|e| e.name == 'directory' && e.kind == 'dir'}
-      assert assigns(:entries).detect {|e| e.name == 'doc-mkdir.txt' && e.kind == 'file'}
+      assert assigns(:entries).detect {|e| e.name == 'root_level.txt' && e.kind == 'file'}
     end
     
     def test_browse_directory
@@ -59,7 +59,7 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
       assert_response :success
       assert_template 'show'
       assert_not_nil assigns(:entries)
-      assert_equal ['doc-ls.txt', 'document.txt', 'edit.png'], assigns(:entries).collect(&:name)
+      assert_equal ["config.txt", "edit.png", "second_file.txt", "source2.txt"], assigns(:entries).collect(&:name)
       entry = assigns(:entries).detect {|e| e.name == 'edit.png'}
       assert_not_nil entry
       assert_equal 'file', entry.kind
@@ -67,29 +67,29 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
     end
     
     def test_browse_at_given_revision
-      get :show, :id => 3, :path => [], :rev => 3
+      get :show, :id => 3, :path => [], :rev => 'johndoe@no.server-20100927142810-5hx3443dk9mdbs3t'
       assert_response :success
       assert_template 'show'
       assert_not_nil assigns(:entries)
-      assert_equal ['directory', 'doc-deleted.txt', 'doc-ls.txt', 'doc-mkdir.txt'], assigns(:entries).collect(&:name)
+      assert_equal ['directory', 'mainfile.txt'], assigns(:entries).collect(&:name)
     end
     
     def test_changes
-      get :changes, :id => 3, :path => ['doc-mkdir.txt']
+      get :changes, :id => 3, :path => ['root_level.txt']
       assert_response :success
       assert_template 'changes'
-      assert_tag :tag => 'h2', :content => 'doc-mkdir.txt'
+      assert_tag :tag => 'h2', :content => 'root_level.txt'
     end
     
     def test_entry_show
-      get :entry, :id => 3, :path => ['directory', 'doc-ls.txt']
+      get :entry, :id => 3, :path => ['directory', 'root_level.txt']
       assert_response :success
       assert_template 'entry'
-      # Line 19
+      # Line 2
       assert_tag :tag => 'th',
-                 :content => /29/,
+                 :content => /2/,
                  :attributes => { :class => /line-num/ },
-                 :sibling => { :tag => 'td', :content => /Show help message/ }
+                 :sibling => { :tag => 'td', :content => /The above line is incorrect / }
     end
     
     def test_entry_download
