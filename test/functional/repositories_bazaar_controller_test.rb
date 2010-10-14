@@ -82,21 +82,21 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
     end
     
     def test_entry_show
-      get :entry, :id => 3, :path => ['directory', 'root_level.txt']
+      get :entry, :id => 3, :path => ['directory', 'second_file.txt']
       assert_response :success
       assert_template 'entry'
       # Line 2
       assert_tag :tag => 'th',
                  :content => /2/,
                  :attributes => { :class => /line-num/ },
-                 :sibling => { :tag => 'td', :content => /The above line is incorrect / }
+                 :sibling => { :tag => 'td', :content => /More code from/ }
     end
     
     def test_entry_download
-      get :entry, :id => 3, :path => ['directory', 'doc-ls.txt'], :format => 'raw'
+      get :entry, :id => 3, :path => ['directory', 'second_file.txt'], :format => 'raw'
       assert_response :success
       # File content
-      assert @response.body.include?('Show help message')
+      assert @response.body.include?('More code from')
     end
   
     def test_directory_entry
@@ -109,7 +109,7 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
 
     def test_diff
       # Full diff of changeset 3
-      get :diff, :id => 3, :rev => 3
+      get :diff, :id => 3, :rev => 'johndoe@no.server-20100927142810-5hx3443dk9mdbs3t'
       assert_response :success
       assert_template 'diff'
       # Line 22 removed
@@ -117,7 +117,7 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
                  :content => /2/,
                  :sibling => { :tag => 'td', 
                                :attributes => { :class => /diff_in/ },
-                               :content => /Main purpose/ }
+                               :content => /Added another line to the file/ }
     end
     
     def test_annotate
