@@ -208,7 +208,7 @@ ActionController::Routing::Routes.draw do |map|
       repository_views.connect 'projects/:id/repository/statistics', :action => 'stats'
       repository_views.connect 'projects/:id/repository/revisions', :action => 'revisions'
       repository_views.connect 'projects/:id/repository/revisions.:format', :action => 'revisions'
-      repository_views.connect 'projects/:id/repository/revisions/:rev', :action => 'revision', :requirements => { :rev => /[a-z0-9\.\-_]+/ }
+      repository_views.connect 'projects/:id/repository/revisions/:rev', :action => 'revision', :requirements => { :rev => /[a-z0-9\.\-_@]+/ }
       repository_views.connect 'projects/:id/repository/revisions/:rev/diff', :action => 'diff'
       repository_views.connect 'projects/:id/repository/revisions/:rev/diff.:format', :action => 'diff'
       repository_views.connect 'projects/:id/repository/revisions/:rev/raw/*path', :action => 'entry', :format => 'raw', :requirements => { :rev => /[a-z0-9\.\-_]+/ }
