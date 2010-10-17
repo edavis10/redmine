@@ -45,7 +45,7 @@
 <li class="change change-D"><%= l(:label_deleted) %></li>
 </ul>
 
-<p><%= link_to(l(:label_view_diff), :action => 'diff', :id => @project, :path => "", :rev => link_safe_rev(@changeset.revision)) if @changeset.changes.any? %></p>
+<p><%= link_to(l(:label_view_diff), :action => 'diff', :id => @project, :path => "", :rev => @changeset.revision) if @changeset.changes.any? %></p>
 
 <div class="changeset-changes">
 <%= render_changeset_changes %>

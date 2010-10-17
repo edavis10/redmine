@@ -84,7 +84,7 @@ module RepositoriesHelper
                              :action => 'show',
                              :id => @project,
                              :path => path_param,
-                             :rev => link_safe_rev(@changeset.revision))
+                             :rev => @changeset.revision)
         output << "<li class='#{style}'>#{text}</li>"
         output << render_changes_tree(s)
       elsif c = tree[file][:c]
@@ -94,13 +94,13 @@ module RepositoriesHelper
                              :action => 'entry',
                              :id => @project,
                              :path => path_param,
-                             :rev => link_safe_rev(@changeset.revision)) unless c.action == 'D'
+                             :rev => @changeset.revision) unless c.action == 'D'
         text << " - #{c.revision}" unless c.revision.blank?
         text << ' (' + link_to('diff', :controller => 'repositories',
                                        :action => 'diff',
                                        :id => @project,
                                        :path => path_param,
-                                       :rev => link_safe_rev(@changeset.revision)) + ') ' if c.action == 'M'
+                                       :rev => @changeset.revision) + ') ' if c.action == 'M'
         text << ' ' + content_tag('span', c.from_path, :class => 'copied-from') unless c.from_path.blank?
         output << "<li class='#{style}'>#{text}</li>"
       end

@@ -117,7 +117,7 @@ module ApplicationHelper
   # Options:
   # * :text - Link text (default to the formatted revision)
   def link_to_revision(revision, project, options={})
-    revision_identifier = revision.revision.gsub(/\./, "___")
+    revision_identifier = revision.revision
     text = options.delete(:text) || (revision.respond_to?(:display_name) && revision.display_name ? revision.display_name : format_revision(revision.revision))
 
     link_to(text, {:controller => 'repositories', :action => 'revision', :id => project, :rev => revision_identifier}, :title => l(:label_revision_id, revision.revision))
@@ -184,13 +184,6 @@ module ApplicationHelper
   def format_revision(txt)
     txt.to_s[0,8]
   end
-
-  # Some VCSes (Bazaar) have a . in the revision number, which causes problems
-  # when it's part of the URL in a link.  Call this on a revision when
-  # including it in a link
-  def link_safe_rev(revision)
-    revision ? revision.gsub(/\./, "___") : nil
-  end  
 
   def format_version_name(version)
     if version.project == @project
