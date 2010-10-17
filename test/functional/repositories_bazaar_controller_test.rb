@@ -121,14 +121,14 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
     end
     
     def test_annotate
-      get :annotate, :id => 3, :path => ['doc-mkdir.txt']
+      get :annotate, :id => 3, :path => ['root_level.txt']
       assert_response :success
       assert_template 'annotate'
       # Line 2, revision 3
       assert_tag :tag => 'th', :content => /2/,
-                 :sibling => { :tag => 'td', :child => { :tag => 'a', :content => /3/ } },
-                 :sibling => { :tag => 'td', :content => /jsmith/ },
-                 :sibling => { :tag => 'td', :content => /Main purpose/ }
+                 :sibling => { :tag => 'td', :child => { :tag => 'a', :content => /second@no\.server\-20100927143241\-aknlenpvde342upv/ } },
+                 :sibling => { :tag => 'td', :content => /second@no\.server/ },
+                 :sibling => { :tag => 'td', :content => /The above line is incorrect/ }
     end
   else
     puts "Bazaar test repository NOT FOUND. Skipping functional tests !!!"
