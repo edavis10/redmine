@@ -8,6 +8,11 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
+# This is Mercurial extension for Redmine Mercurial adapter.
+# http://mercurial.selenic.com/wiki/WritingExtensions
+# You can run with following command.
+# $ hg --config extensions.redminehelper=redminehelper.py rhsummary
+
 '''command to list revision of each file
 '''
 
@@ -68,8 +73,8 @@ def rhentries(ui, repo, path='', **opts):
                 fctx = repo.filectx(f, fileid=mf[f])
                 ctx = fctx.changectx()
                 tm, tzoffset = ctx.date()
-                localtime = int(tm) + tzoffset - time.timezone
-                files[name] = (ctx.rev(), node.short(ctx.node()), localtime,
+                utctime = int(tm)
+                files[name] = (ctx.rev(), node.short(ctx.node()), utctime,
                                fctx.size(), name)
             except LookupError:  # TODO: when this occurs?
                 pass

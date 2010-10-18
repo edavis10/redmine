@@ -54,6 +54,17 @@ class RepositoryMercurialTest < ActiveSupport::TestCase
       assert_equal 2, @repository.entries("sources", '400bb8672109').size
       assert_equal 1, @repository.entries("sources", 3).size
       assert_equal 1, @repository.entries("sources", 'b3a615152df8').size
+
+      # TODO file size
+      ent_src_rev2 = @repository.entries("sources", 2)
+      assert_equal ent_src_rev2[0].name, "watchers_controller.rb"
+       # 2007-12-14 10:25:20 +0100
+      assert_equal ent_src_rev2[0].lastrev.time, Time.gm(2007, 12, 14, 9, 25, 20)
+
+      ent_root_rev5 = @repository.entries("", 5)
+      assert_equal 3, ent_root_rev5.size
+      assert_equal ent_root_rev5[2].name, "README"
+      assert_equal ent_root_rev5[2].lastrev.time, Time.gm(1970, 1, 1, 0, 0, 0)
     end
 
     def test_locate_on_outdated_repository
