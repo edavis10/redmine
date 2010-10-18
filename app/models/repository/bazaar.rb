@@ -51,43 +51,6 @@ class Repository::Bazaar < Repository
       end
     end
   end
-  
-#  def fetch_changesets
-#    scm_info = scm.info
-#    if scm_info
-#      # latest revision found in database
-#      db_revision = latest_changeset ? latest_changeset.revision.to_i : 0
-#      # latest revision in the repository
-#      scm_revision = scm_info.lastrev.identifier.to_i
-#      if db_revision < scm_revision
-#        logger.debug "Fetching changesets for repository #{url}" if logger && logger.debug?
-#        identifier_from = db_revision + 1
-#        while (identifier_from <= scm_revision)
-#          # loads changesets by batches of 200
-#          identifier_to = [identifier_from + 199, scm_revision].min
-#          revisions = scm.revisions('', identifier_to, identifier_from, :with_paths => true)
-#          transaction do
-#            revisions.reverse_each do |revision|
-#              changeset = Changeset.create(:repository => self,
-#                                           :revision => revision.identifier,
-#                                           :committer => revision.author,
-#                                           :committed_on => revision.time,
-#                                           :scmid => revision.scmid,
-#                                           :comments => revision.message)
-#
-#              revision.paths.each do |change|
-#                Change.create(:changeset => changeset,
-#                              :action => change[:action],
-#                              :path => change[:path],
-#                              :revision => change[:revision])
-#              end
-#            end
-#          end unless revisions.nil?
-#          identifier_from = identifier_to + 1
-#        end
-#      end
-#    end
-#  end
 
   # With SCM's that have a sequential commit numbering, redmine is able to be
   # clever and only fetch changesets going forward from the most recent one
@@ -96,7 +59,8 @@ class Repository::Bazaar < Repository
   # the entire log. Since it's way too slow for large repositories, we only
   # parse 1 week before the last known commit.
   # The repository can still be fully reloaded by calling #clear_changesets
-  # before fetching changesets (eg. for offline resync)
+  # before fetching changesets (eg. for offline resync), you can set this up
+  # as an external job with rake redmine:clear_and_fetch_changesets
   def fetch_changesets
     c = changesets.find(:first, :order => 'committed_on DESC')
     since = (c ? c.committed_on - 7.days : nil)
