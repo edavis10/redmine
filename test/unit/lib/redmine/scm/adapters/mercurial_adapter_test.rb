@@ -80,6 +80,18 @@ class MercurialAdapterTest < ActiveSupport::TestCase
       assert_nil @adapter.cat("sources/welcome_controller.rb")
     end
 
+    def test_access_by_nodeid
+      path = 'sources/welcome_controller.rb'
+      assert_equal @adapter.cat(path, 2),
+                   @adapter.cat(path, '400bb8672109')
+    end
+
+    def test_access_by_fuzzy_nodeid
+      path = 'sources/welcome_controller.rb'
+      # falls back to nodeid
+      assert_equal @adapter.cat(path, 2), @adapter.cat(path, '400')
+    end
+
   else
     puts "Mercurial test repository NOT FOUND. Skipping unit tests !!!"
     def test_fake; assert true end
