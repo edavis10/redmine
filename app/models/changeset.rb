@@ -65,6 +65,15 @@ class Changeset < ActiveRecord::Base
       identifier[0, 8]
     end
   end
+
+  # Returns the identifier for wiki, "rN" or "commit:ABCDEF"
+  def format_wiki_identifier
+    if scmid  # hash-like
+      "commit:#{scmid}"
+    else  # numeric
+      "r#{revision}"
+    end
+  end
   
   def comments=(comment)
     write_attribute(:comments, Changeset.normalize_comments(comment))
@@ -126,11 +135,8 @@ class Changeset < ActiveRecord::Base
           issue.reload
           # don't change the status is the issue is closed
           next if issue.status.is_closed?
-          csettext = "r#{self.revision}"
-          if self.scmid && (! (csettext =~ /^r[0-9]+$/))
-            csettext = "commit:\"#{self.scmid}\""
-          end
-          journal = issue.init_journal(user || User.anonymous, ll(Setting.default_language, :text_status_changed_by_changeset, csettext))
+          journal = issue.init_journal(user || User.anonymous,
+                                       ll(Setting.default_language, :text_status_changed_by_changeset, format_wiki_identifier))
           issue.status = fix_status
           unless Setting.commit_fix_done_ratio.blank?
             issue.done_ratio = Setting.commit_fix_done_ratio.to_i
