@@ -18,8 +18,12 @@
 require 'iconv'
 
 module RepositoriesHelper
-  def format_revision(txt)
-    txt.to_s[0,8]
+  def format_revision(revision)
+    if revision.respond_to? :format_identifier
+      revision.format_identifier
+    else
+      revision.to_s[0,8]
+    end
   end
   
   def truncate_at_line_break(text, length = 255)
