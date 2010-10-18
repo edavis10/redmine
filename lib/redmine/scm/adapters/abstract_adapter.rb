@@ -291,6 +291,11 @@ module Redmine
           (@identifier || revision).to_s
         end
 
+        # Returns the readable identifier; first 8 chars of identifier.
+        def format_identifier
+          identifier[0, 8]
+        end
+
         def save(repo)
           Changeset.transaction do
             changeset = Changeset.new(

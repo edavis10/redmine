@@ -197,6 +197,13 @@ module Redmine
           return nil if $? && $?.exitstatus != 0
           blame
         end
+
+        class Revision < Redmine::Scm::Adapters::Revision
+          # Returns the readable identifier
+          def format_identifier
+            "#{revision}:#{scmid}"
+          end
+        end
       end
     end
   end

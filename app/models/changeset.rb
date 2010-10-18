@@ -56,6 +56,15 @@ class Changeset < ActiveRecord::Base
       revision.to_s
     end
   end
+
+  # Returns the readable identifier; first 8 chars of identifier by default
+  def format_identifier
+    if repository.class.respond_to? :format_changeset_identifier
+      repository.class.format_changeset_identifier self
+    else
+      identifier[0, 8]
+    end
+  end
   
   def comments=(comment)
     write_attribute(:comments, Changeset.normalize_comments(comment))
