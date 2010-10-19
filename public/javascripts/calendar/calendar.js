@@ -1589,7 +1589,7 @@ Date.parseDate = function(str, fmt) {
 	var a = str.split(/\W+/);
 	var b = fmt.match(/%./g);
 	var i = 0, j = 0;
-	var hr = 0;
+	var hr = 12;
 	var min = 0;
 	for (i = 0; i < a.length; ++i) {
 		if (!a[i])
