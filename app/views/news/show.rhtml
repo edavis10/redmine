@@ -1,10 +1,10 @@
 <div class="contextual">
 <%= link_to_if_authorized l(:button_edit), 
-                          edit_news_path(@news),
+                          {:controller => 'news', :action => 'edit', :id => @news},
                           :class => 'icon icon-edit',
                           :accesskey => accesskey(:edit),
                           :onclick => 'Element.show("edit-news"); return false;' %>
-<%= link_to_if_authorized l(:button_delete), news_path(@news), :confirm => l(:text_are_you_sure), :method => :delete, :class => 'icon icon-del' %>
+<%= link_to_if_authorized l(:button_delete), {:controller => 'news', :action => 'destroy', :id => @news}, :confirm => l(:text_are_you_sure), :method => :delete, :class => 'icon icon-del' %>
 </div>
 
 <h2><%= avatar(@news.author, :size => "24") %><%=h @news.title %></h2>

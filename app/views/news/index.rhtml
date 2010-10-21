@@ -1,6 +1,6 @@
 <div class="contextual">
 <%= link_to_if_authorized(l(:label_news_new),
-                          new_project_news_path(@project),
+                          {:controller => 'news', :action => 'new', :project_id => @project},
                           :class => 'icon icon-add',
                           :onclick => 'Element.show("add-news"); Form.Element.focus("news_title"); return false;') if @project %>
 </div>
