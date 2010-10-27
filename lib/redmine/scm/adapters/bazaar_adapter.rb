@@ -97,12 +97,12 @@ module Redmine
                 next unless revision
                 
                 if line =~ /^\s*revno: (\d+(\.\d+)*)($|\s\[merge\]$)/
-                  revision.display_name = $1
+                  revision.revision = $1
                 elsif line =~ /^\s*committer: (.+)$/
                   revision.author = $1.strip
                 elsif line =~ /^\s*revision-id:(.+)$/
                   revision.scmid = $1.strip
-                  revision.identifier = revision.scmid
+                  revision.identifier = revision.revision
                 elsif line =~ /^\s*timestamp: (.+)$/
                   revision.time = Time.parse($1).localtime
                 elsif line =~ /^    \s*-----/
