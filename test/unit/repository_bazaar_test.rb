@@ -69,18 +69,6 @@ class RepositoryBazaarTest < ActiveSupport::TestCase
       assert_equal 'source2.txt', entries.last.name
     end
     
-    def test_cat
-      cat = @repository.scm.cat('directory/source2.txt')
-      assert cat =~ /New source code file/, cat
-    end
-    
-    def test_annotate
-      annotate = @repository.scm.annotate('root_level.txt')
-      assert_equal 2, annotate.lines.size
-      assert_equal "second@no.server-20100927143241-aknlenpvde342upv", annotate.revisions[0].identifier
-      assert_equal 'second@no.server', annotate.revisions[0].author
-      assert_equal '#First file, not much to say here', annotate.lines[0]
-    end
   else
     puts "Bazaar test repository NOT FOUND. Skipping unit tests !!!"
     def test_fake; assert true end

@@ -77,7 +77,7 @@ module Redmine
           revisions = Revisions.new
           cmd = "#{BZR_BIN} log -n 0 -v --show-ids"
           if options[:since]
-            cmd << " -r date:#{shell_quote(options[:since].strftime("%Y-%m-%d,%H:%M:%S"))}.."
+            cmd << " -r date:#{options[:since].strftime("%Y-%m-%d,%H:%M:%S")}.."
           else
             from = identifier_from ? "revid:#{identifier_from}" : "last:1"
             to = identifier_to ? "revid:#{identifier_to}" : "1"
