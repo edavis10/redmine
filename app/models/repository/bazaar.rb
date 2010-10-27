@@ -28,7 +28,17 @@ class Repository::Bazaar < Repository
   def self.scm_name
     'Bazaar'
   end
-  
+
+  # Returns the identifier for the given mercurial changeset
+  def self.changeset_identifier(changeset)
+    changeset.scmid
+  end
+
+  # Returns the readable identifier for the given mercurial changeset
+  def self.format_changeset_identifier(changeset)
+    changeset.revision
+  end
+
   def entries(path=nil, identifier=nil)
     entries = scm.entries(path, identifier)
     if entries
@@ -79,6 +89,17 @@ class Repository::Bazaar < Repository
 
     # Save the remaining ones to the database
     revisions.each{|r| r.save(self)} unless revisions.nil?
+  end
+
+  # Finds and returns a revision with a number or the beginning of a hash
+  def find_changeset_by_name(name)
+    if /[^\d\.]/ =~ name
+      e = changesets.find(:first, :conditions => ['scmid = ?', name.to_s])
+    else
+      e = changesets.find(:first, :conditions => ['revision = ?', name.to_s])
+    end
+    return e if e
+    changesets.find(:first, :conditions => ['scmid LIKE ?', "#{name}%"])  # last ditch
   end
 
   def latest_changesets(path,rev,limit=10)
