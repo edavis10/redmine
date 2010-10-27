@@ -30,10 +30,10 @@ module Redmine
           cmd = "#{BZR_BIN} revno #{target('')}"
           info = nil
           shellout(cmd) do |io|
-            if io.read =~ %r{^(\d+)\r?$}
+            if io.read =~ %r{^(\d+(\.\d+)*)\r?$}
               info = Info.new({:root_url => url,
                                :lastrev => Revision.new({
-                                 :identifier => $1
+                                 :display_name => $1
                                })
                              })
             end
@@ -50,8 +50,8 @@ module Redmine
           path ||= ''
           entries = Entries.new
           cmd = "#{BZR_BIN} ls -v --show-ids"
-          identifier = -1 unless identifier && identifier.to_i > 0 
-          cmd << " -r#{identifier.to_i}" 
+          rev_spec = identifier ? "revid:#{identifier}" : "-1"
+          cmd << " -r #{rev_spec}"
           cmd << " #{target(path)}"
           shellout(cmd) do |io|
             prefix = "#{url}/#{path}".gsub('\\', '/')
@@ -74,35 +74,43 @@ module Redmine
     
         def revisions(path=nil, identifier_from=nil, identifier_to=nil, options={})
           path ||= ''
-          identifier_from = 'last:1' unless identifier_from and identifier_from.to_i > 0
-          identifier_to = 1 unless identifier_to and identifier_to.to_i > 0
           revisions = Revisions.new
-          cmd = "#{BZR_BIN} log -v --show-ids -r#{identifier_to.to_i}..#{identifier_from} #{target(path)}"
+          cmd = "#{BZR_BIN} log -n 0 -v --show-ids"
+          if options[:since]
+            cmd << " -r date:#{options[:since].strftime("%Y-%m-%d,%H:%M:%S")}.."
+          else
+            from = identifier_from ? "revid:#{identifier_from}" : "last:1"
+            to = identifier_to ? "revid:#{identifier_to}" : "1"
+            cmd << " -r #{to}..#{from}"
+          end
+          cmd << " -l #{options[:limit]} " if options[:limit]
+          cmd << " #{target(path)}"
           shellout(cmd) do |io|
             revision = nil
             parsing = nil
             io.each_line do |line|
-              if line =~ /^----/
+              if line =~ /^\s*----/
                 revisions << revision if revision
                 revision = Revision.new(:paths => [], :message => '')
                 parsing = nil
               else
                 next unless revision
                 
-                if line =~ /^revno: (\d+)($|\s\[merge\]$)/
-                  revision.identifier = $1.to_i
-                elsif line =~ /^committer: (.+)$/
+                if line =~ /^\s*revno: (\d+(\.\d+)*)($|\s\[merge\]$)/
+                  revision.display_name = $1
+                elsif line =~ /^\s*committer: (.+)$/
                   revision.author = $1.strip
-                elsif line =~ /^revision-id:(.+)$/
+                elsif line =~ /^\s*revision-id:(.+)$/
                   revision.scmid = $1.strip
-                elsif line =~ /^timestamp: (.+)$/
+                  revision.identifier = revision.scmid
+                elsif line =~ /^\s*timestamp: (.+)$/
                   revision.time = Time.parse($1).localtime
-                elsif line =~ /^    -----/
+                elsif line =~ /^    \s*-----/
                   # partial revisions
                   parsing = nil unless parsing == 'message'
-                elsif line =~ /^(message|added|modified|removed|renamed):/
+                elsif line =~ /^\s*(message|added|modified|removed|renamed):/
                   parsing = $1
-                elsif line =~ /^  (.*)$/
+                elsif line =~ /^  \s*(.*)$/
                   if parsing == 'message'
                     revision.message << "#{$1}\n"
                   else
@@ -135,12 +143,13 @@ module Redmine
         
         def diff(path, identifier_from, identifier_to=nil)
           path ||= ''
-          if identifier_to
-            identifier_to = identifier_to.to_i 
+          cmd = "#{BZR_BIN} diff"
+          if identifier_to.nil?
+            cmd << " -c revid:#{identifier_from}"
           else
-            identifier_to = identifier_from.to_i - 1
+            cmd << " -r revid:#{identifier_to}..revid:#{identifier_from}"
           end
-          cmd = "#{BZR_BIN} diff -r#{identifier_to}..#{identifier_from} #{target(path)}"
+          cmd << " #{target(path)}"
           diff = []
           shellout(cmd) do |io|
             io.each_line do |line|
@@ -153,7 +162,7 @@ module Redmine
         
         def cat(path, identifier=nil)
           cmd = "#{BZR_BIN} cat"
-          cmd << " -r#{identifier.to_i}" if identifier && identifier.to_i > 0
+          cmd << " -r revid:#{identifier}" if identifier
           cmd << " #{target(path)}"
           cat = nil
           shellout(cmd) do |io|
@@ -165,16 +174,14 @@ module Redmine
         end
         
         def annotate(path, identifier=nil)
-          cmd = "#{BZR_BIN} annotate --all"
-          cmd << " -r#{identifier.to_i}" if identifier && identifier.to_i > 0
+          cmd = "#{BZR_BIN} annotate --all --show-ids"
+          cmd << " -r revid:#{identifier}" if identifier
           cmd << " #{target(path)}"
           blame = Annotate.new
           shellout(cmd) do |io|
-            author = nil
-            identifier = nil
             io.each_line do |line|
-              next unless line =~ %r{^(\d+) ([^|]+)\| (.*)$}
-              blame.add_line($3.rstrip, Revision.new(:identifier => $1.to_i, :author => $2.strip))
+              next unless line =~ %r{^(.+?)\-(\d+)\-(.+?) \| (.*)$}
+              blame.add_line($4.rstrip, Revision.new(:identifier => "#{$1}-#{$2}-#{$3}", :author => $1.strip))
             end
           end
           return nil if $? && $?.exitstatus != 0

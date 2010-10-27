@@ -18,3 +18,5 @@
 /tmp/test/*
 /vendor/rails
 *.rbc
+/.idea
+*~
