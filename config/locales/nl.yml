@@ -579,7 +579,6 @@ nl:
   label_user_activity: "{{value}}'s activiteit"
   label_user_mail_no_self_notified: "Ik wil niet op de hoogte gehouden worden van wijzigingen die ik zelf maak."
   label_user_mail_option_all: "Bij elk gebeurtenis in al mijn projecten..."
-  label_user_mail_option_none: "Alleen in de dingen die ik monitor of in betrokken ben"
   label_user_mail_option_selected: "Enkel bij elke gebeurtenis op het geselecteerde project..."
   label_user_new: Nieuwe gebruiker
   label_user_plural: Gebruikers
@@ -765,9 +764,9 @@ nl:
   text_select_project_modules: 'Selecteer de modules die u wilt gebruiken voor dit project:'
   text_status_changed_by_changeset: "Toegepast in changeset {{value}}."
   text_subprojects_destroy_warning: "De subprojecten: {{value}} zullen ook verwijderd worden."
-  text_tip_task_begin_day: taak die op deze dag begint
-  text_tip_task_begin_end_day: taak die op deze dag begint en eindigt
-  text_tip_task_end_day: taak die op deze dag eindigt
+  text_tip_issue_begin_day: issue die op deze dag begint
+  text_tip_issue_begin_end_day: issue die op deze dag begint en eindigt
+  text_tip_issue_end_day: issue die op deze dag eindigt
   text_tracker_no_workflow: Geen workflow gedefinieerd voor deze tracker
   text_unallowed_characters: Niet toegestane tekens
   text_user_mail_option: "Bij niet-geselecteerde projecten zult u enkel notificaties ontvangen voor issues die u monitort of waar u bij betrokken bent (als auteur of toegewezen persoon)."
@@ -895,8 +894,14 @@ nl:
   field_time_entries: Log tijd
   project_module_gantt: Gantt
   project_module_calendar: Kalender
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
   button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
   text_are_you_sure_with_children: Delete issue and all child issues?
   field_text: Text field
+  label_user_mail_option_only_owner: Only for things I am the owner of
+  setting_default_notification_option: Default notification option
+  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
+  label_user_mail_option_only_assigned: Only for things I am assigned to
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.

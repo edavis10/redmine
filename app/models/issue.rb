@@ -86,8 +86,8 @@ class Issue < ActiveRecord::Base
   }
 
   before_create :default_assign
-  before_save :reschedule_following_issues, :close_duplicates, :update_done_ratio_from_issue_status
-  after_save :update_nested_set_attributes, :update_parent_attributes, :create_journal
+  before_save :close_duplicates, :update_done_ratio_from_issue_status
+  after_save :reschedule_following_issues, :update_nested_set_attributes, :update_parent_attributes, :create_journal
   after_destroy :destroy_children
   after_destroy :update_parent_attributes
   
@@ -390,7 +390,9 @@ class Issue < ActiveRecord::Base
   
   # Users the issue can be assigned to
   def assignable_users
-    project.assignable_users
+    users = project.assignable_users
+    users << author if author
+    users.uniq.sort
   end
   
   # Versions that the issue can be assigned to
@@ -415,9 +417,10 @@ class Issue < ActiveRecord::Base
   # Returns the mail adresses of users that should be notified
   def recipients
     notified = project.notified_users
-    # Author and assignee are always notified unless they have been locked
-    notified << author if author && author.active?
-    notified << assigned_to if assigned_to && assigned_to.active?
+    # Author and assignee are always notified unless they have been
+    # locked or don't want to be notified
+    notified << author if author && author.active? && author.notify_about?(self)
+    notified << assigned_to if assigned_to && assigned_to.active? && assigned_to.notify_about?(self)
     notified.uniq!
     # Remove users that can not view the issue
     notified.reject! {|user| !visible?(user)}

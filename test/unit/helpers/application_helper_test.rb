@@ -49,15 +49,6 @@ class ApplicationHelperTest < ActionView::TestCase
       assert_match /href/, response
     end
     
-    should "allow using the url for the target link" do
-      User.current = User.find_by_login('admin')
-
-      @project = Issue.first.project # Used by helper
-      response = link_to_if_authorized("By url",
-                                       new_issue_move_path(:id => Issue.first.id))
-      assert_match /href/, response
-    end
-
   end
   
   def test_auto_links
@@ -88,6 +79,8 @@ class ApplicationHelperTest < ActionView::TestCase
       'http://example.net/path!602815048C7B5C20!302.html' => '<a class="external" href="http://example.net/path!602815048C7B5C20!302.html">http://example.net/path!602815048C7B5C20!302.html</a>',
       # escaping
       'http://foo"bar' => '<a class="external" href="http://foo&quot;bar">http://foo"bar</a>',
+      # wrap in angle brackets
+      '<http://foo.bar>' => '&lt;<a class="external" href="http://foo.bar">http://foo.bar</a>&gt;'
     }
     to_test.each { |text, result| assert_equal "<p>#{result}</p>", textilizable(text) }
   end

@@ -169,6 +169,7 @@ fr:
   notice_file_not_found: "La page à laquelle vous souhaitez accéder n'existe pas ou a été supprimée."
   notice_locking_conflict: Les données ont été mises à jour par un autre utilisateur. Mise à jour impossible.
   notice_not_authorized: "Vous n'êtes pas autorisés à accéder à cette page."
+  notice_not_authorized_archived_project: Le projet auquel vous tentez d'accéder a été archivé.
   notice_email_sent: "Un email a été envoyé à {{value}}"
   notice_email_error: "Erreur lors de l'envoi de l'email ({{value}})"
   notice_feeds_access_key_reseted: "Votre clé d'accès aux flux RSS a été réinitialisée."
@@ -718,7 +719,6 @@ fr:
   label_search_titles_only: Uniquement dans les titres
   label_user_mail_option_all: "Pour tous les événements de tous mes projets"
   label_user_mail_option_selected: "Pour tous les événements des projets sélectionnés..."
-  label_user_mail_option_none: "Seulement pour ce que je surveille ou à quoi je participe"
   label_user_mail_no_self_notified: "Je ne veux pas être notifié des changements que j'effectue"
   label_registration_activation_by_email: activation du compte par email
   label_registration_manual_activation: activation manuelle du compte
@@ -833,9 +833,9 @@ fr:
   text_subprojects_destroy_warning: "Ses sous-projets : {{value}} seront également supprimés."
   text_workflow_edit: Sélectionner un tracker et un rôle pour éditer le workflow
   text_are_you_sure: Êtes-vous sûr ?
-  text_tip_task_begin_day: tâche commençant ce jour
-  text_tip_task_end_day: tâche finissant ce jour
-  text_tip_task_begin_end_day: tâche commençant et finissant ce jour
+  text_tip_issue_begin_day: tâche commençant ce jour
+  text_tip_issue_end_day: tâche finissant ce jour
+  text_tip_issue_begin_end_day: tâche commençant et finissant ce jour
   text_project_identifier_info: 'Seuls les lettres minuscules (a-z), chiffres et tirets sont autorisés.<br />Un fois sauvegardé, l''identifiant ne pourra plus être modifié.'
   text_caracters_maximum: "{{count}} caractères maximum."
   text_caracters_minimum: "{{count}} caractères minimum."
@@ -930,9 +930,14 @@ fr:
   label_overall_spent_time: Temps passé global
   field_time_entries: Log time
   project_module_gantt: Gantt
-  project_module_calendar: Calendar
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
-  button_edit_associated_wikipage: "Modifier la page de Wiki associée: {{page_title}}"
-  text_are_you_sure_with_children: Delete issue and all child issues?
-  field_text: Text field
+  project_module_calendar: Calendrier
+  button_edit_associated_wikipage: "Modifier la page wiki associée: {{page_title}}"
+  text_are_you_sure_with_children: Supprimer la demande et toutes ses sous-demandes ?
+  field_text: Champ texte
+  label_user_mail_option_only_owner: Seulement pour ce que j'ai créé
+  setting_default_notification_option: Option de notification par défaut
+  label_user_mail_option_only_my_events: Seulement pour ce que je surveille
+  label_user_mail_option_only_assigned: Seulement pour ce qui m'est assigné
+  label_user_mail_option_none: Aucune notification
+  field_member_of_group: Groupe de l'assigné
+  field_assigned_to_role: Rôle de l'assigné

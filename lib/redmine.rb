@@ -8,6 +8,7 @@ require 'redmine/core_ext'
 require 'redmine/themes'
 require 'redmine/hook'
 require 'redmine/plugin'
+require 'redmine/notifiable'
 require 'redmine/wiki_formatting'
 require 'redmine/scm/base'
 
@@ -83,10 +84,10 @@ Redmine::AccessControl.map do |map|
   end
   
   map.project_module :time_tracking do |map|
-    map.permission :log_time, {:timelog => :edit}, :require => :loggedin
-    map.permission :view_time_entries, :timelog => [:details, :report]
-    map.permission :edit_time_entries, {:timelog => [:edit, :destroy]}, :require => :member
-    map.permission :edit_own_time_entries, {:timelog => [:edit, :destroy]}, :require => :loggedin
+    map.permission :log_time, {:timelog => [:new, :create, :edit, :update]}, :require => :loggedin
+    map.permission :view_time_entries, :timelog => [:index], :time_entry_reports => [:report]
+    map.permission :edit_time_entries, {:timelog => [:new, :create, :edit, :update, :destroy]}, :require => :member
+    map.permission :edit_own_time_entries, {:timelog => [:new, :create, :edit, :update, :destroy]}, :require => :loggedin
     map.permission :manage_project_activities, {:project_enumerations => [:update, :destroy]}, :require => :member
   end
   
@@ -110,10 +111,10 @@ Redmine::AccessControl.map do |map|
     map.permission :manage_wiki, {:wikis => [:edit, :destroy]}, :require => :member
     map.permission :rename_wiki_pages, {:wiki => :rename}, :require => :member
     map.permission :delete_wiki_pages, {:wiki => :destroy}, :require => :member
-    map.permission :view_wiki_pages, :wiki => [:index, :special]
-    map.permission :export_wiki_pages, {}
+    map.permission :view_wiki_pages, :wiki => [:index, :show, :special, :date_index]
+    map.permission :export_wiki_pages, :wiki => [:export]
     map.permission :view_wiki_edits, :wiki => [:history, :diff, :annotate]
-    map.permission :edit_wiki_pages, :wiki => [:edit, :preview, :add_attachment]
+    map.permission :edit_wiki_pages, :wiki => [:edit, :update, :preview, :add_attachment]
     map.permission :delete_wiki_pages_attachments, {}
     map.permission :protect_wiki_pages, {:wiki => :protect}, :require => :member
   end
@@ -194,7 +195,7 @@ Redmine::MenuManager.map :project_menu do |menu|
   menu.push :calendar, { :controller => 'calendars', :action => 'show' }, :param => :project_id, :caption => :label_calendar
   menu.push :news, { :controller => 'news', :action => 'index' }, :param => :project_id, :caption => :label_news_plural
   menu.push :documents, { :controller => 'documents', :action => 'index' }, :param => :project_id, :caption => :label_document_plural
-  menu.push :wiki, { :controller => 'wiki', :action => 'index', :page => nil }, 
+  menu.push :wiki, { :controller => 'wiki', :action => 'show', :page => nil }, :param => :project_id,
               :if => Proc.new { |p| p.wiki && !p.wiki.new_record? }
   menu.push :boards, { :controller => 'boards', :action => 'index', :id => nil }, :param => :project_id,
               :if => Proc.new { |p| p.boards.any? }, :caption => :label_board_plural

@@ -503,6 +503,17 @@ class IssueTest < ActiveSupport::TestCase
     assert !closed_statuses.empty?
   end
   
+  def test_rescheduling_an_issue_should_reschedule_following_issue
+    issue1 = Issue.create!(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :subject => '-', :start_date => Date.today, :due_date => Date.today + 2)
+    issue2 = Issue.create!(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :subject => '-', :start_date => Date.today, :due_date => Date.today + 2)
+    IssueRelation.create!(:issue_from => issue1, :issue_to => issue2, :relation_type => IssueRelation::TYPE_PRECEDES)
+    assert_equal issue1.due_date + 1, issue2.reload.start_date
+    
+    issue1.due_date = Date.today + 5
+    issue1.save!
+    assert_equal issue1.due_date + 1, issue2.reload.start_date
+  end
+  
   def test_overdue
     assert Issue.new(:due_date => 1.day.ago.to_date).overdue?
     assert !Issue.new(:due_date => Date.today).overdue?
@@ -532,9 +543,28 @@ class IssueTest < ActiveSupport::TestCase
       assert Issue.new(:start_date => 100.days.ago.to_date, :due_date => Date.today, :done_ratio => 90).behind_schedule?
     end
   end
-  
-  def test_assignable_users
-    assert_kind_of User, Issue.find(1).assignable_users.first
+
+  context "#assignable_users" do
+    should "be Users" do
+      assert_kind_of User, Issue.find(1).assignable_users.first
+    end
+
+    should "include the issue author" do
+      project = Project.find(1)
+      non_project_member = User.generate!
+      issue = Issue.generate_for_project!(project, :author => non_project_member)
+
+      assert issue.assignable_users.include?(non_project_member)
+    end
+
+    should "not show the issue author twice" do
+      assignable_user_ids = Issue.find(1).assignable_users.collect(&:id)
+      assert_equal 2, assignable_user_ids.length
+      
+      assignable_user_ids.each do |user_id|
+        assert_equal 1, assignable_user_ids.count(user_id), "User #{user_id} appears more or less than once"
+      end
+    end
   end
   
   def test_create_should_send_email_notification
@@ -544,7 +574,7 @@ class IssueTest < ActiveSupport::TestCase
     assert issue.save
     assert_equal 1, ActionMailer::Base.deliveries.size
   end
-  
+
   def test_stale_issue_should_not_send_email_notification
     ActionMailer::Base.deliveries.clear
     issue = Issue.find(1)
@@ -737,5 +767,50 @@ class IssueTest < ActiveSupport::TestCase
     issue.project = Project.find(2)
     assert issue.save
     assert_equal before, Issue.on_active_project.length
+  end
+
+  context "Issue#recipients" do
+    setup do
+      @project = Project.find(1)
+      @author = User.generate_with_protected!
+      @assignee = User.generate_with_protected!
+      @issue = Issue.generate_for_project!(@project, :assigned_to => @assignee, :author => @author)
+    end
+    
+    should "include project recipients" do
+      assert @project.recipients.present?
+      @project.recipients.each do |project_recipient|
+        assert @issue.recipients.include?(project_recipient)
+      end
+    end
+
+    should "include the author if the author is active" do
+      assert @issue.author, "No author set for Issue"
+      assert @issue.recipients.include?(@issue.author.mail)
+    end
+    
+    should "include the assigned to user if the assigned to user is active" do
+      assert @issue.assigned_to, "No assigned_to set for Issue"
+      assert @issue.recipients.include?(@issue.assigned_to.mail)
+    end
+
+    should "not include users who opt out of all email" do
+      @author.update_attribute(:mail_notification, :none)
+
+      assert !@issue.recipients.include?(@issue.author.mail)
+    end
+
+    should "not include the issue author if they are only notified of assigned issues" do
+      @author.update_attribute(:mail_notification, :only_assigned)
+
+      assert !@issue.recipients.include?(@issue.author.mail)
+    end
+
+    should "not include the assigned user if they are only notified of owned issues" do
+      @assignee.update_attribute(:mail_notification, :only_owner)
+
+      assert !@issue.recipients.include?(@issue.assigned_to.mail)
+    end
+
   end
 end

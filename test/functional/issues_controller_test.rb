@@ -340,9 +340,7 @@ class IssuesControllerTest < ActionController::TestCase
     
     get :new, :project_id => 1
     assert_response 500
-    assert_not_nil flash[:error]
-    assert_tag :tag => 'div', :attributes => { :class => /error/ },
-                              :content => /No default issue/
+    assert_error_tag :content => /No default issue/
   end
   
   def test_get_new_with_no_tracker_should_display_an_error
@@ -351,9 +349,7 @@ class IssuesControllerTest < ActionController::TestCase
     
     get :new, :project_id => 1
     assert_response 500
-    assert_not_nil flash[:error]
-    assert_tag :tag => 'div', :attributes => { :class => /error/ },
-                              :content => /No tracker/
+    assert_error_tag :content => /No tracker/
   end
   
   def test_update_new_form
@@ -911,6 +907,19 @@ class IssuesControllerTest < ActionController::TestCase
     assert_tag :select, :attributes => {:name => 'issue[custom_field_values][1]'}
   end
 
+  def test_get_bulk_edit_on_different_projects
+    @request.session[:user_id] = 2
+    get :bulk_edit, :ids => [1, 2, 6]
+    assert_response :success
+    assert_template 'bulk_edit'
+    
+    # Project specific custom field, date type
+    field = CustomField.find(9)
+    assert !field.is_for_all?
+    assert !field.project_ids.include?(Issue.find(6).project_id)
+    assert_no_tag :input, :attributes => {:name => 'issue[custom_field_values][9]'}
+  end
+
   def test_bulk_update
     @request.session[:user_id] = 2
     # update issues priority
@@ -930,6 +939,39 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal 1, journal.details.size
   end
 
+  def test_bulk_update_on_different_projects
+    @request.session[:user_id] = 2
+    # update issues priority
+    post :bulk_update, :ids => [1, 2, 6], :notes => 'Bulk editing',
+                                     :issue => {:priority_id => 7,
+                                                :assigned_to_id => '',
+                                                :custom_field_values => {'2' => ''}}
+    
+    assert_response 302
+    # check that the issues were updated
+    assert_equal [7, 7, 7], Issue.find([1,2,6]).map(&:priority_id)
+    
+    issue = Issue.find(1)
+    journal = issue.journals.find(:first, :order => 'created_on DESC')
+    assert_equal '125', issue.custom_value_for(2).value
+    assert_equal 'Bulk editing', journal.notes
+    assert_equal 1, journal.details.size
+  end
+
+  def test_bulk_update_on_different_projects_without_rights
+    @request.session[:user_id] = 3
+    user = User.find(3)
+    action = { :controller => "issues", :action => "bulk_update" }
+    assert user.allowed_to?(action, Issue.find(1).project)
+    assert ! user.allowed_to?(action, Issue.find(6).project)
+    post :bulk_update, :ids => [1, 6], :notes => 'Bulk should fail',
+                                     :issue => {:priority_id => 7,
+                                                :assigned_to_id => '',
+                                                :custom_field_values => {'2' => ''}}
+    assert_response 403
+    assert_not_equal "Bulk should fail", Journal.last.notes
+  end
+    
   def test_bullk_update_should_send_a_notification
     @request.session[:user_id] = 2
     ActionMailer::Base.deliveries.clear
@@ -1059,6 +1101,13 @@ class IssuesControllerTest < ActionController::TestCase
     assert !(Issue.find_by_id(1) || Issue.find_by_id(3))
     assert_equal 2, TimeEntry.find(1).issue_id
     assert_equal 2, TimeEntry.find(2).issue_id
+  end
+  
+  def test_destroy_issues_from_different_projects
+    @request.session[:user_id] = 2
+    post :destroy, :ids => [1, 2, 6], :todo => 'destroy'
+    assert_redirected_to :controller => 'issues', :action => 'index'
+    assert !(Issue.find_by_id(1) || Issue.find_by_id(2) || Issue.find_by_id(6))
   end
   
   def test_default_search_scope

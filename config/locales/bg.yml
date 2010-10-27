@@ -562,9 +562,9 @@ bg:
   text_project_destroy_confirmation: Сигурни ли сте, че искате да изтриете проекта и данните в него?
   text_workflow_edit: Изберете роля и тракер за да редактирате работния процес
   text_are_you_sure: Сигурни ли сте?
-  text_tip_task_begin_day: задача започваща този ден
-  text_tip_task_end_day: задача завършваща този ден
-  text_tip_task_begin_end_day: задача започваща и завършваща този ден
+  text_tip_issue_begin_day: задача започваща този ден
+  text_tip_issue_end_day: задача завършваща този ден
+  text_tip_issue_begin_end_day: задача започваща и завършваща този ден
   text_project_identifier_info: 'Позволени са малки букви (a-z), цифри и тирета.<br />Невъзможна промяна след запис.'
   text_caracters_maximum: "До {{count}} символа."
   text_length_between: "От {{min}} до {{max}} символа."
@@ -622,7 +622,6 @@ bg:
   text_user_mail_option: "За неизбраните проекти, ще получавате известия само за наблюдавани дейности или в които участвате (т.е. автор или назначени на мен)."
   label_user_mail_option_selected: "За всички събития само в избраните проекти..."
   label_user_mail_option_all: "За всяко събитие в проектите, в които участвам"
-  label_user_mail_option_none: "Само за наблюдавани или в които участвам (автор или назначени на мен)"
   setting_emails_footer: Подтекст за e-mail
   label_float: Дробно
   button_copy: Копиране
@@ -907,8 +906,14 @@ bg:
   field_time_entries: Log time
   project_module_gantt: Gantt
   project_module_calendar: Calendar
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
   button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
   text_are_you_sure_with_children: Delete issue and all child issues?
   field_text: Text field
+  label_user_mail_option_only_owner: Only for things I am the owner of
+  setting_default_notification_option: Default notification option
+  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
+  label_user_mail_option_only_assigned: Only for things I am assigned to
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.

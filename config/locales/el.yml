@@ -678,7 +678,6 @@ el:
   label_search_titles_only: Αναζήτηση τίτλων μόνο
   label_user_mail_option_all: "Για όλες τις εξελίξεις σε όλα τα έργα μου"
   label_user_mail_option_selected: "Για όλες τις εξελίξεις μόνο στα επιλεγμένα έργα..."
-  label_user_mail_option_none: "Μόνο για πράγματα που παρακολουθώ ή συμμετέχω ενεργά"
   label_user_mail_no_self_notified: "Δεν θέλω να ειδοποιούμαι για τις δικές μου αλλαγές"
   label_registration_activation_by_email: ενεργοποίηση λογαριασμού με email
   label_registration_manual_activation: χειροκίνητη ενεργοποίηση λογαριασμού
@@ -761,9 +760,9 @@ el:
   text_subprojects_destroy_warning: "Επίσης το(α) επιμέρους έργο(α): {{value}}  θα διαγραφούν."
   text_workflow_edit: Επιλέξτε ένα ρόλο και έναν ανιχνευτή για να επεξεργαστείτε  τη ροή εργασίας
   text_are_you_sure: Είστε σίγουρος ;
-  text_tip_task_begin_day: καθήκοντα που ξεκινάνε σήμερα
-  text_tip_task_end_day: καθήκοντα που τελειώνουν σήμερα
-  text_tip_task_begin_end_day: καθήκοντα που ξεκινάνε και τελειώνουν σήμερα
+  text_tip_issue_begin_day: καθήκοντα που ξεκινάνε σήμερα
+  text_tip_issue_end_day: καθήκοντα που τελειώνουν σήμερα
+  text_tip_issue_begin_end_day: καθήκοντα που ξεκινάνε και τελειώνουν σήμερα
   text_project_identifier_info: 'Επιτρέπονται μόνο μικρά πεζά γράμματα (a-z), αριθμοί και παύλες. <br /> Μετά την αποθήκευση, το αναγνωριστικό δεν μπορεί να αλλάξει.'
   text_caracters_maximum: "μέγιστος αριθμός {{count}} χαρακτήρες."
   text_caracters_minimum: "Πρέπει να περιέχει τουλάχιστον {{count}} χαρακτήρες."
@@ -913,8 +912,14 @@ el:
   field_time_entries: Log time
   project_module_gantt: Gantt
   project_module_calendar: Calendar
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
   button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
   text_are_you_sure_with_children: Delete issue and all child issues?
   field_text: Text field
+  label_user_mail_option_only_owner: Only for things I am the owner of
+  setting_default_notification_option: Default notification option
+  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
+  label_user_mail_option_only_assigned: Only for things I am assigned to
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.

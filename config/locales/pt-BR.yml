@@ -622,7 +622,6 @@ pt-BR:
   label_search_titles_only: Pesquisar somente títulos
   label_user_mail_option_all: "Para qualquer evento em todos os meus projetos"
   label_user_mail_option_selected: "Para qualquer evento somente no(s) projeto(s) selecionado(s)..."
-  label_user_mail_option_none: "Somente tarefas que eu acompanho ou estou envolvido"
   label_user_mail_no_self_notified: "Eu não quero ser notificado de minhas próprias modificações"
   label_registration_activation_by_email: ativação de conta por e-mail
   label_registration_manual_activation: ativação manual de conta
@@ -696,9 +695,9 @@ pt-BR:
   text_subprojects_destroy_warning: "Seu(s) subprojeto(s): {{value}} também serão excluídos."
   text_workflow_edit: Selecione um papel e um tipo de tarefa para editar o fluxo de trabalho
   text_are_you_sure: Você tem certeza?
-  text_tip_task_begin_day: tarefa inicia neste dia
-  text_tip_task_end_day: tarefa termina neste dia
-  text_tip_task_begin_end_day: tarefa inicia e termina neste dia
+  text_tip_issue_begin_day: tarefa inicia neste dia
+  text_tip_issue_end_day: tarefa termina neste dia
+  text_tip_issue_begin_end_day: tarefa inicia e termina neste dia
   text_project_identifier_info: 'Letras minúsculas (a-z), números e hífens permitidos.<br />Uma vez salvo, o identificador não poderá ser alterado.'
   text_caracters_maximum: "máximo {{count}} caracteres"
   text_caracters_minimum: "deve ter ao menos {{count}} caracteres."
@@ -937,8 +936,14 @@ pt-BR:
   field_time_entries: Log time
   project_module_gantt: Gantt
   project_module_calendar: Calendário
-  field_member_of_group: Mebro do grupo
-  field_assigned_to_role: Membro com o papel
-  button_edit_associated_wikipage: "Editar páginas wiki relacionadas: {{page_title}}"
+  button_edit_associated_wikipage: "Editar página wiki relacionada: {{page_title}}"
   text_are_you_sure_with_children: Excluir a tarefa e suas subtarefas?
   field_text: Campo de texto
+  label_user_mail_option_only_owner: Somente para as coisas que eu criei
+  setting_default_notification_option: Opção padrão de notificação
+  label_user_mail_option_only_my_events: Somente para as coisas que eu esteja observando ou esteja envolvido
+  label_user_mail_option_only_assigned: Somente para as coisas que estejam atribuídas a mim
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.

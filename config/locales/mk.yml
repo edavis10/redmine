@@ -722,7 +722,6 @@ mk:
   label_search_titles_only: Пребарувај само наслови
   label_user_mail_option_all: "За било кој настан во сите мои проекти"
   label_user_mail_option_selected: "За било кој настан само во избраните проекти..."
-  label_user_mail_option_none: "Само за работите кои ги следам или од кои сум дел"
   label_user_mail_no_self_notified: "Не ме известувај за промените што јас ги правам"
   label_registration_activation_by_email: активација на профил преку е-пошта
   label_registration_manual_activation: мануелна активација на профил
@@ -839,9 +838,9 @@ mk:
   text_journal_set_to: "{{label}} set to {{value}}"
   text_journal_deleted: "{{label}} избришан ({{old}})"
   text_journal_added: "{{label}} {{value}} додаден"
-  text_tip_task_begin_day: задачи што почнуваат овој ден
-  text_tip_task_end_day: задачи што завршуваат овој ден
-  text_tip_task_begin_end_day: задачи што почнуваат и завршуваат овој ден
+  text_tip_issue_begin_day: задачи што почнуваат овој ден
+  text_tip_issue_end_day: задачи што завршуваат овој ден
+  text_tip_issue_begin_end_day: задачи што почнуваат и завршуваат овој ден
   text_project_identifier_info: 'Само мали букви (a-z), бројки и dashes се дозволени<br />По зачувувањето, идентификаторот неможе да се смени.'
   text_caracters_maximum: "{{count}} знаци максимум."
   text_caracters_minimum: "Мора да е најмалку {{count}} знаци долго."
@@ -913,8 +912,14 @@ mk:
   enumeration_activities: Активности (следење на време)
   enumeration_system_activity: Системска активност
 
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
   button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
   text_are_you_sure_with_children: Delete issue and all child issues?
   field_text: Text field
+  label_user_mail_option_only_owner: Only for things I am the owner of
+  setting_default_notification_option: Default notification option
+  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
+  label_user_mail_option_only_assigned: Only for things I am assigned to
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.
