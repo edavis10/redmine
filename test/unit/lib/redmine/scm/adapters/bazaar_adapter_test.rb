@@ -10,7 +10,7 @@ class BazaarAdapterTest < ActiveSupport::TestCase
 
     def test_info
       info = @adapter.info
-      assert_equal "7", info.lastrev.display_name
+      assert_equal "7", info.lastrev.revision
     end
 
     def test_entries
@@ -32,12 +32,12 @@ class BazaarAdapterTest < ActiveSupport::TestCase
       assert_equal 8, revs.length
       last_rev = revs[0]
       sub_rev = revs[1]
-      assert_equal "7", last_rev.display_name
-      assert_equal "second@no.server-20100927143627-e2mreqlpaodcixpg", last_rev.identifier
+      assert_equal "7", last_rev.revision
+      assert_equal "second@no.server-20100927143627-e2mreqlpaodcixpg", last_rev.scmid
       assert_equal "Second Developer <second@no.server>", last_rev.author
       assert_equal Time.gm(2010,9,27,14,36,27).utc, last_rev.time.utc
-      assert_equal "4.1.1", sub_rev.display_name
-      assert_equal "johndoe@no.server-20100927143451-vw9ij1q1max8nakq", sub_rev.identifier
+      assert_equal "4.1.1", sub_rev.revision
+      assert_equal "johndoe@no.server-20100927143451-vw9ij1q1max8nakq", sub_rev.scmid
       assert_equal "John Doe <johndoe@no.server>", sub_rev.author
       assert_equal Time.gm(2010,9,27,14,34,51).utc, sub_rev.time.utc
       [last_rev, sub_rev].each do |r|
@@ -51,33 +51,33 @@ class BazaarAdapterTest < ActiveSupport::TestCase
     def test_revision_path
       revs = @adapter.revisions("directory/second_file.txt")
       assert_equal 2, revs.length
-      assert_equal "6", revs[0].display_name
-      assert_equal "5", revs[-1].display_name
+      assert_equal "6", revs[0].revision
+      assert_equal "5", revs[-1].revision
       assert_equal 2, revs[0].paths.length
     end
 
     def test_revisions_identifers
       revs = @adapter.revisions(nil, "second@no.server-20100927143409-waety1q0cm1ur3sv", "johndoe@no.server-20100927142845-un2x20a6r2t3nz1w")
       assert_equal 3, revs.length
-      assert_equal "6", revs[0].display_name
-      assert_equal "4", revs[-1].display_name
+      assert_equal "6", revs[0].revision
+      assert_equal "4", revs[-1].revision
 
       revs = @adapter.revisions(nil, "second@no.server-20100927143409-waety1q0cm1ur3sv")
       assert_equal 6, revs.length
-      assert_equal "6", revs[0].display_name
-      assert_equal "1", revs[-1].display_name
+      assert_equal "6", revs[0].revision
+      assert_equal "1", revs[-1].revision
 
       revs = @adapter.revisions(nil, nil, "johndoe@no.server-20100927142845-un2x20a6r2t3nz1w")
       assert_equal 5, revs.length
-      assert_equal "7", revs[0].display_name
-      assert_equal "4", revs[-1].display_name
+      assert_equal "7", revs[0].revision
+      assert_equal "4", revs[-1].revision
     end
 
     def test_revisions_options
       revs = @adapter.revisions(nil, nil, nil, {:since => Time.gm(2010,9,27,14,34,0).localtime})
       assert_equal 3, revs.length
-      assert_equal "7", revs[0].display_name
-      assert_equal "6", revs[-1].display_name
+      assert_equal "7", revs[0].revision
+      assert_equal "6", revs[-1].revision
     end
 
     def test_diff

@@ -80,7 +80,7 @@ class Repository::Bazaar < Repository
 
     recent_changesets = changesets.find(:all, :conditions => ['committed_on >= ?', since])
 
-    # Clean out revisions that are no longer in git
+    # Clean out revisions that are no longer in bazaar
     recent_changesets.each {|c| c.destroy unless revisions.detect {|r| r.scmid.to_s == c.scmid.to_s }}
 
     # Subtract revisions that redmine already knows about

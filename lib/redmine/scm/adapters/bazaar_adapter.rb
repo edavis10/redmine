@@ -33,7 +33,8 @@ module Redmine
             if io.read =~ %r{^(\d+(\.\d+)*)\r?$}
               info = Info.new({:root_url => url,
                                :lastrev => Revision.new({
-                               :identifier => $1
+                                 :identifier => $1,
+                                 :revision => $1
                                })
                              })
             end

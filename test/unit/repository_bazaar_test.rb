@@ -36,13 +36,15 @@ class RepositoryBazaarTest < ActiveSupport::TestCase
       
       assert_equal 8, @repository.changesets.count
       assert_equal 13, @repository.changes.count
-      assert_equal 'Initial commit, just one file', @repository.changesets.find_by_display_name('1').comments
+      assert_equal 'Initial commit, just one file', @repository.find_changeset_by_name('1').comments
+      assert_equal 'Initial commit, just one file',
+                   @repository.find_changeset_by_name('johndoe@no.server-20100927142357-09lh9svlopfrt2zh').comments
     end
     
     def test_fetch_changesets_incremental
       @repository.fetch_changesets
       # Remove changesets with revision > 2
-      @repository.changesets.find(:all).each {|c| c.destroy if c.display_name.to_i > 2}
+      @repository.changesets.find(:all).each {|c| c.destroy if c.revision.to_i > 2}
       @repository.reload
       assert_equal 2, @repository.changesets.count
       
