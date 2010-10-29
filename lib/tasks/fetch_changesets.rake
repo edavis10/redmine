@@ -21,4 +21,7 @@ namespace :redmine do
   task :fetch_changesets => :environment do
     Repository.fetch_changesets
   end
+  task :clear_and_fetch_changesets => :environment do
+    Repository.clear_and_fetch_changesets
+  end
 end
