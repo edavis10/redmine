@@ -21,6 +21,13 @@ module Redmine
   module Scm
     module Adapters    
       class BazaarAdapter < AbstractAdapter
+
+        class Revision < Redmine::Scm::Adapters::Revision
+          # Returns the readable identifier
+          def format_identifier
+            revision
+          end
+        end
       
         # Bazaar executable name
         BZR_BIN = "bzr"
@@ -179,11 +186,30 @@ module Redmine
           cmd << " -r revid:#{identifier}" if identifier
           cmd << " #{target(path)}"
           blame = Annotate.new
+          # With Bazaar, there is no way to show both the regular revision
+          # number (ie 121, 4.1.1, etc.) and the internal ID with one command.
+          # So run through the command twice
+          lines = []
           shellout(cmd) do |io|
             io.each_line do |line|
               next unless line =~ %r{^(.+?)\-(\d+)\-(.+?) \| (.*)$}
-              blame.add_line($4.rstrip, Revision.new(:identifier => "#{$1}-#{$2}-#{$3}", :author => $1.strip))
+              lines << {:text => $4.rstrip, :scmid => "#{$1}-#{$2}-#{$3}", :author => $1.strip}
             end
+          end
+          cmd.gsub!(/ \-\-show\-ids/, "")
+          i = 0
+          shellout(cmd) do |io|
+            io.each_line do |line|
+              next unless line =~ %r{^([\d\.]+) .*? \| (.*)$}
+              lines[i][:revision] = $1
+              i += 1
+            end
+          end
+
+          lines.each do |l|
+            blame.add_line(l[:text], Revision.new(:identifier => l[:scmid],
+                                                  :author => l[:author], :scmid => l[:scmid],
+                                                  :revision => l[:revision]))
           end
           return nil if $? && $?.exitstatus != 0
           blame

@@ -126,7 +126,7 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
       assert_template 'annotate'
       # Line 2, revision 3
       assert_tag :tag => 'th', :content => /2/,
-                 :sibling => { :tag => 'td', :child => { :tag => 'a', :content => /second@no\.server\-20100927143241\-aknlenpvde342upv/ } },
+                 :sibling => { :tag => 'td', :content => /5/, :child => { :tag => 'a', :content => /second@no\.server\-20100927143241\-aknlenpvde342upv/ } },
                  :sibling => { :tag => 'td', :content => /second@no\.server/ },
                  :sibling => { :tag => 'td', :content => /The above line is incorrect/ }
     end

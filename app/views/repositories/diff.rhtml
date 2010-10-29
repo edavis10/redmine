@@ -1,4 +1,4 @@
-<h2><%= l(:label_revision) %> <%= format_revision(@rev_to) + ':' if @rev_to %><%= format_revision(@rev) %> <%=h @path %></h2>
+<h2><%= l(:label_revision) %> <%= format_revision(@end_changeset) + ':' if @end_changeset %><%= format_revision(@start_changeset) %> <%=h @path %></h2>
 
 <!-- Choose view type -->
 <% form_tag({:path => to_path_param(@path)}, :method => 'get') do %>
