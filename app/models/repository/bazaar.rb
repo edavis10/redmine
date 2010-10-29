@@ -29,12 +29,12 @@ class Repository::Bazaar < Repository
     'Bazaar'
   end
 
-  # Returns the identifier for the given mercurial changeset
+  # Returns the identifier for the given bazaar changeset
   def self.changeset_identifier(changeset)
     changeset.scmid
   end
 
-  # Returns the readable identifier for the given mercurial changeset
+  # Returns the readable identifier for the given bazaar changeset
   def self.format_changeset_identifier(changeset)
     changeset.revision
   end
