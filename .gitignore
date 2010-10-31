@@ -19,3 +19,4 @@
 /vendor/rails
 *.rbc
 /.idea
+*.pyc
