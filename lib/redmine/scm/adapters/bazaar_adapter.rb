@@ -192,7 +192,7 @@ module Redmine
           lines = []
           shellout(cmd) do |io|
             io.each_line do |line|
-              next unless line =~ %r{^(.+?)\-(\d+)\-(.+?) \| (.*)$}
+              next unless line =~ %r{^\s*(\S+?)\-(\d+)\-(.+?) \| (.*)$}
               lines << {:text => $4.rstrip, :scmid => "#{$1}-#{$2}-#{$3}", :author => $1.strip}
             end
           end
@@ -200,7 +200,7 @@ module Redmine
           i = 0
           shellout(cmd) do |io|
             io.each_line do |line|
-              next unless line =~ %r{^([\d\.]+) .*? \| (.*)$}
+              next unless line =~ %r{^\s*([\d\.]+) .*? \| (.*)$}
               lines[i][:revision] = $1
               i += 1
             end
