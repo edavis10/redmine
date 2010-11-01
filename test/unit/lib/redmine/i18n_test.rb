@@ -37,6 +37,7 @@ class Redmine::I18nTest < ActiveSupport::TestCase
     today = Date.today
     Setting.date_format = '%d %m %Y'
     assert_equal today.strftime('%d %m %Y'), format_date(today)
+    assert_equal today.strftime('%d %m %Y'), format_date(today.to_s)
   end
   
   def test_date_and_time_for_each_language
