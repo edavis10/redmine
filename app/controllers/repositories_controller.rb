@@ -149,7 +149,7 @@ class RepositoriesController < ApplicationController
   rescue ChangesetNotFound
     show_error_not_found
   end
-  
+
   def diff
     if params[:format] == 'diff'
       @diff = @repository.diff(@path, @rev, @rev_to)
@@ -168,15 +168,20 @@ class RepositoriesController < ApplicationController
         User.current.pref[:diff_type] = @diff_type
         User.current.preference.save
       end
-      
+
       @cache_key = "repositories/diff/#{@repository.id}/" + Digest::MD5.hexdigest("#{@path}-#{@rev}-#{@rev_to}-#{@diff_type}")    
       unless read_fragment(@cache_key)
         @diff = @repository.diff(@path, @rev, @rev_to)
         show_error_not_found unless @diff
       end
+
+      # Mercurial and Bazaar @rev are commit id
+      @start_changeset = @repository.find_changeset_by_name(@rev)
+      @end_changeset   = @repository.find_changeset_by_name(@rev_to) if @rev_to
+
     end
   end
-  
+
   def stats  
   end
   
