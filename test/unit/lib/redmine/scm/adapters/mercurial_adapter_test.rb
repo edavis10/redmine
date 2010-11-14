@@ -49,5 +49,8 @@ begin
   end
   
 rescue LoadError
-  def test_fake; assert(false, "Requires mocha to run those tests")  end
+  class MercurialMochaFake < ActiveSupport::TestCase
+    def test_fake; assert(false, "Requires mocha to run those tests")  end
+  end
 end
+
