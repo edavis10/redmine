@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2009  Jean-Philippe Lang
+# Copyright (C) 2006-2010  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -49,15 +49,6 @@ class ApplicationHelperTest < ActionView::TestCase
       assert_match /href/, response
     end
     
-    should "allow using the url for the target link" do
-      User.current = User.find_by_login('admin')
-
-      @project = Issue.first.project # Used by helper
-      response = link_to_if_authorized("By url",
-                                       new_issue_move_path(:id => Issue.first.id))
-      assert_match /href/, response
-    end
-
   end
   
   def test_auto_links
@@ -88,6 +79,8 @@ class ApplicationHelperTest < ActionView::TestCase
       'http://example.net/path!602815048C7B5C20!302.html' => '<a class="external" href="http://example.net/path!602815048C7B5C20!302.html">http://example.net/path!602815048C7B5C20!302.html</a>',
       # escaping
       'http://foo"bar' => '<a class="external" href="http://foo&quot;bar">http://foo"bar</a>',
+      # wrap in angle brackets
+      '<http://foo.bar>' => '&lt;<a class="external" href="http://foo.bar">http://foo.bar</a>&gt;'
     }
     to_test.each { |text, result| assert_equal "<p>#{result}</p>", textilizable(text) }
   end
@@ -121,15 +114,6 @@ RAW
 
     assert textilizable(raw).include?('<img src="foo.png" alt="" />')
     assert textilizable(raw).include?('<img src="bar.gif" alt="" />')
-  end
-  
-  def test_acronyms
-    to_test = {
-      'this is an acronym: GPL(General Public License)' => 'this is an acronym: <acronym title="General Public License">GPL</acronym>',
-      'GPL(This is a double-quoted "title")' => '<acronym title="This is a double-quoted &quot;title&quot;">GPL</acronym>',
-    }
-    to_test.each { |text, result| assert_equal "<p>#{result}</p>", textilizable(text) }
-    
   end
   
   def test_attached_images
@@ -260,8 +244,8 @@ RAW
       '[[Unknown page]]' => '<a href="/projects/ecookbook/wiki/Unknown_page" class="wiki-page new">Unknown page</a>',
       '[[Unknown page|404]]' => '<a href="/projects/ecookbook/wiki/Unknown_page" class="wiki-page new">404</a>',
       # link to another project wiki
-      '[[onlinestore:]]' => '<a href="/projects/onlinestore/wiki/" class="wiki-page">onlinestore</a>',
-      '[[onlinestore:|Wiki]]' => '<a href="/projects/onlinestore/wiki/" class="wiki-page">Wiki</a>',
+      '[[onlinestore:]]' => '<a href="/projects/onlinestore/wiki" class="wiki-page">onlinestore</a>',
+      '[[onlinestore:|Wiki]]' => '<a href="/projects/onlinestore/wiki" class="wiki-page">Wiki</a>',
       '[[onlinestore:Start page]]' => '<a href="/projects/onlinestore/wiki/Start_page" class="wiki-page">Start page</a>',
       '[[onlinestore:Start page|Text]]' => '<a href="/projects/onlinestore/wiki/Start_page" class="wiki-page">Text</a>',
       '[[onlinestore:Unknown page]]' => '<a href="/projects/onlinestore/wiki/Unknown_page" class="wiki-page new">Unknown page</a>',
@@ -408,11 +392,6 @@ EXPECTED
     assert_equal '<p>Dashes: ---</p>', textilizable('Dashes: ---')
   end
   
-  def test_acronym
-    assert_equal '<p>This is an acronym: <acronym title="American Civil Liberties Union">ACLU</acronym>.</p>',
-                 textilizable('This is an acronym: ACLU(American Civil Liberties Union).')
-  end
-  
   def test_footnotes
     raw = <<-RAW
 This is some text[1].
@@ -443,25 +422,60 @@ Nullam commodo metus accumsan nulla. Curabitur lobortis dui id dolor.
 h2. Subtitle with [[Wiki|another Wiki]] link
 
 h2. Subtitle with %{color:red}red text%
+    
+h3. Subtitle with *some* _modifiers_
 
 h1. Another title
 
-h2. An "Internet link":http://www.redmine.org/ inside subtitle
+h3. An "Internet link":http://www.redmine.org/ inside subtitle
 
 h2. "Project Name !/attachments/1234/logo_small.gif! !/attachments/5678/logo_2.png!":/projects/projectname/issues
 
 RAW
 
-    expected = '<ul class="toc">' +
-               '<li class="heading1"><a href="#Title">Title</a></li>' +
-               '<li class="heading2"><a href="#Subtitle-with-a-Wiki-link">Subtitle with a Wiki link</a></li>' + 
-               '<li class="heading2"><a href="#Subtitle-with-another-Wiki-link">Subtitle with another Wiki link</a></li>' + 
-               '<li class="heading2"><a href="#Subtitle-with-red-text">Subtitle with red text</a></li>' +
-               '<li class="heading1"><a href="#Another-title">Another title</a></li>' +
-               '<li class="heading2"><a href="#An-Internet-link-inside-subtitle">An Internet link inside subtitle</a></li>' +
-               '<li class="heading2"><a href="#Project-Name">Project Name</a></li>' +
+    expected =  '<ul class="toc">' +
+                  '<li><a href="#Title">Title</a>' +
+                    '<ul>' +
+                      '<li><a href="#Subtitle-with-a-Wiki-link">Subtitle with a Wiki link</a></li>' + 
+                      '<li><a href="#Subtitle-with-another-Wiki-link">Subtitle with another Wiki link</a></li>' + 
+                      '<li><a href="#Subtitle-with-red-text">Subtitle with red text</a>' +
+                        '<ul>' +
+                          '<li><a href="#Subtitle-with-some-modifiers">Subtitle with some modifiers</a></li>' +
+                        '</ul>' +
+                      '</li>' +
+                    '</ul>' +
+                  '</li>' +
+                  '<li><a href="#Another-title">Another title</a>' +
+                    '<ul>' +
+                      '<li>' +
+                        '<ul>' +
+                          '<li><a href="#An-Internet-link-inside-subtitle">An Internet link inside subtitle</a></li>' +
+                        '</ul>' +
+                      '</li>' +
+                      '<li><a href="#Project-Name">Project Name</a></li>' +
+                    '</ul>' +
+                  '</li>' +
                '</ul>'
 
+    @project = Project.find(1)
+    assert textilizable(raw).gsub("\n", "").include?(expected)
+  end
+  
+  def test_table_of_content_should_contain_included_page_headings
+    raw = <<-RAW
+{{toc}}
+
+h1. Included
+
+{{include(Child_1)}}
+RAW
+
+    expected = '<ul class="toc">' +
+               '<li><a href="#Included">Included</a></li>' +
+               '<li><a href="#Child-page-1">Child page 1</a></li>' + 
+               '</ul>'
+
+    @project = Project.find(1)
     assert textilizable(raw).gsub("\n", "").include?(expected)
   end
   

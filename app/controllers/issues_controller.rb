@@ -21,13 +21,13 @@ class IssuesController < ApplicationController
   
   before_filter :find_issue, :only => [:show, :edit, :update]
   before_filter :find_issues, :only => [:bulk_edit, :bulk_update, :move, :perform_move, :destroy]
-  before_filter :check_project_uniqueness, :only => [:bulk_edit, :bulk_update, :move, :perform_move, :destroy]
+  before_filter :check_project_uniqueness, :only => [:move, :perform_move]
   before_filter :find_project, :only => [:new, :create]
   before_filter :authorize, :except => [:index]
   before_filter :find_optional_project, :only => [:index]
   before_filter :check_for_default_issue_status, :only => [:new, :create]
   before_filter :build_new_issue_from_params, :only => [:new, :create]
-  accept_key_auth :index, :show
+  accept_key_auth :index, :show, :create, :update, :destroy
 
   rescue_from Query::StatementInvalid, :with => :query_statement_invalid
   
@@ -150,11 +150,7 @@ class IssuesController < ApplicationController
       end
     end
   end
-  
-  # Attributes that can be updated on workflow transition (without :edit permission)
-  # TODO: make it configurable (at least per role)
-  UPDATABLE_ATTRS_ON_TRANSITION = %w(status_id assigned_to_id fixed_version_id done_ratio) unless const_defined?(:UPDATABLE_ATTRS_ON_TRANSITION)
-  
+    
   def edit
     update_issue_from_params
 
@@ -194,8 +190,10 @@ class IssuesController < ApplicationController
   # Bulk edit a set of issues
   def bulk_edit
     @issues.sort!
-    @available_statuses = Workflow.available_statuses(@project)
-    @custom_fields = @project.all_issue_custom_fields
+    @available_statuses = @projects.map{|p|Workflow.available_statuses(p)}.inject{|memo,w|memo & w}
+    @custom_fields = @projects.map{|p|p.all_issue_custom_fields}.inject{|memo,c|memo & c}
+    @assignables = @projects.map(&:assignable_users).inject{|memo,a| memo & a}
+    @trackers = @projects.map(&:trackers).inject{|memo,t| memo & t}
   end
 
   def bulk_update
@@ -242,7 +240,7 @@ class IssuesController < ApplicationController
     end
     @issues.each(&:destroy)
     respond_to do |format|
-      format.html { redirect_to :action => 'index', :project_id => @project }
+      format.html { redirect_back_or_default(:action => 'index', :project_id => @project) }
       format.xml  { head :ok }
       format.json  { head :ok }
     end
@@ -274,14 +272,7 @@ private
     
     @notes = params[:notes] || (params[:issue].present? ? params[:issue][:notes] : nil)
     @issue.init_journal(User.current, @notes)
-    # User can change issue attributes only if he has :edit permission or if a workflow transition is allowed
-    if (@edit_allowed || !@allowed_statuses.empty?) && params[:issue]
-      attrs = params[:issue].dup
-      attrs.delete_if {|k,v| !UPDATABLE_ATTRS_ON_TRANSITION.include?(k) } unless @edit_allowed
-      attrs.delete(:status_id) unless @allowed_statuses.detect {|s| s.id.to_s == attrs[:status_id].to_s}
-      @issue.safe_attributes = attrs
-    end
-
+    @issue.safe_attributes = params[:issue]
   end
 
   # TODO: Refactor, lots of extra code in here
@@ -302,6 +293,7 @@ private
       render_error l(:error_no_tracker_in_project)
       return false
     end
+    @issue.start_date ||= Date.today
     if params[:issue].is_a?(Hash)
       @issue.safe_attributes = params[:issue]
       if User.current.allowed_to?(:add_issue_watchers, @project) && @issue.new_record?
@@ -309,7 +301,6 @@ private
       end
     end
     @issue.author = User.current
-    @issue.start_date ||= Date.today
     @priorities = IssuePriority.all
     @allowed_statuses = @issue.new_statuses_allowed_to(User.current, true)
   end

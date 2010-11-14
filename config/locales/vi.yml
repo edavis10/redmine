@@ -294,7 +294,6 @@ vi:
   field_attr_lastname: Lastname attribute
   field_attr_mail: Email attribute
   field_onthefly: On-the-fly user creation
-  field_start_date: Bắt đầu
   field_done_ratio: Tiến độ
   field_auth_source: Authentication mode
   field_hide_mail: Không làm lộ email của bạn
@@ -654,7 +653,6 @@ vi:
   label_search_titles_only: Chỉ tìm trong tựa đề
   label_user_mail_option_all: "Mọi sự kiện trên mọi dự án của bạn"
   label_user_mail_option_selected: "Mọi sự kiện trên các dự án được chọn..."
-  label_user_mail_option_none: "Chỉ những vấn đề bạn theo dõi hoặc được gán"
   label_user_mail_no_self_notified: "Đừng gửi email về các thay đổi do chính bạn thực hiện"
   label_registration_activation_by_email: account activation by email
   label_registration_manual_activation: manual account activation
@@ -728,9 +726,9 @@ vi:
   text_subprojects_destroy_warning: "Its subproject(s): {{value}} will be also deleted."
   text_workflow_edit: Select a role and a tracker to edit the workflow
   text_are_you_sure: Bạn chắc chứ?
-  text_tip_task_begin_day: ngày bắt đầu
-  text_tip_task_end_day: ngày kết thúc
-  text_tip_task_begin_end_day: bắt đầu và kết thúc cùng ngày
+  text_tip_issue_begin_day: ngày bắt đầu
+  text_tip_issue_end_day: ngày kết thúc
+  text_tip_issue_begin_end_day: bắt đầu và kết thúc cùng ngày
   text_project_identifier_info: 'Chỉ cho phép chữ cái thường (a-z), con số và dấu gạch ngang.<br />Sau khi lưu, chỉ số ID không thể thay đổi.'
   text_caracters_maximum: "Tối đa {{count}} ký tự."
   text_caracters_minimum: "Phải gồm ít nhất {{count}} ký tự."
@@ -871,12 +869,12 @@ vi:
   text_wiki_page_destroy_children: Delete child pages and all their descendants
   setting_password_min_length: Minimum password length
   field_group_by: Group results by
-  mail_subject_wiki_content_updated: "'{{page}}' wiki page has been updated"
+  mail_subject_wiki_content_updated: "'{{id}}' wiki page has been updated"
   label_wiki_content_added: Wiki page added
-  mail_subject_wiki_content_added: "'{{page}}' wiki page has been added"
-  mail_body_wiki_content_added: The '{{page}}' wiki page has been added by {{author}}.
+  mail_subject_wiki_content_added: "'{{id}}' wiki page has been added"
+  mail_body_wiki_content_added: The '{{id}}' wiki page has been added by {{author}}.
   label_wiki_content_updated: Wiki page updated
-  mail_body_wiki_content_updated: The '{{page}}' wiki page has been updated by {{author}}.
+  mail_body_wiki_content_updated: The '{{id}}' wiki page has been updated by {{author}}.
   permission_add_project: Create project
   setting_new_project_user_role_id: Role given to a non-admin user who creates a project
   label_view_all_revisions: View all revisions
@@ -968,8 +966,6 @@ vi:
   field_time_entries: Log time
   project_module_gantt: Gantt
   project_module_calendar: Calendar
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
   button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
   text_are_you_sure_with_children: Delete issue and all child issues?
   field_text: Text field
@@ -977,3 +973,12 @@ vi:
   setting_default_notification_option: Default notification option
   label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
   label_user_mail_option_only_assigned: Only for things I am assigned to
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.
+  field_start_date: Start date
+  label_principal_search: "Search for user or group:"
+  label_user_search: "Search for user:"
+  field_visible: Visible
+  setting_emails_header: Emails header

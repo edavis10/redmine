@@ -64,7 +64,7 @@ class Project < ActiveRecord::Base
   attr_protected :status, :enabled_module_names
   
   validates_presence_of :name, :identifier
-  validates_uniqueness_of :name, :identifier
+  validates_uniqueness_of :identifier
   validates_associated :repository, :wiki
   validates_length_of :name, :maximum => 30
   validates_length_of :homepage, :maximum => 255
@@ -218,6 +218,10 @@ class Project < ActiveRecord::Base
   
   def active?
     self.status == STATUS_ACTIVE
+  end
+  
+  def archived?
+    self.status == STATUS_ARCHIVED
   end
   
   # Archives the project and its descendants
@@ -382,12 +386,13 @@ class Project < ActiveRecord::Base
   
   # Returns the mail adresses of users that should be always notified on project events
   def recipients
-    members.select {|m| m.mail_notification? || m.user.mail_notification == 'all'}.collect {|m| m.user.mail}
+    notified_users.collect {|user| user.mail}
   end
   
   # Returns the users that should be notified on project events
   def notified_users
-    members.select {|m| m.mail_notification? || m.user.mail_notification?}.collect {|m| m.user}
+    # TODO: User part should be extracted to User#notify_about?
+    members.select {|m| m.mail_notification? || m.user.mail_notification == 'all'}.collect {|m| m.user}
   end
   
   # Returns an array of all custom fields enabled for project issues
@@ -562,6 +567,18 @@ class Project < ActiveRecord::Base
       end
     rescue ActiveRecord::RecordNotFound
       return nil
+    end
+  end
+
+  # Yields the given block for each project with its level in the tree
+  def self.project_tree(projects, &block)
+    ancestors = []
+    projects.sort_by(&:lft).each do |project|
+      while (ancestors.any? && !project.is_descendant_of?(ancestors.last)) 
+        ancestors.pop
+      end
+      yield project, ancestors.size
+      ancestors << project
     end
   end
   

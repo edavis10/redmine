@@ -283,8 +283,8 @@ module Redmine
       end
 
       def line_for_project(project, options)
-        # Skip versions that don't have a start_date
-        if project.is_a?(Project) && project.start_date
+        # Skip versions that don't have a start_date or due date
+        if project.is_a?(Project) && project.start_date && project.due_date
           options[:zoom] ||= 1
           options[:g_width] ||= (self.date_to - self.date_from + 1) * options[:zoom]
 
@@ -419,7 +419,7 @@ module Redmine
 
       def line_for_version(version, options)
         # Skip versions that don't have a start_date
-        if version.is_a?(Version) && version.start_date
+        if version.is_a?(Version) && version.start_date && version.due_date
           options[:zoom] ||= 1
           options[:g_width] ||= (self.date_to - self.date_from + 1) * options[:zoom]
 
@@ -536,8 +536,6 @@ module Redmine
             end
             output << "<span class='#{css_classes.join(' ')}'>"
             output << view.link_to_issue(issue)
-            output << ":"
-            output << h(issue.subject)
             output << '</span>'
           else
             ActiveRecord::Base.logger.debug "Gantt#subject_for_issue was not given an issue"

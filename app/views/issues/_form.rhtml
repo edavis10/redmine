@@ -8,8 +8,8 @@
 
 <p><%= f.text_field :subject, :size => 80, :required => true %></p>
                                      
-<% unless (@issue.new_record? && @issue.parent_issue_id.nil?) || !User.current.allowed_to?(:manage_subtasks, @project) %>
-<p><%= f.text_field :parent_issue_id, :size => 10 %></p>
+<% if User.current.allowed_to?(:manage_subtasks, @project) %>
+<p id="parent_issue"><%= f.text_field :parent_issue_id, :size => 10 %></p>
 <div id="parent_issue_candidates" class="autocomplete"></div>
 <%= javascript_tag "observeParentIssueField('#{auto_complete_issues_path(:id => @issue, :project_id => @project) }')" %>
 <% end %>
@@ -26,11 +26,11 @@
 </div>
 
 <% if @issue.new_record? %>
-<p><%= label_tag('attachments[1][file]', l(:label_attachment_plural))%><%= render :partial => 'attachments/form' %></p>
+<p id="attachments_form"><%= label_tag('attachments[1][file]', l(:label_attachment_plural))%><%= render :partial => 'attachments/form' %></p>
 <% end %>
 
 <% if @issue.new_record? && User.current.allowed_to?(:add_issue_watchers, @project) -%>
-<p><label><%= l(:label_issue_watchers) %></label>
+<p id="watchers_form"><label><%= l(:label_issue_watchers) %></label>
 <% @issue.project.users.sort.each do |user| -%>
 <label class="floating"><%= check_box_tag 'issue[watcher_user_ids][]', user.id, @issue.watched_by?(user) %> <%=h user %></label>
 <% end -%>

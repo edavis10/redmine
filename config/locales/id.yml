@@ -181,10 +181,10 @@ id:
   mail_body_account_activation_request: "Pengguna baru ({{value}}) sudan didaftarkan. Akun tersebut menunggu persetujuan anda:"
   mail_subject_reminder: "{{count}} masalah harus selesai pada hari berikutnya ({{days}})"
   mail_body_reminder: "{{count}} masalah yang ditugaskan pada anda harus selesai dalam {{days}} hari kedepan:"
-  mail_subject_wiki_content_added: "'{{page}}' halaman wiki sudah ditambahkan"
-  mail_body_wiki_content_added: "The '{{page}}' halaman wiki sudah ditambahkan oleh {{author}}."
-  mail_subject_wiki_content_updated: "'{{page}}' halaman wiki sudah diperbarui"
-  mail_body_wiki_content_updated: "The '{{page}}' halaman wiki sudah diperbarui oleh {{author}}."
+  mail_subject_wiki_content_added: "'{{id}}' halaman wiki sudah ditambahkan"
+  mail_body_wiki_content_added: "The '{{id}}' halaman wiki sudah ditambahkan oleh {{author}}."
+  mail_subject_wiki_content_updated: "'{{id}}' halaman wiki sudah diperbarui"
+  mail_body_wiki_content_updated: "The '{{id}}' halaman wiki sudah diperbarui oleh {{author}}."
   
   gui_validation_error: 1 kesalahan
   gui_validation_error_plural: "{{count}} kesalahan"
@@ -251,7 +251,6 @@ id:
   field_attr_lastname: Atribut nama belakang
   field_attr_mail: Atribut email
   field_onthefly: Pembuatan pengguna seketika
-  field_start_date: Mulai
   field_done_ratio: % Selesai
   field_auth_source: Mode otentikasi
   field_hide_mail: Sembunyikan email saya
@@ -688,7 +687,6 @@ id:
   label_search_titles_only: Cari judul saja
   label_user_mail_option_all: "Untuk semua kejadian pada semua proyek saya"
   label_user_mail_option_selected: "Hanya untuk semua kejadian pada proyek yang saya pilih ..."
-  label_user_mail_option_none: "Hanya pada hal-hal yang saya pantau atau saya terlibat di dalamnya"
   label_user_mail_no_self_notified: "Saya tak ingin diberitahu untuk perubahan yang saya buat sendiri"
   label_user_mail_assigned_only_mail_notification: "Kirim email hanya bila saya ditugaskan untuk masalah terkait"
   label_user_mail_block_mail_notification: "Saya tidak ingin menerima email. Terima kasih."  
@@ -796,9 +794,9 @@ id:
   text_journal_set_to: "{{label}} di set ke {{value}}"
   text_journal_deleted: "{{label}} dihapus ({{old}})"
   text_journal_added: "{{label}} {{value}} ditambahkan"
-  text_tip_task_begin_day: tugas dimulai hari itu
-  text_tip_task_end_day: tugas berakhir hari itu
-  text_tip_task_begin_end_day: tugas dimulai dan berakhir hari itu
+  text_tip_issue_begin_day: tugas dimulai hari itu
+  text_tip_issue_end_day: tugas berakhir hari itu
+  text_tip_issue_begin_end_day: tugas dimulai dan berakhir hari itu
   text_project_identifier_info: 'Yang diijinkan hanya huruf kecil (a-z), angka dan tanda minus.<br />Sekali disimpan, pengenal tidak bisa diubah.'
   text_caracters_maximum: "maximum {{count}} karakter."
   text_caracters_minimum: "Setidaknya harus sepanjang {{count}} karakter."
@@ -921,8 +919,6 @@ id:
   field_time_entries: Log time
   project_module_gantt: Gantt
   project_module_calendar: Calendar
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
   button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
   text_are_you_sure_with_children: Delete issue and all child issues?
   field_text: Text field
@@ -930,3 +926,12 @@ id:
   setting_default_notification_option: Default notification option
   label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
   label_user_mail_option_only_assigned: Only for things I am assigned to
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.
+  field_start_date: Start date
+  label_principal_search: "Search for user or group:"
+  label_user_search: "Search for user:"
+  field_visible: Visible
+  setting_emails_header: Emails header

@@ -35,7 +35,7 @@ module Redmine
         def branches
           return @branches if @branches
           @branches = []
-          cmd = "#{GIT_BIN} --git-dir #{target('')} branch"
+          cmd = "#{GIT_BIN} --git-dir #{target('')} branch --no-color"
           shellout(cmd) do |io|
             io.each_line do |line|
               @branches << line.match('\s*\*?\s*(.*)$')[1]
@@ -86,7 +86,7 @@ module Redmine
 
         def lastrev(path,rev)
           return nil if path.nil?
-          cmd = "#{GIT_BIN} --git-dir #{target('')} log --date=iso --pretty=fuller --no-merges -n 1 "
+          cmd = "#{GIT_BIN} --git-dir #{target('')} log --no-color --date=iso --pretty=fuller --no-merges -n 1 "
           cmd << " #{shell_quote rev} " if rev 
           cmd <<  "-- #{shell_quote path} " unless path.empty?
           shellout(cmd) do |io|
@@ -114,7 +114,7 @@ module Redmine
         def revisions(path, identifier_from, identifier_to, options={})
           revisions = Revisions.new
 
-          cmd = "#{GIT_BIN} --git-dir #{target('')} log --raw --date=iso --pretty=fuller "
+          cmd = "#{GIT_BIN} --git-dir #{target('')} log --no-color --raw --date=iso --pretty=fuller "
           cmd << " --reverse " if options[:reverse]
           cmd << " --all " if options[:all]
           cmd << " -n #{options[:limit]} " if options[:limit]
@@ -209,9 +209,9 @@ module Redmine
           path ||= ''
 
           if identifier_to
-            cmd = "#{GIT_BIN} --git-dir #{target('')} diff #{shell_quote identifier_to} #{shell_quote identifier_from}" 
+            cmd = "#{GIT_BIN} --git-dir #{target('')} diff --no-color #{shell_quote identifier_to} #{shell_quote identifier_from}" 
           else
-            cmd = "#{GIT_BIN} --git-dir #{target('')} show #{shell_quote identifier_from}"
+            cmd = "#{GIT_BIN} --git-dir #{target('')} show --no-color #{shell_quote identifier_from}"
           end
 
           cmd << " -- #{shell_quote path}" unless path.empty?
@@ -255,7 +255,7 @@ module Redmine
           if identifier.nil?
             identifier = 'HEAD'
           end
-          cmd = "#{GIT_BIN} --git-dir #{target('')} show #{shell_quote(identifier + ':' + path)}"
+          cmd = "#{GIT_BIN} --git-dir #{target('')} show --no-color #{shell_quote(identifier + ':' + path)}"
           cat = nil
           shellout(cmd) do |io|
             io.binmode

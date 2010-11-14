@@ -13,55 +13,20 @@ ActionController::Routing::Routes.draw do |map|
   
   map.connect 'roles/workflow/:id/:role_id/:tracker_id', :controller => 'roles', :action => 'workflow'
   map.connect 'help/:ctrl/:page', :controller => 'help'
-  
-  map.connect 'time_entries/:id/edit', :action => 'edit', :controller => 'timelog'
-  map.connect 'projects/:project_id/time_entries/new', :action => 'edit', :controller => 'timelog'
-  map.connect 'projects/:project_id/issues/:issue_id/time_entries/new', :action => 'edit', :controller => 'timelog'
-  
-  map.with_options :controller => 'timelog' do |timelog|
-    timelog.connect 'projects/:project_id/time_entries', :action => 'details'
-    
-    timelog.with_options :action => 'details', :conditions => {:method => :get}  do |time_details|
-      time_details.connect 'time_entries'
-      time_details.connect 'time_entries.:format'
-      time_details.connect 'issues/:issue_id/time_entries'
-      time_details.connect 'issues/:issue_id/time_entries.:format'
-      time_details.connect 'projects/:project_id/time_entries.:format'
-      time_details.connect 'projects/:project_id/issues/:issue_id/time_entries'
-      time_details.connect 'projects/:project_id/issues/:issue_id/time_entries.:format'
-    end
-    timelog.connect 'projects/:project_id/time_entries/report', :action => 'report'
-    timelog.with_options :action => 'report',:conditions => {:method => :get} do |time_report|
-      time_report.connect 'time_entries/report'
-      time_report.connect 'time_entries/report.:format'
-      time_report.connect 'projects/:project_id/time_entries/report.:format'
-    end
 
-    timelog.with_options :action => 'edit', :conditions => {:method => :get} do |time_edit|
-      time_edit.connect 'issues/:issue_id/time_entries/new'
-    end
-      
-    timelog.connect 'time_entries/:id/destroy', :action => 'destroy', :conditions => {:method => :post}
+  map.connect 'projects/:project_id/time_entries/report', :controller => 'time_entry_reports', :action => 'report'
+  map.with_options :controller => 'time_entry_reports', :action => 'report',:conditions => {:method => :get} do |time_report|
+    time_report.connect 'time_entries/report'
+    time_report.connect 'time_entries/report.:format'
+    time_report.connect 'projects/:project_id/time_entries/report.:format'
   end
+
+  # TODO: wasteful since this is also nested under issues, projects, and projects/issues
+  map.resources :time_entries, :controller => 'timelog'
   
   map.connect 'projects/:id/wiki', :controller => 'wikis', :action => 'edit', :conditions => {:method => :post}
   map.connect 'projects/:id/wiki/destroy', :controller => 'wikis', :action => 'destroy', :conditions => {:method => :get}
   map.connect 'projects/:id/wiki/destroy', :controller => 'wikis', :action => 'destroy', :conditions => {:method => :post}
-  map.with_options :controller => 'wiki' do |wiki_routes|
-    wiki_routes.with_options :conditions => {:method => :get} do |wiki_views|
-      wiki_views.connect 'projects/:id/wiki/:page', :action => 'special', :page => /page_index|date_index|export/i
-      wiki_views.connect 'projects/:id/wiki/:page', :action => 'index', :page => nil
-      wiki_views.connect 'projects/:id/wiki/:page/edit', :action => 'edit'
-      wiki_views.connect 'projects/:id/wiki/:page/rename', :action => 'rename'
-      wiki_views.connect 'projects/:id/wiki/:page/history', :action => 'history'
-      wiki_views.connect 'projects/:id/wiki/:page/diff/:version/vs/:version_from', :action => 'diff'
-      wiki_views.connect 'projects/:id/wiki/:page/annotate/:version', :action => 'annotate'
-    end
-    
-    wiki_routes.connect 'projects/:id/wiki/:page/:action', 
-      :action => /edit|rename|destroy|preview|protect/,
-      :conditions => {:method => :post}
-  end
   
   map.with_options :controller => 'messages' do |messages_routes|
     messages_routes.with_options :conditions => {:method => :get} do |messages_views|
@@ -129,8 +94,13 @@ ActionController::Routing::Routes.draw do |map|
   map.connect '/issues', :controller => 'issues', :action => 'index', :conditions => { :method => :post }
   map.connect '/issues/create', :controller => 'issues', :action => 'index', :conditions => { :method => :post }
   
-  map.resources :issues, :member => { :edit => :post }, :collection => {}
-  map.resources :issues, :path_prefix => '/projects/:project_id', :collection => { :create => :post }
+  map.resources :issues, :member => { :edit => :post }, :collection => {} do |issues|
+    issues.resources :time_entries, :controller => 'timelog'
+  end
+  
+  map.resources :issues, :path_prefix => '/projects/:project_id', :collection => { :create => :post } do |issues|
+    issues.resources :time_entries, :controller => 'timelog'
+  end
 
   map.with_options  :controller => 'issue_relations', :conditions => {:method => :post} do |relations|
     relations.connect 'issues/:issue_id/relations/:id', :action => 'new'
@@ -138,22 +108,22 @@ ActionController::Routing::Routes.draw do |map|
   end
 
   map.connect 'projects/:id/members/new', :controller => 'members', :action => 'new'
-  
+
   map.with_options :controller => 'users' do |users|
-    users.with_options :conditions => {:method => :get} do |user_views|
-      user_views.connect 'users', :action => 'index'
-      user_views.connect 'users/:id', :action => 'show', :id => /\d+/
-      user_views.connect 'users/new', :action => 'new'
-      user_views.connect 'users/:id/edit/:tab', :action => 'edit', :tab => nil
-    end
+    users.connect 'users/:id/edit/:tab', :action => 'edit', :tab => nil, :conditions => {:method => :get}
+    
     users.with_options :conditions => {:method => :post} do |user_actions|
-      user_actions.connect 'users/new', :action => 'create'
-      user_actions.connect 'users/:id/edit', :action => 'edit'
       user_actions.connect 'users/:id/memberships', :action => 'edit_membership'
       user_actions.connect 'users/:id/memberships/:membership_id', :action => 'edit_membership'
       user_actions.connect 'users/:id/memberships/:membership_id/destroy', :action => 'destroy_membership'
     end
   end
+
+  map.resources :users, :member => {
+    :edit_membership => :post,
+    :destroy_membership => :post
+  },
+  :except => [:destroy]
 
   # For nice "roadmap" in the url for the index action
   map.connect 'projects/:project_id/roadmap', :controller => 'versions', :action => 'index'
@@ -175,6 +145,24 @@ ActionController::Routing::Routes.draw do |map|
     project.resources :files, :only => [:index, :new, :create]
     project.resources :versions, :collection => {:close_completed => :put}, :member => {:status_by => :post}
     project.resources :news, :shallow => true
+    project.resources :time_entries, :controller => 'timelog', :path_prefix => 'projects/:project_id'
+
+    project.wiki_start_page 'wiki', :controller => 'wiki', :action => 'show', :conditions => {:method => :get}
+    project.wiki_index 'wiki/index', :controller => 'wiki', :action => 'index', :conditions => {:method => :get}
+    project.wiki_diff 'wiki/:id/diff/:version', :controller => 'wiki', :action => 'diff', :version => nil
+    project.wiki_diff 'wiki/:id/diff/:version/vs/:version_from', :controller => 'wiki', :action => 'diff'
+    project.wiki_annotate 'wiki/:id/annotate/:version', :controller => 'wiki', :action => 'annotate'
+    project.resources :wiki, :except => [:new, :create], :member => {
+      :rename => [:get, :post],
+      :history => :get,
+      :preview => :any,
+      :protect => :post,
+      :add_attachment => :post
+    }, :collection => {
+      :export => :get,
+      :date_index => :get
+    }
+
   end
 
   # Destroy uses a get request to prompt the user before the actual DELETE request

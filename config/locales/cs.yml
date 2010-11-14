@@ -237,7 +237,6 @@ cs:
   field_attr_lastname: Příjemní (atribut)
   field_attr_mail: Email (atribut)
   field_onthefly: Automatické vytváření uživatelů
-  field_start_date: Začátek
   field_done_ratio: % Hotovo
   field_auth_source: Autentifikační mód
   field_hide_mail: Nezobrazovat můj email
@@ -587,7 +586,6 @@ cs:
   label_search_titles_only: Vyhledávat pouze v názvech
   label_user_mail_option_all: "Pro všechny události všech mých projektů"
   label_user_mail_option_selected: "Pro všechny události vybraných projektů..."
-  label_user_mail_option_none: "Pouze pro události které sleduji nebo které se mne týkají"
   label_user_mail_no_self_notified: "Nezasílat informace o mnou vytvořených změnách"
   label_registration_activation_by_email: aktivace účtu emailem
   label_registration_manual_activation: manuální aktivace účtu
@@ -655,9 +653,9 @@ cs:
   text_project_destroy_confirmation: Jste si jisti, že chcete odstranit tento projekt a všechna související data ?
   text_workflow_edit: Vyberte roli a frontu k editaci průběhu práce
   text_are_you_sure: Jste si jisti?
-  text_tip_task_begin_day: úkol začíná v tento den
-  text_tip_task_end_day: úkol končí v tento den
-  text_tip_task_begin_end_day: úkol začíná a končí v tento den
+  text_tip_issue_begin_day: úkol začíná v tento den
+  text_tip_issue_end_day: úkol končí v tento den
+  text_tip_issue_begin_end_day: úkol začíná a končí v tento den
   text_project_identifier_info: 'Jsou povolena malá písmena (a-z), čísla a pomlčky.<br />Po uložení již není možné identifikátor změnit.'
   text_caracters_maximum: "{{count}} znaků maximálně."
   text_caracters_minimum: "Musí být alespoň {{count}} znaků dlouhé."
@@ -816,12 +814,12 @@ cs:
   text_wiki_page_destroy_children: Smazat podstránky a všechny jejich potomky
   setting_password_min_length: Minimální délka hesla
   field_group_by: Seskupovat výsledky podle
-  mail_subject_wiki_content_updated: "'{{page}}' Wiki stránka byla aktualizována"
+  mail_subject_wiki_content_updated: "'{{id}}' Wiki stránka byla aktualizována"
   label_wiki_content_added: Wiki stránka přidána
-  mail_subject_wiki_content_added: "'{{page}}' Wiki stránka byla přidána"
-  mail_body_wiki_content_added: "'{{page}}' Wiki stránka byla přidána od {{author}}."
+  mail_subject_wiki_content_added: "'{{id}}' Wiki stránka byla přidána"
+  mail_body_wiki_content_added: "'{{id}}' Wiki stránka byla přidána od {{author}}."
   label_wiki_content_updated: Wiki stránka aktualizována
-  mail_body_wiki_content_updated: "'{{page}}' Wiki stránka byla aktualizována od {{author}}."
+  mail_body_wiki_content_updated: "'{{id}}' Wiki stránka byla aktualizována od {{author}}."
   permission_add_project: Vytvořit projekt
   setting_new_project_user_role_id: Role přiřazená uživateli bez práv administrátora, který projekt vytvořil
   label_view_all_revisions: Zobrazit všechny revize
@@ -913,8 +911,6 @@ cs:
   field_time_entries: Zaznamenaný čas
   project_module_gantt: Gantt
   project_module_calendar: Kalendář
-  field_member_of_group: Člen skupiny
-  field_assigned_to_role: Člen role
   button_edit_associated_wikipage: "Upravit přiřazenou Wiki stránku: {{page_title}}"
   text_are_you_sure_with_children: Smazat úkol včetně všech podúkolů?
   field_text: Textové pole
@@ -922,3 +918,12 @@ cs:
   setting_default_notification_option: Default notification option
   label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
   label_user_mail_option_only_assigned: Only for things I am assigned to
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.
+  field_start_date: Start date
+  label_principal_search: "Search for user or group:"
+  label_user_search: "Search for user:"
+  field_visible: Visible
+  setting_emails_header: Emails header

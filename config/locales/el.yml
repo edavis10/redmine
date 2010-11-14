@@ -179,10 +179,10 @@ el:
   mail_body_account_activation_request: "'Ένας νέος χρήστης ({{value}}) έχει εγγραφεί. Ο λογαριασμός είναι σε στάδιο αναμονής της έγκρισης σας:"
   mail_subject_reminder: "{{count}} θέμα(τα) με προθεσμία στις επόμενες {{days}} ημέρες"
   mail_body_reminder: "{{count}}θέμα(τα)  που έχουν ανατεθεί σε σας, με προθεσμία στις επόμενες {{days}} ημέρες:"
-  mail_subject_wiki_content_added: "'προστέθηκε η σελίδα wiki {{page}}' "
-  mail_body_wiki_content_added: "Η σελίδα wiki '{{page}}' προστέθηκε από τον {{author}}."
-  mail_subject_wiki_content_updated: "'ενημερώθηκε η σελίδα wiki {{page}}' "
-  mail_body_wiki_content_updated: "Η σελίδα wiki  '{{page}}' ενημερώθηκε από τον {{author}}."
+  mail_subject_wiki_content_added: "'προστέθηκε η σελίδα wiki {{id}}' "
+  mail_body_wiki_content_added: "Η σελίδα wiki '{{id}}' προστέθηκε από τον {{author}}."
+  mail_subject_wiki_content_updated: "'ενημερώθηκε η σελίδα wiki {{id}}' "
+  mail_body_wiki_content_updated: "Η σελίδα wiki  '{{id}}' ενημερώθηκε από τον {{author}}."
   
   gui_validation_error: 1 σφάλμα
   gui_validation_error_plural: "{{count}} σφάλματα"
@@ -247,7 +247,6 @@ el:
   field_attr_lastname:  Ιδιότητα επωνύμου
   field_attr_mail: Ιδιότητα email
   field_onthefly: Άμεση δημιουργία χρήστη
-  field_start_date: Εκκίνηση
   field_done_ratio: % επιτεύχθη
   field_auth_source: Τρόπος πιστοποίησης
   field_hide_mail: Απόκρυψη διεύθυνσης email
@@ -678,7 +677,6 @@ el:
   label_search_titles_only: Αναζήτηση τίτλων μόνο
   label_user_mail_option_all: "Για όλες τις εξελίξεις σε όλα τα έργα μου"
   label_user_mail_option_selected: "Για όλες τις εξελίξεις μόνο στα επιλεγμένα έργα..."
-  label_user_mail_option_none: "Μόνο για πράγματα που παρακολουθώ ή συμμετέχω ενεργά"
   label_user_mail_no_self_notified: "Δεν θέλω να ειδοποιούμαι για τις δικές μου αλλαγές"
   label_registration_activation_by_email: ενεργοποίηση λογαριασμού με email
   label_registration_manual_activation: χειροκίνητη ενεργοποίηση λογαριασμού
@@ -761,9 +759,9 @@ el:
   text_subprojects_destroy_warning: "Επίσης το(α) επιμέρους έργο(α): {{value}}  θα διαγραφούν."
   text_workflow_edit: Επιλέξτε ένα ρόλο και έναν ανιχνευτή για να επεξεργαστείτε  τη ροή εργασίας
   text_are_you_sure: Είστε σίγουρος ;
-  text_tip_task_begin_day: καθήκοντα που ξεκινάνε σήμερα
-  text_tip_task_end_day: καθήκοντα που τελειώνουν σήμερα
-  text_tip_task_begin_end_day: καθήκοντα που ξεκινάνε και τελειώνουν σήμερα
+  text_tip_issue_begin_day: καθήκοντα που ξεκινάνε σήμερα
+  text_tip_issue_end_day: καθήκοντα που τελειώνουν σήμερα
+  text_tip_issue_begin_end_day: καθήκοντα που ξεκινάνε και τελειώνουν σήμερα
   text_project_identifier_info: 'Επιτρέπονται μόνο μικρά πεζά γράμματα (a-z), αριθμοί και παύλες. <br /> Μετά την αποθήκευση, το αναγνωριστικό δεν μπορεί να αλλάξει.'
   text_caracters_maximum: "μέγιστος αριθμός {{count}} χαρακτήρες."
   text_caracters_minimum: "Πρέπει να περιέχει τουλάχιστον {{count}} χαρακτήρες."
@@ -913,8 +911,6 @@ el:
   field_time_entries: Log time
   project_module_gantt: Gantt
   project_module_calendar: Calendar
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
   button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
   text_are_you_sure_with_children: Delete issue and all child issues?
   field_text: Text field
@@ -922,3 +918,12 @@ el:
   setting_default_notification_option: Default notification option
   label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
   label_user_mail_option_only_assigned: Only for things I am assigned to
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.
+  field_start_date: Start date
+  label_principal_search: "Search for user or group:"
+  label_user_search: "Search for user:"
+  field_visible: Visible
+  setting_emails_header: Emails header

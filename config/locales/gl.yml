@@ -290,7 +290,6 @@ gl:
   field_role: Perfil
   field_searchable: Incluír nas búsquedas
   field_spent_on: Data
-  field_start_date: Data de inicio
   field_start_page: Páxina principal
   field_status: Estado
   field_subject: Tema
@@ -613,7 +612,6 @@ gl:
   label_user_activity: "Actividade de {{value}}"
   label_user_mail_no_self_notified: "Non quero ser avisado de cambios feitos por min"
   label_user_mail_option_all: "Para calquera evento en tódolos proxectos"
-  label_user_mail_option_none: "Só para elementos monitorizados ou relacionados comigo"
   label_user_mail_option_selected: "Para calquera evento dos proxectos seleccionados..."
   label_user_new: Novo usuario
   label_user_plural: Usuarios
@@ -798,9 +796,9 @@ gl:
   text_select_project_modules: 'Seleccione os módulos a activar para este proxecto:'
   text_status_changed_by_changeset: "Aplicado nos cambios {{value}}"
   text_subprojects_destroy_warning: "Os proxectos secundarios: {{value}} tamén se eliminarán"
-  text_tip_task_begin_day: tarefa que comeza este día
-  text_tip_task_begin_end_day: tarefa que comeza e remata este día
-  text_tip_task_end_day: tarefa que remata este día
+  text_tip_issue_begin_day: tarefa que comeza este día
+  text_tip_issue_begin_end_day: tarefa que comeza e remata este día
+  text_tip_issue_end_day: tarefa que remata este día
   text_tracker_no_workflow: Non hai ningún fluxo de traballo definido para este tipo de petición
   text_unallowed_characters: Caracteres non permitidos
   text_user_mail_option: "Dos proxectos non seleccionados, só recibirá notificacións sobre elementos monitorizados ou elementos nos que estea involucrado (por exemplo, peticións das que vostede sexa autor ou asignadas a vostede)."
@@ -832,12 +830,12 @@ gl:
   text_wiki_page_destroy_children: Delete child pages and all their descendants
   setting_password_min_length: Minimum password length
   field_group_by: Group results by
-  mail_subject_wiki_content_updated: "'{{page}}' wiki page has been updated"
+  mail_subject_wiki_content_updated: "'{{id}}' wiki page has been updated"
   label_wiki_content_added: Wiki page added
-  mail_subject_wiki_content_added: "'{{page}}' wiki page has been added"
-  mail_body_wiki_content_added: The '{{page}}' wiki page has been added by {{author}}.
+  mail_subject_wiki_content_added: "'{{id}}' wiki page has been added"
+  mail_body_wiki_content_added: The '{{id}}' wiki page has been added by {{author}}.
   label_wiki_content_updated: Wiki page updated
-  mail_body_wiki_content_updated: The '{{page}}' wiki page has been updated by {{author}}.
+  mail_body_wiki_content_updated: The '{{id}}' wiki page has been updated by {{author}}.
   permission_add_project: Create project
   setting_new_project_user_role_id: Role given to a non-admin user who creates a project
   label_view_all_revisions: View all revisions
@@ -929,8 +927,6 @@ gl:
   field_time_entries: Log time
   project_module_gantt: Gantt
   project_module_calendar: Calendar
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
   button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
   text_are_you_sure_with_children: Delete issue and all child issues?
   field_text: Text field
@@ -938,3 +934,12 @@ gl:
   setting_default_notification_option: Default notification option
   label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
   label_user_mail_option_only_assigned: Only for things I am assigned to
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.
+  field_start_date: Start date
+  label_principal_search: "Search for user or group:"
+  label_user_search: "Search for user:"
+  field_visible: Visible
+  setting_emails_header: Emails header

@@ -236,7 +236,6 @@ sl:
   field_attr_lastname: Oznaka za priimek
   field_attr_mail: Oznaka za e-naslov
   field_onthefly: Sprotna izdelava uporabnikov
-  field_start_date: Začetek
   field_done_ratio: % Narejeno
   field_auth_source: Način overovljanja
   field_hide_mail: Skrij moj e-naslov
@@ -650,7 +649,6 @@ sl:
   label_search_titles_only: Preišči samo naslove
   label_user_mail_option_all: "Za vsak dogodek v vseh mojih projektih"
   label_user_mail_option_selected: "Za vsak dogodek samo na izbranih projektih..."
-  label_user_mail_option_none: "Samo za zadeve ki jih spremljam ali sem v njih udeležen(a)"
   label_user_mail_no_self_notified: "Ne želim biti opozorjen(a) na spremembe, ki jih naredim sam(a)"
   label_registration_activation_by_email: aktivacija računa po e-pošti
   label_registration_manual_activation: ročna aktivacija računa
@@ -725,9 +723,9 @@ sl:
   text_subprojects_destroy_warning: "Njegov(i) podprojekt(i): {{value}} bodo prav tako izbrisani."
   text_workflow_edit: Izberite vlogo in zahtevek za urejanje poteka dela
   text_are_you_sure: Ali ste prepričani?
-  text_tip_task_begin_day: naloga z začetkom na ta dan
-  text_tip_task_end_day: naloga z zaključkom na ta dan
-  text_tip_task_begin_end_day: naloga ki se začne in konča ta dan
+  text_tip_issue_begin_day: naloga z začetkom na ta dan
+  text_tip_issue_end_day: naloga z zaključkom na ta dan
+  text_tip_issue_begin_end_day: naloga ki se začne in konča ta dan
   text_project_identifier_info: 'Dovoljene so samo male črke (a-z), številke in vezaji.<br />Enkrat shranjen identifikator ne more biti spremenjen.'
   text_caracters_maximum: "največ {{count}} znakov."
   text_caracters_minimum: "Mora biti vsaj dolg vsaj {{count}} znakov."
@@ -812,12 +810,12 @@ sl:
   text_wiki_page_destroy_children: Delete child pages and all their descendants
   setting_password_min_length: Minimum password length
   field_group_by: Group results by
-  mail_subject_wiki_content_updated: "'{{page}}' wiki page has been updated"
+  mail_subject_wiki_content_updated: "'{{id}}' wiki page has been updated"
   label_wiki_content_added: Wiki page added
-  mail_subject_wiki_content_added: "'{{page}}' wiki page has been added"
-  mail_body_wiki_content_added: The '{{page}}' wiki page has been added by {{author}}.
+  mail_subject_wiki_content_added: "'{{id}}' wiki page has been added"
+  mail_body_wiki_content_added: The '{{id}}' wiki page has been added by {{author}}.
   label_wiki_content_updated: Wiki page updated
-  mail_body_wiki_content_updated: The '{{page}}' wiki page has been updated by {{author}}.
+  mail_body_wiki_content_updated: The '{{id}}' wiki page has been updated by {{author}}.
   permission_add_project: Create project
   setting_new_project_user_role_id: Role given to a non-admin user who creates a project
   label_view_all_revisions: View all revisions
@@ -909,8 +907,6 @@ sl:
   field_time_entries: Log time
   project_module_gantt: Gantt
   project_module_calendar: Calendar
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
   button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
   text_are_you_sure_with_children: Delete issue and all child issues?
   field_text: Text field
@@ -918,3 +914,12 @@ sl:
   setting_default_notification_option: Default notification option
   label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
   label_user_mail_option_only_assigned: Only for things I am assigned to
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.
+  field_start_date: Start date
+  label_principal_search: "Search for user or group:"
+  label_user_search: "Search for user:"
+  field_visible: Visible
+  setting_emails_header: Emails header

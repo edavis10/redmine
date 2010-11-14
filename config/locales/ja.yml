@@ -175,6 +175,7 @@ ja:
   notice_file_not_found: アクセスしようとしたページは存在しないか削除されています。
   notice_locking_conflict: 別のユーザがデータを更新しています。
   notice_not_authorized: このページにアクセスするには認証が必要です。
+  notice_not_authorized_archived_project: プロジェクトは書庫に保存されています。
   notice_email_sent: "{{value}} 宛にメールを送信しました。"
   notice_email_error: "メール送信中にエラーが発生しました ({{value}})"
   notice_feeds_access_key_reseted: RSSアクセスキーを初期化しました。
@@ -218,10 +219,10 @@ ja:
   mail_body_account_activation_request: "新しいユーザ {{value}} が登録されました。このアカウントはあなたの承認待ちです："
   mail_subject_reminder: "{{count}}件のチケットの期日が{{days}}日以内に到来します"
   mail_body_reminder: "{{count}}件の担当チケットの期日が{{days}}日以内に到来します:"
-  mail_subject_wiki_content_added: "Wikiページ {{page}} が追加されました"
-  mail_body_wiki_content_added: "{{author}} によってWikiページ {{page}} が追加されました。"
-  mail_subject_wiki_content_updated: "Wikiページ {{page}} が更新されました"
-  mail_body_wiki_content_updated: "{{author}} によってWikiページ {{page}} が更新されました。"
+  mail_subject_wiki_content_added: "Wikiページ {{id}} が追加されました"
+  mail_body_wiki_content_added: "{{author}} によってWikiページ {{id}} が追加されました。"
+  mail_subject_wiki_content_updated: "Wikiページ {{id}} が更新されました"
+  mail_body_wiki_content_updated: "{{author}} によってWikiページ {{id}} が更新されました。"
   
   gui_validation_error: 1件のエラー
   gui_validation_error_plural: "{{count}}件のエラー"
@@ -287,7 +288,6 @@ ja:
   field_attr_lastname: 苗字属性
   field_attr_mail: メール属性
   field_onthefly: あわせてユーザを作成
-  field_start_date: 開始日
   field_done_ratio: 進捗 %
   field_auth_source: 認証方式
   field_hide_mail: メールアドレスを隠す
@@ -376,6 +376,7 @@ ja:
   setting_issue_done_ratio_issue_status: チケットのステータスを使用する
   setting_start_of_week: 週の開始曜日
   setting_rest_api_enabled: RESTによるWebサービスを有効にする
+  setting_default_notification_option: デフォルトのメール通知オプション
   
   permission_add_project: プロジェクトの追加
   permission_add_subprojects: サブプロジェクトの追加
@@ -701,7 +702,7 @@ ja:
   label_relation_delete: 関連の削除
   label_relates_to: 関係している
   label_duplicates: 重複している
-  label_duplicated_by: 重複している
+  label_duplicated_by: 重複されている
   label_blocks: ブロックしている
   label_blocked_by: ブロックされている
   label_precedes: 先行する
@@ -752,7 +753,10 @@ ja:
   label_search_titles_only: タイトルのみ
   label_user_mail_option_all: "参加しているプロジェクトの全ての通知"
   label_user_mail_option_selected: "選択したプロジェクトの全ての通知..."
-  label_user_mail_option_none: "ウォッチまたは関係している事柄のみ"
+  label_user_mail_option_none: "通知しない"
+  label_user_mail_option_only_my_events: "ウォッチまたは関係している事柄のみ"
+  label_user_mail_option_only_assigned: "自分が担当している事柄のみ"
+  label_user_mail_option_only_owner: "自分が作成した事柄のみ"
   label_user_mail_no_self_notified: 自分自身による変更の通知は不要
   label_registration_activation_by_email: メールでアカウントを有効化
   label_registration_manual_activation: 手動でアカウントを有効化
@@ -870,9 +874,9 @@ ja:
   text_journal_set_to: "{{label}} を {{value}} にセット"
   text_journal_deleted: "{{label}} を削除 ({{old}})"
   text_journal_added: "{{label}} {{value}} を追加"
-  text_tip_task_begin_day: この日に開始するタスク
-  text_tip_task_end_day: この日に終了するタスク
-  text_tip_task_begin_end_day: この日のうちに開始して終了するタスク
+  text_tip_issue_begin_day: この日に開始するタスク
+  text_tip_issue_end_day: この日に終了するタスク
+  text_tip_issue_begin_end_day: この日のうちに開始して終了するタスク
   text_project_identifier_info: '英小文字(a-z)と数字とダッシュ(-)が使えます。<br />一度保存すると、識別子は変更できません。'
   text_caracters_maximum: "最大{{count}}文字です。"
   text_caracters_minimum: "最低{{count}}文字の長さが必要です"
@@ -943,7 +947,8 @@ ja:
   enumeration_doc_categories: 文書カテゴリ
   enumeration_activities: 作業分類 (時間トラッキング)
   enumeration_system_activity: システム作業分類
-  label_user_mail_option_only_owner: Only for things I am the owner of
-  setting_default_notification_option: Default notification option
-  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
-  label_user_mail_option_only_assigned: Only for things I am assigned to
+  field_start_date: Start date
+  label_principal_search: "Search for user or group:"
+  label_user_search: "Search for user:"
+  field_visible: Visible
+  setting_emails_header: Emails header

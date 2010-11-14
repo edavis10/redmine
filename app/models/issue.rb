@@ -86,8 +86,8 @@ class Issue < ActiveRecord::Base
   }
 
   before_create :default_assign
-  before_save :reschedule_following_issues, :close_duplicates, :update_done_ratio_from_issue_status
-  after_save :update_nested_set_attributes, :update_parent_attributes, :create_journal
+  before_save :close_duplicates, :update_done_ratio_from_issue_status
+  after_save :reschedule_following_issues, :update_nested_set_attributes, :update_parent_attributes, :create_journal
   after_destroy :destroy_children
   after_destroy :update_parent_attributes
   
@@ -233,14 +233,35 @@ class Issue < ActiveRecord::Base
     lock_version
   ) unless const_defined?(:SAFE_ATTRIBUTES)
   
+  SAFE_ATTRIBUTES_ON_TRANSITION = %w(
+    status_id
+    assigned_to_id
+    fixed_version_id
+    done_ratio
+  ) unless const_defined?(:SAFE_ATTRIBUTES_ON_TRANSITION)
+
   # Safely sets attributes
   # Should be called from controllers instead of #attributes=
   # attr_accessible is too rough because we still want things like
   # Issue.new(:project => foo) to work
   # TODO: move workflow/permission checks from controllers to here
   def safe_attributes=(attrs, user=User.current)
-    return if attrs.nil?
-    attrs = attrs.reject {|k,v| !SAFE_ATTRIBUTES.include?(k)}
+    return unless attrs.is_a?(Hash)
+    
+    # User can change issue attributes only if he has :edit permission or if a workflow transition is allowed
+    if new_record? || user.allowed_to?(:edit_issues, project)
+      attrs = attrs.reject {|k,v| !SAFE_ATTRIBUTES.include?(k)}
+    elsif new_statuses_allowed_to(user).any?
+      attrs = attrs.reject {|k,v| !SAFE_ATTRIBUTES_ON_TRANSITION.include?(k)}
+    else
+      return
+    end
+    
+    # Tracker must be set before since new_statuses_allowed_to depends on it.
+    if t = attrs.delete('tracker_id')
+      self.tracker_id = t
+    end
+    
     if attrs['status_id']
       unless new_statuses_allowed_to(user).collect(&:id).include?(attrs['status_id'].to_i)
         attrs.delete('status_id')
@@ -390,7 +411,9 @@ class Issue < ActiveRecord::Base
   
   # Users the issue can be assigned to
   def assignable_users
-    project.assignable_users
+    users = project.assignable_users
+    users << author if author
+    users.uniq.sort
   end
   
   # Versions that the issue can be assigned to

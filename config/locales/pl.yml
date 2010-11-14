@@ -277,7 +277,6 @@ pl:
   field_role: Rola
   field_searchable: Przeszukiwalne
   field_spent_on: Data
-  field_start_date: Start
   field_start_page: Strona startowa
   field_status: Status
   field_subject: Temat
@@ -614,7 +613,6 @@ pl:
   label_user: Użytkownik
   label_user_mail_no_self_notified: "Nie chcę powiadomień o zmianach, które sam wprowadzam."
   label_user_mail_option_all: "Dla każdego zdarzenia w każdym moim projekcie"
-  label_user_mail_option_none: "Tylko to co obserwuje lub w czym biorę udział"
   label_user_mail_option_selected: "Tylko dla każdego zdarzenia w wybranych projektach..."
   label_user_new: Nowy użytkownik
   label_user_plural: Użytkownicy
@@ -797,9 +795,9 @@ pl:
   text_select_project_modules: 'Wybierz moduły do aktywacji w tym projekcie:'
   text_status_changed_by_changeset: "Zastosowane w zmianach {{value}}."
   text_subprojects_destroy_warning: "Podprojekt(y): {{value}} zostaną także usunięte."
-  text_tip_task_begin_day: zadanie zaczynające się dzisiaj
-  text_tip_task_begin_end_day: zadanie zaczynające i kończące się dzisiaj
-  text_tip_task_end_day: zadanie kończące się dzisiaj
+  text_tip_issue_begin_day: zadanie zaczynające się dzisiaj
+  text_tip_issue_begin_end_day: zadanie zaczynające i kończące się dzisiaj
+  text_tip_issue_end_day: zadanie kończące się dzisiaj
   text_tracker_no_workflow: Brak przepływu zdefiniowanego dla tego typu zagadnienia
   text_unallowed_characters: Niedozwolone znaki
   text_user_mail_option: "W przypadku niezaznaczonych projektów, będziesz otrzymywał powiadomienia tylko na temat zagadnień, które obserwujesz, lub w których bierzesz udział (np. jesteś autorem lub adresatem)."
@@ -836,12 +834,12 @@ pl:
   text_wiki_page_destroy_children: Usuń wszystkie podstrony
   setting_password_min_length: Minimalna długość hasła
   field_group_by: Grupuj wyniki wg
-  mail_subject_wiki_content_updated: "Strona wiki '{{page}}' została uaktualniona"
+  mail_subject_wiki_content_updated: "Strona wiki '{{id}}' została uaktualniona"
   label_wiki_content_added: Dodano stronę wiki
-  mail_subject_wiki_content_added: "Strona wiki '{{page}}' została dodana"
-  mail_body_wiki_content_added: Strona wiki '{{page}}' została dodana przez {{author}}.
+  mail_subject_wiki_content_added: "Strona wiki '{{id}}' została dodana"
+  mail_body_wiki_content_added: Strona wiki '{{id}}' została dodana przez {{author}}.
   label_wiki_content_updated: Uaktualniono stronę wiki
-  mail_body_wiki_content_updated: Strona wiki '{{page}}' została uaktualniona przez {{author}}.
+  mail_body_wiki_content_updated: Strona wiki '{{id}}' została uaktualniona przez {{author}}.
   permission_add_project: Tworzenie projektu
   setting_new_project_user_role_id: Rola nadawana twórcom projektów, którzy nie posiadają uprawnień administatora
   label_view_all_revisions: Pokaż wszystkie rewizje
@@ -934,8 +932,6 @@ pl:
   field_time_entries: Dziennik
   project_module_gantt: Diagram Gantta
   project_module_calendar: Kalendarz
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
   button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
   text_are_you_sure_with_children: Delete issue and all child issues?
   field_text: Text field
@@ -943,3 +939,12 @@ pl:
   setting_default_notification_option: Default notification option
   label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
   label_user_mail_option_only_assigned: Only for things I am assigned to
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.
+  field_start_date: Start date
+  label_principal_search: "Search for user or group:"
+  label_user_search: "Search for user:"
+  field_visible: Visible
+  setting_emails_header: Emails header

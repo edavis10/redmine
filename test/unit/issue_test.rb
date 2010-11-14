@@ -503,6 +503,17 @@ class IssueTest < ActiveSupport::TestCase
     assert !closed_statuses.empty?
   end
   
+  def test_rescheduling_an_issue_should_reschedule_following_issue
+    issue1 = Issue.create!(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :subject => '-', :start_date => Date.today, :due_date => Date.today + 2)
+    issue2 = Issue.create!(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :subject => '-', :start_date => Date.today, :due_date => Date.today + 2)
+    IssueRelation.create!(:issue_from => issue1, :issue_to => issue2, :relation_type => IssueRelation::TYPE_PRECEDES)
+    assert_equal issue1.due_date + 1, issue2.reload.start_date
+    
+    issue1.due_date = Date.today + 5
+    issue1.save!
+    assert_equal issue1.due_date + 1, issue2.reload.start_date
+  end
+  
   def test_overdue
     assert Issue.new(:due_date => 1.day.ago.to_date).overdue?
     assert !Issue.new(:due_date => Date.today).overdue?
@@ -532,9 +543,28 @@ class IssueTest < ActiveSupport::TestCase
       assert Issue.new(:start_date => 100.days.ago.to_date, :due_date => Date.today, :done_ratio => 90).behind_schedule?
     end
   end
-  
-  def test_assignable_users
-    assert_kind_of User, Issue.find(1).assignable_users.first
+
+  context "#assignable_users" do
+    should "be Users" do
+      assert_kind_of User, Issue.find(1).assignable_users.first
+    end
+
+    should "include the issue author" do
+      project = Project.find(1)
+      non_project_member = User.generate!
+      issue = Issue.generate_for_project!(project, :author => non_project_member)
+
+      assert issue.assignable_users.include?(non_project_member)
+    end
+
+    should "not show the issue author twice" do
+      assignable_user_ids = Issue.find(1).assignable_users.collect(&:id)
+      assert_equal 2, assignable_user_ids.length
+      
+      assignable_user_ids.each do |user_id|
+        assert_equal 1, assignable_user_ids.count(user_id), "User #{user_id} appears more or less than once"
+      end
+    end
   end
   
   def test_create_should_send_email_notification
