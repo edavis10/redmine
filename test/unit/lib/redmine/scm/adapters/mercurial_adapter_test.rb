@@ -25,15 +25,10 @@ begin
                     "1.6"                   => [1,6],
                     "1.6.1"                 => [1,6,1],
                     "Mercurial Distributed SCM (version 1.6.3)" => [1,6,3],
-                    "Mercurial Distributed SCM (version 1.7)" => [1,7],
                     ## Italian
                     # $ make local
                     # $ LANG=it ./hg --version
                     "Mercurial SCM Distribuito (versione 1.6.3+61-1c9bb7e00f71)" => [1,6,3],
-                    # Multi lines CRLF.
-                    "Mercurial Distributed SCM (version 1.6.3)\r\n1.7\r\n(1.8.1)" => [1,6,3],
-                    # Multi lines LF.
-                    "Mercurial Distributed SCM (version 1.7)\n1.7.1\n(1.8.1)" => [1,7],
                   }
       
       to_test.each do |s, v|

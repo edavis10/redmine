@@ -525,6 +525,20 @@ class IssuesControllerTest < ActionController::TestCase
     assert_not_nil issue
     assert_equal Issue.find(2), issue.parent
   end
+
+  def test_post_create_subissue_with_non_numeric_parent_id
+    @request.session[:user_id] = 2
+    
+    assert_difference 'Issue.count' do
+      post :create, :project_id => 1, 
+                 :issue => {:tracker_id => 1,
+                            :subject => 'This is a child issue',
+                            :parent_issue_id => 'ABC'}
+    end
+    issue = Issue.find_by_subject('This is a child issue')
+    assert_not_nil issue
+    assert_nil issue.parent
+  end
   
   def test_post_create_should_send_a_notification
     ActionMailer::Base.deliveries.clear
@@ -737,7 +751,8 @@ class IssuesControllerTest < ActionController::TestCase
   
   def test_get_edit_with_params
     @request.session[:user_id] = 2
-    get :edit, :id => 1, :issue => { :status_id => 5, :priority_id => 7 }
+    get :edit, :id => 1, :issue => { :status_id => 5, :priority_id => 7 },
+        :time_entry => { :hours => '2.5', :comments => 'test_get_edit_with_params', :activity_id => TimeEntryActivity.first.id }
     assert_response :success
     assert_template 'edit'
     
@@ -755,6 +770,12 @@ class IssuesControllerTest < ActionController::TestCase
                         :child => { :tag => 'option', 
                                     :content => 'Urgent',
                                     :attributes => { :selected => 'selected' } }
+
+    assert_tag :input, :attributes => { :name => 'time_entry[hours]', :value => '2.5' }
+    assert_tag :select, :attributes => { :name => 'time_entry[activity_id]' },
+                        :child => { :tag => 'option',
+                                    :attributes => { :selected => 'selected', :value => TimeEntryActivity.first.id } }
+    assert_tag :input, :attributes => { :name => 'time_entry[comments]', :value => 'test_get_edit_with_params' }
   end
 
   def test_update_edit_form

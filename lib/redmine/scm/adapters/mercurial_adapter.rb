@@ -32,29 +32,16 @@ module Redmine
           def client_version
             @client_version ||= hgversion
           end
-
+          
           def hgversion  
             # The hg version is expressed either as a
             # release number (eg 0.9.5 or 1.0) or as a revision
             # id composed of 12 hexa characters.
-            version = []
-            buf = hgversion_from_command_line
-            if buf && m = buf.match(%r{\A(.*?)((\d+\.)+\d+)})
-              version = m[2].scan(%r{\d+}).collect(&:to_i)
-            end
-            version
+            hgversion_from_command_line[/\d+(\.\d+)+/].to_s.split('.').map(&:to_i)
           end
-
+          
           def hgversion_from_command_line
-            buf = nil
-            cmd = "#{HG_BIN} --version"
-            shellout(cmd) do |io|
-               # Read svn version in first returned line
-               buf = io.read.to_s
-             end
-            return nil if $? && $?.exitstatus != 0
-            buf
-
+            shellout("#{HG_BIN} --version") { |io| io.read }.to_s
           end
           private :hgversion_from_command_line
           
