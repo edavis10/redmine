@@ -204,10 +204,10 @@ zh:
   mail_body_account_activation_request: "新用户（{{value}}）已完成注册，正在等候您的审核："
   mail_subject_reminder: "{{count}} 个问题需要尽快解决 ({{days}})"
   mail_body_reminder: "指派给您的 {{count}} 个问题需要在 {{days}} 天内完成："
-  mail_subject_wiki_content_added: "'{{page}}' wiki页面已添加"
-  mail_body_wiki_content_added: "'{{page}}' wiki页面已由 {{author}} 添加。"
-  mail_subject_wiki_content_updated: "'{{page}}' wiki页面已更新"
-  mail_body_wiki_content_updated: "'{{page}}' wiki页面已由 {{author}} 更新。"
+  mail_subject_wiki_content_added: "'{{id}}' wiki页面已添加"
+  mail_body_wiki_content_added: "'{{id}}' wiki页面已由 {{author}} 添加。"
+  mail_subject_wiki_content_updated: "'{{id}}' wiki页面已更新"
+  mail_body_wiki_content_updated: "'{{id}}' wiki页面已由 {{author}} 更新。"
 
   gui_validation_error: 1 个错误
   gui_validation_error_plural: "{{count}} 个错误"
@@ -272,7 +272,6 @@ zh:
   field_attr_lastname: 姓氏属性
   field_attr_mail: 邮件属性
   field_onthefly: 即时用户生成
-  field_start_date: 开始
   field_done_ratio: 完成度
   field_auth_source: 认证模式
   field_hide_mail: 隐藏我的邮件地址
@@ -721,7 +720,6 @@ zh:
   label_search_titles_only: 仅在标题中搜索
   label_user_mail_option_all: "收取我的项目的所有通知"
   label_user_mail_option_selected: "收取选中项目的所有通知..."
-  label_user_mail_option_none: "只收取我跟踪或参与的项目的通知"
   label_user_mail_no_self_notified: "不要发送对我自己提交的修改的通知"
   label_registration_activation_by_email: 通过邮件认证激活帐号
   label_registration_manual_activation: 手动激活帐号
@@ -835,9 +833,9 @@ zh:
   text_journal_set_to: "{{label}} 被设置为 {{value}}"
   text_journal_deleted: "{{label}} 已删除 ({{old}})"
   text_journal_added: "{{label}} {{value}} 已添加"
-  text_tip_task_begin_day: 今天开始的任务
-  text_tip_task_end_day: 今天结束的任务
-  text_tip_task_begin_end_day: 今天开始并结束的任务
+  text_tip_issue_begin_day: 今天开始的任务
+  text_tip_issue_end_day: 今天结束的任务
+  text_tip_issue_begin_end_day: 今天开始并结束的任务
   text_project_identifier_info: '只允许使用小写字母（a-z），数字和连字符（-）。<br />请注意，标识符保存后将不可修改。'
   text_caracters_maximum: "最多 {{count}} 个字符。"
   text_caracters_minimum: "至少需要 {{count}} 个字符。"
@@ -931,8 +929,6 @@ zh:
   field_time_entries: Log time
   project_module_gantt: Gantt
   project_module_calendar: Calendar
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
   button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
   text_are_you_sure_with_children: Delete issue and all child issues?
   field_text: Text field
@@ -940,3 +936,12 @@ zh:
   setting_default_notification_option: Default notification option
   label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
   label_user_mail_option_only_assigned: Only for things I am assigned to
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.
+  field_start_date: Start date
+  label_principal_search: "Search for user or group:"
+  label_user_search: "Search for user:"
+  field_visible: Visible
+  setting_emails_header: Emails header

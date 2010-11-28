@@ -295,7 +295,6 @@ ru:
   field_admin: Администратор
   field_assignable: Задача может быть назначена этой роли
   field_assigned_to: Назначена
-  field_assigned_to_role: Роль участника
   field_attr_firstname: Имя
   field_attr_lastname: Фамилия
   field_attr_login: Атрибут Регистрация
@@ -314,6 +313,7 @@ ru:
   field_description: Описание
   field_done_ratio: Готовность в %
   field_downloads: Загрузки
+  field_start_date: Дата начала
   field_due_date: Дата выполнения
   field_editable: Редактируемый
   field_effective_date: Дата
@@ -345,7 +345,6 @@ ru:
   field_mail: Email
   field_mail_notification: Уведомления по email
   field_max_length: Максимальная длина
-  field_member_of_group: Группа участника
   field_min_length: Минимальная длина
   field_name: Имя
   field_new_password: Новый пароль
@@ -365,7 +364,6 @@ ru:
   field_role: Роль
   field_searchable: Доступно для поиска
   field_spent_on: Дата
-  field_start_date: Начата
   field_start_page: Стартовая страница
   field_status: Статус
   field_subject: Тема
@@ -703,8 +701,10 @@ ru:
   label_user_activity: "Активность пользователя {{value}}"
   label_user_mail_no_self_notified: "Не извещать об изменениях, которые я сделал сам"
   label_user_mail_option_all: "О всех событиях во всех моих проектах"
-  label_user_mail_option_none: "Только о тех событиях, которые я отслеживаю или в которых я участвую"
   label_user_mail_option_selected: "О всех событиях только в выбранном проекте..."
+  label_user_mail_option_only_owner: Только для объектов, для которых я являюсь владельцем
+  label_user_mail_option_only_my_events: Только для объектов, которые я отслеживаю или в которых участвую
+  label_user_mail_option_only_assigned: Только для объектов, которые назначены мне
   label_user_new: Новый пользователь
   label_user_plural: Пользователи
   label_version: Версия
@@ -859,7 +859,7 @@ ru:
   setting_attachment_max_size: Максимальный размер вложения
   setting_autofetch_changesets: Автоматически следить за изменениями хранилища
   setting_autologin: Автоматический вход
-  setting_bcc_recipients: Использовать скрытые списки (bcc)
+  setting_bcc_recipients: Использовать скрытые списки (BCC)
   setting_cache_formatted_text: Кешировать форматированный текст
   setting_commit_fix_keywords: Назначение ключевых слов
   setting_commit_logs_encoding: Кодировка комментариев в хранилище
@@ -867,10 +867,11 @@ ru:
   setting_cross_project_issue_relations: Разрешить пересечение задач по проектам
   setting_date_format: Формат даты
   setting_default_language: Язык по умолчанию
+  setting_default_notification_option: Способ оповещения по умолчанию
   setting_default_projects_public: Новые проекты являются общедоступными
   setting_diff_max_lines_displayed: Максимальное число строк для diff
   setting_display_subprojects_issues: Отображение подпроектов по умолчанию
-  setting_emails_footer: Подстрочные примечания Email
+  setting_emails_footer: Подстрочные примечания письма
   setting_enabled_scm: Разрешенные SCM
   setting_feeds_limit: Ограничение количества заголовков для RSS потока
   setting_file_max_size_displayed: Максимальный размер текстового файла для отображения
@@ -941,9 +942,9 @@ ru:
   text_select_project_modules: 'Выберите модули, которые будут использованы в проекте:'
   text_status_changed_by_changeset: "Реализовано в {{value}} редакции."
   text_subprojects_destroy_warning: "Подпроекты: {{value}} также будут удалены."
-  text_tip_task_begin_day: дата начала задачи
-  text_tip_task_begin_end_day: начало задачи и окончание ее в этот день
-  text_tip_task_end_day: дата завершения задачи
+  text_tip_issue_begin_day: дата начала задачи
+  text_tip_issue_begin_end_day: начало задачи и окончание ее в этот день
+  text_tip_issue_end_day: дата завершения задачи
   text_tracker_no_workflow: Для этого трекера последовательность действий не определена
   text_unallowed_characters: Запрещенные символы
   text_user_mail_option: "Для невыбранных проектов, Вы будете получать уведомления только о том что просматриваете или в чем участвуете (например, вопросы, автором которых Вы являетесь или которые Вам назначены)."
@@ -958,12 +959,12 @@ ru:
   text_wiki_page_destroy_children: Удалить дочерние страницы и всех их потомков
   setting_password_min_length: Минимальная длина пароля
   field_group_by: Группировать результаты по
-  mail_subject_wiki_content_updated: "Wiki-страница '{{page}}' была обновлена"
+  mail_subject_wiki_content_updated: "Wiki-страница '{{id}}' была обновлена"
   label_wiki_content_added: Добавлена wiki-страница
-  mail_subject_wiki_content_added: "Wiki-страница  '{{page}}' была добавлена"
-  mail_body_wiki_content_added: "{{author}} добавил(а) wiki-страницу '{{page}}'."
+  mail_subject_wiki_content_added: "Wiki-страница  '{{id}}' была добавлена"
+  mail_body_wiki_content_added: "{{author}} добавил(а) wiki-страницу '{{id}}'."
   label_wiki_content_updated: Обновлена wiki-страница
-  mail_body_wiki_content_updated: "{{author}} обновил(а) wiki-страницу '{{page}}'."
+  mail_body_wiki_content_updated: "{{author}} обновил(а) wiki-страницу '{{id}}'."
   permission_add_project: Создание проекта
   setting_new_project_user_role_id: Роль, назначаемая пользователю, создавшему проект
   label_view_all_revisions: Показать все ревизии
@@ -1034,8 +1035,12 @@ ru:
   text_zoom_in: Приблизить
   notice_unable_delete_time_entry: Невозможно удалить запись журнала.
   label_overall_spent_time: Всего затрачено времени
+  label_user_mail_option_none: Нет событий
+  field_member_of_group: Группа назначенного
+  field_assigned_to_role: Роль назначенного
+  notice_not_authorized_archived_project: Запрашиваемый проект был архивирован.
+  label_principal_search: "Найти пользователя или группу:"
+  label_user_search: "Найти пользователя:"
+  field_visible: Видимый
+  setting_emails_header: Заголовок письма
 
-  label_user_mail_option_only_owner: Only for things I am the owner of
-  setting_default_notification_option: Default notification option
-  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
-  label_user_mail_option_only_assigned: Only for things I am assigned to

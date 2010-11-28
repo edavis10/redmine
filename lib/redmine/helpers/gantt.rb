@@ -91,7 +91,7 @@ module Redmine
         if @project
           return number_of_rows_on_project(@project)
         else
-          Project.roots.inject(0) do |total, project|
+          Project.roots.visible.inject(0) do |total, project|
             total += number_of_rows_on_project(project)
           end
         end
@@ -119,7 +119,7 @@ module Redmine
         end
 
         # Subprojects
-        project.children.each do |subproject|
+        project.children.visible.each do |subproject|
           count += number_of_rows_on_project(subproject)
         end
 
@@ -134,7 +134,7 @@ module Redmine
         if @project
           output << render_project(@project, options)
         else
-          Project.roots.each do |project|
+          Project.roots.visible.each do |project|
             output << render_project(project, options)
           end
         end
@@ -150,7 +150,7 @@ module Redmine
         if @project
           output << render_project(@project, options)
         else
-          Project.roots.each do |project|
+          Project.roots.visible.each do |project|
             output << render_project(project, options)
           end
         end
@@ -178,6 +178,7 @@ module Redmine
         
         # Second, Issues without a version
         issues = project.issues.for_gantt.without_version.with_query(@query)
+        sort_issues!(issues)
         if issues
           issue_rendering = render_issues(issues, options)
           output << issue_rendering if options[:format] == :html
@@ -190,7 +191,7 @@ module Redmine
         end
 
         # Fourth, subprojects
-        project.children.each do |project|
+        project.children.visible.each do |project|
           subproject_rendering = render_project(project, options)
           output << subproject_rendering if options[:format] == :html
         end
@@ -237,6 +238,7 @@ module Redmine
         
         issues = version.fixed_issues.for_gantt.with_query(@query)
         if issues
+          sort_issues!(issues)
           # Indent issues
           options[:indent] += options[:indent_increment]
           output << render_issues(issues, options)
@@ -283,8 +285,8 @@ module Redmine
       end
 
       def line_for_project(project, options)
-        # Skip versions that don't have a start_date
-        if project.is_a?(Project) && project.start_date
+        # Skip versions that don't have a start_date or due date
+        if project.is_a?(Project) && project.start_date && project.due_date
           options[:zoom] ||= 1
           options[:g_width] ||= (self.date_to - self.date_from + 1) * options[:zoom]
 
@@ -419,7 +421,7 @@ module Redmine
 
       def line_for_version(version, options)
         # Skip versions that don't have a start_date
-        if version.is_a?(Version) && version.start_date
+        if version.is_a?(Version) && version.start_date && version.due_date
           options[:zoom] ||= 1
           options[:g_width] ||= (self.date_to - self.date_from + 1) * options[:zoom]
 
@@ -536,8 +538,6 @@ module Redmine
             end
             output << "<span class='#{css_classes.join(' ')}'>"
             output << view.link_to_issue(issue)
-            output << ":"
-            output << h(issue.subject)
             output << '</span>'
           else
             ActiveRecord::Base.logger.debug "Gantt#subject_for_issue was not given an issue"
@@ -954,6 +954,17 @@ module Redmine
       
       private
 
+      # Sorts a collection of issues by start_date, due_date, id for gantt rendering
+      def sort_issues!(issues)
+        issues.sort! do |a, b|
+          cmp = 0
+          cmp = (a.start_date <=> b.start_date) if a.start_date? && b.start_date?
+          cmp = (a.due_date <=> b.due_date) if cmp == 0 && a.due_date? && b.due_date?
+          cmp = (a.id <=> b.id) if cmp == 0
+          cmp
+        end
+      end
+      
       # Renders both the subjects and lines of the Gantt chart for the
       # PDF format
       def pdf_subjects_and_lines(pdf, options = {})

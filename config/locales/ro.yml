@@ -232,7 +232,6 @@ ro:
   field_attr_lastname: Atribut nume
   field_attr_mail: Atribut email
   field_onthefly: Creare utilizator pe loc
-  field_start_date: Data începerii
   field_done_ratio: Realizat (%)
   field_auth_source: Mod autentificare
   field_hide_mail: Nu se afișează adresa de email
@@ -654,7 +653,6 @@ ro:
   label_search_titles_only: Caută numai în titluri
   label_user_mail_option_all: "Pentru orice eveniment, în toate proiectele mele"
   label_user_mail_option_selected: " Pentru orice eveniment, în proiectele selectate..."
-  label_user_mail_option_none: "Doar cele urmărite sau cele în care sunt implicat"
   label_user_mail_no_self_notified: "Nu trimite notificări pentru modificările mele"
   label_registration_activation_by_email: activare cont prin email
   label_registration_manual_activation: activare manuală a contului
@@ -737,9 +735,9 @@ ro:
   text_subprojects_destroy_warning: "Se vor șterge și sub-proiectele: {{value}}."
   text_workflow_edit: Selectați un rol și un tip de tichet pentru a edita modul de lucru
   text_are_you_sure: Sunteți sigur(ă)?
-  text_tip_task_begin_day: sarcină care începe în această zi
-  text_tip_task_end_day: sarcină care se termină în această zi
-  text_tip_task_begin_end_day: sarcină care începe și se termină în această zi
+  text_tip_issue_begin_day: sarcină care începe în această zi
+  text_tip_issue_end_day: sarcină care se termină în această zi
+  text_tip_issue_begin_end_day: sarcină care începe și se termină în această zi
   text_project_identifier_info: 'Sunt permise doar litere mici (a-z), numere și cratime.<br />Odată salvat, identificatorul nu mai poate fi modificat.'
   text_caracters_maximum: "maxim {{count}} caractere."
   text_caracters_minimum: "Trebuie să fie minim {{count}} caractere."
@@ -809,12 +807,12 @@ ro:
   text_wiki_page_destroy_children: Șterge paginile și descendenții
   setting_password_min_length: Lungime minimă parolă
   field_group_by: Grupează după
-  mail_subject_wiki_content_updated: "Pagina wiki '{{page}}' a fost actualizată"
+  mail_subject_wiki_content_updated: "Pagina wiki '{{id}}' a fost actualizată"
   label_wiki_content_added: Adăugat
-  mail_subject_wiki_content_added: "Pagina wiki '{{page}}' a fost adăugată"
-  mail_body_wiki_content_added: Pagina wiki '{{page}}' a fost adăugată de {{author}}.
+  mail_subject_wiki_content_added: "Pagina wiki '{{id}}' a fost adăugată"
+  mail_body_wiki_content_added: Pagina wiki '{{id}}' a fost adăugată de {{author}}.
   label_wiki_content_updated: Actualizat
-  mail_body_wiki_content_updated: Pagina wiki '{{page}}' a fost actualizată de {{author}}.
+  mail_body_wiki_content_updated: Pagina wiki '{{id}}' a fost actualizată de {{author}}.
   permission_add_project: Crează proiect
   setting_new_project_user_role_id: Rol atribuit utilizatorului non-admin care crează un proiect.
   label_view_all_revisions: Arată toate reviziile
@@ -906,8 +904,6 @@ ro:
   field_time_entries: Log time
   project_module_gantt: Gantt
   project_module_calendar: Calendar
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
   button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
   text_are_you_sure_with_children: Delete issue and all child issues?
   field_text: Text field
@@ -915,3 +911,12 @@ ro:
   setting_default_notification_option: Default notification option
   label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
   label_user_mail_option_only_assigned: Only for things I am assigned to
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.
+  field_start_date: Start date
+  label_principal_search: "Search for user or group:"
+  label_user_search: "Search for user:"
+  field_visible: Visible
+  setting_emails_header: Emails header

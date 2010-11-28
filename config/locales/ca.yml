@@ -195,10 +195,10 @@ ca:
   mail_body_account_activation_request: "S'ha registrat un usuari nou ({{value}}). El seu compte està pendent d'aprovació:"
   mail_subject_reminder: "{{count}} assumptes venceran els següents {{days}} dies"
   mail_body_reminder: "{{count}} assumptes que teniu assignades venceran els següents {{days}} dies:"
-  mail_subject_wiki_content_added: "S'ha afegit la pàgina wiki «{{page}}»"
-  mail_body_wiki_content_added: "En {{author}} ha afegit la pàgina wiki «{{page}}»."
-  mail_subject_wiki_content_updated: "S'ha actualitzat la pàgina wiki «{{page}}»"
-  mail_body_wiki_content_updated: "En {{author}} ha actualitzat la pàgina wiki «{{page}}»."
+  mail_subject_wiki_content_added: "S'ha afegit la pàgina wiki «{{id}}»"
+  mail_body_wiki_content_added: "En {{author}} ha afegit la pàgina wiki «{{id}}»."
+  mail_subject_wiki_content_updated: "S'ha actualitzat la pàgina wiki «{{id}}»"
+  mail_body_wiki_content_updated: "En {{author}} ha actualitzat la pàgina wiki «{{id}}»."
   
   gui_validation_error: 1 error
   gui_validation_error_plural: "{{count}} errors"
@@ -264,7 +264,6 @@ ca:
   field_attr_lastname: Atribut del cognom
   field_attr_mail: Atribut del correu electrònic
   field_onthefly: "Creació de l'usuari «al vol»"
-  field_start_date: Inici
   field_done_ratio: % realitzat
   field_auth_source: "Mode d'autenticació"
   field_hide_mail: "Oculta l'adreça de correu electrònic"
@@ -725,7 +724,6 @@ ca:
   label_search_titles_only: Cerca només en els títols
   label_user_mail_option_all: "Per qualsevol esdeveniment en tots els meus projectes"
   label_user_mail_option_selected: "Per qualsevol esdeveniment en els projectes seleccionats..."
-  label_user_mail_option_none: "Només per les coses que vigilo o hi estic implicat"
   label_user_mail_no_self_notified: "No vull ser notificat pels canvis que faig jo mateix"
   label_registration_activation_by_email: activació del compte per correu electrònic
   label_registration_manual_activation: activació del compte manual
@@ -842,9 +840,9 @@ ca:
   text_journal_set_to: "{{label}} s'ha establert a {{value}}"
   text_journal_deleted: "{{label}} s'ha suprimit ({{old}})"
   text_journal_added: "S'ha afegit {{label}} {{value}}"
-  text_tip_task_begin_day: "tasca que s'inicia aquest dia"
-  text_tip_task_end_day: tasca que finalitza aquest dia
-  text_tip_task_begin_end_day: "tasca que s'inicia i finalitza aquest dia"
+  text_tip_issue_begin_day: "tasca que s'inicia aquest dia"
+  text_tip_issue_end_day: tasca que finalitza aquest dia
+  text_tip_issue_begin_end_day: "tasca que s'inicia i finalitza aquest dia"
   text_project_identifier_info: "Es permeten lletres en minúscules (a-z), números i guions.<br />Un cop desat, l'identificador no es pot modificar."
   text_caracters_maximum: "{{count}} caràcters com a màxim."
   text_caracters_minimum: "Com a mínim ha de tenir {{count}} caràcters."
@@ -916,8 +914,6 @@ ca:
   enumeration_activities: Activitats (seguidor de temps)
   enumeration_system_activity: Activitat del sistema
 
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
   button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
   text_are_you_sure_with_children: Delete issue and all child issues?
   field_text: Text field
@@ -925,3 +921,12 @@ ca:
   setting_default_notification_option: Default notification option
   label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
   label_user_mail_option_only_assigned: Only for things I am assigned to
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.
+  field_start_date: Start date
+  label_principal_search: "Search for user or group:"
+  label_user_search: "Search for user:"
+  field_visible: Visible
+  setting_emails_header: Emails header

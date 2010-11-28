@@ -184,10 +184,10 @@ hr:
   mail_body_account_activation_request: "Novi korisnik ({{value}}) je registriran. Njegov korisnički račun čeka vaše odobrenje:"
   mail_subject_reminder: "{{count}} predmet(a) dospijeva sljedećih {{days}} dana"
   mail_body_reminder: "{{count}} vama dodijeljen(ih) predmet(a) dospijeva u sljedećih {{days}} dana:"
-  mail_subject_wiki_content_added: "'{{page}}' wiki page has been added"
-  mail_body_wiki_content_added: "The '{{page}}' wiki page has been added by {{author}}."
-  mail_subject_wiki_content_updated: "'{{page}}' wiki page has been updated"
-  mail_body_wiki_content_updated: "The '{{page}}' wiki page has been updated by {{author}}."
+  mail_subject_wiki_content_added: "'{{id}}' wiki page has been added"
+  mail_body_wiki_content_added: "The '{{id}}' wiki page has been added by {{author}}."
+  mail_subject_wiki_content_updated: "'{{id}}' wiki page has been updated"
+  mail_body_wiki_content_updated: "The '{{id}}' wiki page has been updated by {{author}}."
   
   gui_validation_error: 1 pogreška
   gui_validation_error_plural: "{{count}} pogrešaka"
@@ -253,7 +253,6 @@ hr:
   field_attr_lastname: Atribut prezimena
   field_attr_mail: Atribut e-pošte
   field_onthefly: "Izrada korisnika \"u hodu\""
-  field_start_date: Pocetak
   field_done_ratio: % Učinjeno
   field_auth_source: Vrsta prijavljivanja
   field_hide_mail: Sakrij moju adresu e-pošte
@@ -701,7 +700,6 @@ hr:
   label_search_titles_only: Pretraživanje samo naslova
   label_user_mail_option_all: "Za bilo koji događaj na svim mojim projektima"
   label_user_mail_option_selected: "Za bilo koji događaj samo za izabrane projekte..."
-  label_user_mail_option_none: "Samo za stvari koje pratim ili u kojima sudjelujem"
   label_user_mail_no_self_notified: "Ne želim primati obavijesti o promjenama koje sam napravim"
   label_registration_activation_by_email: aktivacija putem e-pošte
   label_registration_manual_activation: ručna aktivacija
@@ -815,9 +813,9 @@ hr:
   text_journal_set_to: "{{label}} postavi na {{value}}"
   text_journal_deleted: "{{label}} izbrisano ({{old}})"
   text_journal_added: "{{label}} {{value}} added"  
-  text_tip_task_begin_day: Zadaci koji počinju ovog dana
-  text_tip_task_end_day: zadaci koji se završavaju ovog dana
-  text_tip_task_begin_end_day: Zadaci koji počinju i završavaju se ovog dana
+  text_tip_issue_begin_day: Zadaci koji počinju ovog dana
+  text_tip_issue_end_day: zadaci koji se završavaju ovog dana
+  text_tip_issue_begin_end_day: Zadaci koji počinju i završavaju se ovog dana
   text_project_identifier_info: 'mala slova (a-z), brojevi i crtice su dozvoljeni.<br />Jednom snimljen identifikator se ne može mijenjati!'
   text_caracters_maximum: "Najviše {{count}} znakova."
   text_caracters_minimum: "Mora biti dugačko najmanje {{count}} znakova."
@@ -920,8 +918,6 @@ hr:
   field_time_entries: Log time
   project_module_gantt: Gantt
   project_module_calendar: Calendar
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
   button_edit_associated_wikipage: "Edit associated Wiki page: {{page_title}}"
   text_are_you_sure_with_children: Delete issue and all child issues?
   field_text: Text field
@@ -929,3 +925,12 @@ hr:
   setting_default_notification_option: Default notification option
   label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
   label_user_mail_option_only_assigned: Only for things I am assigned to
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.
+  field_start_date: Start date
+  label_principal_search: "Search for user or group:"
+  label_user_search: "Search for user:"
+  field_visible: Visible
+  setting_emails_header: Emails header

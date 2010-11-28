@@ -211,10 +211,10 @@ de:
   mail_body_account_activation_request: "Ein neuer Benutzer ({{value}}) hat sich registriert. Sein Konto wartet auf Ihre Genehmigung:"
   mail_subject_reminder: "{{count}} Tickets müssen in den nächsten {{days}} Tagen abgegeben werden"
   mail_body_reminder: "{{count}} Tickets, die Ihnen zugewiesen sind, müssen in den nächsten {{days}} Tagen abgegeben werden:"
-  mail_subject_wiki_content_added: "Wiki-Seite '{{page}}' hinzugefügt"
-  mail_body_wiki_content_added: "Die Wiki-Seite '{{page}}' wurde von {{author}} hinzugefügt."
-  mail_subject_wiki_content_updated: "Wiki-Seite '{{page}}' erfolgreich aktualisiert"
-  mail_body_wiki_content_updated: "Die Wiki-Seite '{{page}}' wurde von {{author}} aktualisiert."
+  mail_subject_wiki_content_added: "Wiki-Seite '{{id}}' hinzugefügt"
+  mail_body_wiki_content_added: "Die Wiki-Seite '{{id}}' wurde von {{author}} hinzugefügt."
+  mail_subject_wiki_content_updated: "Wiki-Seite '{{id}}' erfolgreich aktualisiert"
+  mail_body_wiki_content_updated: "Die Wiki-Seite '{{id}}' wurde von {{author}} aktualisiert."
 
   gui_validation_error: 1 Fehler
   gui_validation_error_plural: "{{count}} Fehler"
@@ -280,7 +280,6 @@ de:
   field_attr_lastname: Name-Attribut
   field_attr_mail: E-Mail-Attribut
   field_onthefly: On-the-fly-Benutzererstellung
-  field_start_date: Beginn
   field_done_ratio: % erledigt
   field_auth_source: Authentifizierungs-Modus
   field_hide_mail: E-Mail-Adresse nicht anzeigen
@@ -741,7 +740,6 @@ de:
   label_search_titles_only: Nur Titel durchsuchen
   label_user_mail_option_all: "Für alle Ereignisse in all meinen Projekten"
   label_user_mail_option_selected: "Für alle Ereignisse in den ausgewählten Projekten..."
-  label_user_mail_option_none: "Nur für Dinge, die ich beobachte oder an denen ich beteiligt bin"
   label_user_mail_no_self_notified: "Ich möchte nicht über Änderungen benachrichtigt werden, die ich selbst durchführe."
   label_registration_activation_by_email: Kontoaktivierung durch E-Mail
   label_registration_manual_activation: Manuelle Kontoaktivierung
@@ -792,6 +790,8 @@ de:
   label_profile: Profil
   label_subtask_plural: Unteraufgaben
   label_project_copy_notifications: Sende Mailbenachrichtigungen beim Kopieren des Projekts.
+  label_principal_search: "Nach Benutzer oder Gruppe suchen:"
+  label_user_search: "Nach Benutzer suchen:"
   
   button_login: Anmelden
   button_submit: OK
@@ -800,7 +800,7 @@ de:
   button_uncheck_all: Alles abwählen
   button_delete: Löschen
   button_create: Anlegen
-  button_create_and_continue: Anlegen + nächstes Ticket
+  button_create_and_continue: Anlegen und weiter
   button_test: Testen
   button_edit: Bearbeiten
   button_edit_associated_wikipage: "Zugehörige Wikiseite bearbeiten: {{page_title}}"
@@ -832,7 +832,7 @@ de:
   button_copy: Kopieren
   button_copy_and_follow: Kopieren und Ticket anzeigen
   button_annotate: Annotieren
-  button_update: Aktualisieren
+  button_update: Bearbeiten
   button_configure: Konfigurieren
   button_quote: Zitieren
   button_duplicate: Duplizieren
@@ -859,9 +859,9 @@ de:
   text_journal_set_to: "{{label}} wurde auf {{value}} gesetzt"
   text_journal_deleted: "{{label}} {{old}} wurde gelöscht"
   text_journal_added: "{{label}} {{value}} wurde hinzugefügt"
-  text_tip_task_begin_day: Aufgabe, die an diesem Tag beginnt
-  text_tip_task_end_day: Aufgabe, die an diesem Tag endet
-  text_tip_task_begin_end_day: Aufgabe, die an diesem Tag beginnt und endet
+  text_tip_issue_begin_day: Aufgabe, die an diesem Tag beginnt
+  text_tip_issue_end_day: Aufgabe, die an diesem Tag endet
+  text_tip_issue_begin_end_day: Aufgabe, die an diesem Tag beginnt und endet
   text_project_identifier_info: 'Kleinbuchstaben (a-z), Ziffern und Bindestriche erlaubt.<br />Einmal gespeichert, kann die Kennung nicht mehr geändert werden.'
   text_caracters_maximum: "Max. {{count}} Zeichen."
   text_caracters_minimum: "Muss mindestens {{count}} Zeichen lang sein."
@@ -933,11 +933,16 @@ de:
   enumeration_activities: Aktivitäten (Zeiterfassung)
   enumeration_system_activity: System-Aktivität
 
-  field_member_of_group: Member of Group
-  field_assigned_to_role: Member of Role
   text_are_you_sure_with_children: Delete issue and all child issues?
   field_text: Text field
   label_user_mail_option_only_owner: Only for things I am the owner of
   setting_default_notification_option: Default notification option
   label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
   label_user_mail_option_only_assigned: Only for things I am assigned to
+  notice_not_authorized_archived_project: The project you're trying to access has been archived.
+  label_user_mail_option_none: No events
+  field_member_of_group: Assignee's group
+  field_assigned_to_role: Assignee's role
+  field_start_date: Start date
+  field_visible: Visible
+  setting_emails_header: Emails header
