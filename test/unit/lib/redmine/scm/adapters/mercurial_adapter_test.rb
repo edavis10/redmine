@@ -45,15 +45,13 @@ begin
     private
     
     def test_hgversion_for(hgversion, version)
-      Redmine::Scm::Adapters::MercurialAdapter.expects(:hgversion_from_command_line).returns(hgversion)
-      adapter = Redmine::Scm::Adapters::MercurialAdapter
-      assert_equal version, adapter.hgversion
+      @adapter.class.expects(:hgversion_from_command_line).returns(hgversion)
+      assert_equal version, @adapter.class.hgversion
     end
     
     def test_template_path_for(version, template)
-      adapter = Redmine::Scm::Adapters::MercurialAdapter
-      assert_equal "#{TEMPLATES_DIR}/#{TEMPLATE_NAME}-#{template}.#{TEMPLATE_EXTENSION}", adapter.template_path_for(version)
-      assert File.exist?(adapter.template_path_for(version))
+      assert_equal "#{TEMPLATES_DIR}/#{TEMPLATE_NAME}-#{template}.#{TEMPLATE_EXTENSION}", @adapter.class.template_path_for(version)
+      assert File.exist?(@adapter.class.template_path_for(version))
     end
   end
 
