@@ -55,19 +55,13 @@ class RepositoryMercurialTest < ActiveSupport::TestCase
     end
 
     def test_locate_on_outdated_repository
-      # Change the working dir state
-      %x{hg -R #{REPOSITORY_PATH} up -r 0}
+      # For bare repository; that is, a repository without a working copy
+      # $ hg update null
+      # See http://mercurial.selenic.com/wiki/GitConcepts?action=recall&rev=46#Bare_repositories
       assert_equal 1, @repository.entries("images", 0).size
       assert_equal 2, @repository.entries("images").size
       assert_equal 2, @repository.entries("images", 2).size
     end
-
-
-    def test_cat
-      assert @repository.scm.cat("sources/welcome_controller.rb", 2)
-      assert_nil @repository.scm.cat("sources/welcome_controller.rb")
-    end
-
   else
     puts "Mercurial test repository NOT FOUND. Skipping unit tests !!!"
     def test_fake; assert true end

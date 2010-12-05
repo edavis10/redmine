@@ -36,7 +36,12 @@ begin
         test_template_path_for(v, template)
       end
     end
-    
+
+    def test_cat
+      assert     @adapter.cat("sources/welcome_controller.rb", 2)
+      assert_nil @adapter.cat("sources/welcome_controller.rb")
+    end
+
     private
     
     def test_hgversion_for(hgversion, version)
@@ -51,7 +56,7 @@ begin
       assert File.exist?(adapter.template_path_for(version))
     end
   end
-  
+
 rescue LoadError
   class MercurialMochaFake < ActiveSupport::TestCase
     def test_fake; assert(false, "Requires mocha to run those tests")  end
