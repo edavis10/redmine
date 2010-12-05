@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2009  Jean-Philippe Lang
+# Copyright (C) 2006-2010  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -19,6 +19,7 @@ class UsersController < ApplicationController
   layout 'admin'
   
   before_filter :require_admin, :except => :show
+  accept_key_auth :index, :show, :create, :update
 
   helper :sort
   include SortHelper
@@ -46,7 +47,10 @@ class UsersController < ApplicationController
 						:limit  =>  @user_pages.items_per_page,
 						:offset =>  @user_pages.current.offset
 
-    render :layout => !request.xhr?	
+		respond_to do |format|
+		  format.html { render :layout => !request.xhr? }
+      format.api
+		end	
   end
   
   def show
@@ -64,8 +68,11 @@ class UsersController < ApplicationController
         return
       end
     end
-    render :layout => 'base'
-
+    
+    respond_to do |format|
+      format.html { render :layout => 'base' }
+      format.api
+    end
   rescue ActiveRecord::RecordNotFound
     render_404
   end
@@ -98,15 +105,25 @@ class UsersController < ApplicationController
       @user.notified_project_ids = (params[:notification_option] == 'selected' ? params[:notified_project_ids] : [])
 
       Mailer.deliver_account_information(@user, params[:password]) if params[:send_information]
-      flash[:notice] = l(:notice_successful_create)
-      redirect_to(params[:continue] ? {:controller => 'users', :action => 'new'} : 
-                                      {:controller => 'users', :action => 'edit', :id => @user})
-      return
+      
+      respond_to do |format|
+        format.html {
+          flash[:notice] = l(:notice_successful_create)
+          redirect_to(params[:continue] ? 
+            {:controller => 'users', :action => 'new'} : 
+            {:controller => 'users', :action => 'edit', :id => @user}
+          )
+        }
+        format.api  { render :action => 'show', :status => :created, :location => user_url(@user) }
+      end
     else
       @auth_sources = AuthSource.find(:all)
       @notification_option = @user.mail_notification
 
-      render :action => 'new'
+      respond_to do |format|
+        format.html { render :action => 'new' }
+        format.api  { render_validation_errors(@user) }
+      end
     end
   end
 
@@ -148,13 +165,22 @@ class UsersController < ApplicationController
       elsif @user.active? && params[:send_information] && !params[:password].blank? && @user.auth_source_id.nil?
         Mailer.deliver_account_information(@user, params[:password])
       end
-      flash[:notice] = l(:notice_successful_update)
-      redirect_to :back
+      
+      respond_to do |format|
+        format.html {
+          flash[:notice] = l(:notice_successful_update)
+          redirect_to :back
+        }
+        format.api  { head :ok }
+      end
     else
       @auth_sources = AuthSource.find(:all)
       @membership ||= Member.new
 
-      render :action => :edit
+      respond_to do |format|
+        format.html { render :action => :edit }
+        format.api  { render_validation_errors(@user) }
+      end
     end
   rescue ::ActionController::RedirectBackError
     redirect_to :controller => 'users', :action => 'edit', :id => @user

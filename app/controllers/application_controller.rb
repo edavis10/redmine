@@ -22,7 +22,7 @@ class ApplicationController < ActionController::Base
   include Redmine::I18n
 
   layout 'base'
-  exempt_from_layout 'builder'
+  exempt_from_layout 'builder', 'rsb'
   
   # Remove broken cookie after upgrade from 0.8.x (#4292)
   # See https://rails.lighthouseapp.com/projects/8994/tickets/3360
@@ -413,5 +413,37 @@ class ApplicationController < ActionController::Base
       { attribute => error }
     end.to_json
   end
+
+  # Renders API response on validation failure
+  def render_validation_errors(object)
+    options = { :status => :unprocessable_entity, :layout => false }
+    options.merge!(case params[:format]
+      when 'xml';  { :xml =>  object.errors }
+      when 'json'; { :json => {'errors' => object.errors} } # ActiveResource client compliance
+      else
+        raise "Unknown format #{params[:format]} in #render_validation_errors"
+      end
+    )
+    render options
+  end
   
+  # Overrides #default_template so that the api template
+  # is used automatically if it exists
+  def default_template(action_name = self.action_name)
+    if api_request?
+      begin
+        return self.view_paths.find_template(default_template_name(action_name), 'api')
+      rescue ::ActionView::MissingTemplate
+        # the api template was not found
+        # fallback to the default behaviour
+      end
+    end
+    super
+  end
+  
+  # Overrides #pick_layout so that #render with no arguments
+  # doesn't use the layout for api requests
+  def pick_layout(*args)
+    api_request? ? nil : super
+  end
 end
