@@ -32,7 +32,9 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
     @request    = ActionController::TestRequest.new
     @response   = ActionController::TestResponse.new
     User.current = nil
-    Repository::Mercurial.create(:project => Project.find(3), :url => REPOSITORY_PATH)
+    assert @repository = Repository::Mercurial.create(:project => Project.find(3), :url => REPOSITORY_PATH)
+    @repository.fetch_changesets
+    @repository.reload
   end
   
   if File.directory?(REPOSITORY_PATH)
@@ -49,7 +51,7 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       assert_response :success
       assert_template 'show'
       assert_not_nil assigns(:entries)
-      assert_equal 3, assigns(:entries).size
+      assert_equal 4, assigns(:entries).size
       assert assigns(:entries).detect {|e| e.name == 'images' && e.kind == 'dir'}
       assert assigns(:entries).detect {|e| e.name == 'sources' && e.kind == 'dir'}
       assert assigns(:entries).detect {|e| e.name == 'README' && e.kind == 'file'}
@@ -74,7 +76,19 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       assert_not_nil assigns(:entries)
       assert_equal ['delete.png'], assigns(:entries).collect(&:name)
     end
-    
+
+    def test_show_directory_sql_escape_percent
+      get :show, :id => 3, :path => ['sql_escape', 'percent%dir'], :rev => 14
+      assert_response :success
+      assert_template 'show'
+
+      assert_not_nil assigns(:entries)
+      assert_equal ['percent%file1.txt', 'percentfile1.txt'], assigns(:entries).collect(&:name)
+      changesets = assigns(:changesets)
+      assert_not_nil changesets
+      assert_equal %w(14 12 11 10), changesets.collect(&:revision)
+    end
+
     def test_changes
       get :changes, :id => 3, :path => ['images', 'edit.png']
       assert_response :success
@@ -157,3 +171,4 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
     def test_fake; assert true end
   end
 end
+
