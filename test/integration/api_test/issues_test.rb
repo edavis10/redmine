@@ -91,6 +91,66 @@ class ApiTest::IssuesTest < ActionController::IntegrationTest
   end
   
   context "GET /issues/:id" do
+    context "with journals" do
+      context ".xml" do
+        should "display journals" do
+          get '/issues/1.xml'
+          
+          assert_tag :tag => 'issue',
+            :child => {
+              :tag => 'journals',
+              :attributes => { :type => 'array' },
+              :child => {
+                :tag => 'journal',
+                :attributes => { :id => '1'},
+                :child => {
+                  :tag => 'details',
+                  :attributes => { :type => 'array' },
+                  :child => {
+                    :tag => 'detail',
+                    :attributes => { :name => 'status_id' },
+                    :child => {
+                      :tag => 'old_value',
+                      :content => '1',
+                      :sibling => {
+                        :tag => 'new_value',
+                        :content => '2'
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        end
+      end
+    end
+    
+    context "with custom fields" do
+      context ".xml" do
+        should "display custom fields" do
+          get '/issues/3.xml'
+          
+          assert_tag :tag => 'issue', 
+            :child => {
+              :tag => 'custom_fields',
+              :attributes => { :type => 'array' },
+              :child => {
+                :tag => 'custom_field',
+                :attributes => { :id => '1'},
+                :child => {
+                  :tag => 'value',
+                  :content => 'MySQL'
+                }
+              }
+            }
+            
+          assert_nothing_raised do
+            Hash.from_xml(response.body).to_xml
+          end
+        end
+      end
+    end
+    
     context "with subtasks" do
       setup do
         @c1 = Issue.generate!(:status_id => 1, :subject => "child c1", :tracker_id => 1, :project_id => 1, :parent_issue_id => 1)
@@ -256,6 +316,23 @@ class ApiTest::IssuesTest < ActionController::IntegrationTest
       assert_equal "API update", issue.subject
     end
     
+  end
+  
+  context "PUT /issues/3.xml with custom fields" do
+    setup do
+      @parameters = {:issue => {:custom_fields => [{'id' => '1', 'value' => 'PostgreSQL' }, {'id' => '2', 'value' => '150'}]}}
+      @headers = { :authorization => credentials('jsmith') }
+    end
+    
+    should "update custom fields" do
+      assert_no_difference('Issue.count') do
+        put '/issues/3.xml', @parameters, @headers
+      end
+      
+      issue = Issue.find(3)
+      assert_equal '150', issue.custom_value_for(2).value
+      assert_equal 'PostgreSQL', issue.custom_value_for(1).value
+    end
   end
   
   context "PUT /issues/6.xml with failed update" do
