@@ -15,6 +15,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+require 'redmine/scm/adapters/path_encodable_wrapper'
+
 class Repository < ActiveRecord::Base
   belongs_to :project
   has_many :changesets, :order => "#{Changeset.table_name}.committed_on DESC, #{Changeset.table_name}.id DESC"
@@ -38,7 +40,7 @@ class Repository < ActiveRecord::Base
   end
 
   def scm
-    @scm ||= self.scm_adapter.new url, root_url, login, password
+    @scm ||= new_scm
     update_attribute(:root_url, @scm.root_url) if root_url.blank?
     @scm
   end
@@ -105,14 +107,14 @@ class Repository < ActiveRecord::Base
   # Default behaviour is to search in cached changesets
   def latest_changesets(path, rev, limit=10)
     if path.blank?
-      changesets.find(:all, :include => :user,
-                            :order => "#{Changeset.table_name}.committed_on DESC, #{Changeset.table_name}.id DESC",
-                            :limit => limit)
+      changesets.find(:all, :include => :user, :limit => limit)
     else
-      changes.find(:all, :include => {:changeset => :user}, 
-                         :conditions => ["path = ?", path.with_leading_slash],
-                         :order => "#{Changeset.table_name}.committed_on DESC, #{Changeset.table_name}.id DESC",
-                         :limit => limit).collect(&:changeset)
+      changesets.find(:all, :select => "DISTINCT #{Changeset.table_name}.*",
+                      :joins => :changes,
+                      :conditions => ["#{Change.table_name}.path = ? OR #{Change.table_name}.path LIKE ? ESCAPE ?",
+                                      path.with_leading_slash,
+                                      "#{path.with_leading_slash.gsub(/[%_\\]/) { |s| "\\#{s}" }}/%", '\\'],
+                      :include => :user, :limit => limit)
     end
   end
     
@@ -198,6 +200,12 @@ class Repository < ActiveRecord::Base
   end
   
   private
+
+  def new_scm
+    scm = self.scm_adapter.new url, root_url, login, password
+    scm = Redmine::Scm::Adapters::PathEncodableWrapper.new(scm, path_encoding) unless path_encoding.blank?
+    scm
+  end
   
   def before_save
     # Strips url and root_url

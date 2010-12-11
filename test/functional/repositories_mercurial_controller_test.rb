@@ -32,7 +32,13 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
     @request    = ActionController::TestRequest.new
     @response   = ActionController::TestResponse.new
     User.current = nil
-    Repository::Mercurial.create(:project => Project.find(3), :url => REPOSITORY_PATH)
+    assert @repository = Repository::Mercurial.create(
+                            :project       => Project.find(3),
+                            :url           => REPOSITORY_PATH,
+                            :path_encoding => 'ISO-8859-1'
+                            )
+    @repository.fetch_changesets
+    @repository.reload
   end
   
   if File.directory?(REPOSITORY_PATH)
@@ -49,7 +55,7 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       assert_response :success
       assert_template 'show'
       assert_not_nil assigns(:entries)
-      assert_equal 3, assigns(:entries).size
+      assert_equal 4, assigns(:entries).size
       assert assigns(:entries).detect {|e| e.name == 'images' && e.kind == 'dir'}
       assert assigns(:entries).detect {|e| e.name == 'sources' && e.kind == 'dir'}
       assert assigns(:entries).detect {|e| e.name == 'README' && e.kind == 'file'}
@@ -74,7 +80,31 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       assert_not_nil assigns(:entries)
       assert_equal ['delete.png'], assigns(:entries).collect(&:name)
     end
-    
+
+    def test_show_directory_sql_escape_percent
+      get :show, :id => 3, :path => ['sql_escape', 'percent%dir'], :rev => 13
+      assert_response :success
+      assert_template 'show'
+
+      assert_not_nil assigns(:entries)
+      assert_equal ['percent%file1.txt', 'percentfile1.txt'], assigns(:entries).collect(&:name)
+      changesets = assigns(:changesets)
+      assert_not_nil changesets
+      assert_equal %w(13 11 10 9), changesets.collect(&:revision)
+    end
+
+    def test_show_directory_latin_1
+      get :show, :id => 3, :path => ['latin-1-dir'], :rev => 19
+      assert_response :success
+      assert_template 'show'
+
+      assert_not_nil assigns(:entries)
+      assert_equal ["make-latin-1-file.rb", "test-\xc3\x9c-1.txt","test-\xc3\x9c-2.txt", "test-\xc3\x9c.txt"], assigns(:entries).collect(&:name)
+      changesets = assigns(:changesets)
+      assert_not_nil changesets
+      assert_equal %w(19 18 17 16 15), changesets.collect(&:revision)
+    end
+
     def test_changes
       get :changes, :id => 3, :path => ['images', 'edit.png']
       assert_response :success
@@ -88,9 +118,20 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       assert_template 'entry'
       # Line 19
       assert_tag :tag => 'th',
-                 :content => /10/,
-                 :attributes => { :class => /line-num/ },
+                 :content => '10',
+                 :attributes => { :class => 'line-num' },
                  :sibling => { :tag => 'td', :content => /WITHOUT ANY WARRANTY/ }
+    end
+
+    def test_entry_show_latin_1
+      get :entry, :id => 3, :path => ['latin-1-dir', "test-\xc3\x9c-2.txt"], :rev => 19
+      assert_response :success
+      assert_template 'entry'
+      # Line 19
+      assert_tag :tag => 'th',
+                 :content => '1',
+                 :attributes => { :class => 'line-num' },
+                 :sibling => { :tag => 'td', :content => /Mercurial is a distributed version control system/ }
     end
     
     def test_entry_download
@@ -115,24 +156,87 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       assert_template 'diff'
       # Line 22 removed
       assert_tag :tag => 'th',
-                 :content => /22/,
+                 :content => '22',
                  :sibling => { :tag => 'td', 
                                :attributes => { :class => /diff_out/ },
                                :content => /def remove/ }
     end
     
+    def test_diff_latin_1
+      get :diff, :id => 3, :rev => 19
+      assert_response :success
+      assert_template 'diff'
+      assert_tag :tag => 'th',
+                 :content => '2',
+                 :sibling => { :tag => 'td', 
+                               :attributes => { :class => /diff_in/ },
+                               :content => /It is written in Python/ }
+    end
+
     def test_annotate
       get :annotate, :id => 3, :path => ['sources', 'watchers_controller.rb']
       assert_response :success
       assert_template 'annotate'
-      # Line 23, revision 4
-      assert_tag :tag => 'th', :content => /23/,
-                 :sibling => { :tag => 'td', :child => { :tag => 'a', :content => /4/ } },
-                 :sibling => { :tag => 'td', :content => /jsmith/ },
+      # Line 23, revision 4:def6d2f1254a
+      assert_tag :tag => 'th',
+                 :content => '23',
+                 :attributes => { :class => 'line-num' },
+                 :sibling =>
+                       {
+                         :tag => 'td',
+                         :attributes => { :class => 'revision' },
+                         :child => { :tag => 'a', :content => '4' }
+                         # :child => { :tag => 'a', :content => /4:def6d2f1/ }
+                       }
+      assert_tag :tag => 'th',
+                 :content => '23',
+                 :attributes => { :class => 'line-num' },
+                 :sibling =>
+                       {
+                          :tag     => 'td'    ,
+                          :content => 'jsmith' ,
+                          :attributes => { :class   => 'author' },
+                          
+                        }
+      assert_tag :tag => 'th',
+                 :content => '23',
+                 :attributes => { :class => 'line-num' },
                  :sibling => { :tag => 'td', :content => /watcher =/ }
     end
+
+    def test_annotate_latin_1
+      get :annotate, :id => 3, :path => ['latin-1-dir', "test-\xc3\x9c-2.txt"], :rev => 19
+      assert_response :success
+      assert_template 'annotate'
+      assert_tag :tag => 'th',
+                 :content => '1',
+                 :attributes => { :class => 'line-num' },
+                 :sibling =>
+                       {
+                         :tag => 'td',
+                         :attributes => { :class => 'revision' },
+                         :child => { :tag => 'a', :content => '18' }
+                       }
+      assert_tag :tag => 'th',
+                 :content => '1',
+                 :attributes => { :class => 'line-num' },
+                 :sibling =>
+                       {
+                          :tag     => 'td'    ,
+                          :content => 'jsmith' ,
+                          :attributes => { :class   => 'author' },
+                          
+                        }
+      assert_tag :tag => 'th',
+                 :content => '1',
+                 :attributes => { :class => 'line-num' },
+                 :sibling => { :tag => 'td', :content => /Mercurial is a distributed version control system/ }
+
+    end
+
   else
     puts "Mercurial test repository NOT FOUND. Skipping functional tests !!!"
     def test_fake; assert true end
   end
 end
+

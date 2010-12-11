@@ -166,7 +166,9 @@ module RepositoriesHelper
   end
   
   def mercurial_field_tags(form, repository)
-      content_tag('p', form.text_field(:url, :label => 'Root directory', :size => 60, :required => true, :disabled => (repository && !repository.root_url.blank?)))
+    content_tag('p', form.text_field(:url, :label => 'Root directory', :size => 60, :required => true, :disabled => (repository && !repository.root_url.blank?))) +
+    content_tag('p', form.select(:path_encoding, [nil] + Setting::ENCODINGS,
+                                 :label => 'Path encoding'))
   end
 
   def git_field_tags(form, repository)
