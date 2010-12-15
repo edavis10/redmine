@@ -51,7 +51,7 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
       assert_not_nil assigns(:entries)
       assert_equal 2, assigns(:entries).size
       assert assigns(:entries).detect {|e| e.name == 'directory' && e.kind == 'dir'}
-      assert assigns(:entries).detect {|e| e.name == 'doc-mkdir.txt' && e.kind == 'file'}
+      assert assigns(:entries).detect {|e| e.name == 'root_level.txt' && e.kind == 'file'}
     end
     
     def test_browse_directory
@@ -59,7 +59,7 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
       assert_response :success
       assert_template 'show'
       assert_not_nil assigns(:entries)
-      assert_equal ['doc-ls.txt', 'document.txt', 'edit.png'], assigns(:entries).collect(&:name)
+      assert_equal ["config.txt", "edit.png", "second_file.txt", "source2.txt"], assigns(:entries).collect(&:name)
       entry = assigns(:entries).detect {|e| e.name == 'edit.png'}
       assert_not_nil entry
       assert_equal 'file', entry.kind
@@ -67,36 +67,36 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
     end
     
     def test_browse_at_given_revision
-      get :show, :id => 3, :path => [], :rev => 3
+      get :show, :id => 3, :path => [], :rev => 'johndoe@no.server-20100927142810-5hx3443dk9mdbs3t'
       assert_response :success
       assert_template 'show'
       assert_not_nil assigns(:entries)
-      assert_equal ['directory', 'doc-deleted.txt', 'doc-ls.txt', 'doc-mkdir.txt'], assigns(:entries).collect(&:name)
+      assert_equal ['directory', 'mainfile.txt'], assigns(:entries).collect(&:name)
     end
     
     def test_changes
-      get :changes, :id => 3, :path => ['doc-mkdir.txt']
+      get :changes, :id => 3, :path => ['root_level.txt']
       assert_response :success
       assert_template 'changes'
-      assert_tag :tag => 'h2', :content => 'doc-mkdir.txt'
+      assert_tag :tag => 'h2', :content => 'root_level.txt'
     end
     
     def test_entry_show
-      get :entry, :id => 3, :path => ['directory', 'doc-ls.txt']
+      get :entry, :id => 3, :path => ['directory', 'second_file.txt']
       assert_response :success
       assert_template 'entry'
-      # Line 19
+      # Line 2
       assert_tag :tag => 'th',
-                 :content => /29/,
+                 :content => /2/,
                  :attributes => { :class => /line-num/ },
-                 :sibling => { :tag => 'td', :content => /Show help message/ }
+                 :sibling => { :tag => 'td', :content => /More code from/ }
     end
     
     def test_entry_download
-      get :entry, :id => 3, :path => ['directory', 'doc-ls.txt'], :format => 'raw'
+      get :entry, :id => 3, :path => ['directory', 'second_file.txt'], :format => 'raw'
       assert_response :success
       # File content
-      assert @response.body.include?('Show help message')
+      assert @response.body.include?('More code from')
     end
   
     def test_directory_entry
@@ -109,7 +109,7 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
 
     def test_diff
       # Full diff of changeset 3
-      get :diff, :id => 3, :rev => 3
+      get :diff, :id => 3, :rev => 'johndoe@no.server-20100927142810-5hx3443dk9mdbs3t'
       assert_response :success
       assert_template 'diff'
       # Line 22 removed
@@ -117,18 +117,18 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
                  :content => /2/,
                  :sibling => { :tag => 'td', 
                                :attributes => { :class => /diff_in/ },
-                               :content => /Main purpose/ }
+                               :content => /Added another line to the file/ }
     end
     
     def test_annotate
-      get :annotate, :id => 3, :path => ['doc-mkdir.txt']
+      get :annotate, :id => 3, :path => ['root_level.txt']
       assert_response :success
       assert_template 'annotate'
       # Line 2, revision 3
       assert_tag :tag => 'th', :content => /2/,
-                 :sibling => { :tag => 'td', :child => { :tag => 'a', :content => /3/ } },
-                 :sibling => { :tag => 'td', :content => /jsmith/ },
-                 :sibling => { :tag => 'td', :content => /Main purpose/ }
+                 :sibling => { :tag => 'td', :content => /5/, :child => { :tag => 'a', :content => /second@no\.server\-20100927143241\-aknlenpvde342upv/ } },
+                 :sibling => { :tag => 'td', :content => /second@no\.server/ },
+                 :sibling => { :tag => 'td', :content => /The above line is incorrect/ }
     end
   else
     puts "Bazaar test repository NOT FOUND. Skipping functional tests !!!"
