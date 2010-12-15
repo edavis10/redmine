@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 require 'wiki_controller'
 
 # Re-raise errors caught by the controller.
@@ -108,6 +108,52 @@ class WikiControllerTest < ActionController::TestCase
     assert_equal 1, page.attachments.count
     assert_equal 'testfile.txt', page.attachments.first.filename
   end
+
+  def test_update_page
+    @request.session[:user_id] = 2
+    assert_no_difference 'WikiPage.count' do
+      assert_no_difference 'WikiContent.count' do
+        assert_difference 'WikiContent::Version.count' do
+          put :update, :project_id => 1,
+            :id => 'Another_page',
+            :content => {
+              :comments => "my comments",
+              :text => "edited",
+              :version => 1
+            }
+        end
+      end
+    end
+    assert_redirected_to '/projects/ecookbook/wiki/Another_page'
+    
+    page = Wiki.find(1).pages.find_by_title('Another_page')
+    assert_equal "edited", page.content.text
+    assert_equal 2, page.content.version
+    assert_equal "my comments", page.content.comments
+  end
+
+  def test_update_page_with_failure
+    @request.session[:user_id] = 2
+    assert_no_difference 'WikiPage.count' do
+      assert_no_difference 'WikiContent.count' do
+        assert_no_difference 'WikiContent::Version.count' do
+          put :update, :project_id => 1,
+            :id => 'Another_page',
+            :content => {
+              :comments => 'a' * 300,  # failure here, comment is too long
+              :text => 'edited',
+              :version => 1
+            }
+          end
+        end
+      end
+    assert_response :success
+    assert_template 'edit'
+    
+    assert_error_tag :descendant => {:content => /Comment is too long/}
+    assert_tag :tag => 'textarea', :attributes => {:id => 'content_text'}, :content => 'edited'
+    assert_tag :tag => 'input', :attributes => {:id => 'content_version', :value => '1'}
+  end
   
   def test_preview
     @request.session[:user_id] = 2
@@ -170,6 +216,38 @@ class WikiControllerTest < ActionController::TestCase
                              :child => { :tag => 'td', :attributes => {:class => 'author'}, :content => /redMine Admin/ },
                              :child => { :tag => 'td', :content => /Some updated \[\[documentation\]\] here/ }
   end
+
+  def test_get_rename
+    @request.session[:user_id] = 2
+    get :rename, :project_id => 1, :id => 'Another_page'
+    assert_response :success
+    assert_template 'rename'
+    assert_tag 'option',
+      :attributes => {:value => ''},
+      :content => '',
+      :parent => {:tag => 'select', :attributes => {:name => 'wiki_page[parent_id]'}}
+    assert_no_tag 'option',
+      :attributes => {:selected => 'selected'},
+      :parent => {:tag => 'select', :attributes => {:name => 'wiki_page[parent_id]'}}
+  end
+  
+  def test_get_rename_child_page
+    @request.session[:user_id] = 2
+    get :rename, :project_id => 1, :id => 'Child_1'
+    assert_response :success
+    assert_template 'rename'
+    assert_tag 'option',
+      :attributes => {:value => ''},
+      :content => '',
+      :parent => {:tag => 'select', :attributes => {:name => 'wiki_page[parent_id]'}}
+    assert_tag 'option',
+      :attributes => {:value => '2', :selected => 'selected'},
+      :content => /Another page/,
+      :parent => {
+        :tag => 'select',
+        :attributes => {:name => 'wiki_page[parent_id]'}
+      }
+  end
   
   def test_rename_with_redirect
     @request.session[:user_id] = 2
@@ -192,6 +270,22 @@ class WikiControllerTest < ActionController::TestCase
     wiki = Project.find(1).wiki
     # Check that there's no redirects
     assert_nil wiki.find_page('Another page')
+  end
+  
+  def test_rename_with_parent_assignment
+    @request.session[:user_id] = 2
+    post :rename, :project_id => 1, :id => 'Another_page',
+      :wiki_page => { :title => 'Another page', :redirect_existing_links => "0", :parent_id => '4' }
+    assert_redirected_to :action => 'show', :project_id => 'ecookbook', :id => 'Another_page'
+    assert_equal WikiPage.find(4), WikiPage.find_by_title('Another_page').parent
+  end
+
+  def test_rename_with_parent_unassignment
+    @request.session[:user_id] = 2
+    post :rename, :project_id => 1, :id => 'Child_1',
+      :wiki_page => { :title => 'Child 1', :redirect_existing_links => "0", :parent_id => '' }
+    assert_redirected_to :action => 'show', :project_id => 'ecookbook', :id => 'Child_1'
+    assert_nil WikiPage.find_by_title('Child_1').parent
   end
   
   def test_destroy_child

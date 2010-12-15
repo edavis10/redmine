@@ -1,5 +1,5 @@
-# redMine - project management software
-# Copyright (C) 2006-2007  Jean-Philippe Lang
+# Redmine - project management software
+# Copyright (C) 2006-2010  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -453,7 +453,7 @@ module ApplicationHelper
     text = Redmine::WikiFormatting.to_html(Setting.text_formatting, text, :object => obj, :attribute => attr) { |macro, args| exec_macro(macro, obj, args) }
       
     parse_non_pre_blocks(text) do |text|
-      [:parse_inline_attachments, :parse_wiki_links, :parse_redmine_links].each do |method_name|
+      [:parse_inline_attachments, :parse_wiki_links, :parse_redmine_links, :parse_headings].each do |method_name|
         send method_name, text, project, obj, attr, only_path, options
       end
     end
@@ -526,7 +526,7 @@ module ApplicationHelper
       esc, all, page, title = $1, $2, $3, $5
       if esc.nil?
         if page =~ /^([^\:]+)\:(.*)$/
-          link_project = Project.find_by_name($1) || Project.find_by_identifier($1)
+          link_project = Project.find_by_identifier($1) || Project.find_by_name($1)
           page = $2
           title ||= $1 if page.blank?
         end
@@ -673,6 +673,50 @@ module ApplicationHelper
         end
       end
       leading + (link || "#{prefix}#{sep}#{identifier}")
+    end
+  end
+  
+  TOC_RE = /<p>\{\{([<>]?)toc\}\}<\/p>/i unless const_defined?(:TOC_RE)
+  HEADING_RE = /<h(1|2|3|4)( [^>]+)?>(.+?)<\/h(1|2|3|4)>/i unless const_defined?(:HEADING_RE)
+  
+  # Headings and TOC
+  # Adds ids and links to headings and renders the TOC if needed unless options[:headings] is set to false
+  def parse_headings(text, project, obj, attr, only_path, options)
+    headings = []
+    text.gsub!(HEADING_RE) do
+      level, attrs, content = $1.to_i, $2, $3
+      item = strip_tags(content).strip
+      anchor = item.gsub(%r{[^\w\s\-]}, '').gsub(%r{\s+(\-+\s*)?}, '-')
+      headings << [level, anchor, item]
+      "<h#{level} #{attrs} id=\"#{anchor}\">#{content}<a href=\"##{anchor}\" class=\"wiki-anchor\">&para;</a></h#{level}>"
+    end unless options[:headings] == false
+    
+    text.gsub!(TOC_RE) do
+      if headings.empty?
+        ''
+      else
+        div_class = 'toc'
+        div_class << ' right' if $1 == '>'
+        div_class << ' left' if $1 == '<'
+        out = "<ul class=\"#{div_class}\"><li>"
+        root = headings.map(&:first).min
+        current = root
+        started = false
+        headings.each do |level, anchor, item|
+          if level > current
+            out << '<ul><li>' * (level - current)
+          elsif level < current
+            out << "</li></ul>\n" * (current - level) + "</li><li>"
+          elsif started
+            out << '</li><li>'
+          end
+          out << "<a href=\"##{anchor}\">#{item}</a>"
+          current = level
+          started = true
+        end
+        out << '</li></ul>' * (current - root)
+        out << '</li></ul>'
+      end
     end
   end
 
@@ -824,7 +868,29 @@ module ApplicationHelper
   def favicon
     "<link rel='shortcut icon' href='#{image_path('/favicon.ico')}' />"
   end
+  
+  # Returns true if arg is expected in the API response
+  def include_in_api_response?(arg)
+    unless @included_in_api_response
+      param = params[:include]
+      @included_in_api_response = param.is_a?(Array) ? param.collect(&:to_s) : param.to_s.split(',')
+      @included_in_api_response.collect!(&:strip)
+    end
+    @included_in_api_response.include?(arg.to_s)
+  end
 
+  # Returns options or nil if nometa param or X-Redmine-Nometa header
+  # was set in the request
+  def api_meta(options)
+    if params[:nometa].present? || request.headers['X-Redmine-Nometa']
+      # compatibility mode for activeresource clients that raise
+      # an error when unserializing an array with attributes
+      nil
+    else
+      options
+    end
+  end
+  
   private
 
   def wiki_helper

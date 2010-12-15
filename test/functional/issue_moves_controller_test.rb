@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 
 class IssueMovesControllerTest < ActionController::TestCase
   fixtures :all
@@ -58,8 +58,8 @@ class IssueMovesControllerTest < ActionController::TestCase
       post :create, :ids => [1, 2], :notes => 'Moving two issues'
 
       assert_redirected_to :controller => 'issues', :action => 'index', :project_id => 'ecookbook'
-      assert_equal 'Moving two issues', Issue.find(1).journals.last.notes
-      assert_equal 'Moving two issues', Issue.find(2).journals.last.notes
+      assert_equal 'Moving two issues', Issue.find(1).journals.sort_by(&:id).last.notes
+      assert_equal 'Moving two issues', Issue.find(2).journals.sort_by(&:id).last.notes
 
     end
     
@@ -72,7 +72,7 @@ class IssueMovesControllerTest < ActionController::TestCase
         post :create, :ids => [1, 2], :new_project_id => 2, :copy_options => {:copy => '1'}
       end
     end
-    assert_redirected_to 'projects/ecookbook/issues'
+    assert_redirected_to '/projects/ecookbook/issues'
   end
 
   context "#create via bulk copy" do

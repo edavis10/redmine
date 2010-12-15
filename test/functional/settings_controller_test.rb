@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 require 'settings_controller'
 
 # Re-raise errors caught by the controller.
@@ -50,7 +50,7 @@ class SettingsControllerTest < ActionController::TestCase
                               :notified_events => %w(issue_added issue_updated news_added),
                               :emails_footer => 'Test footer'
                               }
-    assert_redirected_to 'settings/edit'
+    assert_redirected_to '/settings/edit'
     assert_equal 'functional@test.foo', Setting.mail_from
     assert !Setting.bcc_recipients?
     assert_equal %w(issue_added issue_updated news_added), Setting.notified_events

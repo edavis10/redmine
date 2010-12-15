@@ -4,6 +4,69 @@ Redmine - project management software
 Copyright (C) 2006-2010  Jean-Philippe Lang
 http://www.redmine.org/
 
+== 2010-11-28 v1.0.4
+
+* #5324: Git not working if color.ui is enabled
+* #6447: Issues API doesn't allow full key auth for all actions
+* #6457: Edit User group problem
+* #6575: start date being filled with current date even when blank value is submitted
+* #6740: Max attachment size, incorrect usage of 'KB'
+* #6760: Select box sorted by ID instead of name in Issue Category
+* #6766: Changing target version name can cause an internal error
+* #6784: Redmine not working with i18n gem 0.4.2
+* #6839: Hardcoded absolute links in my/page_layout
+* #6841: Projects API doesn't allow full key auth for all actions
+* #6860: svn: Write error: Broken pipe when browsing repository
+* #6874: API should return XML description when creating a project
+* #6932: submitting wrong parent task input creates a 500 error
+* #6966: Records of Forums are remained, deleting project
+* #6990: Layout problem in workflow overview
+* #5117: mercurial_adapter should ensure the right LANG environment variable
+* #6782: Traditional Chinese language file (to r4352)
+* #6783: Swedish Translation for r4352
+* #6804: Bugfix: spelling fixes
+* #6814: Japanese Translation for r4362
+* #6948: Bulgarian translation
+* #6973: Update es.yml
+
+== 2010-10-31 v1.0.3
+
+* #4065: Redmine.pm doesn't work with LDAPS and a non-standard port
+* #4416: Link from version details page to edit the wiki.
+* #5484: Add new issue as subtask to an existing ticket
+* #5948: Update help/wiki_syntax_detailed.html with more link options
+* #6494: Typo in pt_BR translation for 1.0.2
+* #6508: Japanese translation update
+* #6509: Localization pt-PT (new strings)
+* #6511: Rake task to test email
+* #6525: Traditional Chinese language file (to r4225)
+* #6536: Patch for swedish translation
+* #6548: Rake tasks to add/remove i18n strings
+* #6569: Updated Hebrew translation
+* #6570: Japanese Translation for r4231
+* #6596: pt-BR translation updates
+* #6629: Change field-name of issues start date
+* #6669: Bulgarian translation
+* #6731: Macedonian translation fix
+* #6732: Japanese Translation for r4287
+* #6735: Add user-agent to reposman
+* #6736: Traditional Chinese language file (to r4288)
+* #6739: Swedish Translation for r4288
+* #6765: Traditional Chinese language file (to r4302)
+* Fixed #5324: Git not working if color.ui is enabled
+* Fixed #5652: Bad URL parsing in the wiki when it ends with right-angle-bracket(greater-than mark).
+* Fixed #5803: Precedes/Follows Relationships Broke
+* Fixed #6435: Links to wikipages bound to versions do not respect version-sharing in Settings -> Versions
+* Fixed #6438: Autologin cannot be disabled again once it's enabled
+* Fixed #6513: "Move" and "Copy" are not displayed when deployed in subdirectory
+* Fixed #6521: Tooltip/label for user "search-refinment" field on group/project member list
+* Fixed #6563: i18n-issues on calendar view
+* Fixed #6598: Wrong caption for button_create_and_continue in German language file
+* Fixed #6607: Unclear caption for german button_update
+* Fixed #6612: SortHelper missing from CalendarsController
+* Fixed #6740: Max attachment size, incorrect usage of 'KB'
+* Fixed #6750: ActionView::TemplateError (undefined method `empty?' for nil:NilClass) on line #12 of app/views/context_menus/issues.html.erb:
+
 == 2010-09-26 v1.0.2
 
 * #2285: issue-refinement: pressing enter should result to an "apply"
@@ -1074,7 +1137,7 @@ http://www.redmine.org/
 * Search engines now supports pagination. Results are sorted in reverse chronological order
 * Added "Estimated hours" attribute on issues
 * A category with assigned issue can now be deleted. 2 options are proposed: remove assignments or reassign issues to another category
-* Forum notifications are now also sent to the authors of the thread, even if they don’t watch the board
+* Forum notifications are now also sent to the authors of the thread, even if they donï¿½t watch the board
 * Added an application setting to specify the application protocol (http or https) used to generate urls in emails
 * Gantt chart: now starts at the current month by default
 * Gantt chart: month count and zoom factor are automatically saved as user preferences
@@ -1082,7 +1145,7 @@ http://www.redmine.org/
 * Added wiki index by date
 * Added preview on add/edit issue form
 * Emails footer can now be customized from the admin interface (Admin -> Email notifications)
-* Default encodings for repository files can now be set in application settings (used to convert files content and diff to UTF-8 so that they’re properly displayed)
+* Default encodings for repository files can now be set in application settings (used to convert files content and diff to UTF-8 so that theyï¿½re properly displayed)
 * Calendar: first day of week can now be set in lang files
 * Automatic closing of duplicate issues
 * Added a cross-project issue list
@@ -1094,7 +1157,7 @@ http://www.redmine.org/
 * Added some accesskeys
 * Added "Float" as a custom field format
 * Added basic Theme support
-* Added the ability to set the “done ratio” of issues fixed by commit (Nikolay Solakov)
+* Added the ability to set the ï¿½done ratioï¿½ of issues fixed by commit (Nikolay Solakov)
 * Added custom fields in issue related mail notifications
 * Email notifications are now sent in plain text and html
 * Gantt chart can now be exported to a graphic file (png). This functionality is only available if RMagick is installed.
@@ -1127,7 +1190,7 @@ http://www.redmine.org/
 * Added Korean translation (Choi Jong Yoon)
 * Fixed: the link to delete issue relations is displayed even if the user is not authorized to delete relations
 * Performance improvement on calendar and gantt
-* Fixed: wiki preview doesn’t work on long entries
+* Fixed: wiki preview doesnï¿½t work on long entries
 * Fixed: queries with multiple custom fields return no result
 * Fixed: Can not authenticate user against LDAP if its DN contains non-ascii characters
 * Fixed: URL with ~ broken in wiki formatting
@@ -1138,7 +1201,7 @@ http://www.redmine.org/
 
 * per project forums added
 * added the ability to archive projects
-* added “Watch” functionality on issues. It allows users to receive notifications about issue changes
+* added ï¿½Watchï¿½ functionality on issues. It allows users to receive notifications about issue changes
 * custom fields for issues can now be used as filters on issue list
 * added per user custom queries
 * commit messages are now scanned for referenced or fixed issue IDs (keywords defined in Admin -> Settings)
@@ -1179,7 +1242,7 @@ http://www.redmine.org/
 * added swedish translation (Thomas Habets)
 * italian translation update (Alessio Spadaro)
 * japanese translation update (Satoru Kurashiki)
-* fixed: error on history atom feed when there’s no notes on an issue change
+* fixed: error on history atom feed when thereï¿½s no notes on an issue change
 * fixed: error in journalizing an issue with longtext custom fields (Postgresql)
 * fixed: creation of Oracle schema
 * fixed: last day of the month not included in project activity

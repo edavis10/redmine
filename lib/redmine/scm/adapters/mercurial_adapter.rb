@@ -16,7 +16,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 require 'redmine/scm/adapters/abstract_adapter'
-require 'rexml/document'
 
 module Redmine
   module Scm
@@ -25,33 +24,31 @@ module Redmine
         
         # Mercurial executable name
         HG_BIN = "hg"
-        HG_HELPER_EXT = "#{RAILS_ROOT}/extra/mercurial/redminehelper.py"
         TEMPLATES_DIR = File.dirname(__FILE__) + "/mercurial"
         TEMPLATE_NAME = "hg-template"
         TEMPLATE_EXTENSION = "tmpl"
         
-        # raised if hg command exited with error, e.g. unknown revision.
-        class HgCommandAborted < CommandFailed; end
-
         class << self
           def client_version
-            @client_version ||= hgversion
+            @@client_version ||= (hgversion || [])
           end
           
           def hgversion  
             # The hg version is expressed either as a
             # release number (eg 0.9.5 or 1.0) or as a revision
             # id composed of 12 hexa characters.
-            hgversion_from_command_line[/\d+(\.\d+)+/].to_s.split('.').map { |e| e.to_i }
+            theversion = hgversion_from_command_line
+            if m = theversion.match(%r{\A(.*?)((\d+\.)+\d+)})
+              m[2].scan(%r{\d+}).collect(&:to_i)
+            end
           end
           
           def hgversion_from_command_line
-            shellout("#{HG_BIN} --version") { |io| io.gets }.to_s
+            shellout("#{HG_BIN} --version") { |io| io.read }.to_s
           end
-          private :hgversion_from_command_line
           
           def template_path
-            template_path_for(client_version)
+            @@template_path ||= template_path_for(client_version)
           end
           
           def template_path_for(version)
@@ -65,17 +62,19 @@ module Redmine
         end
         
         def info
-          tip = summary['tip'].first
-          Info.new(:root_url => summary['root'].first['path'],
-                   :lastrev => Revision.new(:identifier => tip['rev'],
-                                            :revision => tip['rev'],
-                                            :scmid => tip['node']))
+          cmd = "#{HG_BIN} -R #{target('')} root"
+          root_url = nil
+          shellout(cmd) do |io|
+            root_url = io.read
+          end
+          return nil if $? && $?.exitstatus != 0
+          info = Info.new({:root_url => root_url.chomp,
+                            :lastrev => revisions(nil,nil,nil,{:limit => 1}).last
+                          })
+          info
+        rescue CommandFailed
+          return nil
         end
-
-        def summary
-          @summary ||= fetchg 'rhsummary'
-        end
-        private :summary
         
         def entries(path=nil, identifier=nil)
           path ||= ''
@@ -102,144 +101,104 @@ module Redmine
           entries.sort_by_name
         end
         
-        # TODO: is this api necessary?
-        def revisions(path=nil, identifier_from=nil, identifier_to=nil, options={})
-          revisions = Revisions.new
-          each_revision { |e| revisions << e }
-          revisions
-        end
-
-        # Iterates the revisions by using a template file that
+        # Fetch the revisions by using a template file that 
         # makes Mercurial produce a xml output.
-        def each_revision(path=nil, identifier_from=nil, identifier_to=nil, options={})
-          hg_args = ['log', '--debug', '-C', '--style', self.class.template_path]
-          hg_args << '-r' << "#{hgrev(identifier_from)}:#{hgrev(identifier_to)}"
-          hg_args << '--limit' << options[:limit] if options[:limit]
-          hg_args << without_leading_slash(path) unless path.blank?
-          doc = hg(*hg_args) do |io|
-            s = io.read
+        def revisions(path=nil, identifier_from=nil, identifier_to=nil, options={})  
+          revisions = Revisions.new
+          cmd = "#{HG_BIN} --debug --encoding utf8 -R #{target('')} log -C --style #{shell_quote self.class.template_path}"
+          if identifier_from && identifier_to
+            cmd << " -r #{identifier_from.to_i}:#{identifier_to.to_i}"
+          elsif identifier_from
+            cmd << " -r #{identifier_from.to_i}:"
+          end
+          cmd << " --limit #{options[:limit].to_i}" if options[:limit]
+          cmd << " #{path}" if path
+          shellout(cmd) do |io|
             begin
-              REXML::Document.new(s)
-            rescue REXML::ParseException
-              # Mercurial < 1.5 does not support footer template for '</log>'
-              REXML::Document.new(s + '</log>')
+              # HG doesn't close the XML Document...
+              doc = REXML::Document.new(io.read << "</log>")
+              doc.elements.each("log/logentry") do |logentry|
+                paths = []
+                copies = logentry.get_elements('paths/path-copied')
+                logentry.elements.each("paths/path") do |path|
+                  # Detect if the added file is a copy
+                  if path.attributes['action'] == 'A' and c = copies.find{ |e| e.text == path.text }
+                    from_path = c.attributes['copyfrom-path']
+                    from_rev = logentry.attributes['revision']
+                  end
+                  paths << {:action => path.attributes['action'],
+                    :path => "/#{path.text}",
+                    :from_path => from_path ? "/#{from_path}" : nil,
+                    :from_revision => from_rev ? from_rev : nil
+                  }
+                end
+                paths.sort! { |x,y| x[:path] <=> y[:path] }
+                
+                revisions << Revision.new({:identifier => logentry.attributes['revision'],
+                                            :scmid => logentry.attributes['node'],
+                                            :author => (logentry.elements['author'] ? logentry.elements['author'].text : ""),
+                                            :time => Time.parse(logentry.elements['date'].text).localtime,
+                                            :message => logentry.elements['msg'].text,
+                                            :paths => paths
+                                          })
+              end
+            rescue
+              logger.debug($!)
             end
           end
-
-          doc.each_element('log/logentry') do |le|
-            cpalist = le.get_elements('paths/path-copied').map do |e|
-              [e.text, e.attributes['copyfrom-path']]
-            end
-            cpmap = Hash[*cpalist.flatten]
-
-            paths = le.get_elements('paths/path').map do |e|
-              {:action => e.attributes['action'], :path => with_leading_slash(e.text),
-                :from_path => (cpmap.member?(e.text) ? with_leading_slash(cpmap[e.text]) : nil),
-                :from_revision => (cpmap.member?(e.text) ? le.attributes['revision'] : nil)}
-            end.sort { |a, b| a[:path] <=> b[:path] }
-
-            yield Revision.new(:identifier => le.attributes['revision'],
-                               :revision => le.attributes['revision'],
-                               :scmid => le.attributes['node'],
-                               :author => (le.elements['author'].text rescue ''),
-                               :time => Time.parse(le.elements['date'].text).localtime,
-                               :message => le.elements['msg'].text,
-                               :paths => paths)
-          end
-          self
+          return nil if $? && $?.exitstatus != 0
+          revisions
         end
         
         def diff(path, identifier_from, identifier_to=nil)
-          hg_args = ['diff', '--nodates']
+          path ||= ''
           if identifier_to
-            hg_args << '-r' << hgrev(identifier_to) << '-r' << hgrev(identifier_from)
+            identifier_to = identifier_to.to_i 
           else
-            hg_args << '-c' << hgrev(identifier_from)
+            identifier_to = identifier_from.to_i - 1
           end
-          hg_args << without_leading_slash(path) unless path.blank?
-
-          hg *hg_args do |io|
-            io.collect
+          cmd = "#{HG_BIN} -R #{target('')} diff -r #{identifier_to} -r #{identifier_from} --nodates"
+          cmd << " -I #{target(path)}" unless path.empty?
+          diff = []
+          shellout(cmd) do |io|
+            io.each_line do |line|
+              diff << line
+            end
           end
-        rescue HgCommandAborted
-          nil  # means not found
+          return nil if $? && $?.exitstatus != 0
+          diff
         end
         
         def cat(path, identifier=nil)
-          hg 'cat', '-r', hgrev(identifier), without_leading_slash(path) do |io|
+          cmd = "#{HG_BIN} -R #{target('')} cat"
+          cmd << " -r " + (identifier ? identifier.to_s : "tip")
+          cmd << " #{target(path)}"
+          cat = nil
+          shellout(cmd) do |io|
             io.binmode
-            io.read
+            cat = io.read
           end
-        rescue HgCommandAborted
-          nil  # means not found
+          return nil if $? && $?.exitstatus != 0
+          cat
         end
         
         def annotate(path, identifier=nil)
+          path ||= ''
+          cmd = "#{HG_BIN} -R #{target('')}"
+          cmd << " annotate -n -u"
+          cmd << " -r " + (identifier ? identifier.to_s : "tip")
+          cmd << " -r #{identifier.to_i}" if identifier
+          cmd << " #{target(path)}"
           blame = Annotate.new
-          hg 'annotate', '-ncu', '-r', hgrev(identifier), without_leading_slash(path) do |io|
-            io.each do |line|
-              next unless line =~ %r{^([^:]+)\s(\d+)\s([0-9a-f]+):(.*)$}
-              r = Revision.new(:author => $1.strip, :revision => $2, :scmid => $3,
-                               :identifier => $3)
-              blame.add_line($4.rstrip, r)
+          shellout(cmd) do |io|
+            io.each_line do |line|
+              next unless line =~ %r{^([^:]+)\s(\d+):(.*)$}
+              blame.add_line($3.rstrip, Revision.new(:identifier => $2.to_i, :author => $1.strip))
             end
           end
+          return nil if $? && $?.exitstatus != 0
           blame
-        rescue HgCommandAborted
-          nil  # means not found or cannot be annotated
         end
-
-        class Revision < Redmine::Scm::Adapters::Revision
-          # Returns the readable identifier
-          def format_identifier
-            "#{revision}:#{scmid}"
-          end
-        end
-
-        # Runs 'hg' command with the given args
-        def hg(*args, &block)
-          full_args = [HG_BIN, '--cwd', url, '--encoding', 'utf-8']
-          full_args << '--config' << "extensions.redminehelper=#{HG_HELPER_EXT}"
-          full_args += args
-          ret = shellout(full_args.map { |e| shell_quote e.to_s }.join(' '), &block)
-          if $? && $?.exitstatus != 0
-            raise HgCommandAborted, "hg exited with non-zero status: #{$?.exitstatus}"
-          end
-          ret
-        end
-        private :hg
-
-        # Runs 'hg' helper, then parses output to return
-        def fetchg(*args)
-          # command output example:
-          #   :tip: rev node
-          #   100 abcdef012345
-          #   :tags: rev node name
-          #   100 abcdef012345 tip
-          #   ...
-          data = Hash.new { |h, k| h[k] = [] }
-          hg(*args) do |io|
-            key, attrs = nil, nil
-            io.each do |line|
-              next if line.chomp.empty?
-              if /^:(\w+): ([\w ]+)/ =~ line
-                key = $1
-                attrs = $2.split(/ /)
-              elsif key
-                alist = attrs.zip(line.chomp.split(/ /, attrs.size))
-                data[key] << Hash[*alist.flatten]
-              end
-            end
-          end
-          data
-        end
-        private :fetchg
-
-        # Returns correct revision identifier
-        def hgrev(identifier)
-          identifier.blank? ? 'tip' : identifier.to_s
-        end
-        private :hgrev
       end
     end
   end

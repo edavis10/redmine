@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../../../../test_helper'
+require File.expand_path('../../../../../test_helper', __FILE__)
 
 class Redmine::WikiFormatting::TextileFormatterTest < HelperTestCase
 
@@ -75,6 +75,14 @@ class Redmine::WikiFormatting::TextileFormatterTest < HelperTestCase
     assert_html_output(
       'double -- dashes -- test'  => 'double -- dashes -- test',
       'double -- *dashes* -- test'  => 'double -- <strong>dashes</strong> -- test'
+    )
+  end
+  
+  def test_acronyms
+    assert_html_output(
+      'this is an acronym: GPL(General Public License)' => 'this is an acronym: <acronym title="General Public License">GPL</acronym>',
+      '2 letters JP(Jean-Philippe) acronym' => '2 letters <acronym title="Jean-Philippe">JP</acronym> acronym',
+      'GPL(This is a double-quoted "title")' => '<acronym title="This is a double-quoted &quot;title&quot;">GPL</acronym>'
     )
   end
   

@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 
 class WikiTest < ActiveSupport::TestCase
   fixtures :wikis, :wiki_pages, :wiki_contents, :wiki_content_versions
@@ -37,6 +37,15 @@ class WikiTest < ActiveSupport::TestCase
     assert @wiki.save
     @wiki.reload
     assert_equal "Another start page", @wiki.start_page
+  end
+  
+  def test_find_page
+    wiki = Wiki.find(1)
+    page = WikiPage.find(2)
+    
+    assert_equal page, wiki.find_page('Another_page')
+    assert_equal page, wiki.find_page('Another page')
+    assert_equal page, wiki.find_page('ANOTHER page')
   end
   
   def test_titleize

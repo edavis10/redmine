@@ -929,3 +929,8 @@ eu:
   field_start_date: Start date
   label_principal_search: "Search for user or group:"
   label_user_search: "Search for user:"
+  field_visible: Visible
+  setting_emails_header: Emails header
+  setting_commit_logtime_activity_id: Activity for logged time
+  text_time_logged_by_changeset: Applied in changeset {{value}}.
+  setting_commit_logtime_enabled: Enable time logging

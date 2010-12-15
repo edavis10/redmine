@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 require 'search_controller'
 
 # Re-raise errors caught by the controller.
@@ -83,7 +83,7 @@ class SearchControllerTest < ActionController::TestCase
     results = assigns(:results)
     assert_not_nil results
     assert_equal 1, results.size
-    assert results.include?(Issue.find(3))
+    assert results.include?(Issue.find(7))
   end
   
   def test_search_all_words
@@ -126,7 +126,7 @@ class SearchControllerTest < ActionController::TestCase
   def test_quick_jump_to_issue
     # issue of a public project
     get :index, :q => "3"
-    assert_redirected_to 'issues/3'
+    assert_redirected_to '/issues/3'
     
     # issue of a private project
     get :index, :q => "4"

@@ -67,6 +67,10 @@ module Redmine
         
         @date_from = Date.civil(@year_from, @month_from, 1)
         @date_to = (@date_from >> @months) - 1
+        
+        @subjects = ''
+        @lines = ''
+        @number_of_rows = nil
       end
 
       def common_params
@@ -88,10 +92,12 @@ module Redmine
             ### Extracted from the HTML view/helpers
       # Returns the number of rows that will be rendered on the Gantt chart
       def number_of_rows
+        return @number_of_rows if @number_of_rows
+        
         if @project
           return number_of_rows_on_project(@project)
         else
-          Project.roots.inject(0) do |total, project|
+          Project.roots.visible.has_module('issue_tracking').inject(0) do |total, project|
             total += number_of_rows_on_project(project)
           end
         end
@@ -119,7 +125,7 @@ module Redmine
         end
 
         # Subprojects
-        project.children.each do |subproject|
+        project.children.visible.has_module('issue_tracking').each do |subproject|
           count += number_of_rows_on_project(subproject)
         end
 
@@ -128,34 +134,35 @@ module Redmine
 
       # Renders the subjects of the Gantt chart, the left side.
       def subjects(options={})
-        options = {:indent => 4, :render => :subject, :format => :html}.merge(options)
-
-        output = ''
-        if @project
-          output << render_project(@project, options)
-        else
-          Project.roots.each do |project|
-            output << render_project(project, options)
-          end
-        end
-
-        output
+        render(options.merge(:only => :subjects)) unless @subjects_rendered
+        @subjects
       end
 
       # Renders the lines of the Gantt chart, the right side
       def lines(options={})
-        options = {:indent => 4, :render => :line, :format => :html}.merge(options)
-        output = ''
-
+        render(options.merge(:only => :lines)) unless @lines_rendered
+        @lines
+      end
+      
+      def render(options={})
+        options = {:indent => 4, :render => :subject, :format => :html}.merge(options)
+        
+        @subjects = '' unless options[:only] == :lines
+        @lines = '' unless options[:only] == :subjects
+        @number_of_rows = 0
+        
         if @project
-          output << render_project(@project, options)
+          render_project(@project, options)
         else
-          Project.roots.each do |project|
-            output << render_project(project, options)
+          Project.roots.visible.has_module('issue_tracking').each do |project|
+            render_project(project, options)
           end
         end
         
-        output
+        @subjects_rendered = true unless options[:only] == :lines
+        @lines_rendered = true unless options[:only] == :subjects
+        
+        render_end(options)
       end
 
       def render_project(project, options={})
@@ -163,73 +170,52 @@ module Redmine
         options[:indent_increment] = 20 unless options.key? :indent_increment
         options[:top_increment] = 20 unless options.key? :top_increment
 
-        output = ''
-        # Project Header
-        project_header = if options[:render] == :subject
-                           subject_for_project(project, options)
-                         else
-                           # :line
-                           line_for_project(project, options)
-                         end
-        output << project_header if options[:format] == :html
+        subject_for_project(project, options) unless options[:only] == :lines
+        line_for_project(project, options) unless options[:only] == :subjects
         
         options[:top] += options[:top_increment]
         options[:indent] += options[:indent_increment]
+        @number_of_rows += 1
         
         # Second, Issues without a version
         issues = project.issues.for_gantt.without_version.with_query(@query)
+        sort_issues!(issues)
         if issues
-          issue_rendering = render_issues(issues, options)
-          output << issue_rendering if options[:format] == :html
+          render_issues(issues, options)
         end
 
         # Third, Versions
         project.versions.sort.each do |version|
-          version_rendering = render_version(version, options)
-          output << version_rendering if options[:format] == :html
+          render_version(version, options)
         end
 
         # Fourth, subprojects
-        project.children.each do |project|
-          subproject_rendering = render_project(project, options)
-          output << subproject_rendering if options[:format] == :html
+        project.children.visible.has_module('issue_tracking').each do |project|
+          render_project(project, options)
         end
 
         # Remove indent to hit the next sibling
         options[:indent] -= options[:indent_increment]
-        
-        output
       end
 
       def render_issues(issues, options={})
-        output = ''
         issues.each do |i|
-          issue_rendering = if options[:render] == :subject
-                              subject_for_issue(i, options)
-                            else
-                              # :line
-                              line_for_issue(i, options)
-                            end
-          output << issue_rendering if options[:format] == :html
+          subject_for_issue(i, options) unless options[:only] == :lines
+          line_for_issue(i, options) unless options[:only] == :subjects
+          
           options[:top] += options[:top_increment]
+          @number_of_rows += 1
         end
-        output
       end
 
       def render_version(version, options={})
-        output = ''
         # Version header
-        version_rendering = if options[:render] == :subject
-                              subject_for_version(version, options)
-                            else
-                              # :line
-                              line_for_version(version, options)
-                            end
-
-        output << version_rendering if options[:format] == :html
+        subject_for_version(version, options) unless options[:only] == :lines
+        line_for_version(version, options) unless options[:only] == :subjects
         
         options[:top] += options[:top_increment]
-
+        @number_of_rows += 1
+        
         # Remove the project requirement for Versions because it will
         # restrict issues to only be on the current project.  This
         # ends up missing issues which are assigned to shared versions.
@@ -237,13 +223,19 @@ module Redmine
         
         issues = version.fixed_issues.for_gantt.with_query(@query)
         if issues
+          sort_issues!(issues)
           # Indent issues
           options[:indent] += options[:indent_increment]
-          output << render_issues(issues, options)
+          render_issues(issues, options)
           options[:indent] -= options[:indent_increment]
         end
-
-        output
+      end
+      
+      def render_end(options={})
+        case options[:format]
+        when :pdf        
+          options[:pdf].Line(15, options[:top], PDF::TotalWidth, options[:top])
+        end
       end
 
       def subject_for_project(project, options)
@@ -261,7 +253,7 @@ module Redmine
             ''
           end
           output << "</small></div>"
-
+          @subjects << output
           output
         when :image
           
@@ -270,6 +262,7 @@ module Redmine
           options[:image].stroke_width(1)
           options[:image].text(options[:indent], options[:top] + 2, project.name)
         when :pdf
+          pdf_new_page?(options)
           options[:pdf].SetY(options[:top])
           options[:pdf].SetX(15)
           
@@ -349,7 +342,7 @@ module Redmine
               output << "<strong>#{h project } #{h project.completed_percent(:include_subprojects => true).to_i.to_s}%</strong>"
               output << "</div>"
             end
-
+            @lines << output
             output
           when :image
             options[:image].stroke('transparent')
@@ -397,7 +390,7 @@ module Redmine
             ''
           end
           output << "</small></div>"
-
+          @subjects << output
           output
         when :image
           options[:image].fill('black')
@@ -405,6 +398,7 @@ module Redmine
           options[:image].stroke_width(1)
           options[:image].text(options[:indent], options[:top] + 2, version.to_s_with_project)
         when :pdf
+          pdf_new_page?(options)
           options[:pdf].SetY(options[:top])
           options[:pdf].SetX(15)
           
@@ -484,7 +478,7 @@ module Redmine
               output << "<strong>#{h version } #{h version.completed_pourcent.to_i.to_s}%</strong>"
               output << "</div>"
             end
-
+            @lines << output
             output
           when :image
             options[:image].stroke('transparent')
@@ -536,8 +530,6 @@ module Redmine
             end
             output << "<span class='#{css_classes.join(' ')}'>"
             output << view.link_to_issue(issue)
-            output << ":"
-            output << h(issue.subject)
             output << '</span>'
           else
             ActiveRecord::Base.logger.debug "Gantt#subject_for_issue was not given an issue"
@@ -553,6 +545,7 @@ module Redmine
           end
 
           output << "</div>"
+          @subjects << output
           output
         when :image
           options[:image].fill('black')
@@ -560,6 +553,7 @@ module Redmine
           options[:image].stroke_width(1)
           options[:image].text(options[:indent], options[:top] + 2, issue.subject)
         when :pdf
+          pdf_new_page?(options)
           options[:pdf].SetY(options[:top])
           options[:pdf].SetX(15)
           
@@ -625,6 +619,7 @@ module Redmine
             output << '<span class="tip">'
             output << view.render_issue_tooltip(issue)
             output << "</span></div>"
+            @lines << output
             output
           
           when :image
@@ -938,39 +933,42 @@ module Redmine
         
         # Tasks
         top = headers_heigth + y_start
-        pdf_subjects_and_lines(pdf, {
-                                 :top => top,
-                                 :zoom => zoom,
-                                 :subject_width => subject_width,
-                                 :g_width => g_width
-                               })
-
-        
-        pdf.Line(15, top, subject_width+g_width, top)
+        options = {
+          :top => top,
+          :zoom => zoom,
+          :subject_width => subject_width,
+          :g_width => g_width,
+          :indent => 0,
+          :indent_increment => 5,
+          :top_increment => 5,
+          :format => :pdf,
+          :pdf => pdf
+        }
+        render(options)
         pdf.Output
-
-        
       end
       
       private
 
-      # Renders both the subjects and lines of the Gantt chart for the
-      # PDF format
-      def pdf_subjects_and_lines(pdf, options = {})
-        subject_options = {:indent => 0, :indent_increment => 5, :top_increment => 3, :render => :subject, :format => :pdf, :pdf => pdf}.merge(options)
-        line_options = {:indent => 0, :indent_increment => 5, :top_increment => 3, :render => :line, :format => :pdf, :pdf => pdf}.merge(options)
-
-        if @project
-          render_project(@project, subject_options)
-          render_project(@project, line_options)
-        else
-          Project.roots.each do |project|
-            render_project(project, subject_options)
-            render_project(project, line_options)
-          end
+      # Sorts a collection of issues by start_date, due_date, id for gantt rendering
+      def sort_issues!(issues)
+        issues.sort! do |a, b|
+          cmp = 0
+          cmp = (a.start_date <=> b.start_date) if a.start_date? && b.start_date?
+          cmp = (a.due_date <=> b.due_date) if cmp == 0 && a.due_date? && b.due_date?
+          cmp = (a.id <=> b.id) if cmp == 0
+          cmp
         end
       end
-
+      
+      def pdf_new_page?(options)
+        if options[:top] > 180
+          options[:pdf].Line(15, options[:top], PDF::TotalWidth, options[:top])
+          options[:pdf].AddPage("L")
+          options[:top] = 15
+          options[:pdf].Line(15, options[:top] - 0.1, PDF::TotalWidth, options[:top] - 0.1)
+        end
+      end
     end
   end
 end

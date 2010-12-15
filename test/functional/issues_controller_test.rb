@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 require 'issues_controller'
 
 # Re-raise errors caught by the controller.
@@ -125,11 +125,42 @@ class IssuesControllerTest < ActionController::TestCase
     assert_tag :tag => 'a', :content => /Issue of a private subproject/
   end
   
-  def test_index_with_project_and_filter
+  def test_index_with_project_and_default_filter
     get :index, :project_id => 1, :set_filter => 1
     assert_response :success
     assert_template 'index.rhtml'
     assert_not_nil assigns(:issues)
+    
+    query = assigns(:query)
+    assert_not_nil query
+    # default filter
+    assert_equal({'status_id' => {:operator => 'o', :values => ['']}}, query.filters)
+  end
+  
+  def test_index_with_project_and_filter
+    get :index, :project_id => 1, :set_filter => 1, 
+      :fields => ['tracker_id'],
+      :operators => {'tracker_id' => '='},
+      :values => {'tracker_id' => ['1']} 
+    assert_response :success
+    assert_template 'index.rhtml'
+    assert_not_nil assigns(:issues)
+    
+    query = assigns(:query)
+    assert_not_nil query
+    assert_equal({'tracker_id' => {:operator => '=', :values => ['1']}}, query.filters)
+  end
+  
+  def test_index_with_project_and_empty_filters
+    get :index, :project_id => 1, :set_filter => 1, :fields => ['']
+    assert_response :success
+    assert_template 'index.rhtml'
+    assert_not_nil assigns(:issues)
+    
+    query = assigns(:query)
+    assert_not_nil query
+    # no filter
+    assert_equal({}, query.filters)
   end
   
   def test_index_with_query
@@ -378,6 +409,7 @@ class IssuesControllerTest < ActionController::TestCase
                             :subject => 'This is the test_new issue',
                             :description => 'This is the description',
                             :priority_id => 5,
+                            :start_date => '2010-11-07',
                             :estimated_hours => '',
                             :custom_field_values => {'2' => 'Value for field 2'}}
     end
@@ -388,10 +420,31 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal 2, issue.author_id
     assert_equal 3, issue.tracker_id
     assert_equal 2, issue.status_id
+    assert_equal Date.parse('2010-11-07'), issue.start_date
     assert_nil issue.estimated_hours
     v = issue.custom_values.find(:first, :conditions => {:custom_field_id => 2})
     assert_not_nil v
     assert_equal 'Value for field 2', v.value
+  end
+  
+  def test_post_create_without_start_date
+    @request.session[:user_id] = 2
+    assert_difference 'Issue.count' do
+      post :create, :project_id => 1, 
+                 :issue => {:tracker_id => 3,
+                            :status_id => 2,
+                            :subject => 'This is the test_new issue',
+                            :description => 'This is the description',
+                            :priority_id => 5,
+                            :start_date => '',
+                            :estimated_hours => '',
+                            :custom_field_values => {'2' => 'Value for field 2'}}
+    end
+    assert_redirected_to :controller => 'issues', :action => 'show', :id => Issue.last.id
+    
+    issue = Issue.find_by_subject('This is the test_new issue')
+    assert_not_nil issue
+    assert_nil issue.start_date
   end
   
   def test_post_create_and_continue
@@ -472,6 +525,20 @@ class IssuesControllerTest < ActionController::TestCase
     assert_not_nil issue
     assert_equal Issue.find(2), issue.parent
   end
+
+  def test_post_create_subissue_with_non_numeric_parent_id
+    @request.session[:user_id] = 2
+    
+    assert_difference 'Issue.count' do
+      post :create, :project_id => 1, 
+                 :issue => {:tracker_id => 1,
+                            :subject => 'This is a child issue',
+                            :parent_issue_id => 'ABC'}
+    end
+    issue = Issue.find_by_subject('This is a child issue')
+    assert_not_nil issue
+    assert_nil issue.parent
+  end
   
   def test_post_create_should_send_a_notification
     ActionMailer::Base.deliveries.clear
@@ -527,7 +594,7 @@ class IssuesControllerTest < ActionController::TestCase
   context "without workflow privilege" do
     setup do
       Workflow.delete_all(["role_id = ?", Role.anonymous.id])
-      Role.anonymous.add_permission! :add_issues
+      Role.anonymous.add_permission! :add_issues, :add_issue_notes
     end
     
     context "#new" do
@@ -552,6 +619,17 @@ class IssuesControllerTest < ActionController::TestCase
         assert_equal IssueStatus.default, issue.status
       end
       
+      should "accept default status" do
+        assert_difference 'Issue.count' do
+          post :create, :project_id => 1, 
+                     :issue => {:tracker_id => 1,
+                                :subject => 'This is an issue',
+                                :status_id => 1}
+        end
+        issue = Issue.last(:order => 'id')
+        assert_equal IssueStatus.default, issue.status
+      end
+      
       should "ignore unauthorized status" do
         assert_difference 'Issue.count' do
           post :create, :project_id => 1, 
@@ -561,6 +639,94 @@ class IssuesControllerTest < ActionController::TestCase
         end
         issue = Issue.last(:order => 'id')
         assert_equal IssueStatus.default, issue.status
+      end
+    end
+    
+    context "#update" do
+      should "ignore status change" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:status_id => 3}
+        end
+        assert_equal 1, Issue.find(1).status_id
+      end
+      
+      should "ignore attributes changes" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:subject => 'changed', :assigned_to_id => 2}
+        end
+        issue = Issue.find(1)
+        assert_equal "Can't print recipes", issue.subject
+        assert_nil issue.assigned_to
+      end
+    end
+  end
+  
+  context "with workflow privilege" do
+    setup do
+      Workflow.delete_all(["role_id = ?", Role.anonymous.id])
+      Workflow.create!(:role => Role.anonymous, :tracker_id => 1, :old_status_id => 1, :new_status_id => 3)
+      Workflow.create!(:role => Role.anonymous, :tracker_id => 1, :old_status_id => 1, :new_status_id => 4)
+      Role.anonymous.add_permission! :add_issues, :add_issue_notes
+    end
+    
+    context "#update" do
+      should "accept authorized status" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:status_id => 3}
+        end
+        assert_equal 3, Issue.find(1).status_id
+      end
+      
+      should "ignore unauthorized status" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:status_id => 2}
+        end
+        assert_equal 1, Issue.find(1).status_id
+      end
+      
+      should "accept authorized attributes changes" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:assigned_to_id => 2}
+        end
+        issue = Issue.find(1)
+        assert_equal 2, issue.assigned_to_id
+      end
+      
+      should "ignore unauthorized attributes changes" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:subject => 'changed'}
+        end
+        issue = Issue.find(1)
+        assert_equal "Can't print recipes", issue.subject
+      end
+    end
+    
+    context "and :edit_issues permission" do
+      setup do
+        Role.anonymous.add_permission! :add_issues, :edit_issues
+      end
+
+      should "accept authorized status" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:status_id => 3}
+        end
+        assert_equal 3, Issue.find(1).status_id
+      end
+      
+      should "ignore unauthorized status" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:status_id => 2}
+        end
+        assert_equal 1, Issue.find(1).status_id
+      end
+      
+      should "accept authorized attributes changes" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:subject => 'changed', :assigned_to_id => 2}
+        end
+        issue = Issue.find(1)
+        assert_equal "changed", issue.subject
+        assert_equal 2, issue.assigned_to_id
       end
     end
   end
@@ -585,7 +751,8 @@ class IssuesControllerTest < ActionController::TestCase
   
   def test_get_edit_with_params
     @request.session[:user_id] = 2
-    get :edit, :id => 1, :issue => { :status_id => 5, :priority_id => 7 }
+    get :edit, :id => 1, :issue => { :status_id => 5, :priority_id => 7 },
+        :time_entry => { :hours => '2.5', :comments => 'test_get_edit_with_params', :activity_id => TimeEntryActivity.first.id }
     assert_response :success
     assert_template 'edit'
     
@@ -603,6 +770,12 @@ class IssuesControllerTest < ActionController::TestCase
                         :child => { :tag => 'option', 
                                     :content => 'Urgent',
                                     :attributes => { :selected => 'selected' } }
+
+    assert_tag :input, :attributes => { :name => 'time_entry[hours]', :value => '2.5' }
+    assert_tag :select, :attributes => { :name => 'time_entry[activity_id]' },
+                        :child => { :tag => 'option',
+                                    :attributes => { :selected => 'selected', :value => TimeEntryActivity.first.id } }
+    assert_tag :input, :attributes => { :name => 'time_entry[comments]', :value => 'test_get_edit_with_params' }
   end
 
   def test_update_edit_form
