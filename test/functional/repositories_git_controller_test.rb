@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 require 'repositories_controller'
 
 # Re-raise errors caught by the controller.
@@ -154,7 +154,7 @@ class RepositoriesGitControllerTest < ActionController::TestCase
     def test_annotate_binary_file
       get :annotate, :id => 3, :path => ['images', 'edit.png']
       assert_response 500
-      assert_tag :tag => 'div', :attributes => { :class => /error/ },
+      assert_tag :tag => 'p', :attributes => { :id => /errorExplanation/ },
                                 :content => /can not be annotated/
     end
   else

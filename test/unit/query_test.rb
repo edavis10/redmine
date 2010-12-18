@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 
 class QueryTest < ActiveSupport::TestCase
   fixtures :projects, :enabled_modules, :users, :members, :member_roles, :roles, :trackers, :issue_statuses, :issue_categories, :enumerations, :issues, :watchers, :custom_fields, :custom_values, :versions, :queries
@@ -397,8 +397,8 @@ class QueryTest < ActiveSupport::TestCase
         group2 = Group.generate!.reload
 
         expected_group_list = [
-                               [group1.name, group1.id],
-                               [group2.name, group2.id]
+                               [group1.name, group1.id.to_s],
+                               [group2.name, group2.id.to_s]
                               ]
         assert_equal expected_group_list.sort, @query.available_filters["member_of_group"][:values].sort
       end
@@ -415,14 +415,14 @@ class QueryTest < ActiveSupport::TestCase
       end
       
       should "have a list of the Roles as values" do
-        assert @query.available_filters["assigned_to_role"][:values].include?(['Manager',1])
-        assert @query.available_filters["assigned_to_role"][:values].include?(['Developer',2])
-        assert @query.available_filters["assigned_to_role"][:values].include?(['Reporter',3])
+        assert @query.available_filters["assigned_to_role"][:values].include?(['Manager','1'])
+        assert @query.available_filters["assigned_to_role"][:values].include?(['Developer','2'])
+        assert @query.available_filters["assigned_to_role"][:values].include?(['Reporter','3'])
       end
 
       should "not include the built in Roles as values" do
-        assert ! @query.available_filters["assigned_to_role"][:values].include?(['Non member',4])
-        assert ! @query.available_filters["assigned_to_role"][:values].include?(['Anonymous',5])
+        assert ! @query.available_filters["assigned_to_role"][:values].include?(['Non member','4'])
+        assert ! @query.available_filters["assigned_to_role"][:values].include?(['Anonymous','5'])
       end
 
     end

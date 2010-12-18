@@ -113,7 +113,7 @@ table.list caption { text-align: left; padding: 0.5em 0.5em 0.5em 0; }
 
 tr.project td.name a { white-space:nowrap; }
 
-tr.project.idnt td.name a {background: url(../images/bullet_arrow_right.png) no-repeat 0 50%; padding-left: 16px;}
+tr.project.idnt td.name span {background: url(../images/bullet_arrow_right.png) no-repeat 0 50%; padding-left: 16px;}
 tr.project.idnt-1 td.name {padding-left: 0.5em;}
 tr.project.idnt-2 td.name {padding-left: 2em;}
 tr.project.idnt-3 td.name {padding-left: 3.5em;}
@@ -663,6 +663,7 @@ div.autocomplete ul li span.informal {
 }
 
 #parent_issue_candidates ul li {width: 500px;}
+#related_issue_candidates ul li {width: 500px;}
 
 /***** Diff *****/
 .diff_out { background: #fcc; }
@@ -715,9 +716,10 @@ div.wiki ul.toc {
 
 div.wiki ul.toc.right { float: right; margin-left: 12px; margin-right: 0; width: auto; }
 div.wiki ul.toc.left  { float: left; margin-right: 12px; margin-left: 0; width: auto; }
-div.wiki ul.toc li { list-style-type:none;}
-div.wiki ul.toc li.heading2 { margin-left: 6px; }
-div.wiki ul.toc li.heading3 { margin-left: 12px; font-size: 0.8em; }
+div.wiki ul.toc ul { margin: 0; padding: 0; }
+div.wiki ul.toc li { list-style-type:none; margin: 0;}
+div.wiki ul.toc li li { margin-left: 1.5em; }
+div.wiki ul.toc li li li { font-size: 0.8em; }
 
 div.wiki ul.toc a {
     font-size: 0.9em;
@@ -777,6 +779,8 @@ background-image:url('../images/close_hl.png');
   overflow: hidden;
 }
 
+.gantt_subjects { font-size: 0.8em; }
+
 .task {
   position: absolute;
   height:8px;
@@ -789,6 +793,7 @@ background-image:url('../images/close_hl.png');
 }
 
 .task.label {width:100%;}
+.task.label.project, .task.label.version { font-weight: bold; }
 
 .task_late { background:#f66 url(../images/task_late.png); border: 1px solid #f66; }
 .task_done { background:#00c600 url(../images/task_done.png); border: 1px solid #00c600; }  
@@ -799,14 +804,15 @@ background-image:url('../images/close_hl.png');
 .task_todo.parent .left  { position: absolute; background: url(../images/task_parent_end.png) no-repeat 0 0; width: 8px; height: 16px; margin-left: -5px; left: 0px; top: -1px;}
 .task_todo.parent .right { position: absolute; background: url(../images/task_parent_end.png) no-repeat 0 0; width: 8px; height: 16px; margin-right: -5px; right: 0px; top: -1px;}
 
-.milestone { background-image:url(../images/version_marker.png); background-repeat: no-repeat; border: 0; }
-.milestone_late { background:#f66 url(../images/milestone_late.png); border: 1px solid #f66; height: 2px; margin-top: 3px;}
-.milestone_done { background:#00c600 url(../images/milestone_done.png); border: 1px solid #00c600; height: 2px; margin-top: 3px;}
-.milestone_todo { background:#fff url(../images/milestone_todo.png); border: 1px solid #fff; height: 2px; margin-top: 3px;}
-.project-line { background-image:url(../images/project_marker.png); background-repeat: no-repeat; border: 0; }
-.project_late { background:#f66 url(../images/milestone_late.png); border: 1px solid #f66; height: 2px; margin-top: 3px;}
-.project_done { background:#00c600 url(../images/milestone_done.png); border: 1px solid #00c600; height: 2px; margin-top: 3px;}
-.project_todo { background:#fff url(../images/milestone_todo.png); border: 1px solid #fff; height: 2px; margin-top: 3px;}
+.version.task_late { background:#f66 url(../images/milestone_late.png); border: 1px solid #f66; height: 2px; margin-top: 3px;}
+.version.task_done { background:#00c600 url(../images/milestone_done.png); border: 1px solid #00c600; height: 2px; margin-top: 3px;}
+.version.task_todo { background:#fff url(../images/milestone_todo.png); border: 1px solid #fff; height: 2px; margin-top: 3px;}
+.version.marker { background-image:url(../images/version_marker.png); background-repeat: no-repeat; border: 0; }
+
+.project.task_late { background:#f66 url(../images/milestone_late.png); border: 1px solid #f66; height: 2px; margin-top: 3px;}
+.project.task_done { background:#00c600 url(../images/milestone_done.png); border: 1px solid #00c600; height: 2px; margin-top: 3px;}
+.project.task_todo { background:#fff url(../images/milestone_todo.png); border: 1px solid #fff; height: 2px; margin-top: 3px;}
+.project.marker { background-image:url(../images/project_marker.png); background-repeat: no-repeat; border: 0; }
 
 .version-behind-schedule a, .issue-behind-schedule a {color: #f66914;}
 .version-overdue a, .issue-overdue a, .project-overdue a {color: #f00;}
@@ -854,6 +860,8 @@ padding-bottom: 3px;
 .icon-summary  { background-image: url(../images/lightning.png); }
 .icon-server-authentication { background-image: url(../images/server_key.png); }
 .icon-issue { background-image: url(../images/ticket.png); }
+.icon-zoom-in { background-image: url(../images/zoom_in.png); }
+.icon-zoom-out { background-image: url(../images/zoom_out.png); }
 
 .icon-file { background-image: url(../images/files/default.png); }
 .icon-file.text-plain { background-image: url(../images/files/text.png); }

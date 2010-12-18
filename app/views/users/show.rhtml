@@ -1,5 +1,5 @@
 <div class="contextual">
-<%= link_to(l(:button_edit), {:controller => 'users', :action => 'edit', :id => @user}, :class => 'icon icon-edit') if User.current.admin? %>
+<%= link_to(l(:button_edit), edit_user_path(@user), :class => 'icon icon-edit') if User.current.admin? %>
 </div>
 
 <h2><%= avatar @user, :size => "50" %> <%=h @user.name %></h2>
@@ -9,7 +9,7 @@
 	<% unless @user.pref.hide_mail %>
 		<li><%=l(:field_mail)%>: <%= mail_to(h(@user.mail), nil, :encode => 'javascript') %></li>
 	<% end %>
-	<% for custom_value in @custom_values %>
+	<% @user.visible_custom_field_values.each do |custom_value| %>
 	<% if !custom_value.value.blank? %>
     <li><%=h custom_value.custom_field.name%>: <%=h show_value(custom_value) %></li>
 	<% end %>

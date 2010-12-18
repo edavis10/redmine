@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 require 'projects_controller'
 
 # Re-raise errors caught by the controller.
@@ -144,19 +144,30 @@ class ProjectsControllerTest < ActionController::TestCase
       end
       
       should "create a new project" do
-        post :create, :project => { :name => "blog", 
-                                 :description => "weblog",
-                                 :identifier => "blog",
-                                 :is_public => 1,
-                                 :custom_field_values => { '3' => 'Beta' }
-                                }
+        post :create,
+          :project => {
+            :name => "blog", 
+            :description => "weblog",
+            :homepage => 'http://weblog',
+            :identifier => "blog",
+            :is_public => 1,
+            :custom_field_values => { '3' => 'Beta' },
+            :tracker_ids => ['1', '3'],
+            # an issue custom field that is not for all project
+            :issue_custom_field_ids => ['9']
+          }
         assert_redirected_to '/projects/blog/settings'
         
         project = Project.find_by_name('blog')
         assert_kind_of Project, project
+        assert project.active?
         assert_equal 'weblog', project.description 
+        assert_equal 'http://weblog', project.homepage
         assert_equal true, project.is_public?
         assert_nil project.parent
+        assert_equal 'Beta', project.custom_value_for(3).value
+        assert_equal [1, 3], project.trackers.map(&:id).sort
+        assert project.issue_custom_fields.include?(IssueCustomField.find(9))
       end
       
       should "create a new subproject" do
@@ -284,6 +295,18 @@ class ProjectsControllerTest < ActionController::TestCase
     assert_template 'show'
     assert_not_nil assigns(:project)
     assert_equal Project.find_by_identifier('ecookbook'), assigns(:project)
+    
+    assert_tag 'li', :content => /Development status/
+  end
+
+  def test_show_should_not_display_hidden_custom_fields
+    ProjectCustomField.find_by_name('Development status').update_attribute :visible, false
+    get :show, :id => 'ecookbook'
+    assert_response :success
+    assert_template 'show'
+    assert_not_nil assigns(:project)
+    
+    assert_no_tag 'li', :content => /Development status/
   end
   
   def test_show_should_not_fail_when_custom_values_are_nil
@@ -294,6 +317,16 @@ class ProjectsControllerTest < ActionController::TestCase
     assert_template 'show'
     assert_not_nil assigns(:project)
     assert_equal Project.find_by_identifier('ecookbook'), assigns(:project)
+  end
+  
+  def show_archived_project_should_be_denied
+    project = Project.find_by_identifier('ecookbook')
+    project.archive!
+    
+    get :show, :id => 'ecookbook'
+    assert_response 403
+    assert_nil assigns(:project)
+    assert_tag :tag => 'p', :content => /archived/
   end
   
   def test_private_subprojects_hidden
@@ -322,7 +355,7 @@ class ProjectsControllerTest < ActionController::TestCase
     @request.session[:user_id] = 2 # manager
     post :update, :id => 1, :project => {:name => 'Test changed name',
                                        :issue_custom_field_ids => ['']}
-    assert_redirected_to 'projects/ecookbook/settings'
+    assert_redirected_to '/projects/ecookbook/settings'
     project = Project.find(1)
     assert_equal 'Test changed name', project.name
   end
@@ -338,14 +371,14 @@ class ProjectsControllerTest < ActionController::TestCase
   def test_post_destroy
     @request.session[:user_id] = 1 # admin
     post :destroy, :id => 1, :confirm => 1
-    assert_redirected_to 'admin/projects'
+    assert_redirected_to '/admin/projects'
     assert_nil Project.find_by_id(1)
   end
   
   def test_archive
     @request.session[:user_id] = 1 # admin
     post :archive, :id => 1
-    assert_redirected_to 'admin/projects'
+    assert_redirected_to '/admin/projects'
     assert !Project.find(1).active?
   end
   
@@ -353,7 +386,7 @@ class ProjectsControllerTest < ActionController::TestCase
     @request.session[:user_id] = 1 # admin
     Project.find(1).archive
     post :unarchive, :id => 1
-    assert_redirected_to 'admin/projects'
+    assert_redirected_to '/admin/projects'
     assert Project.find(1).active?
   end
   
@@ -402,7 +435,7 @@ class ProjectsControllerTest < ActionController::TestCase
 
   def test_jump_should_redirect_to_active_tab
     get :show, :id => 1, :jump => 'issues'
-    assert_redirected_to 'projects/ecookbook/issues'
+    assert_redirected_to '/projects/ecookbook/issues'
   end
   
   def test_jump_should_not_redirect_to_inactive_tab

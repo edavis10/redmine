@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 require 'versions_controller'
 
 # Re-raise errors caught by the controller.
@@ -122,6 +122,15 @@ class VersionsControllerTest < ActionController::TestCase
     version = Version.find(2)
     assert_equal 'New version name', version.name
     assert_equal Date.today, version.effective_date
+  end
+  
+  def test_post_update_with_validation_failure
+    @request.session[:user_id] = 2
+    put :update, :id => 2, 
+                 :version => { :name => '', 
+                               :effective_date => Date.today.strftime("%Y-%m-%d")}
+    assert_response :success
+    assert_template 'edit'
   end
 
   def test_destroy

@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 require 'documents_controller'
 
 # Re-raise errors caught by the controller.
@@ -77,7 +77,7 @@ LOREM
                               :category_id => 2},
                :attachments => {'1' => {'file' => uploaded_test_file('testfile.txt', 'text/plain')}}
                
-    assert_redirected_to 'projects/ecookbook/documents'
+    assert_redirected_to '/projects/ecookbook/documents'
     
     document = Document.find_by_title('DocumentsControllerTest#test_post_new')
     assert_not_nil document
@@ -90,7 +90,7 @@ LOREM
   def test_destroy
     @request.session[:user_id] = 2
     post :destroy, :id => 1
-    assert_redirected_to 'projects/ecookbook/documents'
+    assert_redirected_to '/projects/ecookbook/documents'
     assert_nil Document.find_by_id(1)
   end
 end

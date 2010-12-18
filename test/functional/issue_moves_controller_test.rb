@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 
 class IssueMovesControllerTest < ActionController::TestCase
   fixtures :all
@@ -40,6 +40,31 @@ class IssueMovesControllerTest < ActionController::TestCase
     assert_equal 2, Issue.find(2).tracker_id
   end
 
+  context "#create via bulk move" do
+    setup do
+      @request.session[:user_id] = 2
+    end
+    
+    should "allow changing the issue priority" do
+      post :create, :ids => [1, 2], :priority_id => 6
+
+      assert_redirected_to :controller => 'issues', :action => 'index', :project_id => 'ecookbook'
+      assert_equal 6, Issue.find(1).priority_id
+      assert_equal 6, Issue.find(2).priority_id
+
+    end
+
+    should "allow adding a note when moving" do
+      post :create, :ids => [1, 2], :notes => 'Moving two issues'
+
+      assert_redirected_to :controller => 'issues', :action => 'index', :project_id => 'ecookbook'
+      assert_equal 'Moving two issues', Issue.find(1).journals.sort_by(&:id).last.notes
+      assert_equal 'Moving two issues', Issue.find(2).journals.sort_by(&:id).last.notes
+
+    end
+    
+  end
+
   def test_bulk_copy_to_another_project
     @request.session[:user_id] = 2
     assert_difference 'Issue.count', 2 do
@@ -47,7 +72,7 @@ class IssueMovesControllerTest < ActionController::TestCase
         post :create, :ids => [1, 2], :new_project_id => 2, :copy_options => {:copy => '1'}
       end
     end
-    assert_redirected_to 'projects/ecookbook/issues'
+    assert_redirected_to '/projects/ecookbook/issues'
   end
 
   context "#create via bulk copy" do

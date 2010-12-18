@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 
 class IssueRelationTest < ActiveSupport::TestCase
   fixtures :issue_relations, :issues
@@ -62,5 +62,15 @@ class IssueRelationTest < ActiveSupport::TestCase
     relation = IssueRelation.new :issue_from => from, :issue_to => to, :relation_type => IssueRelation::TYPE_PRECEDES
     assert_equal IssueRelation::TYPE_PRECEDES, relation.relation_type_for(from)
     assert_equal IssueRelation::TYPE_FOLLOWS, relation.relation_type_for(to)
+  end
+  
+  def test_set_issue_to_dates_without_issue_to
+    r = IssueRelation.new(:issue_from => Issue.new(:start_date => Date.today), :relation_type => IssueRelation::TYPE_PRECEDES, :delay => 1)
+    assert_nil r.set_issue_to_dates
+  end
+  
+  def test_set_issue_to_dates_without_issues
+    r = IssueRelation.new(:relation_type => IssueRelation::TYPE_PRECEDES, :delay => 1)
+    assert_nil r.set_issue_to_dates
   end
 end

@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 
 class ProjectTest < ActiveSupport::TestCase
   fixtures :all
@@ -29,7 +29,6 @@ class ProjectTest < ActiveSupport::TestCase
   should_validate_presence_of :name
   should_validate_presence_of :identifier
 
-  should_validate_uniqueness_of :name
   should_validate_uniqueness_of :identifier
 
   context "associations" do
@@ -59,6 +58,35 @@ class ProjectTest < ActiveSupport::TestCase
   def test_truth
     assert_kind_of Project, @ecookbook
     assert_equal "eCookbook", @ecookbook.name
+  end
+  
+  def test_default_attributes
+    with_settings :default_projects_public => '1' do
+      assert_equal true, Project.new.is_public
+      assert_equal false, Project.new(:is_public => false).is_public
+    end
+
+    with_settings :default_projects_public => '0' do
+      assert_equal false, Project.new.is_public
+      assert_equal true, Project.new(:is_public => true).is_public
+    end
+
+    with_settings :sequential_project_identifiers => '1' do
+      assert !Project.new.identifier.blank?
+      assert Project.new(:identifier => '').identifier.blank?
+    end
+
+    with_settings :sequential_project_identifiers => '0' do
+      assert Project.new.identifier.blank?
+      assert !Project.new(:identifier => 'test').blank?
+    end
+
+    with_settings :default_projects_modules => ['issue_tracking', 'repository'] do
+      assert_equal ['issue_tracking', 'repository'], Project.new.enabled_module_names
+    end
+    
+    assert_equal Tracker.all, Project.new.trackers
+    assert_equal Tracker.find(1, 3), Project.new(:tracker_ids => [1, 3]).trackers
   end
   
   def test_update
@@ -102,6 +130,7 @@ class ProjectTest < ActiveSupport::TestCase
     @ecookbook.reload
     
     assert !@ecookbook.active?
+    assert @ecookbook.archived?
     assert !user.projects.include?(@ecookbook)
     # Subproject are also archived
     assert !@ecookbook.children.empty?
@@ -129,6 +158,7 @@ class ProjectTest < ActiveSupport::TestCase
     assert @ecookbook.unarchive
     @ecookbook.reload
     assert @ecookbook.active?
+    assert !@ecookbook.archived?
     assert user.projects.include?(@ecookbook)
     # Subproject can now be unarchived
     @ecookbook_sub1.reload
@@ -852,14 +882,6 @@ class ProjectTest < ActiveSupport::TestCase
     should "be nil if there are no issues on the project" do
       assert_nil @project.start_date
     end
-
-    should "be nil if issue tracking is disabled" do
-      Issue.generate_for_project!(@project, :start_date => Date.today)
-      @project.enabled_modules.find_all_by_name('issue_tracking').each {|m| m.destroy}
-      @project.reload
-      
-      assert_nil @project.start_date
-    end
     
     should "be tested when issues have no start date"
 
@@ -881,14 +903,6 @@ class ProjectTest < ActiveSupport::TestCase
     end
     
     should "be nil if there are no issues on the project" do
-      assert_nil @project.due_date
-    end
-
-    should "be nil if issue tracking is disabled" do
-      Issue.generate_for_project!(@project, :due_date => Date.today)
-      @project.enabled_modules.find_all_by_name('issue_tracking').each {|m| m.destroy}
-      @project.reload
-      
       assert_nil @project.due_date
     end
     
@@ -964,4 +978,54 @@ class ProjectTest < ActiveSupport::TestCase
 
     end
   end
+
+  context "#notified_users" do
+    setup do
+      @project = Project.generate!
+      @role = Role.generate!
+      
+      @user_with_membership_notification = User.generate!(:mail_notification => 'selected')
+      Member.generate!(:project => @project, :roles => [@role], :principal => @user_with_membership_notification, :mail_notification => true)
+
+      @all_events_user = User.generate!(:mail_notification => 'all')
+      Member.generate!(:project => @project, :roles => [@role], :principal => @all_events_user)
+
+      @no_events_user = User.generate!(:mail_notification => 'none')
+      Member.generate!(:project => @project, :roles => [@role], :principal => @no_events_user)
+
+      @only_my_events_user = User.generate!(:mail_notification => 'only_my_events')
+      Member.generate!(:project => @project, :roles => [@role], :principal => @only_my_events_user)
+
+      @only_assigned_user = User.generate!(:mail_notification => 'only_assigned')
+      Member.generate!(:project => @project, :roles => [@role], :principal => @only_assigned_user)
+
+      @only_owned_user = User.generate!(:mail_notification => 'only_owner')
+      Member.generate!(:project => @project, :roles => [@role], :principal => @only_owned_user)
+    end
+    
+    should "include members with a mail notification" do
+      assert @project.notified_users.include?(@user_with_membership_notification)
+    end
+    
+    should "include users with the 'all' notification option" do
+      assert @project.notified_users.include?(@all_events_user)
+    end
+    
+    should "not include users with the 'none' notification option" do
+      assert !@project.notified_users.include?(@no_events_user)
+    end
+    
+    should "not include users with the 'only_my_events' notification option" do
+      assert !@project.notified_users.include?(@only_my_events_user)
+    end
+    
+    should "not include users with the 'only_assigned' notification option" do
+      assert !@project.notified_users.include?(@only_assigned_user)
+    end
+    
+    should "not include users with the 'only_owner' notification option" do
+      assert !@project.notified_users.include?(@only_owned_user)
+    end
+  end
+  
 end

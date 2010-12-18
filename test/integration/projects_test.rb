@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require "#{File.dirname(__FILE__)}/../test_helper"
+require File.expand_path('../../test_helper', __FILE__)
 
 class ProjectsTest < ActionController::IntegrationTest
   fixtures :projects, :users, :members
@@ -27,7 +27,7 @@ class ProjectsTest < ActionController::IntegrationTest
     assert_response :success
     assert_template "admin/projects"
     post "projects/archive", :id => 1
-    assert_redirected_to "admin/projects"
+    assert_redirected_to "/admin/projects"
     assert !Project.find(1).active?
     
     get 'projects/1'
@@ -36,7 +36,7 @@ class ProjectsTest < ActionController::IntegrationTest
     assert_response 403
     
     post "projects/unarchive", :id => 1
-    assert_redirected_to "admin/projects"
+    assert_redirected_to "/admin/projects"
     assert Project.find(1).active?
     get "projects/1"
     assert_response :success

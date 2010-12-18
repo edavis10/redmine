@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 
 class CalendarsControllerTest < ActionController::TestCase
   fixtures :all
@@ -15,6 +15,16 @@ class CalendarsControllerTest < ActionController::TestCase
     assert_response :success
     assert_template 'calendar'
     assert_not_nil assigns(:calendar)
+  end
+
+  context "GET :show" do
+    should "run custom queries" do
+      @query = Query.generate_default!
+      
+      get :show, :query_id => @query.id
+      assert_response :success
+    end
+    
   end
   
   def test_week_number_calculation

@@ -196,10 +196,10 @@ class Query < ActiveRecord::Base
     @available_filters["assigned_to_id"] = { :type => :list_optional, :order => 4, :values => user_values } unless user_values.empty?
     @available_filters["author_id"] = { :type => :list, :order => 5, :values => user_values } unless user_values.empty?
 
-    group_values = Group.all.collect {|g| [g.name, g.id] }
+    group_values = Group.all.collect {|g| [g.name, g.id.to_s] }
     @available_filters["member_of_group"] = { :type => :list_optional, :order => 6, :values => group_values } unless group_values.empty?
 
-    role_values = Role.givable.collect {|r| [r.name, r.id] }
+    role_values = Role.givable.collect {|r| [r.name, r.id.to_s] }
     @available_filters["assigned_to_role"] = { :type => :list_optional, :order => 7, :values => role_values } unless role_values.empty?
     
     if User.current.logged?
@@ -258,8 +258,10 @@ class Query < ActiveRecord::Base
 
   # Add multiple filters using +add_filter+
   def add_filters(fields, operators, values)
-    fields.each do |field|
-      add_filter(field, operators[field], values[field])
+    if fields.is_a?(Array) && operators.is_a?(Hash) && values.is_a?(Hash)
+      fields.each do |field|
+        add_filter(field, operators[field], values[field])
+      end
     end
   end
   

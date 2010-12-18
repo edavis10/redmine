@@ -15,10 +15,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 
 class WikiRedirectTest < ActiveSupport::TestCase
-  fixtures :projects, :wikis
+  fixtures :projects, :wikis, :wiki_pages
 
   def setup
     @wiki = Wiki.find(1)
@@ -33,6 +33,7 @@ class WikiRedirectTest < ActiveSupport::TestCase
     assert_equal 'New_title', @original.title
     assert @wiki.redirects.find_by_title('Original_title')
     assert @wiki.find_page('Original title')
+    assert @wiki.find_page('ORIGINAL title')
   end
   
   def test_update_redirect

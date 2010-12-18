@@ -22,7 +22,7 @@ class ApplicationController < ActionController::Base
   include Redmine::I18n
 
   layout 'base'
-  exempt_from_layout 'builder'
+  exempt_from_layout 'builder', 'rsb'
   
   # Remove broken cookie after upgrade from 0.8.x (#4292)
   # See https://rails.lighthouseapp.com/projects/8994/tickets/3360
@@ -153,8 +153,16 @@ class ApplicationController < ActionController::Base
 
   # Authorize the user for the requested action
   def authorize(ctrl = params[:controller], action = params[:action], global = false)
-    allowed = User.current.allowed_to?({:controller => ctrl, :action => action}, @project, :global => global)
-    allowed ? true : deny_access
+    allowed = User.current.allowed_to?({:controller => ctrl, :action => action}, @project || @projects, :global => global)
+    if allowed
+      true
+    else
+      if @project && @project.archived?
+        render_403 :message => :notice_not_authorized_archived_project
+      else
+        deny_access
+      end
+    end
   end
 
   # Authorize the user for the requested action outside a project
@@ -213,16 +221,19 @@ class ApplicationController < ActionController::Base
   def find_issues
     @issues = Issue.find_all_by_id(params[:id] || params[:ids])
     raise ActiveRecord::RecordNotFound if @issues.empty?
-    projects = @issues.collect(&:project).compact.uniq
-    if projects.size == 1
-      @project = projects.first
-    else
+    @projects = @issues.collect(&:project).compact.uniq
+    @project = @projects.first if @projects.size == 1
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+  
+  # Check if project is unique before bulk operations
+  def check_project_uniqueness
+    unless @project
       # TODO: let users bulk edit/move/destroy issues from different projects
       render_error 'Can not bulk edit/move/destroy issues from different projects'
       return false
     end
-  rescue ActiveRecord::RecordNotFound
-    render_404
   end
   
   # make sure that the user is a member of the project (or admin) if project is private
@@ -262,39 +273,33 @@ class ApplicationController < ActionController::Base
     redirect_to default
   end
   
-  def render_403
+  def render_403(options={})
     @project = nil
-    respond_to do |format|
-      format.html { render :template => "common/403", :layout => use_layout, :status => 403 }
-      format.atom { head 403 }
-      format.xml { head 403 }
-      format.js { head 403 }
-      format.json { head 403 }
-    end
+    render_error({:message => :notice_not_authorized, :status => 403}.merge(options))
     return false
   end
     
-  def render_404
-    respond_to do |format|
-      format.html { render :template => "common/404", :layout => use_layout, :status => 404 }
-      format.atom { head 404 }
-      format.xml { head 404 }
-      format.js { head 404 }
-      format.json { head 404 }
-    end
+  def render_404(options={})
+    render_error({:message => :notice_file_not_found, :status => 404}.merge(options))
     return false
   end
   
-  def render_error(msg)
+  # Renders an error response
+  def render_error(arg)
+    arg = {:message => arg} unless arg.is_a?(Hash)
+    
+    @message = arg[:message]
+    @message = l(@message) if @message.is_a?(Symbol)
+    @status = arg[:status] || 500
+    
     respond_to do |format|
-      format.html { 
-        flash.now[:error] = msg
-        render :text => '', :layout => use_layout, :status => 500
+      format.html {
+        render :template => 'common/error', :layout => use_layout, :status => @status
       }
-      format.atom { head 500 }
-      format.xml { head 500 }
-      format.js { head 500 }
-      format.json { head 500 }
+      format.atom { head @status }
+      format.xml { head @status }
+      format.js { head @status }
+      format.json { head @status }
     end
   end
 
@@ -344,6 +349,23 @@ class ApplicationController < ActionController::Base
     per_page
   end
 
+  def api_offset_and_limit
+    offset = nil
+    if params[:offset].present?
+      offset = params[:offset].to_i
+      if offset < 0
+        offset = 0
+      end
+    end
+    limit = params[:limit].to_i
+    if limit < 1
+      limit = 25
+    elsif limit > 100
+      limit = 100
+    end
+    [offset, limit]
+  end
+  
   # qvalues http header parser
   # code taken from webrick
   def parse_qvalues(value)
@@ -408,5 +430,37 @@ class ApplicationController < ActionController::Base
       { attribute => error }
     end.to_json
   end
+
+  # Renders API response on validation failure
+  def render_validation_errors(object)
+    options = { :status => :unprocessable_entity, :layout => false }
+    options.merge!(case params[:format]
+      when 'xml';  { :xml =>  object.errors }
+      when 'json'; { :json => {'errors' => object.errors} } # ActiveResource client compliance
+      else
+        raise "Unknown format #{params[:format]} in #render_validation_errors"
+      end
+    )
+    render options
+  end
   
+  # Overrides #default_template so that the api template
+  # is used automatically if it exists
+  def default_template(action_name = self.action_name)
+    if api_request?
+      begin
+        return self.view_paths.find_template(default_template_name(action_name), 'api')
+      rescue ::ActionView::MissingTemplate
+        # the api template was not found
+        # fallback to the default behaviour
+      end
+    end
+    super
+  end
+  
+  # Overrides #pick_layout so that #render with no arguments
+  # doesn't use the layout for api requests
+  def pick_layout(*args)
+    api_request? ? nil : super
+  end
 end

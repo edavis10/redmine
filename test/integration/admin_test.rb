@@ -15,17 +15,17 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require "#{File.dirname(__FILE__)}/../test_helper"
+require File.expand_path('../../test_helper', __FILE__)
 
 class AdminTest < ActionController::IntegrationTest
   fixtures :all
 
   def test_add_user
     log_user("admin", "admin")
-    get "/users/add"
+    get "/users/new"
     assert_response :success
-    assert_template "users/add"
-    post "/users/create", :user => { :login => "psmith", :firstname => "Paul", :lastname => "Smith", :mail => "psmith@somenet.foo", :language => "en" }, :password => "psmith09", :password_confirmation => "psmith09"
+    assert_template "users/new"
+    post "/users/create", :user => { :login => "psmith", :firstname => "Paul", :lastname => "Smith", :mail => "psmith@somenet.foo", :language => "en", :password => "psmith09", :password_confirmation => "psmith09" }
     
     user = User.find_by_login("psmith")
     assert_kind_of User, user
@@ -35,7 +35,7 @@ class AdminTest < ActionController::IntegrationTest
     assert_kind_of User, logged_user
     assert_equal "Paul", logged_user.firstname
     
-    post "users/edit", :id => user.id, :user => { :status => User::STATUS_LOCKED }
+    put "users/#{user.id}", :id => user.id, :user => { :status => User::STATUS_LOCKED }
     assert_redirected_to "/users/#{ user.id }/edit"
     locked_user = User.try_to_login("psmith", "psmith09")
     assert_equal nil, locked_user
@@ -44,6 +44,6 @@ class AdminTest < ActionController::IntegrationTest
   test "Add a user as an anonymous user should fail" do
     post '/users/create', :user => { :login => 'psmith', :firstname => 'Paul'}, :password => "psmith09", :password_confirmation => "psmith09"
     assert_response :redirect
-    assert_redirected_to "/login?back_url=http%3A%2F%2Fwww.example.com%2Fusers%2Fnew"
+    assert_redirected_to "/login?back_url=http%3A%2F%2Fwww.example.com%2Fusers"
   end
 end

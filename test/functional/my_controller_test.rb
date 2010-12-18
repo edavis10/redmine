@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 require 'my_controller'
 
 # Re-raise errors caught by the controller.
@@ -64,17 +64,24 @@ class MyControllerTest < ActionController::TestCase
   end
 
   def test_update_account
-    post :account, :user => {:firstname => "Joe",
-                             :login => "root",
-                             :admin => 1,
-                             :custom_field_values => {"4" => "0100562500"}}
-    assert_redirected_to 'my/account'
+    post :account,
+      :user => {
+        :firstname => "Joe",
+        :login => "root",
+        :admin => 1,
+        :group_ids => ['10'],
+        :custom_field_values => {"4" => "0100562500"}
+      }
+    
+    assert_redirected_to '/my/account'
     user = User.find(2)
     assert_equal user, assigns(:user)
     assert_equal "Joe", user.firstname
     assert_equal "jsmith", user.login
     assert_equal "0100562500", user.custom_value_for(4).value
+    # ignored
     assert !user.admin?
+    assert user.groups.empty?
   end
   
   def test_change_password
@@ -102,7 +109,7 @@ class MyControllerTest < ActionController::TestCase
     post :password, :password => 'jsmith',
                     :new_password => 'hello',
                     :new_password_confirmation => 'hello'
-    assert_redirected_to 'my/account'
+    assert_redirected_to '/my/account'
     assert User.try_to_login('jsmith', 'hello')
   end
   

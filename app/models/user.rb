@@ -18,7 +18,8 @@
 require "digest/sha1"
 
 class User < Principal
-
+  include Redmine::SafeAttributes
+  
   # Account statuses
   STATUS_ANONYMOUS  = 0
   STATUS_ACTIVE     = 1
@@ -34,13 +35,13 @@ class User < Principal
   }
 
   MAIL_NOTIFICATION_OPTIONS = [
-                               [:all, :label_user_mail_option_all],
-                               [:selected, :label_user_mail_option_selected],
-                               [:none, :label_user_mail_option_none],
-                               [:only_my_events, :label_user_mail_option_only_my_events],
-                               [:only_assigned, :label_user_mail_option_only_assigned],
-                               [:only_owner, :label_user_mail_option_only_owner]
-                              ]
+    ['all', :label_user_mail_option_all],
+    ['selected', :label_user_mail_option_selected],
+    ['only_my_events', :label_user_mail_option_only_my_events],
+    ['only_assigned', :label_user_mail_option_only_assigned],
+    ['only_owner', :label_user_mail_option_only_owner],
+    ['none', :label_user_mail_option_none]
+  ]
 
   has_and_belongs_to_many :groups, :after_add => Proc.new {|user, group| group.user_added(user)},
                                    :after_remove => Proc.new {|user, group| group.user_removed(user)}
@@ -59,7 +60,7 @@ class User < Principal
   attr_accessor :password, :password_confirmation
   attr_accessor :last_before_login_on
   # Prevents unauthorized assignments
-  attr_protected :login, :admin, :password, :password_confirmation, :hashed_password, :group_ids
+  attr_protected :login, :admin, :password, :password_confirmation, :hashed_password
 	
   validates_presence_of :login, :firstname, :lastname, :mail, :if => Proc.new { |user| !user.is_a?(AnonymousUser) }
   validates_uniqueness_of :login, :if => Proc.new { |user| !user.login.blank? }, :case_sensitive => false
@@ -72,6 +73,7 @@ class User < Principal
   validates_format_of :mail, :with => /^([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})$/i, :allow_nil => true
   validates_length_of :mail, :maximum => 60, :allow_nil => true
   validates_confirmation_of :password, :allow_nil => true
+  validates_inclusion_of :mail_notification, :in => MAIL_NOTIFICATION_OPTIONS.collect(&:first), :allow_blank => true
 
   def before_create
     self.mail_notification = Setting.default_notification_option if self.mail_notification.blank?
@@ -264,7 +266,7 @@ class User < Principal
     # Note that @user.membership.size would fail since AR ignores
     # :include association option when doing a count
     if memberships.length < 1
-      MAIL_NOTIFICATION_OPTIONS.delete_if {|option| option.first == :selected}
+      MAIL_NOTIFICATION_OPTIONS.delete_if {|option| option.first == 'selected'}
     else
       MAIL_NOTIFICATION_OPTIONS
     end
@@ -344,23 +346,35 @@ class User < Principal
     !roles_for_project(project).detect {|role| role.member?}.nil?
   end
   
-  # Return true if the user is allowed to do the specified action on project
-  # action can be:
+  # Return true if the user is allowed to do the specified action on a specific context
+  # Action can be:
   # * a parameter-like Hash (eg. :controller => 'projects', :action => 'edit')
   # * a permission Symbol (eg. :edit_project)
-  def allowed_to?(action, project, options={})
-    if project
+  # Context can be:
+  # * a project : returns true if user is allowed to do the specified action on this project
+  # * a group of projects : returns true if user is allowed on every project
+  # * nil with options[:global] set : check if user has at least one role allowed for this action, 
+  #   or falls back to Non Member / Anonymous permissions depending if the user is logged
+  def allowed_to?(action, context, options={})
+    if context && context.is_a?(Project)
       # No action allowed on archived projects
-      return false unless project.active?
+      return false unless context.active?
       # No action allowed on disabled modules
-      return false unless project.allows_to?(action)
+      return false unless context.allows_to?(action)
       # Admin users are authorized for anything else
       return true if admin?
       
-      roles = roles_for_project(project)
+      roles = roles_for_project(context)
       return false unless roles
-      roles.detect {|role| (project.is_public? || role.member?) && role.allowed_to?(action)}
+      roles.detect {|role| (context.is_public? || role.member?) && role.allowed_to?(action)}
       
+    elsif context && context.is_a?(Array)
+      # Authorize if user is authorized on every element of the array
+      context.map do |project|
+        allowed_to?(action,project,options)
+      end.inject do |memo,allowed|
+        memo && allowed
+      end
     elsif options[:global]
       # Admin users are always authorized
       return true if admin?
@@ -378,32 +392,49 @@ class User < Principal
   def allowed_to_globally?(action, options)
     allowed_to?(action, nil, options.reverse_merge(:global => true))
   end
+
+  safe_attributes 'login',
+    'firstname',
+    'lastname',
+    'mail',
+    'mail_notification',
+    'language',
+    'custom_field_values',
+    'custom_fields',
+    'identity_url'
+  
+  safe_attributes 'status',
+    'auth_source_id',
+    :if => lambda {|user, current_user| current_user.admin?}
+  
+  safe_attributes 'group_ids',
+    :if => lambda {|user, current_user| current_user.admin? && !user.new_record?}
   
   # Utility method to help check if a user should be notified about an
   # event.
   #
   # TODO: only supports Issue events currently
   def notify_about?(object)
-    case mail_notification.to_sym
-    when :all
+    case mail_notification
+    when 'all'
       true
-    when :selected
+    when 'selected'
       # Handled by the Project
-    when :none
+    when 'none'
       false
-    when :only_my_events
+    when 'only_my_events'
       if object.is_a?(Issue) && (object.author == self || object.assigned_to == self)
         true
       else
         false
       end
-    when :only_assigned
+    when 'only_assigned'
       if object.is_a?(Issue) && object.assigned_to == self
         true
       else
         false
       end
-    when :only_owner
+    when 'only_owner'
       if object.is_a?(Issue) && object.author == self
         true
       else

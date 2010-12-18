@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require "#{File.dirname(__FILE__)}/../test_helper"
+require File.expand_path('../../test_helper', __FILE__)
 
 class IssuesTest < ActionController::IntegrationTest
   fixtures :projects, 
@@ -72,7 +72,7 @@ class IssuesTest < ActionController::IntegrationTest
     put 'issues/1',
          :notes => 'Some notes',
          :attachments => {'1' => {'file' => uploaded_test_file('testfile.txt', 'text/plain'), 'description' => 'This is an attachment'}}
-    assert_redirected_to "issues/1"
+    assert_redirected_to "/issues/1"
     
     # make sure attachment was saved
     attachment = Issue.find(1).attachments.find_by_filename("testfile.txt")

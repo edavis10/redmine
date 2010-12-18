@@ -21,12 +21,13 @@ class IssuesController < ApplicationController
   
   before_filter :find_issue, :only => [:show, :edit, :update]
   before_filter :find_issues, :only => [:bulk_edit, :bulk_update, :move, :perform_move, :destroy]
+  before_filter :check_project_uniqueness, :only => [:move, :perform_move]
   before_filter :find_project, :only => [:new, :create]
   before_filter :authorize, :except => [:index]
   before_filter :find_optional_project, :only => [:index]
   before_filter :check_for_default_issue_status, :only => [:new, :create]
   before_filter :build_new_issue_from_params, :only => [:new, :create]
-  accept_key_auth :index, :show
+  accept_key_auth :index, :show, :create, :update, :destroy
 
   rescue_from Query::StatementInvalid, :with => :query_statement_invalid
   
@@ -64,27 +65,29 @@ class IssuesController < ApplicationController
     sort_update(@query.sortable_columns)
     
     if @query.valid?
-      limit = case params[:format]
+      case params[:format]
       when 'csv', 'pdf'
-        Setting.issues_export_limit.to_i
+        @limit = Setting.issues_export_limit.to_i
       when 'atom'
-        Setting.feeds_limit.to_i
+        @limit = Setting.feeds_limit.to_i
+      when 'xml', 'json'
+        @offset, @limit = api_offset_and_limit
       else
-        per_page_option
+        @limit = per_page_option
       end
       
       @issue_count = @query.issue_count
-      @issue_pages = Paginator.new self, @issue_count, limit, params['page']
+      @issue_pages = Paginator.new self, @issue_count, @limit, params['page']
+      @offset ||= @issue_pages.current.offset
       @issues = @query.issues(:include => [:assigned_to, :tracker, :priority, :category, :fixed_version],
                               :order => sort_clause, 
-                              :offset => @issue_pages.current.offset, 
-                              :limit => limit)
+                              :offset => @offset, 
+                              :limit => @limit)
       @issue_count_by_group = @query.issue_count_by_group
       
       respond_to do |format|
         format.html { render :template => 'issues/index.rhtml', :layout => !request.xhr? }
-        format.xml  { render :layout => false }
-        format.json { render :text => @issues.to_json, :layout => false }
+        format.api
         format.atom { render_feed(@issues, :title => "#{@project || Setting.app_title}: #{l(:label_issue_plural)}") }
         format.csv  { send_data(issues_to_csv(@issues, @project), :type => 'text/csv; header=present', :filename => 'export.csv') }
         format.pdf  { send_data(issues_to_pdf(@issues, @project, @query), :type => 'application/pdf', :filename => 'export.pdf') }
@@ -109,8 +112,7 @@ class IssuesController < ApplicationController
     @time_entry = TimeEntry.new
     respond_to do |format|
       format.html { render :template => 'issues/show.rhtml' }
-      format.xml  { render :layout => false }
-      format.json { render :text => @issue.to_json, :layout => false }
+      format.api
       format.atom { render :template => 'journals/index', :layout => false, :content_type => 'application/atom+xml' }
       format.pdf  { send_data(issue_to_pdf(@issue), :type => 'application/pdf', :filename => "#{@project.identifier}-#{@issue.id}.pdf") }
     end
@@ -137,23 +139,17 @@ class IssuesController < ApplicationController
           redirect_to(params[:continue] ?  { :action => 'new', :project_id => @project, :issue => {:tracker_id => @issue.tracker, :parent_issue_id => @issue.parent_issue_id}.reject {|k,v| v.nil?} } :
                       { :action => 'show', :id => @issue })
         }
-        format.xml  { render :action => 'show', :status => :created, :location => url_for(:controller => 'issues', :action => 'show', :id => @issue) }
-        format.json { render :text => @issue.to_json, :status => :created, :location => url_for(:controller => 'issues', :action => 'show'), :layout => false }
+        format.api  { render :action => 'show', :status => :created, :location => issue_url(@issue) }
       end
       return
     else
       respond_to do |format|
         format.html { render :action => 'new' }
-        format.xml  { render(:xml => @issue.errors, :status => :unprocessable_entity); return }
-        format.json { render :text => object_errors_to_json(@issue), :status => :unprocessable_entity, :layout => false }
+        format.api  { render_validation_errors(@issue) }
       end
     end
   end
-  
-  # Attributes that can be updated on workflow transition (without :edit permission)
-  # TODO: make it configurable (at least per role)
-  UPDATABLE_ATTRS_ON_TRANSITION = %w(status_id assigned_to_id fixed_version_id done_ratio) unless const_defined?(:UPDATABLE_ATTRS_ON_TRANSITION)
-  
+    
   def edit
     update_issue_from_params
 
@@ -174,8 +170,7 @@ class IssuesController < ApplicationController
 
       respond_to do |format|
         format.html { redirect_back_or_default({:action => 'show', :id => @issue}) }
-        format.xml  { head :ok }
-        format.json  { head :ok }
+        format.api  { head :ok }
       end
     else
       render_attachment_warning_if_needed(@issue)
@@ -184,8 +179,7 @@ class IssuesController < ApplicationController
 
       respond_to do |format|
         format.html { render :action => 'edit' }
-        format.xml  { render :xml => @issue.errors, :status => :unprocessable_entity }
-        format.json { render :text => object_errors_to_json(@issue), :status => :unprocessable_entity, :layout => false }
+        format.api  { render_validation_errors(@issue) }
       end
     end
   end
@@ -193,8 +187,10 @@ class IssuesController < ApplicationController
   # Bulk edit a set of issues
   def bulk_edit
     @issues.sort!
-    @available_statuses = Workflow.available_statuses(@project)
-    @custom_fields = @project.all_issue_custom_fields
+    @available_statuses = @projects.map{|p|Workflow.available_statuses(p)}.inject{|memo,w|memo & w}
+    @custom_fields = @projects.map{|p|p.all_issue_custom_fields}.inject{|memo,c|memo & c}
+    @assignables = @projects.map(&:assignable_users).inject{|memo,a| memo & a}
+    @trackers = @projects.map(&:trackers).inject{|memo,t| memo & t}
   end
 
   def bulk_update
@@ -233,17 +229,14 @@ class IssuesController < ApplicationController
           TimeEntry.update_all("issue_id = #{reassign_to.id}", ['issue_id IN (?)', @issues])
         end
       else
-        unless params[:format] == 'xml' || params[:format] == 'json'
-          # display the destroy form if it's a user request
-          return
-        end
+        # display the destroy form if it's a user request
+        return unless api_request?
       end
     end
     @issues.each(&:destroy)
     respond_to do |format|
-      format.html { redirect_to :action => 'index', :project_id => @project }
-      format.xml  { head :ok }
-      format.json  { head :ok }
+      format.html { redirect_back_or_default(:action => 'index', :project_id => @project) }
+      format.api  { head :ok }
     end
   end
 
@@ -270,17 +263,11 @@ private
     @priorities = IssuePriority.all
     @edit_allowed = User.current.allowed_to?(:edit_issues, @project)
     @time_entry = TimeEntry.new
+    @time_entry.attributes = params[:time_entry]
     
     @notes = params[:notes] || (params[:issue].present? ? params[:issue][:notes] : nil)
     @issue.init_journal(User.current, @notes)
-    # User can change issue attributes only if he has :edit permission or if a workflow transition is allowed
-    if (@edit_allowed || !@allowed_statuses.empty?) && params[:issue]
-      attrs = params[:issue].dup
-      attrs.delete_if {|k,v| !UPDATABLE_ATTRS_ON_TRANSITION.include?(k) } unless @edit_allowed
-      attrs.delete(:status_id) unless @allowed_statuses.detect {|s| s.id.to_s == attrs[:status_id].to_s}
-      @issue.safe_attributes = attrs
-    end
-
+    @issue.safe_attributes = params[:issue]
   end
 
   # TODO: Refactor, lots of extra code in here
@@ -301,6 +288,7 @@ private
       render_error l(:error_no_tracker_in_project)
       return false
     end
+    @issue.start_date ||= Date.today
     if params[:issue].is_a?(Hash)
       @issue.safe_attributes = params[:issue]
       if User.current.allowed_to?(:add_issue_watchers, @project) && @issue.new_record?
@@ -308,7 +296,6 @@ private
       end
     end
     @issue.author = User.current
-    @issue.start_date ||= Date.today
     @priorities = IssuePriority.all
     @allowed_statuses = @issue.new_statuses_allowed_to(User.current, true)
   end

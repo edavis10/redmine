@@ -1,8 +1,8 @@
 # Patch the data from a boolean change.
 class UpdateMailNotificationValues < ActiveRecord::Migration
   def self.up
-    User.update_all("mail_notification = 'all'", "mail_notification = '1'")
-    User.update_all("mail_notification = 'only_my_events'", "mail_notification = '0'")
+    # No-op
+    # See 20100129193402_change_users_mail_notification_to_string.rb
   end
 
   def self.down
