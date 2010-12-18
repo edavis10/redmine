@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.dirname(__FILE__) + '/../test_helper'
+require File.expand_path('../../test_helper', __FILE__)
 
 class ChangesetTest < ActiveSupport::TestCase
   fixtures :projects, :repositories, :issues, :issue_statuses, :changesets, :changes, :issue_categories, :enumerations, :custom_fields, :custom_values, :users, :members, :member_roles, :trackers
@@ -75,7 +75,6 @@ class ChangesetTest < ActiveSupport::TestCase
     c = Changeset.new(:repository => Project.find(1).repository,
                       :committed_on => 24.hours.ago,
                       :comments => 'Worked on this issue #1 @2h',
-                      :scmid => '520',
                       :revision => '520',
                       :user => User.find(2))
     assert_difference 'TimeEntry.count' do
@@ -171,14 +170,19 @@ class ChangesetTest < ActiveSupport::TestCase
     assert c.issues.first.project != c.project
   end
   
-  def test_text_tag_numeric
-    c = Changeset.new(:scmid => '520', :revision => '520')
+  def test_text_tag_revision
+    c = Changeset.new(:revision => '520')
     assert_equal 'r520', c.text_tag
   end
   
   def test_text_tag_hash
     c = Changeset.new(:scmid => '7234cb2750b63f47bff735edc50a1c0a433c2518', :revision => '7234cb2750b63f47bff735edc50a1c0a433c2518')
     assert_equal 'commit:7234cb2750b63f47bff735edc50a1c0a433c2518', c.text_tag
+  end
+
+  def test_text_tag_hash_all_number
+    c = Changeset.new(:scmid => '0123456789', :revision => '0123456789')
+    assert_equal 'commit:0123456789', c.text_tag
   end
 
   def test_previous

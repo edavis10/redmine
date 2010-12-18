@@ -866,7 +866,29 @@ module ApplicationHelper
   def favicon
     "<link rel='shortcut icon' href='#{image_path('/favicon.ico')}' />"
   end
+  
+  # Returns true if arg is expected in the API response
+  def include_in_api_response?(arg)
+    unless @included_in_api_response
+      param = params[:include]
+      @included_in_api_response = param.is_a?(Array) ? param.collect(&:to_s) : param.to_s.split(',')
+      @included_in_api_response.collect!(&:strip)
+    end
+    @included_in_api_response.include?(arg.to_s)
+  end
 
+  # Returns options or nil if nometa param or X-Redmine-Nometa header
+  # was set in the request
+  def api_meta(options)
+    if params[:nometa].present? || request.headers['X-Redmine-Nometa']
+      # compatibility mode for activeresource clients that raise
+      # an error when unserializing an array with attributes
+      nil
+    else
+      options
+    end
+  end
+  
   private
 
   def wiki_helper

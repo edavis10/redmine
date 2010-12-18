@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require "#{File.dirname(__FILE__)}/../../test_helper"
+require File.expand_path('../../../test_helper', __FILE__)
 require 'pp'
 class ApiTest::UsersTest < ActionController::IntegrationTest
   fixtures :users
@@ -54,13 +54,13 @@ class ApiTest::UsersTest < ActionController::IntegrationTest
   context "POST /users" do
     context "with valid parameters" do
       setup do
-        @parameters = {:user => {:login => 'foo', :firstname => 'Firstname', :lastname => 'Lastname', :mail => 'foo@example.net'}}
+        @parameters = {:user => {:login => 'foo', :firstname => 'Firstname', :lastname => 'Lastname', :mail => 'foo@example.net', :password => 'secret', :mail_notification => 'only_assigned'}}
       end
       
       context ".xml" do
         should_allow_api_authentication(:post,
           '/users.xml',
-          {:user => {:login => 'foo', :firstname => 'Firstname', :lastname => 'Lastname', :mail => 'foo@example.net'}},
+          {:user => {:login => 'foo', :firstname => 'Firstname', :lastname => 'Lastname', :mail => 'foo@example.net', :password => 'secret'}},
           {:success_code => :created})
         
         should "create a user with the attributes" do
@@ -73,7 +73,9 @@ class ApiTest::UsersTest < ActionController::IntegrationTest
           assert_equal 'Firstname', user.firstname
           assert_equal 'Lastname', user.lastname
           assert_equal 'foo@example.net', user.mail
+          assert_equal 'only_assigned', user.mail_notification
           assert !user.admin?
+          assert user.check_password?('secret')
           
           assert_response :created
           assert_equal 'application/xml', @response.content_type

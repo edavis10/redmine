@@ -30,6 +30,13 @@ class UsersController < ApplicationController
     sort_init 'login', 'asc'
     sort_update %w(login firstname lastname mail admin created_on last_login_on)
     
+    case params[:format]
+    when 'xml', 'json'
+      @offset, @limit = api_offset_and_limit
+    else
+      @limit = per_page_option
+    end
+    
     @status = params[:status] ? params[:status].to_i : 1
     c = ARCondition.new(@status == 0 ? "status <> 0" : ["status = ?", @status])
 
@@ -39,13 +46,13 @@ class UsersController < ApplicationController
     end
     
     @user_count = User.count(:conditions => c.conditions)
-    @user_pages = Paginator.new self, @user_count,
-								per_page_option,
-								params['page']								
-    @users =  User.find :all,:order => sort_clause,
+    @user_pages = Paginator.new self, @user_count, @limit, params['page']
+    @offset ||= @user_pages.current.offset
+    @users =  User.find :all,
+                        :order => sort_clause,
                         :conditions => c.conditions,
-						:limit  =>  @user_pages.items_per_page,
-						:offset =>  @user_pages.current.offset
+                        :limit  =>  @limit,
+                        :offset =>  @offset
 
 		respond_to do |format|
 		  format.html { render :layout => !request.xhr? }
@@ -78,33 +85,27 @@ class UsersController < ApplicationController
   end
 
   def new
-    @notification_options = User::MAIL_NOTIFICATION_OPTIONS
-    @notification_option = Setting.default_notification_option
-
-    @user = User.new(:language => Setting.default_language)
+    @user = User.new(:language => Setting.default_language, :mail_notification => Setting.default_notification_option)
     @auth_sources = AuthSource.find(:all)
   end
   
   verify :method => :post, :only => :create, :render => {:nothing => true, :status => :method_not_allowed }
   def create
-    @notification_options = User::MAIL_NOTIFICATION_OPTIONS
-    @notification_option = Setting.default_notification_option
-
-    @user = User.new(params[:user])
+    @user = User.new(:language => Setting.default_language, :mail_notification => Setting.default_notification_option)
+    @user.safe_attributes = params[:user]
     @user.admin = params[:user][:admin] || false
     @user.login = params[:user][:login]
-    @user.password, @user.password_confirmation = params[:password], params[:password_confirmation] unless @user.auth_source_id
+    @user.password, @user.password_confirmation = params[:user][:password], params[:user][:password_confirmation] unless @user.auth_source_id
 
     # TODO: Similar to My#account
-    @user.mail_notification = params[:notification_option] || 'only_my_events'
     @user.pref.attributes = params[:pref]
     @user.pref[:no_self_notified] = (params[:no_self_notified] == '1')
 
     if @user.save
       @user.pref.save
-      @user.notified_project_ids = (params[:notification_option] == 'selected' ? params[:notified_project_ids] : [])
+      @user.notified_project_ids = (@user.mail_notification == 'selected' ? params[:notified_project_ids] : [])
 
-      Mailer.deliver_account_information(@user, params[:password]) if params[:send_information]
+      Mailer.deliver_account_information(@user, params[:user][:password]) if params[:send_information]
       
       respond_to do |format|
         format.html {
@@ -118,7 +119,8 @@ class UsersController < ApplicationController
       end
     else
       @auth_sources = AuthSource.find(:all)
-      @notification_option = @user.mail_notification
+      # Clear password input
+      @user.password = @user.password_confirmation = nil
 
       respond_to do |format|
         format.html { render :action => 'new' }
@@ -129,8 +131,6 @@ class UsersController < ApplicationController
 
   def edit
     @user = User.find(params[:id])
-    @notification_options = @user.valid_notification_options
-    @notification_option = @user.mail_notification
 
     @auth_sources = AuthSource.find(:all)
     @membership ||= Member.new
@@ -139,31 +139,27 @@ class UsersController < ApplicationController
   verify :method => :put, :only => :update, :render => {:nothing => true, :status => :method_not_allowed }
   def update
     @user = User.find(params[:id])
-    @notification_options = @user.valid_notification_options
-    @notification_option = @user.mail_notification
 
     @user.admin = params[:user][:admin] if params[:user][:admin]
     @user.login = params[:user][:login] if params[:user][:login]
-    if params[:password].present? && (@user.auth_source_id.nil? || params[:user][:auth_source_id].blank?)
-      @user.password, @user.password_confirmation = params[:password], params[:password_confirmation]
+    if params[:user][:password].present? && (@user.auth_source_id.nil? || params[:user][:auth_source_id].blank?)
+      @user.password, @user.password_confirmation = params[:user][:password], params[:user][:password_confirmation]
     end
-    @user.group_ids = params[:user][:group_ids] if params[:user][:group_ids]
-    @user.attributes = params[:user]
+    @user.safe_attributes = params[:user]
     # Was the account actived ? (do it before User#save clears the change)
     was_activated = (@user.status_change == [User::STATUS_REGISTERED, User::STATUS_ACTIVE])
     # TODO: Similar to My#account
-    @user.mail_notification = params[:notification_option] || 'only_my_events'
     @user.pref.attributes = params[:pref]
     @user.pref[:no_self_notified] = (params[:no_self_notified] == '1')
 
     if @user.save
       @user.pref.save
-      @user.notified_project_ids = (params[:notification_option] == 'selected' ? params[:notified_project_ids] : [])
+      @user.notified_project_ids = (@user.mail_notification == 'selected' ? params[:notified_project_ids] : [])
 
       if was_activated
         Mailer.deliver_account_activated(@user)
-      elsif @user.active? && params[:send_information] && !params[:password].blank? && @user.auth_source_id.nil?
-        Mailer.deliver_account_information(@user, params[:password])
+      elsif @user.active? && params[:send_information] && !params[:user][:password].blank? && @user.auth_source_id.nil?
+        Mailer.deliver_account_information(@user, params[:user][:password])
       end
       
       respond_to do |format|
@@ -176,6 +172,8 @@ class UsersController < ApplicationController
     else
       @auth_sources = AuthSource.find(:all)
       @membership ||= Member.new
+      # Clear password input
+      @user.password = @user.password_confirmation = nil
 
       respond_to do |format|
         format.html { render :action => :edit }
