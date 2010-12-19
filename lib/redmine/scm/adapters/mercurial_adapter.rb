@@ -81,7 +81,7 @@ module Redmine
           path ||= ''
           entries = Entries.new
           cmd = "#{HG_BIN} -R #{target('')} --cwd #{target('')} locate"
-          cmd << " -r " + (identifier ? identifier.to_s : "tip")
+          cmd << " -r " + shell_quote(identifier ? identifier.to_s : "tip")
           cmd << " " + shell_quote("path:#{path}") unless path.empty?
           shellout(cmd) do |io|
             io.each_line do |line|
@@ -113,7 +113,7 @@ module Redmine
             cmd << " -r #{identifier_from.to_i}:"
           end
           cmd << " --limit #{options[:limit].to_i}" if options[:limit]
-          cmd << " #{path}" if path
+          cmd << " #{shell_quote path}" unless path.blank?
           shellout(cmd) do |io|
             begin
               # HG doesn't close the XML Document...
@@ -158,6 +158,9 @@ module Redmine
           else
             identifier_to = identifier_from.to_i - 1
           end
+          if identifier_from
+            identifier_from = identifier_from.to_i
+          end
           cmd = "#{HG_BIN} -R #{target('')} diff -r #{identifier_to} -r #{identifier_from} --nodates"
           cmd << " -I #{target(path)}" unless path.empty?
           diff = []
@@ -172,7 +175,7 @@ module Redmine
         
         def cat(path, identifier=nil)
           cmd = "#{HG_BIN} -R #{target('')} cat"
-          cmd << " -r " + (identifier ? identifier.to_s : "tip")
+          cmd << " -r " + shell_quote(identifier ? identifier.to_s : "tip")
           cmd << " #{target(path)}"
           cat = nil
           shellout(cmd) do |io|
@@ -187,7 +190,7 @@ module Redmine
           path ||= ''
           cmd = "#{HG_BIN} -R #{target('')}"
           cmd << " annotate -n -u"
-          cmd << " -r " + (identifier ? identifier.to_s : "tip")
+          cmd << " -r " + shell_quote(identifier ? identifier.to_s : "tip")
           cmd << " -r #{identifier.to_i}" if identifier
           cmd << " #{target(path)}"
           blame = Annotate.new
