@@ -235,6 +235,22 @@ class QueryTest < ActiveSupport::TestCase
     q = Query.new
     assert q.groupable_columns.detect {|c| c.is_a? QueryCustomFieldColumn}
   end
+
+  def test_grouped_with_valid_column
+    q = Query.new(:group_by => 'status')
+    assert q.grouped?
+    assert_not_nil q.group_by_column
+    assert_equal :status, q.group_by_column.name
+    assert_not_nil q.group_by_statement
+    assert_equal 'status', q.group_by_statement
+  end
+  
+  def test_grouped_with_invalid_column
+    q = Query.new(:group_by => 'foo')
+    assert !q.grouped?
+    assert_nil q.group_by_column
+    assert_nil q.group_by_statement
+  end
   
   def test_default_sort
     q = Query.new
@@ -380,6 +396,12 @@ class QueryTest < ActiveSupport::TestCase
       users = @query.available_filters["assigned_to_id"]
       assert_not_nil users
       assert users[:values].map{|u|u[1]}.include?("3")
+    end
+
+    should "include visible projects in cross-project view" do
+      projects = @query.available_filters["project_id"]
+      assert_not_nil projects
+      assert projects[:values].map{|u|u[1]}.include?("1")
     end
 
     context "'member_of_group' filter" do
