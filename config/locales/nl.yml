@@ -899,22 +899,22 @@ nl:
   project_module_gantt: Gantt
   project_module_calendar: Kalender
   button_edit_associated_wikipage: "Edit associated Wiki page: %{page_title}"
-  text_are_you_sure_with_children: Delete issue and all child issues?
+  text_are_you_sure_with_children: Issue en alle child-issues verwijderen?
   field_text: Text field
-  label_user_mail_option_only_owner: Only for things I am the owner of
-  setting_default_notification_option: Default notification option
-  label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
-  label_user_mail_option_only_assigned: Only for things I am assigned to
-  label_user_mail_option_none: No events
-  field_member_of_group: Assignee's group
-  field_assigned_to_role: Assignee's role
-  notice_not_authorized_archived_project: The project you're trying to access has been archived.
-  label_principal_search: "Search for user or group:"
-  label_user_search: "Search for user:"
-  field_visible: Visible
+  label_user_mail_option_only_owner: Alleen de items waar ik eigenaar van ben
+  setting_default_notification_option: Standaard notificatie optie
+  label_user_mail_option_only_my_events: Alleen items die ik bekijk of waarbij ik betrokken ben
+  label_user_mail_option_only_assigned: Alleen items die mij zijn toegewezen
+  label_user_mail_option_none: Geen events
+  field_member_of_group: Groep van toegewezen persoon
+  field_assigned_to_role: Rol van toegewezen persoon
+  notice_not_authorized_archived_project: Het project dat je probeert te bekijken is gearchiveerd.
+  label_principal_search: "Zoeken naar gebruiker of groep:"
+  label_user_search: "Zoeken naar gebruiker:"
+  field_visible: Zichtbaar
   setting_emails_header: Emails header
-  setting_commit_logtime_activity_id: Activity for logged time
-  text_time_logged_by_changeset: Applied in changeset %{value}.
-  setting_commit_logtime_enabled: Enable time logging
-  notice_gantt_chart_truncated: The chart was truncated because it exceeds the maximum number of items that can be displayed (%{max})
-  setting_gantt_items_limit: Maximum number of items displayed on the gantt chart
+  setting_commit_logtime_activity_id: Activiteit voor geregistreerde tijd
+  text_time_logged_by_changeset: Toegepast in changeset %{value}.
+  setting_commit_logtime_enabled: Schakel tijdsregistratie in
+  notice_gantt_chart_truncated: Deze grafiek is ingekort omdat deze het maximum aantal weer te geven items overschrijdt (%{max})
+  setting_gantt_items_limit: Maximum aantal items om weer te geven in de gantt grafiek
