@@ -90,6 +90,8 @@ ActionController::Routing::Routes.draw do |map|
     reports.connect 'projects/:id/issues/report/:detail', :action => 'issue_report_details'
   end
 
+  map.connect '/trackers.:format', :controller => 'trackers', :action => 'index', :conditions => { :method => :get }
+  map.connect '/issue_statuses.:format', :controller => 'issue_statuses', :action => 'index', :conditions => { :method => :get }
   # Following two routes conflict with the resources because #index allows POST
   map.connect '/issues', :controller => 'issues', :action => 'index', :conditions => { :method => :post }
   map.connect '/issues/create', :controller => 'issues', :action => 'index', :conditions => { :method => :post }

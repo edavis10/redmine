@@ -1,0 +1,7 @@
+api.array :issue_statuses do
+	@issue_statuses.each do |status|
+		api.status do
+			api.name status.name
+		end	
+	end
+end
