@@ -1,0 +1,4 @@
+api.issue_status do
+  api.name  @status.name
+  api.id    @status.id
+end

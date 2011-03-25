@@ -18,7 +18,8 @@
 class IssueStatusesController < ApplicationController
   layout 'admin'
   
-  before_filter :require_admin
+  before_filter :require_admin, :except => [:index, :show]
+  before_filter :find_status, :only => [:show]
 
   verify :method => :post, :only => [ :destroy, :create, :update, :move, :update_issue_done_ratio ],
          :redirect_to => { :action => :index }
@@ -27,7 +28,8 @@ class IssueStatusesController < ApplicationController
     @issue_status_pages, @issue_statuses = paginate :issue_statuses, :per_page => 25, :order => "position"
     render :action => "index", :layout => false if request.xhr?
     respond_to do |format|
-      format.html
+      format.html if User.current.admin?
+      format.html { render_403 } unless User.current.admin?
       format.api
     end
   end
@@ -43,6 +45,13 @@ class IssueStatusesController < ApplicationController
       redirect_to :action => 'index'
     else
       render :action => 'new'
+    end
+  end
+
+  def show
+    respond_to do |format|
+      format.html { render_404 }
+      format.api
     end
   end
 
@@ -76,4 +85,17 @@ class IssueStatusesController < ApplicationController
     end
     redirect_to :action => 'index'
   end
+
+private
+  def find_status
+    begin
+      @status = IssueStatus.find(params[:id])
+    rescue ActiveRecord::RecordNotFound
+      @status = IssueStatus.find_by_name(params[:id])
+      if @status.nil?
+        render_404
+      end
+    end
+  end
+
 end
