@@ -30,7 +30,7 @@
     <%= link_to(l(:button_delete), { :action => 'destroy', :id => status },
     															 :method => :post,
     															 :confirm => l(:text_are_you_sure),
-    															 :class => 'icon icon-del') %>
+    															 :class => 'icon icon-del') if User.current.admin? %>
   </td>
   </tr>
 <% end %>

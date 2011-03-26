@@ -26,6 +26,10 @@ class IssueStatusesController < ApplicationController
   def index
     @issue_status_pages, @issue_statuses = paginate :issue_statuses, :per_page => 25, :order => "position"
     render :action => "index", :layout => false if request.xhr?
+    respond_to do |format|
+      format.html
+      format.api
+    end
   end
 
   def new
