@@ -10,6 +10,25 @@ api.issue do
   api.fixed_version(:id => @issue.fixed_version_id, :name => @issue.fixed_version.name) unless @issue.fixed_version.nil?
   api.parent(:id => @issue.parent_id) unless @issue.parent.nil?
   
+  api.array :assignable_users do
+  	@issue.assignable_users.each do |user|
+      api.users do
+        api.id user.id
+        api.name user.name
+      end
+	  end
+  end
+
+  api.array :assignable_versions do
+  	@issue.assignable_versions.each do |version|
+      api.versions do
+        api.id version.id
+        api.name version.name
+      end
+  	end
+  end
+
+
   api.subject @issue.subject
   api.description @issue.description
   api.start_date @issue.start_date
