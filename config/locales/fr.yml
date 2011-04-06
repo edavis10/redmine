@@ -194,6 +194,7 @@ fr:
   error_workflow_copy_target: 'Veuillez sélectionner les trackers et rôles cibles'
   error_issue_done_ratios_not_updated: L'avancement des demandes n'a pas pu être mis à jour.
   
+  
   warning_attachments_not_saved: "%{count} fichier(s) n'ont pas pu être sauvegardés."
   
   mail_subject_lost_password: "Votre mot de passe %{value}"
@@ -308,6 +309,7 @@ fr:
   field_parent_issue: Tâche parente
   field_visible: Visible
   field_warn_on_leaving_unsaved: "M'avertir lorsque je quitte une page contenant du texte non sauvegardé"
+  field_error_log_time_status_new: "Impossible de logger du temps sur une issue avec le status 'New'"
   
   setting_app_title: Titre de l'application
   setting_app_subtitle: Sous-titre de l'application
