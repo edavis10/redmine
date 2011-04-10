@@ -380,9 +380,9 @@ module Redmine
           when :html
             html_task(options, coords, :css => "task " + (issue.leaf? ? 'leaf' : 'parent'), :label => label, :issue => issue, :markers => !issue.leaf?)
           when :image
-            image_task(options, coords, :label => label)
+            image_task(options, coords, :label => label, :issue => issue)
           when :pdf
-            pdf_task(options, coords, :label => label)
+            pdf_task(options, coords, :label => label, :issue => issue)
         end
         else
           ActiveRecord::Base.logger.debug "GanttHelper#line_for_issue was not given an issue with a due_before"
@@ -814,10 +814,15 @@ module Redmine
             params[:pdf].RDMCell(2, 2, "", 0, 0, "", 1) 
           end
         end
-        # Renders the label on the right
+        # Renders the label on the right and assignation information
         if options[:label]
           params[:pdf].SetX(params[:subject_width] + (coords[:bar_end] || 0) + 5)
-          params[:pdf].RDMCell(30, 2, options[:label])
+          if options[:issue] && options[:issue].assigned_to
+            @cached_label_assigned_to ||= l(:field_assigned_to)
+            params[:pdf].RDMCell(30, 2, "#{options[:label]} (#{@cached_label_assigned_to} #{options[:issue].assigned_to.to_s})")
+          else
+            params[:pdf].RDMCell(30, 2, options[:label])
+          end
         end
       end
 
@@ -853,10 +858,15 @@ module Redmine
             params[:image].polygon(x-4, y, x, y-4, x+4, y, x, y+4)
           end
         end
-        # Renders the label on the right
+        # Renders the label on the right and assignation information
         if options[:label]
           params[:image].fill('black')
-          params[:image].text(params[:subject_width] + (coords[:bar_end] || 0) + 5,params[:top] + 1, options[:label])
+          if options[:issue] && options[:issue].assigned_to
+            @cached_label_assigned_to ||= l(:field_assigned_to)
+            params[:image].text(params[:subject_width] + (coords[:bar_end] || 0) + 5, params[:top] + 1, "#{options[:label]} (#{@cached_label_assigned_to} #{options[:issue].assigned_to.to_s})")
+           else
+            params[:image].text(params[:subject_width] + (coords[:bar_end] || 0) + 5, params[:top] + 1, options[:label])
+          end
         end
       end
     end
