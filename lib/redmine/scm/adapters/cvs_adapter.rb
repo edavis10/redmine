@@ -99,7 +99,7 @@ module Redmine
           logger.debug "<cvs> entries '#{path}' with identifier '#{identifier}'"
           path_with_project="#{url}#{with_leading_slash(path)}"
           entries = Entries.new
-          cmd_args = %w|rls -e|
+          cmd_args = %w|-q rls -e|
           cmd_args << "-D" << time_to_cvstime_rlog(identifier) if identifier
           cmd_args << path_with_project
           scm_cmd(*cmd_args) do |io|
@@ -158,9 +158,8 @@ module Redmine
         def revisions(path=nil, identifier_from=nil, identifier_to=nil, options={}, &block)
           logger.debug "<cvs> revisions path:" +
               "'#{path}',identifier_from #{identifier_from}, identifier_to #{identifier_to}"
-
           path_with_project = "#{url}#{with_leading_slash(path)}"
-          cmd_args = %w|rlog|
+          cmd_args = %w|-q rlog|
           cmd_args << "-d" << ">#{time_to_cvstime_rlog(identifier_from)}" if identifier_from 
           cmd_args << path_with_project
           scm_cmd(*cmd_args) do |io|
@@ -212,8 +211,8 @@ module Redmine
               elsif state=="revision"
                 if /^#{ENDLOG}/ =~ line || /^#{STARTLOG}/ =~ line
                   if revision
-                    revHelper=CvsRevisionHelper.new(revision)
-                    revBranch="HEAD"
+                    revHelper = CvsRevisionHelper.new(revision)
+                    revBranch = "HEAD"
                     branch_map.each() do |branch_name, branch_point|
                       if revHelper.is_in_branch_with_symbol(branch_point)
                         revBranch=branch_name
@@ -237,19 +236,19 @@ module Redmine
                   commit_log = String.new
                   revision   = nil
                   if /^#{ENDLOG}/ =~ line
-                    state="entry_start"
+                    state = "entry_start"
                   end
                   next
                 end
 
                 if /^branches: (.+)$/ =~ line
-                  #TODO: version.branch = $1
+                  # TODO: version.branch = $1
                 elsif /^revision (\d+(?:\.\d+)+).*$/ =~ line
                   revision = $1   
                 elsif /^date:\s+(\d+.\d+.\d+\s+\d+:\d+:\d+)/ =~ line
-                  date      = Time.parse($1)
-                  author    = /author: ([^;]+)/.match(line)[1]
-                  file_state     = /state: ([^;]+)/.match(line)[1]
+                  date       = Time.parse($1)
+                  author     = /author: ([^;]+)/.match(line)[1]
+                  file_state = /state: ([^;]+)/.match(line)[1]
                   # TODO: 
                   #    linechanges only available in CVS....
                   #    maybe a feature our SVN implementation.
@@ -273,33 +272,39 @@ module Redmine
         end
 
         def diff(path, identifier_from, identifier_to=nil)
-          logger.debug "<cvs> diff path:'#{path}',identifier_from #{identifier_from}, identifier_to #{identifier_to}"
+          logger.debug "<cvs> diff path:'#{path}'" +
+              ",identifier_from #{identifier_from}, identifier_to #{identifier_to}"
           path_with_project="#{url}#{with_leading_slash(path)}"
-          cmd = "#{self.class.sq_bin} -d #{shell_quote root_url} rdiff -u -r#{identifier_to} -r#{identifier_from} #{shell_quote path_with_project}"
+          cmd_args = %w|rdiff -u|
+          cmd_args << "-r#{identifier_to}"
+          cmd_args << "-r#{identifier_from}"
+          cmd_args << path_with_project
           diff = []
-          shellout(cmd) do |io|
+          scm_cmd(*cmd_args) do |io|
             io.each_line do |line|
               diff << line
             end
           end
-          return nil if $? && $?.exitstatus != 0
           diff
+        rescue ScmCommandAborted
+          nil
         end
 
         def cat(path, identifier=nil)
           identifier = (identifier) ? identifier : "HEAD"
           logger.debug "<cvs> cat path:'#{path}',identifier #{identifier}"
           path_with_project="#{url}#{with_leading_slash(path)}"
-          cmd = "#{self.class.sq_bin} -d #{shell_quote root_url} co"
-          cmd << " -D \"#{time_to_cvstime(identifier)}\"" if identifier
-          cmd << " -p #{shell_quote path_with_project}"
+          cmd_args = %w|-q co|
+          cmd_args << "-D" << "#{time_to_cvstime(identifier)}" if identifier
+          cmd_args << "-p" << path_with_project
           cat = nil
-          shellout(cmd) do |io|
+          scm_cmd(*cmd_args) do |io|
             io.binmode
             cat = io.read
           end
-          return nil if $? && $?.exitstatus != 0
           cat
+        rescue ScmCommandAborted
+          nil
         end
 
         def annotate(path, identifier=nil)
@@ -311,7 +316,13 @@ module Redmine
           shellout(cmd) do |io|
             io.each_line do |line|
               next unless line =~ %r{^([\d\.]+)\s+\(([^\)]+)\s+[^\)]+\):\s(.*)$}
-              blame.add_line($3.rstrip, Revision.new(:revision => $1, :author => $2.strip))
+              blame.add_line(
+                  $3.rstrip,
+                  Revision.new(
+                    :revision   => $1,
+                    :identifier => nil,
+                    :author     => $2.strip
+                    ))
             end
           end
           return nil if $? && $?.exitstatus != 0
@@ -351,6 +362,13 @@ module Redmine
         def normalize_path(path)
           path.sub(/^(\/)*(.*)/,'\2').sub(/(.*)(,v)+/,'\1')
         end   
+
+        class Revision < Redmine::Scm::Adapters::Revision
+          # Returns the readable identifier
+          def format_identifier
+            revision.to_s
+          end
+        end
 
         def scm_cmd(*args, &block)
           full_args = [CVS_BIN, '-d', root_url]

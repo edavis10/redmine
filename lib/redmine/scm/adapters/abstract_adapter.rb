@@ -300,29 +300,24 @@ module Redmine
       end
       
       class Revision
-        attr_accessor :scmid, :name, :author, :time, :message, :paths, :revision, :branch
-        attr_writer :identifier
+        attr_accessor :scmid, :name, :author, :time, :message,
+                      :paths, :revision, :branch, :identifier
 
         def initialize(attributes={})
           self.identifier = attributes[:identifier]
-          self.scmid = attributes[:scmid]
-          self.name = attributes[:name] || self.identifier
-          self.author = attributes[:author]
-          self.time = attributes[:time]
-          self.message = attributes[:message] || ""
-          self.paths = attributes[:paths]
-          self.revision = attributes[:revision]
-          self.branch = attributes[:branch]
-        end
-
-        # Returns the identifier of this revision; see also Changeset model
-        def identifier
-          (@identifier || revision).to_s
+          self.scmid      = attributes[:scmid]
+          self.name       = attributes[:name] || self.identifier
+          self.author     = attributes[:author]
+          self.time       = attributes[:time]
+          self.message    = attributes[:message] || ""
+          self.paths      = attributes[:paths]
+          self.revision   = attributes[:revision]
+          self.branch     = attributes[:branch]
         end
 
         # Returns the readable identifier.
         def format_identifier
-          identifier
+          self.identifier.to_s
         end
       end
 
