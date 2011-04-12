@@ -9,7 +9,9 @@
 <p><%= f.select :sharing, @version.allowed_sharings.collect {|v| [format_version_sharing(v), v]} %></p>
 
 <% @version.custom_field_values.each do |value| %>
-	<p><%= custom_field_tag_with_label :version, value %></p>
+  <p><%= custom_field_tag_with_label :version, value %></p>
 <% end %>
+
+<%= call_hook(:view_version_form, :version => @version, :form => f) %>
 
 </div>
