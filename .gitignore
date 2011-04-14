@@ -23,3 +23,6 @@
 /tmp/test/*
 /vendor/rails
 *.rbc
+*.tmp*
+*.dump
+*.log
