@@ -26,3 +26,4 @@
 *.tmp*
 *.dump
 *.log
+/vendor/plugins
