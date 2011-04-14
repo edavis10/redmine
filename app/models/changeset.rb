@@ -235,6 +235,8 @@ class Changeset < ActiveRecord::Base
   def log_time_activity
     if Setting.commit_logtime_activity_id.to_i > 0
       TimeEntryActivity.find_by_id(Setting.commit_logtime_activity_id.to_i)
+    else
+      TimeEntryActivity.find_by_name("Development")
     end
   end
 
