@@ -5,12 +5,12 @@
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -31,12 +31,12 @@ class VersionsController < ApplicationController
     retrieve_selected_tracker_ids(@trackers, @trackers.select {|t| t.is_in_roadmap?})
     @with_subprojects = params[:with_subprojects].nil? ? Setting.display_subprojects_issues? : (params[:with_subprojects] == '1')
     project_ids = @with_subprojects ? @project.self_and_descendants.collect(&:id) : [@project.id]
-    
+
     @versions = @project.shared_versions || []
     @versions += @project.rolled_up_versions.visible if @with_subprojects
     @versions = @versions.uniq.sort
     @versions.reject! {|version| version.closed? || version.completed? } unless params[:completed]
-    
+
     @issues_by_version = {}
     unless @selected_tracker_ids.empty?
       @versions.each do |version|
@@ -49,13 +49,13 @@ class VersionsController < ApplicationController
     end
     @versions.reject! {|version| !project_ids.include?(version.project_id) && @issues_by_version[version].blank?}
   end
-  
+
   def show
     @issues = @version.fixed_issues.visible.find(:all,
       :include => [:status, :tracker, :priority],
       :order => "#{Tracker.table_name}.position, #{Issue.table_name}.id")
   end
-  
+
   def new
     @version = @project.versions.build
     if params[:version]
@@ -101,11 +101,12 @@ class VersionsController < ApplicationController
 
   def edit
   end
-  
+
   def update
     if request.put? && params[:version]
       attributes = params[:version].dup
       attributes.delete('sharing') unless @version.allowed_sharings.include?(attributes['sharing'])
+      Redmine::Hook.call_hook(:controller_versions_before_update, :version => @version, :attributes => attributes)
       if @version.update_attributes(attributes)
         flash[:notice] = l(:notice_successful_update)
         redirect_to :controller => 'projects', :action => 'settings', :tab => 'versions', :id => @project
@@ -116,7 +117,7 @@ class VersionsController < ApplicationController
       end
     end
   end
-  
+
   def close_completed
     if request.put?
       @project.close_completed_versions
@@ -133,7 +134,7 @@ class VersionsController < ApplicationController
       redirect_to :controller => 'projects', :action => 'settings', :tab => 'versions', :id => @project
     end
   end
-  
+
   def status_by
     respond_to do |format|
       format.html { render :action => 'show' }
