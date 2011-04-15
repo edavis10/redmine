@@ -34,7 +34,7 @@
          :onclick => "if (this.checked) { Form.Element.enable('settings_commit_logtime_activity_id'); } else { Form.Element.disable('settings_commit_logtime_activity_id'); }"%></p>
 
 <p><%= setting_select :commit_logtime_activity_id, 
-         [[l(:label_default), 0]] + TimeEntryActivity.shared.all.collect{|activity| [activity.name, activity.id.to_s]},
+         TimeEntryActivity.shared.all.collect{|activity| [activity.name, activity.id.to_s]} + [[l(:label_default), 0]],
          :disabled => !Setting.commit_logtime_enabled?%></p>
 </fieldset>
 
