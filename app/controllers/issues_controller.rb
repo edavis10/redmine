@@ -167,6 +167,11 @@ class IssuesController < ApplicationController
   def update
     update_issue_from_params
 
+    # update the due date if there's not due date (100% done)
+    if @issue.done_ratio == 100
+      @issue.due_date ||= Date.today
+    end
+
     if @issue.save_issue_with_child_records(params, @time_entry)
       render_attachment_warning_if_needed(@issue)
       flash[:notice] = l(:notice_successful_update) unless @issue.current_journal.new_record?
