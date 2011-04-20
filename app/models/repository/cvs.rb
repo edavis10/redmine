@@ -42,9 +42,13 @@ class Repository::Cvs < Repository
     rev = identifier.nil? ? nil : changesets.find_by_revision(identifier)
     scm.entry(path, rev.nil? ? nil : rev.committed_on)
   end
-  
+
   def entries(path=nil, identifier=nil)
-    rev = identifier.nil? ? nil : changesets.find_by_revision(identifier)
+    rev = nil
+    if ! identifier.nil?
+      rev = changesets.find_by_revision(identifier)
+      return nil if rev.nil?
+    end
     entries = scm.entries(path, rev.nil? ? nil : rev.committed_on)
     if entries
       entries.each() do |entry|
@@ -63,24 +67,37 @@ class Repository::Cvs < Repository
     end
     entries
   end
-  
+
   def cat(path, identifier=nil)
-    rev = identifier.nil? ? nil : changesets.find_by_revision(identifier)
+    rev = nil
+    if ! identifier.nil?
+      rev = changesets.find_by_revision(identifier)
+      return nil if rev.nil?
+    end
     scm.cat(path, rev.nil? ? nil : rev.committed_on)
   end
-  
+
+  def annotate(path, identifier=nil)
+    rev = nil
+    if ! identifier.nil?
+      rev = changesets.find_by_revision(identifier)
+      return nil if rev.nil?
+    end
+    scm.annotate(path, rev.nil? ? nil : rev.committed_on)
+  end
+
   def diff(path, rev, rev_to)
-    #convert rev to revision. CVS can't handle changesets here
+    # convert rev to revision. CVS can't handle changesets here
     diff=[]
-    changeset_from=changesets.find_by_revision(rev)
+    changeset_from = changesets.find_by_revision(rev)
     if rev_to.to_i > 0 
-      changeset_to=changesets.find_by_revision(rev_to)
+      changeset_to = changesets.find_by_revision(rev_to)
     end
     changeset_from.changes.each() do |change_from|
       revision_from = nil
       revision_to   = nil      
       if path.nil? || (change_from.path.starts_with? scm.with_leading_slash(path))
-        revision_from=change_from.revision
+        revision_from = change_from.revision
       end
       if revision_from
         if changeset_to
@@ -107,49 +124,51 @@ class Repository::Cvs < Repository
     # last one is the next step to take. the commit-date is not equal for all 
     # commits in one changeset. cvs update the commit-date when the *,v file was touched. so
     # we use a small delta here, to merge all changes belonging to _one_ changeset
-    time_delta=10.seconds
-    
+    time_delta  = 10.seconds
     fetch_since = latest_changeset ? latest_changeset.committed_on : nil
     transaction do
       tmp_rev_num = 1
-      scm.revisions('', fetch_since, nil, :with_paths => true) do |revision|
+      scm.revisions('', fetch_since, nil, :log_encoding => repo_log_encoding) do |revision|
         # only add the change to the database, if it doen't exists. the cvs log
         # is not exclusive at all. 
         tmp_time = revision.time.clone
         unless changes.find_by_path_and_revision(
-	           scm.with_leading_slash(revision.paths[0][:path]), revision.paths[0][:revision])
+	                         scm.with_leading_slash(revision.paths[0][:path]),
+	                         revision.paths[0][:revision]
+	                           )
           cmt = Changeset.normalize_comments(revision.message, repo_log_encoding)
-          cs = changesets.find(:first, :conditions=>{
-            :committed_on=>tmp_time - time_delta .. tmp_time + time_delta,
-            :committer=>revision.author,
-            :comments=>cmt
-          })
-        
+          author_utf8 = Changeset.to_utf8(revision.author, repo_log_encoding)
+          cs  = changesets.find(
+            :first,
+            :conditions => {
+                :committed_on => tmp_time - time_delta .. tmp_time + time_delta,
+                :committer    => author_utf8,
+                :comments     => cmt
+                }
+             )
           # create a new changeset.... 
           unless cs
             # we use a temporaray revision number here (just for inserting)
             # later on, we calculate a continous positive number
             tmp_time2 = tmp_time.clone.gmtime
-            branch = revision.paths[0][:branch]
-            scmid = branch + "-" + tmp_time2.strftime("%Y%m%d-%H%M%S")
-            cs = Changeset.create(:repository => self,
-                                  :revision => "tmp#{tmp_rev_num}",
-                                  :scmid => scmid,
-                                  :committer => revision.author, 
+            branch    = revision.paths[0][:branch]
+            scmid     = branch + "-" + tmp_time2.strftime("%Y%m%d-%H%M%S")
+            cs = Changeset.create(:repository   => self,
+                                  :revision     => "tmp#{tmp_rev_num}",
+                                  :scmid        => scmid,
+                                  :committer    => revision.author, 
                                   :committed_on => tmp_time,
-                                  :comments => revision.message)
+                                  :comments     => revision.message)
             tmp_rev_num += 1
           end
-        
-          #convert CVS-File-States to internal Action-abbrevations
-          #default action is (M)odified
-          action="M"
-          if revision.paths[0][:action]=="Exp" && revision.paths[0][:revision]=="1.1"
-            action="A" #add-action always at first revision (= 1.1)
-          elsif revision.paths[0][:action]=="dead"
-            action="D" #dead-state is similar to Delete
+          # convert CVS-File-States to internal Action-abbrevations
+          # default action is (M)odified
+          action = "M"
+          if revision.paths[0][:action] == "Exp" && revision.paths[0][:revision] == "1.1"
+            action = "A" # add-action always at first revision (= 1.1)
+          elsif revision.paths[0][:action] == "dead"
+            action = "D" # dead-state is similar to Delete
           end
-        
           Change.create(
              :changeset => cs,
              :action    => action,

@@ -16,6 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 require 'iconv'
+require 'redmine/codeset_util'
 
 module RepositoriesHelper
   def format_revision(revision)
@@ -48,7 +49,8 @@ module RepositoriesHelper
       when 'A'
         # Detects moved/copied files
         if !change.from_path.blank?
-          change.action = @changeset.changes.detect {|c| c.action == 'D' && c.path == change.from_path} ? 'R' : 'C'
+          change.action =
+             @changeset.changes.detect {|c| c.action == 'D' && c.path == change.from_path} ? 'R' : 'C'
         end
         change
       when 'D'
@@ -56,7 +58,7 @@ module RepositoriesHelper
       else
         change
       end
-   end.compact
+    end.compact
     
     tree = { }
     changes.each do |change|
@@ -72,13 +74,11 @@ module RepositoriesHelper
       end
       p[:c] = change
     end
-    
     render_changes_tree(tree[:s])
   end
 
   def render_changes_tree(tree)
     return '' if tree.nil?
-
     output = ''
     output << '<ul>'
     tree.keys.sort.each do |file|
@@ -143,28 +143,9 @@ module RepositoriesHelper
         # do nothing here and try the next encoding
       end
     end
-    str = replace_invalid_utf8(str)
+    str = Redmine::CodesetUtil.replace_invalid_utf8(str)
   end
   private :to_utf8_internal
-
-  def replace_invalid_utf8(str)
-    return str if str.nil?
-    if str.respond_to?(:force_encoding)
-      str.force_encoding('UTF-8')
-      if ! str.valid_encoding?
-        str = str.encode("US-ASCII", :invalid => :replace,
-              :undef => :replace, :replace => '?').encode("UTF-8")
-      end
-    else
-      # removes invalid UTF8 sequences
-      begin
-        str = Iconv.conv('UTF-8//IGNORE', 'UTF-8', str + '  ')[0..-3]
-      rescue Iconv::InvalidEncoding
-        # "UTF-8//IGNORE" is not supported on some OS
-      end
-    end
-    str
-  end
 
   def repository_field_tags(form, repository)
     method = repository.class.name.demodulize.underscore + "_field_tags"
@@ -254,7 +235,11 @@ module RepositoriesHelper
                      :size => 30, :required => true,
                      :disabled => !repository.new_record?)) +
     content_tag('p', form.select(:log_encoding, [nil] + Setting::ENCODINGS,
-                                 :label => 'Commit messages encoding', :required => true))
+                                 :label => 'Commit messages encoding', :required => true)) +
+    content_tag('p', form.select(
+                     :path_encoding, [nil] + Setting::ENCODINGS,
+                     :label => 'Path encoding') +
+                     '<br />Default: UTF-8')
   end
 
   def bazaar_field_tags(form, repository)

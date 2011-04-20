@@ -65,35 +65,79 @@ class IssueTest < ActiveSupport::TestCase
     assert_equal 'PostgreSQL', issue.custom_value_for(field).value
   end
   
+  def assert_visibility_match(user, issues)
+    assert_equal issues.collect(&:id).sort, Issue.all.select {|issue| issue.visible?(user)}.collect(&:id).sort
+  end
+
   def test_visible_scope_for_anonymous
     # Anonymous user should see issues of public projects only
     issues = Issue.visible(User.anonymous).all
     assert issues.any?
     assert_nil issues.detect {|issue| !issue.project.is_public?}
+    assert_nil issues.detect {|issue| issue.is_private?}
+    assert_visibility_match User.anonymous, issues
+  end
+  
+  def test_visible_scope_for_anonymous_with_own_issues_visibility
+    Role.anonymous.update_attribute :issues_visibility, 'own'
+    Issue.create!(:project_id => 1, :tracker_id => 1, :author_id => User.anonymous.id, :subject => 'Issue by anonymous')
+    
+    issues = Issue.visible(User.anonymous).all
+    assert issues.any?
+    assert_nil issues.detect {|issue| issue.author != User.anonymous}
+    assert_visibility_match User.anonymous, issues
+  end
+  
+  def test_visible_scope_for_anonymous_without_view_issues_permissions
     # Anonymous user should not see issues without permission
     Role.anonymous.remove_permission!(:view_issues)
     issues = Issue.visible(User.anonymous).all
     assert issues.empty?
+    assert_visibility_match User.anonymous, issues
   end
   
-  def test_visible_scope_for_user
+  def test_visible_scope_for_non_member
     user = User.find(9)
     assert user.projects.empty?
     # Non member user should see issues of public projects only
     issues = Issue.visible(user).all
     assert issues.any?
     assert_nil issues.detect {|issue| !issue.project.is_public?}
-    # Non member user should not see issues without permission
-    Role.non_member.remove_permission!(:view_issues)
-    user.reload
-    issues = Issue.visible(user).all
-    assert issues.empty?
-    # User should see issues of projects for which he has view_issues permissions only
-    Member.create!(:principal => user, :project_id => 2, :role_ids => [1])
-    user.reload
+    assert_nil issues.detect {|issue| issue.is_private?}
+    assert_visibility_match user, issues
+  end
+  
+  def test_visible_scope_for_non_member_with_own_issues_visibility
+    Role.non_member.update_attribute :issues_visibility, 'own'
+    Issue.create!(:project_id => 1, :tracker_id => 1, :author_id => 9, :subject => 'Issue by non member')
+    user = User.find(9)
+    
     issues = Issue.visible(user).all
     assert issues.any?
-    assert_nil issues.detect {|issue| issue.project_id != 2}
+    assert_nil issues.detect {|issue| issue.author != user}
+    assert_visibility_match user, issues
+  end
+  
+  def test_visible_scope_for_non_member_without_view_issues_permissions
+    # Non member user should not see issues without permission
+    Role.non_member.remove_permission!(:view_issues)
+    user = User.find(9)
+    assert user.projects.empty?
+    issues = Issue.visible(user).all
+    assert issues.empty?
+    assert_visibility_match user, issues
+  end
+  
+  def test_visible_scope_for_member
+    user = User.find(9)
+    # User should see issues of projects for which he has view_issues permissions only
+    Role.non_member.remove_permission!(:view_issues)
+    Member.create!(:principal => user, :project_id => 3, :role_ids => [2])
+    issues = Issue.visible(user).all
+    assert issues.any?
+    assert_nil issues.detect {|issue| issue.project_id != 3}
+    assert_nil issues.detect {|issue| issue.is_private?}
+    assert_visibility_match user, issues
   end
   
   def test_visible_scope_for_admin
@@ -104,6 +148,9 @@ class IssueTest < ActiveSupport::TestCase
     assert issues.any?
     # Admin should see issues on private projects that he does not belong to
     assert issues.detect {|issue| !issue.project.is_public?}
+    # Admin should see private issues of other users
+    assert issues.detect {|issue| issue.is_private? && issue.author != user}
+    assert_visibility_match user, issues
   end
   
   def test_visible_scope_with_project
@@ -120,6 +167,10 @@ class IssueTest < ActiveSupport::TestCase
     projects = issues.collect(&:project).uniq
     assert projects.size > 1
     assert_equal [], projects.select {|p| !p.is_or_is_descendant_of?(project)}
+  end
+  
+  def test_visible_and_nested_set_scopes
+    assert_equal 0, Issue.find(1).descendants.visible.all.size
   end
   
   def test_errors_full_messages_should_include_custom_fields_errors

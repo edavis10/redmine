@@ -304,6 +304,8 @@ en:
   field_text: Text field
   field_visible: Visible
   field_warn_on_leaving_unsaved: "Warn me when leaving a page with unsaved text"
+  field_issues_visibility: Issues visibility
+  field_is_private: Private
   
   setting_app_title: Application title
   setting_app_subtitle: Application subtitle
@@ -376,6 +378,8 @@ en:
   permission_add_issues: Add issues
   permission_edit_issues: Edit issues
   permission_manage_issue_relations: Manage issue relations
+  permission_set_issues_private: Set issues public or private
+  permission_set_own_issues_private: Set own issues public or private
   permission_add_issue_notes: Add notes
   permission_edit_issue_notes: Edit notes
   permission_edit_own_issue_notes: Edit own notes
@@ -804,6 +808,9 @@ en:
   label_user_search: "Search for user:"
   label_additional_workflow_transitions_for_author: Additional transitions allowed when the user is the author
   label_additional_workflow_transitions_for_assignee: Additional transitions allowed when the user is the assignee
+  label_issues_visibility_all: All issues
+  label_issues_visibility_public: All non private issues
+  label_issues_visibility_own: Issues created by or assigned to the user
   
   button_login: Login
   button_submit: Submit
@@ -899,6 +906,7 @@ en:
   text_status_changed_by_changeset: "Applied in changeset %{value}."
   text_time_logged_by_changeset: "Applied in changeset %{value}."
   text_issues_destroy_confirmation: 'Are you sure you want to delete the selected issue(s)?'
+  text_issues_destroy_descendants_confirmation: "This will also delete %{count} subtask(s)."
   text_time_entries_destroy_confirmation: 'Are you sure you want to delete the selected time entr(y/ies)?'
   text_select_project_modules: 'Select modules to enable for this project:'
   text_default_administrator_account_changed: Default administrator account changed

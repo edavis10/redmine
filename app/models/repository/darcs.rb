@@ -36,34 +36,44 @@ class Repository::Darcs < Repository
     'Darcs'
   end
 
+  def supports_directory_revisions?
+    true
+  end
+
   def entry(path=nil, identifier=nil)
     patch = identifier.nil? ? nil : changesets.find_by_revision(identifier)
     scm.entry(path, patch.nil? ? nil : patch.scmid)
   end
-  
+
   def entries(path=nil, identifier=nil)
-    patch = identifier.nil? ? nil : changesets.find_by_revision(identifier)
+    patch = nil
+    if ! identifier.nil?
+      patch = changesets.find_by_revision(identifier)
+      return nil if patch.nil?
+    end
     entries = scm.entries(path, patch.nil? ? nil : patch.scmid)
     if entries
       entries.each do |entry|
         # Search the DB for the entry's last change
-        changeset = changesets.find_by_scmid(entry.lastrev.scmid) if entry.lastrev && !entry.lastrev.scmid.blank?
+        if entry.lastrev && !entry.lastrev.scmid.blank?
+          changeset = changesets.find_by_scmid(entry.lastrev.scmid)
+        end
         if changeset
           entry.lastrev.identifier = changeset.revision
-          entry.lastrev.name = changeset.revision
-          entry.lastrev.time = changeset.committed_on
-          entry.lastrev.author = changeset.committer
+          entry.lastrev.name       = changeset.revision
+          entry.lastrev.time       = changeset.committed_on
+          entry.lastrev.author     = changeset.committer
         end
       end
     end
     entries
   end
-  
+
   def cat(path, identifier=nil)
     patch = identifier.nil? ? nil : changesets.find_by_revision(identifier.to_s)
     scm.cat(path, patch.nil? ? nil : patch.scmid)
   end
-  
+
   def diff(path, rev, rev_to)
     patch_from = changesets.find_by_revision(rev)
     return nil if patch_from.nil?
@@ -73,25 +83,24 @@ class Repository::Darcs < Repository
     end
     patch_from ? scm.diff(path, patch_from.scmid, patch_to ? patch_to.scmid : nil) : nil
   end
-  
+
   def fetch_changesets
     scm_info = scm.info
     if scm_info
       db_last_id = latest_changeset ? latest_changeset.scmid : nil
-      next_rev = latest_changeset ? latest_changeset.revision.to_i + 1 : 1      
+      next_rev   = latest_changeset ? latest_changeset.revision.to_i + 1 : 1      
       # latest revision in the repository
       scm_revision = scm_info.lastrev.scmid      
       unless changesets.find_by_scmid(scm_revision)
         revisions = scm.revisions('', db_last_id, nil, :with_path => true)
         transaction do
           revisions.reverse_each do |revision|
-            changeset = Changeset.create(:repository => self,
-                                         :revision => next_rev,
-                                         :scmid => revision.scmid,
-                                         :committer => revision.author, 
+            changeset = Changeset.create(:repository   => self,
+                                         :revision     => next_rev,
+                                         :scmid        => revision.scmid,
+                                         :committer    => revision.author, 
                                          :committed_on => revision.time,
-                                         :comments => revision.message)
-                                         
+                                         :comments     => revision.message)
             revision.paths.each do |change|
               changeset.create_change(change)
             end
