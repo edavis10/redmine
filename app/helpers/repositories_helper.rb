@@ -198,65 +198,83 @@ module RepositoriesHelper
   end
 
   def darcs_field_tags(form, repository)
-      content_tag('p', form.text_field(:url, :label => 'Root directory',
-                       :size => 60, :required => true,
-                       :disabled => (repository && !repository.new_record?))) +
-      content_tag('p', form.select(:log_encoding, [nil] + Setting::ENCODINGS,
-                                   :label => 'Commit messages encoding', :required => true))
+    content_tag('p', form.text_field(
+                     :url, :label => l("field_path_to_repository"),
+                     :size => 60, :required => true,
+                     :disabled => (repository && !repository.new_record?))) +
+    content_tag('p', form.select(
+                     :log_encoding, [nil] + Setting::ENCODINGS,
+                     :label => l("field_commit_logs_encoding"), :required => true))
   end
 
   def mercurial_field_tags(form, repository)
-    content_tag('p', form.text_field(:url, :label => 'Root directory',
+    content_tag('p', form.text_field(
+                       :url, :label => l("field_path_to_repository"),
                        :size => 60, :required => true,
-                       :disabled => (repository && !repository.root_url.blank?)) +
-                       '<br />Local repository (e.g. /hgrepo, c:\hgrepo)' ) +
+                       :disabled => (repository && !repository.root_url.blank?)
+                         ) +
+                     '<br />' + l("text_mercurial_repository_note")) +
     content_tag('p', form.select(
                         :path_encoding, [nil] + Setting::ENCODINGS,
-                        :label => 'Path encoding') +
-                        '<br />Default: UTF-8')
+                        :label => l("field_scm_path_encoding")
+                        ) +
+                     '<br />' + l("text_scm_path_encoding_note"))
   end
 
   def git_field_tags(form, repository)
-    content_tag('p', form.text_field(:url, :label => 'Path to repository',
+    content_tag('p', form.text_field(
+                       :url, :label => l("field_path_to_repository"),
                        :size => 60, :required => true,
-                       :disabled => (repository && !repository.root_url.blank?)) +
-                       '<br />Bare and local repository (e.g. /gitrepo, c:\gitrepo)') +
+                       :disabled => (repository && !repository.root_url.blank?)
+                         ) +
+                      '<br />' + l("text_git_repository_note")) +
     content_tag('p', form.select(
                         :path_encoding, [nil] + Setting::ENCODINGS,
-                        :label => 'Path encoding') +
-                        '<br />Default: UTF-8')
+                        :label => l("field_scm_path_encoding")
+                        ) +
+                     '<br />' + l("text_scm_path_encoding_note"))
   end
 
   def cvs_field_tags(form, repository)
-    content_tag('p', form.text_field(:root_url,
-                     :label => 'CVSROOT', :size => 60, :required => true,
+    content_tag('p', form.text_field(
+                     :root_url,
+                     :label => l("field_cvsroot"),
+                     :size => 60, :required => true,
                      :disabled => !repository.new_record?)) +
-    content_tag('p', form.text_field(:url, :label => 'Module',
+    content_tag('p', form.text_field(
+                     :url,
+                     :label => l("field_cvs_module"),
                      :size => 30, :required => true,
                      :disabled => !repository.new_record?)) +
-    content_tag('p', form.select(:log_encoding, [nil] + Setting::ENCODINGS,
-                                 :label => 'Commit messages encoding', :required => true)) +
     content_tag('p', form.select(
-                     :path_encoding, [nil] + Setting::ENCODINGS,
-                     :label => 'Path encoding') +
-                     '<br />Default: UTF-8')
+                     :log_encoding, [nil] + Setting::ENCODINGS,
+                     :label => l("field_commit_logs_encoding"), :required => true)) +
+    content_tag('p', form.select(
+                        :path_encoding, [nil] + Setting::ENCODINGS,
+                        :label => l("field_scm_path_encoding")
+                        ) +
+                     '<br />' + l("text_scm_path_encoding_note"))
   end
 
   def bazaar_field_tags(form, repository)
-    content_tag('p', form.text_field(:url, :label => 'Root directory',
+    content_tag('p', form.text_field(
+                     :url, :label => l("field_path_to_repository"),
                      :size => 60, :required => true,
                      :disabled => (repository && !repository.new_record?))) +
-    content_tag('p', form.select(:log_encoding, [nil] + Setting::ENCODINGS,
-                                 :label => 'Commit messages encoding', :required => true))
+    content_tag('p', form.select(
+                     :log_encoding, [nil] + Setting::ENCODINGS,
+                     :label => l("field_commit_logs_encoding"), :required => true))
   end
 
   def filesystem_field_tags(form, repository)
-    content_tag('p', form.text_field(:url, :label => 'Root directory',
+    content_tag('p', form.text_field(
+                     :url, :label => l("field_root_directory"),
                      :size => 60, :required => true,
                      :disabled => (repository && !repository.root_url.blank?))) +
     content_tag('p', form.select(
                         :path_encoding, [nil] + Setting::ENCODINGS,
-                        :label => 'Path encoding') +
-                        '<br />Default: UTF-8')
+                        :label => l("field_scm_path_encoding")
+                        ) +
+                     '<br />' + l("text_scm_path_encoding_note"))
   end
 end

@@ -13,7 +13,10 @@ lv:
       
     month_names: [~, Janvāris, Februāris, Marts, Aprīlis , Maijs, Jūnijs, Jūlijs, Augusts, Septembris, Oktobris, Novembris, Decembris]
     abbr_month_names: [~, Jan, Feb, Mar, Apr, Mai, Jūn, Jūl, Aug, Sep, Okt, Nov, Dec]
-    order: [ :day, :month, :year ]
+    order:
+      - :day
+      - :month
+      - :year
 
   time:
     formats:
@@ -253,7 +256,7 @@ lv:
   field_attr_mail: "E-pasta atribūts"
   field_onthefly: "Lietotāja izveidošana on-the-fly"
   field_start_date: Sākuma datums
-  field_done_ratio: % padarīti
+  field_done_ratio: "% padarīti"
   field_auth_source: Pilnvarošanas režīms
   field_hide_mail: "Paslēpt manu e-pasta adresi"
   field_comments: Komentārs
@@ -309,7 +312,6 @@ lv:
   setting_cross_project_issue_relations: "Atļaut starp-projektu uzdevumu relācijas"
   setting_issue_list_default_columns: Noklusēti rādītās kolonnas uzdevumu sarakstā
   setting_repositories_encodings: Repozitoriju kodējumi
-  setting_commit_logs_encoding: Kodēt ziņojumus
   setting_emails_footer: "E-pastu kājene"
   setting_protocol: Protokols
   setting_per_page_options: Objekti vienā lapā
@@ -955,3 +957,12 @@ lv:
   permission_set_issues_private: Set issues public or private
   label_issues_visibility_public: All non private issues
   text_issues_destroy_descendants_confirmation: This will also delete %{count} subtask(s).
+  field_commit_logs_encoding: Kodēt ziņojumus
+  field_scm_path_encoding: Path encoding
+  text_scm_path_encoding_note: "Default: UTF-8"
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvs_module: Module
+  field_cvsroot: CVSROOT
+  text_git_repository_note: Bare and local repository (e.g. /gitrepo, c:\gitrepo)
+  text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)

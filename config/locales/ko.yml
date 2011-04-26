@@ -21,7 +21,10 @@ ko:
     month_names: [~, 1월, 2월, 3월, 4월, 5월, 6월, 7월, 8월, 9월, 10월, 11월, 12월]
     abbr_month_names: [~, 1월, 2월, 3월, 4월, 5월, 6월, 7월, 8월, 9월, 10월, 11월, 12월]
     # Used in date_select and datime_select.
-    order: [ :year, :month, :day ]
+    order:
+      - :year
+      - :month
+      - :day
 
   time:
     formats:
@@ -355,7 +358,6 @@ ko:
   setting_cross_project_issue_relations: 다른 프로젝트의 일감과 연결하는 것을 허용
   setting_issue_list_default_columns: 일감 목록에 표시할 항목 
   setting_repositories_encodings:  저장소 인코딩
-  setting_commit_logs_encoding: 제출(commit) 기록 인코딩
   setting_emails_footer: 메일 꼬리
   setting_protocol: 프로토콜
   setting_per_page_options: 목록에서, 한 페이지에 표시할 행
@@ -1012,3 +1014,12 @@ ko:
   permission_set_issues_private: Set issues public or private
   label_issues_visibility_public: All non private issues
   text_issues_destroy_descendants_confirmation: This will also delete %{count} subtask(s).
+  field_commit_logs_encoding: 제출(commit) 기록 인코딩
+  field_scm_path_encoding: Path encoding
+  text_scm_path_encoding_note: "Default: UTF-8"
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvs_module: Module
+  field_cvsroot: CVSROOT
+  text_git_repository_note: Bare and local repository (e.g. /gitrepo, c:\gitrepo)
+  text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)

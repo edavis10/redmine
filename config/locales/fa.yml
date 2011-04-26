@@ -17,7 +17,10 @@ fa:
     month_names: [~, ژانویه, فوریه, مارس, آوریل, مه, ژوئن, ژوئیه, اوت, سپتامبر, اکتبر, نوامبر, دسامبر]
     abbr_month_names: [~, ژان, فور, مار, آور, مه, ژوئن, ژوئیه, اوت, سپت, اکت, نوا, دسا]
     # Used in date_select and datime_select.
-    order: [ :year, :month, :day ]
+    order:
+      - :year
+      - :month
+      - :day
 
   time:
     formats:
@@ -330,7 +333,6 @@ fa:
   setting_cross_project_issue_relations: توانایی وابستگی میان پروژه‌ای پیامدها
   setting_issue_list_default_columns: ستون‌های پیش‌گزیده نمایش داده شده در فهرست پیامدها
   setting_repositories_encodings: کدگذاری انباره‌ها
-  setting_commit_logs_encoding: کدگذاری پیام‌های انباره
   setting_emails_header: سرنویس ایمیل‌ها
   setting_emails_footer: پانویس ایمیل‌ها
   setting_protocol: پیوندنامه
@@ -963,3 +965,12 @@ fa:
   permission_set_issues_private: Set issues public or private
   label_issues_visibility_public: All non private issues
   text_issues_destroy_descendants_confirmation: This will also delete %{count} subtask(s).
+  field_commit_logs_encoding: کدگذاری پیام‌های انباره
+  field_scm_path_encoding: Path encoding
+  text_scm_path_encoding_note: "Default: UTF-8"
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvs_module: Module
+  field_cvsroot: CVSROOT
+  text_git_repository_note: Bare and local repository (e.g. /gitrepo, c:\gitrepo)
+  text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)

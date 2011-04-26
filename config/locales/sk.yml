@@ -16,7 +16,10 @@ sk:
     month_names: [~, Január, Február, Marec, Apríl, Máj, Jún, Júl, August, September, Október, November, December]
     abbr_month_names: [~, Jan, Feb, Mar, Apr, Máj, Jún, Júl, Aug, Sep, Okt, Nov, Dec]
     # Used in date_select and datime_select.
-    order: [ :year, :month, :day ]
+    order:
+      - :year
+      - :month
+      - :day
 
   time:
     formats:
@@ -236,7 +239,7 @@ sk:
   field_attr_mail: Email (atribut)
   field_onthefly: Automatické vytváranie užívateľov
   field_start_date: Začiatok
-  field_done_ratio: % hotovo
+  field_done_ratio: "% hotovo"
   field_auth_source: Autentifikačný mód
   field_hide_mail: Nezobrazovať môj email
   field_comments: Komentár
@@ -726,7 +729,6 @@ sk:
   text_email_delivery_not_configured: "Doručenie emailov nieje nastavené, notifikácie sú vypnuté.\nNastavte váš SMTP server v config/configuration.yml a reštartnite aplikáciu pre aktiváciu funkcie."
   field_parent_title: Nadradená stránka
   label_issue_watchers: Pozorovatelia
-  setting_commit_logs_encoding: Kódovanie prenášaných správ
   button_quote: Citácia
   setting_sequential_project_identifiers: Generovať sekvenčné identifikátory projektov
   notice_unable_delete_version: Verzia nemôže byť zmazaná
@@ -955,3 +957,12 @@ sk:
   permission_set_issues_private: Set issues public or private
   label_issues_visibility_public: All non private issues
   text_issues_destroy_descendants_confirmation: This will also delete %{count} subtask(s).
+  field_commit_logs_encoding: Kódovanie prenášaných správ
+  field_scm_path_encoding: Path encoding
+  text_scm_path_encoding_note: "Default: UTF-8"
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvs_module: Module
+  field_cvsroot: CVSROOT
+  text_git_repository_note: Bare and local repository (e.g. /gitrepo, c:\gitrepo)
+  text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)

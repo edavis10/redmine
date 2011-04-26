@@ -16,7 +16,10 @@ it:
     abbr_day_names: [Dom, Lun, Mar, Mer, Gio, Ven, Sab]
     month_names: [~, Gennaio, Febbraio, Marzo, Aprile, Maggio, Giugno, Luglio, Agosto, Settembre, Ottobre, Novembre, Dicembre]
     abbr_month_names: [~, Gen, Feb, Mar, Apr, Mag, Giu, Lug, Ago, Set, Ott, Nov, Dic]
-    order: [ :day, :month, :year ]
+    order:
+      - :day
+      - :month
+      - :year
   
   time:
     formats:
@@ -234,7 +237,7 @@ it:
   field_attr_mail: Attributo email
   field_onthefly: Creazione utente "al volo"
   field_start_date: Inizio
-  field_done_ratio: % completato
+  field_done_ratio: "% completato"
   field_auth_source: Modalità di autenticazione
   field_hide_mail: Nascondi il mio indirizzo email
   field_comments: Commento
@@ -733,7 +736,6 @@ it:
   text_email_delivery_not_configured: "La consegna via email non è configurata e le notifiche sono disabilitate.\nConfigura il tuo server SMTP in config/configuration.yml e riavvia l'applicazione per abilitarle."
   field_parent_title: Pagina principale
   label_issue_watchers: Osservatori
-  setting_commit_logs_encoding: Codifica dei messaggi di commit
   button_quote: Quota
   setting_sequential_project_identifiers: Genera progetti con identificativi in sequenza
   notice_unable_delete_version: Impossibile eliminare la versione
@@ -961,3 +963,12 @@ it:
   permission_set_issues_private: Set issues public or private
   label_issues_visibility_public: All non private issues
   text_issues_destroy_descendants_confirmation: This will also delete %{count} subtask(s).
+  field_commit_logs_encoding: Codifica dei messaggi di commit
+  field_scm_path_encoding: Path encoding
+  text_scm_path_encoding_note: "Default: UTF-8"
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvs_module: Module
+  field_cvsroot: CVSROOT
+  text_git_repository_note: Bare and local repository (e.g. /gitrepo, c:\gitrepo)
+  text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)

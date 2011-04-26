@@ -18,7 +18,10 @@ pt:
     abbr_day_names: [Dom, Seg, Ter, Qua, Qui, Sex, Sáb]
     month_names: [~, Janeiro, Fevereiro, Março, Abril, Maio, Junho, Julho, Agosto, Setembro, Outubro, Novembro, Dezembro]
     abbr_month_names: [~, Jan, Fev, Mar, Abr, Mai, Jun, Jul, Ago, Set, Out, Nov, Dez]
-    order: [:day, :month, :year]
+    order:
+      - :day
+      - :month
+      - :year
     
   time:
     formats:        
@@ -251,7 +254,7 @@ pt:
   field_attr_mail: Atributo e-mail
   field_onthefly: Criação imediata de utilizadores
   field_start_date: Início
-  field_done_ratio: % Completo
+  field_done_ratio: "% Completo"
   field_auth_source: Modo de autenticação
   field_hide_mail: Esconder endereço de e-mail
   field_comments: Comentário
@@ -300,7 +303,6 @@ pt:
   setting_cross_project_issue_relations: Permitir relações entre tarefas de projectos diferentes
   setting_issue_list_default_columns: Colunas na lista de tarefas por omissão
   setting_repositories_encodings: Encodings dos repositórios
-  setting_commit_logs_encoding: Encoding das mensagens de commit
   setting_emails_footer: Rodapé do e-mails
   setting_protocol: Protocolo
   setting_per_page_options: Opções de objectos por página
@@ -965,3 +967,12 @@ pt:
   permission_set_issues_private: Set issues public or private
   label_issues_visibility_public: All non private issues
   text_issues_destroy_descendants_confirmation: This will also delete %{count} subtask(s).
+  field_commit_logs_encoding: Encoding das mensagens de commit
+  field_scm_path_encoding: Path encoding
+  text_scm_path_encoding_note: "Default: UTF-8"
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvs_module: Module
+  field_cvsroot: CVSROOT
+  text_git_repository_note: Bare and local repository (e.g. /gitrepo, c:\gitrepo)
+  text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)

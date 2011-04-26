@@ -16,7 +16,10 @@ th:
     month_names: [~, January, February, March, April, May, June, July, August, September, October, November, December]
     abbr_month_names: [~, Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]
     # Used in date_select and datime_select.
-    order: [ :year, :month, :day ]
+    order:
+      - :year
+      - :month
+      - :day
 
   time:
     formats:
@@ -238,7 +241,7 @@ th:
   field_attr_mail: อีเมล์ attribute
   field_onthefly: สร้างผู้ใช้ทันที
   field_start_date: เริ่ม
-  field_done_ratio: % สำเร็จ
+  field_done_ratio: "% สำเร็จ"
   field_auth_source: วิธีการยืนยันตัวตน
   field_hide_mail: ซ่อนอีเมล์ของฉัน
   field_comments: ความเห็น
@@ -729,7 +732,6 @@ th:
   text_email_delivery_not_configured: "Email delivery is not configured, and notifications are disabled.\nConfigure your SMTP server in config/configuration.yml and restart the application to enable them."
   field_parent_title: Parent page
   label_issue_watchers: Watchers
-  setting_commit_logs_encoding: Commit messages encoding
   button_quote: Quote
   setting_sequential_project_identifiers: Generate sequential project identifiers
   notice_unable_delete_version: Unable to delete version
@@ -957,3 +959,12 @@ th:
   permission_set_issues_private: Set issues public or private
   label_issues_visibility_public: All non private issues
   text_issues_destroy_descendants_confirmation: This will also delete %{count} subtask(s).
+  field_commit_logs_encoding: Commit messages encoding
+  field_scm_path_encoding: Path encoding
+  text_scm_path_encoding_note: "Default: UTF-8"
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvs_module: Module
+  field_cvsroot: CVSROOT
+  text_git_repository_note: Bare and local repository (e.g. /gitrepo, c:\gitrepo)
+  text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)

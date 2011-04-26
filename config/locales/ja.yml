@@ -20,7 +20,10 @@ ja:
     month_names: [~, 1月, 2月, 3月, 4月, 5月, 6月, 7月, 8月, 9月, 10月, 11月, 12月]
     abbr_month_names: [~, 1月, 2月, 3月, 4月, 5月, 6月, 7月, 8月, 9月, 10月, 11月, 12月]
     # Used in date_select and datime_select.
-    order: [ :year, :month, :day ]
+    order:
+      - :year
+      - :month
+      - :day
 
   time:
     formats:
@@ -227,7 +230,7 @@ ja:
   
   gui_validation_error: 1件のエラー
   gui_validation_error_plural: "%{count}件のエラー"
-  
+
   field_name: 名称
   field_description: 説明
   field_summary: サマリー
@@ -326,7 +329,13 @@ ja:
   field_text: テキスト
   field_visible: 表示
   field_warn_on_leaving_unsaved: データを保存せずにページから移動するときに警告
-  
+  field_commit_logs_encoding: コミットメッセージのエンコーディング
+  field_scm_path_encoding: パスのエンコーディング
+  field_path_to_repository: リポジトリのパス
+  field_root_directory: ルートディレクトリ
+  field_cvsroot: CVSROOT
+  field_cvs_module: モジュール
+
   setting_app_title: アプリケーションのタイトル
   setting_app_subtitle: アプリケーションのサブタイトル
   setting_welcome_text: ウェルカムメッセージ
@@ -354,7 +363,6 @@ ja:
   setting_cross_project_issue_relations: 異なるプロジェクトのチケット間で関係の設定を許可
   setting_issue_list_default_columns: チケットの一覧で表示する項目
   setting_repositories_encodings: リポジトリのエンコーディング
-  setting_commit_logs_encoding: コミットメッセージのエンコーディング
   setting_emails_header: メールのヘッダ
   setting_emails_footer: メールのフッタ
   setting_protocol: プロトコル
@@ -875,7 +883,7 @@ ja:
   version_status_closed: 終了
 
   field_active: 有効
-  
+
   text_select_mail_notifications: どのメール通知を送信するか、アクションを選択してください。
   text_regexp_info: 例) ^[A-Z0-9]+$
   text_min_max_length_info: 0だと無制限になります
@@ -937,7 +945,10 @@ ja:
   text_zoom_in: 拡大
   text_zoom_out: 縮小
   text_warn_on_leaving_unsaved: このページから移動すると、保存されていないデータが失われます。
-  
+  text_scm_path_encoding_note: "デフォルト: UTF-8"
+  text_git_repository_note: "Bare、かつ、ローカルリポジトリ (例: /gitrepo, c:\gitrepo)"
+  text_mercurial_repository_note: "ローカルリポジトリ (例: /hgrepo, c:\hgrepo)"
+
   default_role_manager: 管理者
   default_role_developer: 開発者
   default_role_reporter: 報告者

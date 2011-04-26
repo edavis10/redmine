@@ -16,7 +16,10 @@ sl:
     month_names: [~, January, February, March, April, May, June, July, August, September, October, November, December]
     abbr_month_names: [~, Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]
     # Used in date_select and datime_select.
-    order: [ :year, :month, :day ]
+    order:
+      - :year
+      - :month
+      - :day
 
   time:
     formats:
@@ -241,7 +244,7 @@ sl:
   field_attr_mail: Oznaka za e-naslov
   field_onthefly: Sprotna izdelava uporabnikov
   field_start_date: Začetek
-  field_done_ratio: % Narejeno
+  field_done_ratio: "% Narejeno"
   field_auth_source: Način overovljanja
   field_hide_mail: Skrij moj e-naslov
   field_comments: Komentar
@@ -291,7 +294,6 @@ sl:
   setting_cross_project_issue_relations: Dovoli povezave zahtevkov med različnimi projekti
   setting_issue_list_default_columns: Privzeti stolpci prikazani na seznamu zahtevkov
   setting_repositories_encodings: Kodiranje shrambe
-  setting_commit_logs_encoding: Kodiranje sporočil ob predaji
   setting_emails_footer: Noga e-sporočil
   setting_protocol: Protokol
   setting_per_page_options: Število elementov na stran
@@ -956,3 +958,12 @@ sl:
   permission_set_issues_private: Set issues public or private
   label_issues_visibility_public: All non private issues
   text_issues_destroy_descendants_confirmation: This will also delete %{count} subtask(s).
+  field_commit_logs_encoding: Kodiranje sporočil ob predaji
+  field_scm_path_encoding: Path encoding
+  text_scm_path_encoding_note: "Default: UTF-8"
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvs_module: Module
+  field_cvsroot: CVSROOT
+  text_git_repository_note: Bare and local repository (e.g. /gitrepo, c:\gitrepo)
+  text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)

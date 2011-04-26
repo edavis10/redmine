@@ -13,7 +13,10 @@
     abbr_day_names: [søn, man, tir, ons, tor, fre, lør]
     month_names: [~, januar, februar, mars, april, mai, juni, juli, august, september, oktober, november, desember]
     abbr_month_names: [~, jan, feb, mar, apr, mai, jun, jul, aug, sep, okt, nov, des]
-    order: [:day, :month, :year]
+    order:
+      - :day
+      - :month
+      - :year
   time:
     formats:
       default: "%A, %e. %B %Y, %H:%M"
@@ -232,7 +235,7 @@
   field_attr_mail: E-post-attributt
   field_onthefly: On-the-fly brukeropprettelse
   field_start_date: Start
-  field_done_ratio: % Ferdig
+  field_done_ratio: "% Ferdig"
   field_auth_source: Autentifikasjonsmodus
   field_hide_mail: Skjul min e-post-adresse
   field_comments: Kommentarer
@@ -719,7 +722,6 @@
   text_email_delivery_not_configured: "Levering av e-post er ikke satt opp, og varsler er skrudd av.\nStill inn din SMTP-tjener i config/configuration.yml og start programmet på nytt for å skru det på."
   field_parent_title: Foreldreside
   label_issue_watchers: Overvåkere
-  setting_commit_logs_encoding: Tegnkoding for innsendingsmeldinger
   button_quote: Sitat
   setting_sequential_project_identifiers: Generer sekvensielle prosjekt-IDer
   notice_unable_delete_version: Kan ikke slette versjonen
@@ -947,3 +949,12 @@
   permission_set_issues_private: Set issues public or private
   label_issues_visibility_public: All non private issues
   text_issues_destroy_descendants_confirmation: This will also delete %{count} subtask(s).
+  field_commit_logs_encoding: Tegnkoding for innsendingsmeldinger
+  field_scm_path_encoding: Path encoding
+  text_scm_path_encoding_note: "Default: UTF-8"
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvs_module: Module
+  field_cvsroot: CVSROOT
+  text_git_repository_note: Bare and local repository (e.g. /gitrepo, c:\gitrepo)
+  text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)

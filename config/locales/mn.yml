@@ -16,7 +16,10 @@ mn:
     month_names: [~, 1-р сар, 2-р сар, 3-р сар, 4-р сар, 5-р сар, 6-р сар, 7-р сар, 8-р сар, 9-р сар, 10-р сар, 11-р сар, 12-р сар]
     abbr_month_names: [~, 1сар, 2сар, 3сар, 4сар, 5сар, 6сар, 7сар, 8сар, 9сар, 10сар, 11сар, 12сар]
     # Used in date_select and datime_select.
-    order: [ :day, :month, :year ]
+    order:
+      - :day
+      - :month
+      - :year
 
   time:
     formats:
@@ -257,7 +260,7 @@ mn:
   field_attr_mail: Имэйл аттрибут
   field_onthefly: Хүссэн үедээ хэрэглэгч үүсгэх
   field_start_date: Эхлэл
-  field_done_ratio: %% Гүйцэтгэсэн
+  field_done_ratio: "%% Гүйцэтгэсэн"
   field_auth_source: Нэвтрэх арга
   field_hide_mail: Миний имэйл хаягийг нуу
   field_comments: Тайлбар
@@ -313,7 +316,6 @@ mn:
   setting_cross_project_issue_relations: Төсөл хооронд асуудал хамааруулахыг зөвшөөрөх
   setting_issue_list_default_columns: Асуудлуудыг харуулах стандарт баганууд
   setting_repositories_encodings: Репозиторийн энкодинг
-  setting_commit_logs_encoding: Коммит хийх үед харуулах текстүүдийн энкодинг
   setting_emails_footer: Имэйлүүдийн хөл хэсэг
   setting_protocol: Протокол
   setting_per_page_options: Нэг хуудсанд байх обьектуудын тохиргоо
@@ -961,3 +963,12 @@ mn:
   permission_set_issues_private: Set issues public or private
   label_issues_visibility_public: All non private issues
   text_issues_destroy_descendants_confirmation: This will also delete %{count} subtask(s).
+  field_commit_logs_encoding: Коммит хийх үед харуулах текстүүдийн энкодинг
+  field_scm_path_encoding: Path encoding
+  text_scm_path_encoding_note: "Default: UTF-8"
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvs_module: Module
+  field_cvsroot: CVSROOT
+  text_git_repository_note: Bare and local repository (e.g. /gitrepo, c:\gitrepo)
+  text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)

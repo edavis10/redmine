@@ -14,7 +14,10 @@ id:
       
     month_names: [~, Januari, Februari, Maret, April, Mei, Juni, Juli, Agustus, September, Oktober, November, Desember]
     abbr_month_names: [~, Jan, Feb, Mar, Apr, Mei, Jun, Jul, Agu, Sep, Okt, Nov, Des]
-    order: [ :day, :month, :year ]
+    order:
+      - :day
+      - :month
+      - :year
 
   time:
     formats:
@@ -256,7 +259,7 @@ id:
   field_attr_mail: Atribut email
   field_onthefly: Pembuatan pengguna seketika
   field_start_date: Mulai
-  field_done_ratio: % Selesai
+  field_done_ratio: "% Selesai"
   field_auth_source: Mode otentikasi
   field_hide_mail: Sembunyikan email saya
   field_comments: Komentar
@@ -312,7 +315,6 @@ id:
   setting_cross_project_issue_relations: Perbolehkan kaitan masalah proyek berbeda
   setting_issue_list_default_columns: Kolom default ditampilkan di daftar masalah
   setting_repositories_encodings: Repositories encodings
-  setting_commit_logs_encoding: Commit messages encoding
   setting_emails_footer: Footer untuk email
   setting_protocol: Protokol
   setting_per_page_options: Pilihan obyek per halaman
@@ -968,3 +970,12 @@ id:
   permission_set_issues_private: Set issues public or private
   label_issues_visibility_public: All non private issues
   text_issues_destroy_descendants_confirmation: This will also delete %{count} subtask(s).
+  field_commit_logs_encoding: Commit messages encoding
+  field_scm_path_encoding: Path encoding
+  text_scm_path_encoding_note: "Default: UTF-8"
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvs_module: Module
+  field_cvsroot: CVSROOT
+  text_git_repository_note: Bare and local repository (e.g. /gitrepo, c:\gitrepo)
+  text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)

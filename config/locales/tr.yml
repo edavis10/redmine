@@ -18,7 +18,10 @@ tr:
     abbr_day_names: [Pzr, Pzt, Sal, Çrş, Prş, Cum, Cts]
     month_names: [~, Ocak, Şubat, Mart, Nisan, Mayıs, Haziran, Temmuz, Ağustos, Eylül, Ekim, Kasım, Aralık]
     abbr_month_names: [~, Oca, Şub, Mar, Nis, May, Haz, Tem, Ağu, Eyl, Eki, Kas, Ara]
-    order: [ :day, :month, :year ]
+    order:
+      - :day
+      - :month
+      - :year
   
   time:
     formats:
@@ -261,7 +264,7 @@ tr:
   field_attr_mail: E-Posta Niteliği
   field_onthefly: Anında kullanıcı oluşturma
   field_start_date: Başlangıç
-  field_done_ratio: % tamamlandı
+  field_done_ratio: "% tamamlandı "
   field_auth_source: Kimlik Denetim Modu
   field_hide_mail: E-posta adresimi gizle
   field_comments: Açıklama
@@ -752,7 +755,6 @@ tr:
   label_and_its_subprojects: "%{value} and its subprojects"
   mail_subject_reminder: "%{count} issue(s) due in the next %{days} days"
   setting_mail_handler_api_key: API key
-  setting_commit_logs_encoding: Commit messages encoding
   general_csv_decimal_separator: '.'
   notice_unable_delete_version: Unable to delete version
   label_renamed: renamed
@@ -979,3 +981,12 @@ tr:
   permission_set_issues_private: Set issues public or private
   label_issues_visibility_public: All non private issues
   text_issues_destroy_descendants_confirmation: This will also delete %{count} subtask(s).
+  field_commit_logs_encoding: Commit messages encoding
+  field_scm_path_encoding: Path encoding
+  text_scm_path_encoding_note: "Default: UTF-8"
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvs_module: Module
+  field_cvsroot: CVSROOT
+  text_git_repository_note: Bare and local repository (e.g. /gitrepo, c:\gitrepo)
+  text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)

@@ -14,7 +14,10 @@ ro:
     month_names: [~, Ianuarie, Februarie, Martie, Aprilie, Mai, Iunie, Iulie, August, Septembrie, Octombrie, Noiembrie, Decembrie]
     abbr_month_names: [~, Ian, Feb, Mar, Apr, Mai, Iun, Iul, Aug, Sep, Oct, Noi, Dec]
     # Used in date_select and datime_select.
-    order: [ :day, :month, :year ]
+    order:
+      - :day
+      - :month
+      - :year
 
   time:
     formats:
@@ -291,7 +294,6 @@ ro:
   setting_cross_project_issue_relations: Permite legături de tichete între proiecte
   setting_issue_list_default_columns: Coloane implicite afișate în lista de tichete
   setting_repositories_encodings: Codare pentru depozit
-  setting_commit_logs_encoding: Codare pentru mesaje
   setting_emails_footer: Subsol email
   setting_protocol: Protocol
   setting_per_page_options: Număr de obiecte pe pagină
@@ -953,3 +955,12 @@ ro:
   permission_set_issues_private: Set issues public or private
   label_issues_visibility_public: All non private issues
   text_issues_destroy_descendants_confirmation: This will also delete %{count} subtask(s).
+  field_commit_logs_encoding: Codare pentru mesaje
+  field_scm_path_encoding: Path encoding
+  text_scm_path_encoding_note: "Default: UTF-8"
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvs_module: Module
+  field_cvsroot: CVSROOT
+  text_git_repository_note: Bare and local repository (e.g. /gitrepo, c:\gitrepo)
+  text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)

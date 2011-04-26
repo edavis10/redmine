@@ -17,7 +17,10 @@ en:
     month_names: [~, January, February, March, April, May, June, July, August, September, October, November, December]
     abbr_month_names: [~, Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]
     # Used in date_select and datime_select.
-    order: [ :year, :month, :day ]
+    order:
+      - :year
+      - :month
+      - :day
 
   time:
     formats:
@@ -268,7 +271,7 @@ en:
   field_attr_mail: Email attribute
   field_onthefly: On-the-fly user creation
   field_start_date: Start date
-  field_done_ratio: % Done
+  field_done_ratio: "% Done"
   field_auth_source: Authentication mode
   field_hide_mail: Hide my email address
   field_comments: Comment
@@ -306,7 +309,13 @@ en:
   field_warn_on_leaving_unsaved: "Warn me when leaving a page with unsaved text"
   field_issues_visibility: Issues visibility
   field_is_private: Private
-  
+  field_commit_logs_encoding: Commit messages encoding
+  field_scm_path_encoding: Path encoding
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvsroot: CVSROOT
+  field_cvs_module: Module
+
   setting_app_title: Application title
   setting_app_subtitle: Application subtitle
   setting_welcome_text: Welcome text
@@ -333,7 +342,6 @@ en:
   setting_cross_project_issue_relations: Allow cross-project issue relations
   setting_issue_list_default_columns: Default columns displayed on the issue list
   setting_repositories_encodings: Repositories encodings
-  setting_commit_logs_encoding: Commit messages encoding
   setting_emails_header: Emails header
   setting_emails_footer: Emails footer
   setting_protocol: Protocol
@@ -932,7 +940,10 @@ en:
   text_zoom_in: Zoom in
   text_zoom_out: Zoom out
   text_warn_on_leaving_unsaved: "The current page contains unsaved text that will be lost if you leave this page."
-  
+  text_scm_path_encoding_note: "Default: UTF-8"
+  text_git_repository_note: "Bare and local repository (e.g. /gitrepo, c:\gitrepo)"
+  text_mercurial_repository_note: "Local repository (e.g. /hgrepo, c:\hgrepo)"
+
   default_role_manager: Manager
   default_role_developer: Developer
   default_role_reporter: Reporter
@@ -954,7 +965,7 @@ en:
   default_priority_immediate: Immediate
   default_activity_design: Design
   default_activity_development: Development
-  
+
   enumeration_issue_priorities: Issue priorities
   enumeration_doc_categories: Document categories
   enumeration_activities: Activities (time tracking)

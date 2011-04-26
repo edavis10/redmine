@@ -14,12 +14,15 @@ zh:
       
     day_names: [星期天, 星期一, 星期二, 星期三, 星期四, 星期五, 星期六]
     abbr_day_names: [日, 一, 二, 三, 四, 五, 六]
-      
+
     # Don't forget the nil at the beginning; there's no such thing as a 0th month
     month_names: [~, 一月, 二月, 三月, 四月, 五月, 六月, 七月, 八月, 九月, 十月, 十一月, 十二月]
     abbr_month_names: [~, 1月, 2月, 3月, 4月, 5月, 6月, 7月, 8月, 9月, 10月, 11月, 12月]
     # Used in date_select and datime_select.
-    order: [ :year, :month, :day ]
+    order:
+      - :year
+      - :month
+      - :day
 
   time:
     formats:
@@ -29,7 +32,7 @@ zh:
       long: "%Y年%b%d日 %H:%M"
     am: "上午"
     pm: "下午"
-      
+
   datetime:
     distance_in_words:
       half_a_minute: "半分钟"
@@ -332,7 +335,6 @@ zh:
   setting_cross_project_issue_relations: 允许不同项目之间的问题关联
   setting_issue_list_default_columns: 问题列表中显示的默认列
   setting_repositories_encodings: 版本库编码
-  setting_commit_logs_encoding: 提交注释的编码
   setting_emails_header: 邮件头
   setting_emails_footer: 邮件签名
   setting_protocol: 协议
@@ -963,3 +965,12 @@ zh:
   label_issues_visibility_public: All non private issues
   text_issues_destroy_descendants_confirmation: This will also delete %{count} subtask(s).
 
+  field_commit_logs_encoding: 提交注释的编码
+  field_scm_path_encoding: Path encoding
+  text_scm_path_encoding_note: "Default: UTF-8"
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvs_module: Module
+  field_cvsroot: CVSROOT
+  text_git_repository_note: Bare and local repository (e.g. /gitrepo, c:\gitrepo)
+  text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)

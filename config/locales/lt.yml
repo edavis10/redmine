@@ -22,7 +22,10 @@ lt:
     month_names: [~, sausio, vasario, kovo, balandžio, gegužės, birželio, liepos, rugpjūčio, rugsėjo, spalio, lapkričio, gruodžio]
     abbr_month_names: [~, Sau, Vas, Kov, Bal, Geg, Bir, Lie, Rgp, Rgs, Spa, Lap, Grd]
     # Used in date_select and datime_select.
-    order: [ :year, :month, :day ]
+    order:
+      - :year
+      - :month
+      - :day
 
   time:
     formats:
@@ -311,7 +314,7 @@ lt:
   field_attr_mail: Elektroninio pašto požymis
   field_onthefly: Automatinis vartotojų registravimas
   field_start_date: Pradėti
-  field_done_ratio: % atlikta
+  field_done_ratio: "% atlikta"
   field_auth_source: Autentiškumo nustatymo būdas
   field_hide_mail: Paslėpkite mano elektroninio pašto adresą
   field_comments: Komentaras
@@ -368,7 +371,6 @@ lt:
   setting_cross_project_issue_relations: Leisti tarprojektinius darbų ryšius
   setting_issue_list_default_columns: Numatytosios skiltys darbų sąraše
   setting_repositories_encodings: Saugyklos koduotė
-  setting_commit_logs_encoding: Commit pranešimų koduotė
   setting_emails_footer: elektroninio pašto puslapinė poraštė
   setting_protocol: Protokolas
   setting_per_page_options: Įrašų puslapyje nustatimas
@@ -1020,3 +1022,12 @@ lt:
   permission_set_issues_private: Set issues public or private
   label_issues_visibility_public: All non private issues
   text_issues_destroy_descendants_confirmation: This will also delete %{count} subtask(s).
+  field_commit_logs_encoding: Commit pranešimų koduotė
+  field_scm_path_encoding: Path encoding
+  text_scm_path_encoding_note: "Default: UTF-8"
+  field_path_to_repository: Path to repository
+  field_root_directory: Root directory
+  field_cvs_module: Module
+  field_cvsroot: CVSROOT
+  text_git_repository_note: Bare and local repository (e.g. /gitrepo, c:\gitrepo)
+  text_mercurial_repository_note: Local repository (e.g. /hgrepo, c:\hgrepo)
