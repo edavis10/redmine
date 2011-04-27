@@ -66,6 +66,9 @@ class VersionsController < ApplicationController
   end
 
   def create
+    call_hook(:controller_versions_new_before_save, { :params => params, :version => @version })
+
+
     # TODO: refactor with code above in #new
     @version = @project.versions.build
     if params[:version]
