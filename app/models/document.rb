@@ -50,3 +50,16 @@ class Document < ActiveRecord::Base
     @updated_on
   end
 end
+
+# == Schema Information
+#
+# Table name: documents
+#
+#  id          :integer(4)      not null, primary key
+#  project_id  :integer(4)      default(0), not null
+#  category_id :integer(4)      default(0), not null
+#  title       :string(60)      default(""), not null
+#  description :text
+#  created_on  :datetime
+#
+

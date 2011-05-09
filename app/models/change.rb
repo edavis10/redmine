@@ -29,3 +29,18 @@ class Change < ActiveRecord::Base
     self.path ||= ""
   end
 end
+
+# == Schema Information
+#
+# Table name: changes
+#
+#  id            :integer(4)      not null, primary key
+#  changeset_id  :integer(4)      not null
+#  action        :string(1)       default(""), not null
+#  path          :text            default(""), not null
+#  from_path     :text
+#  from_revision :string(255)
+#  revision      :string(255)
+#  branch        :string(255)
+#
+

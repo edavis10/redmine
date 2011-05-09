@@ -36,3 +36,13 @@ class EnabledModule < ActiveRecord::Base
     end
   end
 end
+
+# == Schema Information
+#
+# Table name: enabled_modules
+#
+#  id         :integer(4)      not null, primary key
+#  project_id :integer(4)
+#  name       :string(255)     not null
+#
+

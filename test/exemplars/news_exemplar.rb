@@ -14,3 +14,18 @@ class News < ActiveRecord::Base
     @last_description
   end
 end
+
+# == Schema Information
+#
+# Table name: news
+#
+#  id             :integer(4)      not null, primary key
+#  project_id     :integer(4)
+#  title          :string(60)      default(""), not null
+#  summary        :string(255)     default("")
+#  description    :text
+#  author_id      :integer(4)      default(0), not null
+#  created_on     :datetime
+#  comments_count :integer(4)      default(0), not null
+#
+

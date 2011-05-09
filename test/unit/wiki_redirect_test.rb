@@ -72,3 +72,15 @@ class WikiRedirectTest < ActiveSupport::TestCase
     assert !@wiki.redirects.find(:first)
   end
 end
+
+# == Schema Information
+#
+# Table name: wiki_redirects
+#
+#  id           :integer(4)      not null, primary key
+#  wiki_id      :integer(4)      not null
+#  title        :string(255)
+#  redirects_to :string(255)
+#  created_on   :datetime        not null
+#
+

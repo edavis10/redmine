@@ -47,3 +47,14 @@ member_roles_011:
   role_id: 2
   member_id: 10
   inherited_from: 10
+
+# == Schema Information
+#
+# Table name: member_roles
+#
+#  id             :integer(4)      not null, primary key
+#  member_id      :integer(4)      not null
+#  role_id        :integer(4)      not null
+#  inherited_from :integer(4)
+#
+

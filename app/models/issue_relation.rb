@@ -111,3 +111,15 @@ class IssueRelation < ActiveRecord::Base
     end
   end
 end
+
+# == Schema Information
+#
+# Table name: issue_relations
+#
+#  id            :integer(4)      not null, primary key
+#  issue_from_id :integer(4)      not null
+#  issue_to_id   :integer(4)      not null
+#  relation_type :string(255)     default(""), not null
+#  delay         :integer(4)
+#
+

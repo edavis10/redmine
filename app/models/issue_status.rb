@@ -97,3 +97,16 @@ private
     Workflow.delete_all(["old_status_id = :id OR new_status_id = :id", {:id => id}])
   end
 end
+
+# == Schema Information
+#
+# Table name: issue_statuses
+#
+#  id                 :integer(4)      not null, primary key
+#  name               :string(30)      default(""), not null
+#  is_closed          :boolean(1)      default(FALSE), not null
+#  is_default         :boolean(1)      default(FALSE), not null
+#  position           :integer(4)      default(1)
+#  default_done_ratio :integer(4)
+#
+

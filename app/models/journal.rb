@@ -79,3 +79,16 @@ class Journal < ActiveRecord::Base
     s
   end
 end
+
+# == Schema Information
+#
+# Table name: journals
+#
+#  id               :integer(4)      not null, primary key
+#  journalized_id   :integer(4)      default(0), not null
+#  journalized_type :string(30)      default(""), not null
+#  user_id          :integer(4)      default(0), not null
+#  notes            :text
+#  created_on       :datetime        not null
+#
+

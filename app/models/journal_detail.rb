@@ -18,3 +18,16 @@
 class JournalDetail < ActiveRecord::Base
   belongs_to :journal
 end
+
+# == Schema Information
+#
+# Table name: journal_details
+#
+#  id         :integer(4)      not null, primary key
+#  journal_id :integer(4)      default(0), not null
+#  property   :string(30)      default(""), not null
+#  prop_key   :string(30)      default(""), not null
+#  old_value  :text
+#  value      :text
+#
+

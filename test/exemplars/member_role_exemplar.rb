@@ -10,3 +10,14 @@ class MemberRole < ActiveRecord::Base
     Member.generate!
   end
 end
+
+# == Schema Information
+#
+# Table name: member_roles
+#
+#  id             :integer(4)      not null, primary key
+#  member_id      :integer(4)      not null
+#  role_id        :integer(4)      not null
+#  inherited_from :integer(4)
+#
+

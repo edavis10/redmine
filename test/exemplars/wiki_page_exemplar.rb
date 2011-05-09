@@ -12,3 +12,16 @@ class WikiPage < ActiveRecord::Base
     Wiki.generate!
   end
 end
+
+# == Schema Information
+#
+# Table name: wiki_pages
+#
+#  id         :integer(4)      not null, primary key
+#  wiki_id    :integer(4)      not null
+#  title      :string(255)     not null
+#  created_on :datetime        not null
+#  protected  :boolean(1)      default(FALSE), not null
+#  parent_id  :integer(4)
+#
+

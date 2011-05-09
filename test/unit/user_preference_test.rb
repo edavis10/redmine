@@ -41,3 +41,15 @@ class UserPreferenceTest < ActiveSupport::TestCase
     assert_equal 'value', user.pref['preftest']
   end
 end
+
+# == Schema Information
+#
+# Table name: user_preferences
+#
+#  id        :integer(4)      not null, primary key
+#  user_id   :integer(4)      default(0), not null
+#  others    :text
+#  hide_mail :boolean(1)      default(FALSE)
+#  time_zone :string(255)
+#
+

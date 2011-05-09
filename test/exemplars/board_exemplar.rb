@@ -19,3 +19,18 @@ class Board < ActiveRecord::Base
     Project.generate!
   end
 end
+
+# == Schema Information
+#
+# Table name: boards
+#
+#  id              :integer(4)      not null, primary key
+#  project_id      :integer(4)      not null
+#  name            :string(255)     default(""), not null
+#  description     :string(255)
+#  position        :integer(4)      default(1)
+#  topics_count    :integer(4)      default(0), not null
+#  messages_count  :integer(4)      default(0), not null
+#  last_message_id :integer(4)
+#
+

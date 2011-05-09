@@ -63,3 +63,14 @@ class Watcher < ActiveRecord::Base
     pruned
   end
 end
+
+# == Schema Information
+#
+# Table name: watchers
+#
+#  id             :integer(4)      not null, primary key
+#  watchable_type :string(255)     default(""), not null
+#  watchable_id   :integer(4)      default(0), not null
+#  user_id        :integer(4)
+#
+

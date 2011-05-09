@@ -98,3 +98,17 @@ class Workflow < ActiveRecord::Base
     end
   end
 end
+
+# == Schema Information
+#
+# Table name: workflows
+#
+#  id            :integer(4)      not null, primary key
+#  tracker_id    :integer(4)      default(0), not null
+#  old_status_id :integer(4)      default(0), not null
+#  new_status_id :integer(4)      default(0), not null
+#  role_id       :integer(4)      default(0), not null
+#  assignee      :boolean(1)      default(FALSE), not null
+#  author        :boolean(1)      default(FALSE), not null
+#
+

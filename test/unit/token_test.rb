@@ -36,3 +36,15 @@ class TokenTest < ActiveSupport::TestCase
     assert  Token.exists?(t2.id)
   end
 end
+
+# == Schema Information
+#
+# Table name: tokens
+#
+#  id         :integer(4)      not null, primary key
+#  user_id    :integer(4)      default(0), not null
+#  action     :string(30)      default(""), not null
+#  value      :string(40)      default(""), not null
+#  created_on :datetime        not null
+#
+

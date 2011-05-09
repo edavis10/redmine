@@ -270,3 +270,19 @@ class Changeset < ActiveRecord::Base
     str
   end
 end
+
+# == Schema Information
+#
+# Table name: changesets
+#
+#  id            :integer(4)      not null, primary key
+#  repository_id :integer(4)      not null
+#  revision      :string(255)     not null
+#  committer     :string(255)
+#  committed_on  :datetime        not null
+#  comments      :text
+#  commit_date   :date
+#  scmid         :string(255)
+#  user_id       :integer(4)
+#
+

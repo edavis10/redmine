@@ -168,3 +168,16 @@ private
     raise "Can't delete builtin role" if builtin?
   end
 end
+
+# == Schema Information
+#
+# Table name: roles
+#
+#  id          :integer(4)      not null, primary key
+#  name        :string(30)      default(""), not null
+#  position    :integer(4)      default(1)
+#  assignable  :boolean(1)      default(TRUE)
+#  builtin     :integer(4)      default(0), not null
+#  permissions :text
+#
+

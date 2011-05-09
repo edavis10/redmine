@@ -1088,3 +1088,24 @@ class ProjectTest < ActiveSupport::TestCase
   end
   
 end
+
+# == Schema Information
+#
+# Table name: projects
+#
+#  id                :integer(4)      not null, primary key
+#  name              :string(255)     default(""), not null
+#  description       :text
+#  homepage          :string(255)     default("")
+#  is_public         :boolean(1)      default(TRUE), not null
+#  parent_id         :integer(4)
+#  created_on        :datetime
+#  updated_on        :datetime
+#  identifier        :string(255)
+#  status            :integer(4)      default(1), not null
+#  lft               :integer(4)
+#  rgt               :integer(4)
+#  projects_count    :integer(4)
+#  mapping_center_id :integer(4)
+#
+
