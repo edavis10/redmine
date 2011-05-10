@@ -81,12 +81,28 @@ begin
         assert_equal 21, revs1.length
         assert_equal '7234cb2750b63f47bff735edc50a1c0a433c2518', revs1[0].identifier
         assert_equal '1ca7f5ed374f3cb31a93ae5215c2e25cc6ec5127', revs1[20].identifier
+      end
 
+      def test_revisions_reverse_with_time
         since2 = Time.gm(2010, 9, 30, 0, 0, 0)
-        revs2 = @adapter.revisions('',nil,nil,{:all => true, :since => since2, :reverse => true })
+        revs2  = @adapter.revisions('', nil, nil,
+                                    {:all => true, :since => since2, :reverse => true})
         assert_equal 6, revs2.length
         assert_equal '67e7792ce20ccae2e4bb73eed09bb397819c8834', revs2[0].identifier
         assert_equal '1ca7f5ed374f3cb31a93ae5215c2e25cc6ec5127', revs2[5].identifier
+      end
+
+      def test_revisions_master
+        revs1  = @adapter.revisions('', nil, "master",{})
+        assert_equal 15, revs1.length
+        assert_equal '83ca5fd546063a3c7dc2e568ba3355661a9e2b2c', revs1[ 0].identifier
+        assert_equal '7234cb2750b63f47bff735edc50a1c0a433c2518', revs1[-1].identifier
+
+        revs2  = @adapter.revisions('', nil, "master",
+                                    {:reverse => true})
+        assert_equal 15, revs2.length
+        assert_equal '83ca5fd546063a3c7dc2e568ba3355661a9e2b2c', revs2[-1].identifier
+        assert_equal '7234cb2750b63f47bff735edc50a1c0a433c2518', revs2[ 0].identifier
       end
 
       def test_getting_revisions_with_spaces_in_filename
@@ -161,13 +177,14 @@ begin
             assert_equal 1, @adapter.annotate(p2, r1).lines.length
             ['64f1f3e89ad1cb57976ff0ad99a107012ba3481d', '64f1f3e89ad1cb5797'].each do |r2|
               assert @adapter.diff(p2, r1, r2)
-            end      
-          end      
+            end
+          end
         end
       end
 
       def test_entries_tag
-        entries1 = @adapter.entries(nil, 'tag01.annotated')
+        entries1 = @adapter.entries(nil, 'tag01.annotated',
+                                    options = {:report_last_commit => true})
         assert entries1
         assert_equal 3, entries1.size
         assert_equal 'sources', entries1[1].name
@@ -183,7 +200,8 @@ begin
       end
 
       def test_entries_branch
-        entries1 = @adapter.entries(nil, 'test_branch')
+        entries1 = @adapter.entries(nil, 'test_branch',
+                                    options = {:report_last_commit => true})
         assert entries1
         assert_equal 4, entries1.size
         assert_equal 'sources', entries1[1].name
@@ -241,4 +259,3 @@ rescue LoadError
     def test_fake; assert(false, "Requires mocha to run those tests")  end
   end
 end
-

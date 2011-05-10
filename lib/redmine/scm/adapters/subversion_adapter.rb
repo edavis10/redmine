@@ -1,16 +1,16 @@
 # Redmine - project management software
-# Copyright (C) 2006-2010  Jean-Philippe Lang
+# Copyright (C) 2006-2011  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -40,7 +40,9 @@ module Redmine
           end
 
           def client_available
-            !client_version.empty?
+            # --xml options are introduced in 1.3.
+            # http://subversion.apache.org/docs/release-notes/1.3.html
+            client_version_above?([1, 3])
           end
 
           def svn_binary_version
@@ -70,7 +72,7 @@ module Redmine
             end
             begin
               doc = ActiveSupport::XmlMini.parse(output)
-              #root_url = doc.elements["info/entry/repository/root"].text          
+              # root_url = doc.elements["info/entry/repository/root"].text
               info = Info.new({:root_url => doc['info']['entry']['repository']['root']['__content__'],
                                :lastrev => Revision.new({
                                  :identifier => doc['info']['entry']['commit']['revision'],
@@ -89,7 +91,7 @@ module Redmine
 
         # Returns an Entries collection
         # or nil if the given path doesn't exist in the repository
-        def entries(path=nil, identifier=nil)
+        def entries(path=nil, identifier=nil, options={})
           path ||= ''
           identifier = (identifier and identifier.to_i > 0) ? identifier.to_i : "HEAD"
           entries = Entries.new
@@ -133,7 +135,7 @@ module Redmine
         def properties(path, identifier=nil)
           # proplist xml output supported in svn 1.5.0 and higher
           return nil unless self.class.client_version_above?([1, 5, 0])
-          
+
           identifier = (identifier and identifier.to_i > 0) ? identifier.to_i : "HEAD"
           cmd = "#{self.class.sq_bin} proplist --verbose --xml #{target(path)}@#{identifier}"
           cmd << credentials_string
@@ -182,7 +184,7 @@ module Redmine
                             }
                 end if logentry['paths'] && logentry['paths']['path']
                 paths.sort! { |x,y| x[:path] <=> y[:path] }
-                
+
                 revisions << Revision.new({:identifier => logentry['revision'],
                               :author => (logentry['author'] ? logentry['author']['__content__'] : ""),
                               :time => Time.parse(logentry['date']['__content__'].to_s).localtime,

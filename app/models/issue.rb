@@ -175,6 +175,7 @@ class Issue < ActiveRecord::Base
       issue.reset_custom_values!
     end
     if options[:copy]
+      issue.author = User.current
       issue.custom_field_values = self.custom_field_values.inject({}) {|h,v| h[v.custom_field_id] = v.value; h}
       issue.status = if options[:attributes] && options[:attributes][:status_id]
                        IssueStatus.find_by_id(options[:attributes][:status_id])
@@ -187,7 +188,13 @@ class Issue < ActiveRecord::Base
       issue.attributes = options[:attributes]
     end
     if issue.save
-      unless options[:copy]
+      if options[:copy]
+        if current_journal && current_journal.notes.present?
+          issue.init_journal(current_journal.user, current_journal.notes)
+          issue.current_journal.notify = false
+          issue.save
+        end
+      else
         # Manually update project_id on related time entries
         TimeEntry.update_all("project_id = #{new_project.id}", {:issue_id => id})
         

@@ -1,16 +1,16 @@
-# redMine - project management software
-# Copyright (C) 2006-2007  Jean-Philippe Lang
+# Redmine - project management software
+# Copyright (C) 2006-2011  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -83,7 +83,7 @@ module Redmine
 
         def initialize(url, root_url=nil, login=nil, password=nil, path_encoding=nil)
           super
-          @path_encoding = path_encoding || 'UTF-8'
+          @path_encoding = path_encoding.blank? ? 'UTF-8' : path_encoding
         end
 
         def info
@@ -118,7 +118,7 @@ module Redmine
         end
 
         def summary
-          return @summary if @summary 
+          return @summary if @summary
           hg 'rhsummary' do |io|
             output = io.read
             if output.respond_to?(:force_encoding)
@@ -132,7 +132,7 @@ module Redmine
         end
         private :summary
 
-        def entries(path=nil, identifier=nil)
+        def entries(path=nil, identifier=nil, options={})
           p1 = scm_iconv(@path_encoding, 'UTF-8', path)
           manifest = hg('rhmanifest', '-r', CGI.escape(hgrev(identifier)),
                         CGI.escape(without_leading_slash(p1.to_s))) do |io|

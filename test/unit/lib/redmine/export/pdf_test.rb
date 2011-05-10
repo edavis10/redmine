@@ -5,88 +5,97 @@
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 require File.expand_path('../../../../../test_helper', __FILE__)
+require 'iconv'
 
 class PdfTest < ActiveSupport::TestCase
   include Redmine::I18n
 
   def test_fix_text_encoding_nil
     set_language_if_valid 'ja'
-    pdf = Redmine::Export::PDF::IFPDF.new('ja')
-    assert pdf
-    assert_equal '', pdf.fix_text_encoding(nil)
+    assert_equal 'CP932', l(:general_pdf_encoding)
+    if RUBY_VERSION < '1.9'
+      ic = Iconv.new(l(:general_pdf_encoding), 'UTF-8')
+    end
+    assert_equal '', Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, nil)
   end
 
-  def test_fix_text_encoding_backslash_ascii
+  def test_rdm_pdf_iconv_cannot_convert_ja_cp932
     set_language_if_valid 'ja'
-    pdf = Redmine::Export::PDF::IFPDF.new('ja')
-    assert pdf
-    assert_equal '\\\\abcd', pdf.fix_text_encoding('\\abcd')
-    assert_equal 'abcd\\\\', pdf.fix_text_encoding('abcd\\')
-    assert_equal 'ab\\\\cd', pdf.fix_text_encoding('ab\\cd')
-    assert_equal '\\\\abcd\\\\', pdf.fix_text_encoding('\\abcd\\')
-    assert_equal '\\\\abcd\\\\abcd\\\\',
-                 pdf.fix_text_encoding('\\abcd\\abcd\\')
-  end
-
-  def test_fix_text_encoding_double_backslash_ascii
-    set_language_if_valid 'ja'
-    pdf = Redmine::Export::PDF::IFPDF.new('ja')
-    assert pdf
-    assert_equal '\\\\\\\\abcd', pdf.fix_text_encoding('\\\\abcd')
-    assert_equal 'abcd\\\\\\\\', pdf.fix_text_encoding('abcd\\\\')
-    assert_equal 'ab\\\\\\\\cd', pdf.fix_text_encoding('ab\\\\cd')
-    assert_equal 'ab\\\\\\\\cd\\\\de', pdf.fix_text_encoding('ab\\\\cd\\de')
-    assert_equal '\\\\\\\\abcd\\\\\\\\', pdf.fix_text_encoding('\\\\abcd\\\\')
-    assert_equal '\\\\\\\\abcd\\\\\\\\abcd\\\\\\\\',
-                 pdf.fix_text_encoding('\\\\abcd\\\\abcd\\\\')
-  end
-
-  def test_fix_text_encoding_backslash_ja_cp932
-    pdf = Redmine::Export::PDF::IFPDF.new('ja')
-    assert pdf
-    assert_equal "\x83\\\\\x98A",
-                  pdf.fix_text_encoding("\xe3\x82\xbd\xe9\x80\xa3")
-    assert_equal "\x83\\\\\x98A\x91\xe3\x95\\\\",
-                  pdf.fix_text_encoding("\xe3\x82\xbd\xe9\x80\xa3\xe4\xbb\xa3\xe8\xa1\xa8")
-    assert_equal "\x91\xe3\x95\\\\\\\\",
-                  pdf.fix_text_encoding("\xe4\xbb\xa3\xe8\xa1\xa8\\")
-    assert_equal "\x91\xe3\x95\\\\\\\\\\\\",
-                  pdf.fix_text_encoding("\xe4\xbb\xa3\xe8\xa1\xa8\\\\")
-    assert_equal "\x91\xe3\x95\\\\a\\\\",
-                  pdf.fix_text_encoding("\xe4\xbb\xa3\xe8\xa1\xa8a\\")
-  end
-
-  def test_fix_text_encoding_cannot_convert_ja_cp932
-    pdf = Redmine::Export::PDF::IFPDF.new('ja')
-    assert pdf
+    assert_equal 'CP932', l(:general_pdf_encoding)
+    if RUBY_VERSION < '1.9'
+      ic = Iconv.new(l(:general_pdf_encoding), 'UTF-8')
+    end
     utf8_txt_1  = "\xe7\x8b\x80\xe6\x85\x8b"
     utf8_txt_2  = "\xe7\x8b\x80\xe6\x85\x8b\xe7\x8b\x80"
     utf8_txt_3  = "\xe7\x8b\x80\xe7\x8b\x80\xe6\x85\x8b\xe7\x8b\x80"
     if utf8_txt_1.respond_to?(:force_encoding)
-      assert_equal "?\x91\xd4",
-                   pdf.fix_text_encoding(utf8_txt_1)
-      assert_equal "?\x91\xd4?",
-                   pdf.fix_text_encoding(utf8_txt_2)
-      assert_equal "??\x91\xd4?",
-                   pdf.fix_text_encoding(utf8_txt_3)
+      txt_1 = Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, utf8_txt_1)
+      txt_2 = Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, utf8_txt_2)
+      txt_3 = Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, utf8_txt_3)
+      assert_equal "?\x91\xd4", txt_1
+      assert_equal "?\x91\xd4?", txt_2
+      assert_equal "??\x91\xd4?", txt_3
+      assert_equal "ASCII-8BIT", txt_1.encoding.to_s
+      assert_equal "ASCII-8BIT", txt_2.encoding.to_s
+      assert_equal "ASCII-8BIT", txt_3.encoding.to_s
     else
       assert_equal "???\x91\xd4",
-                   pdf.fix_text_encoding(utf8_txt_1)
+                   Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, utf8_txt_1)
       assert_equal "???\x91\xd4???",
-                   pdf.fix_text_encoding(utf8_txt_2)
+                   Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, utf8_txt_2)
       assert_equal "??????\x91\xd4???",
-                   pdf.fix_text_encoding(utf8_txt_3)
+                   Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, utf8_txt_3)
     end
+  end
+
+  def test_rdm_pdf_iconv_invalid_utf8_should_be_replaced_en
+    set_language_if_valid 'en'
+    assert_equal 'UTF-8', l(:general_pdf_encoding)
+    str1 = "Texte encod\xe9 en ISO-8859-1"
+    str2 = "\xe9a\xe9b\xe9c\xe9d\xe9e test"
+    str1.force_encoding("UTF-8") if str1.respond_to?(:force_encoding)
+    str2.force_encoding("ASCII-8BIT") if str2.respond_to?(:force_encoding)
+    if RUBY_VERSION < '1.9'
+      ic = Iconv.new(l(:general_pdf_encoding), 'UTF-8')
+    end
+    txt_1 = Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, str1)
+    txt_2 = Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, str2)
+    if txt_1.respond_to?(:force_encoding)
+      assert_equal "ASCII-8BIT", txt_1.encoding.to_s
+      assert_equal "ASCII-8BIT", txt_2.encoding.to_s
+    end
+    assert_equal "Texte encod? en ISO-8859-1", txt_1
+    assert_equal "?a?b?c?d?e test", txt_2
+  end
+
+  def test_rdm_pdf_iconv_invalid_utf8_should_be_replaced_ja
+    set_language_if_valid 'ja'
+    assert_equal 'CP932', l(:general_pdf_encoding)
+    str1 = "Texte encod\xe9 en ISO-8859-1"
+    str2 = "\xe9a\xe9b\xe9c\xe9d\xe9e test"
+    str1.force_encoding("UTF-8") if str1.respond_to?(:force_encoding)
+    str2.force_encoding("ASCII-8BIT") if str2.respond_to?(:force_encoding)
+    if RUBY_VERSION < '1.9'
+      ic = Iconv.new(l(:general_pdf_encoding), 'UTF-8')
+    end
+    txt_1 = Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, str1)
+    txt_2 = Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, str2)
+    if txt_1.respond_to?(:force_encoding)
+      assert_equal "ASCII-8BIT", txt_1.encoding.to_s
+      assert_equal "ASCII-8BIT", txt_2.encoding.to_s
+    end
+    assert_equal "Texte encod? en ISO-8859-1", txt_1
+    assert_equal "?a?b?c?d?e test", txt_2
   end
 end

@@ -1,16 +1,16 @@
-# redMine - project management software
-# Copyright (C) 2006-2008  Jean-Philippe Lang
+# Redmine - project management software
+# Copyright (C) 2006-2011  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -25,11 +25,13 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
   fixtures :projects, :users, :roles, :members, :member_roles, :repositories, :enabled_modules
 
   # No '..' in the repository path
-  REPOSITORY_PATH = RAILS_ROOT.gsub(%r{config\/\.\.}, '') + '/tmp/test/mercurial_repository'
+  REPOSITORY_PATH = RAILS_ROOT.gsub(%r{config\/\.\.}, '') +
+                       '/tmp/test/mercurial_repository'
   CHAR_1_HEX = "\xc3\x9c"
-  PRJ_ID = 3
+  PRJ_ID     = 3
 
-  ruby19_non_utf8_pass = (RUBY_VERSION >= '1.9' && Encoding.default_external.to_s != 'UTF-8')
+  ruby19_non_utf8_pass =
+     (RUBY_VERSION >= '1.9' && Encoding.default_external.to_s != 'UTF-8')
 
   def setup
     @controller = RepositoriesController.new
@@ -58,7 +60,7 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
   if ruby19_non_utf8_pass
     puts "TODO: Mercurial functional test fails in Ruby 1.9 " +
          "and Encoding.default_external is not UTF-8. " +
-         "Current value is '#{Encoding.default_external.to_s}'" 
+         "Current value is '#{Encoding.default_external.to_s}'"
     def test_fake; assert true end
   elsif File.directory?(REPOSITORY_PATH)
     def test_show_root
@@ -110,12 +112,14 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       @repository.fetch_changesets
       @repository.reload
       [13, '13', '3a330eb32958'].each do |r1|
-        get :show, :id => PRJ_ID, :path => ['sql_escape', 'percent%dir'], :rev => r1
+        get :show, :id => PRJ_ID, :path => ['sql_escape', 'percent%dir'],
+            :rev => r1
         assert_response :success
         assert_template 'show'
 
         assert_not_nil assigns(:entries)
-        assert_equal ['percent%file1.txt', 'percentfile1.txt'], assigns(:entries).collect(&:name)
+        assert_equal ['percent%file1.txt', 'percentfile1.txt'],
+                     assigns(:entries).collect(&:name)
         changesets = assigns(:changesets)
         assert_not_nil changesets
         assigns(:changesets).size > 0
@@ -123,7 +127,7 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       end
     end
 
-    def test_show_directory_latin_1
+    def test_show_directory_latin_1_path
       @repository.fetch_changesets
       @repository.reload
       [21, '21', 'adf805632193'].each do |r1|
@@ -187,7 +191,7 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       assert_template 'changes'
       assert_tag :tag => 'h2', :content => 'edit.png'
     end
-    
+
     def test_entry_show
       get :entry, :id => PRJ_ID, :path => ['sources', 'watchers_controller.rb']
       assert_response :success
@@ -199,9 +203,10 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
                  :sibling => { :tag => 'td', :content => /WITHOUT ANY WARRANTY/ }
     end
 
-    def test_entry_show_latin_1
+    def test_entry_show_latin_1_path
       [21, '21', 'adf805632193'].each do |r1|
-        get :entry, :id => PRJ_ID, :path => ['latin-1-dir', "test-#{@char_1}-2.txt"], :rev => r1
+        get :entry, :id => PRJ_ID,
+            :path => ['latin-1-dir', "test-#{@char_1}-2.txt"], :rev => r1
         assert_response :success
         assert_template 'entry'
         assert_tag :tag => 'th',
@@ -211,9 +216,26 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
                                :content => /Mercurial is a distributed version control system/ }
       end
     end
-    
+
+    def test_entry_show_latin_1_contents
+      with_settings :repositories_encodings => 'UTF-8,ISO-8859-1' do
+        [27, '27', '7bbf4c738e71'].each do |r1|
+          get :entry, :id => PRJ_ID,
+              :path => ['latin-1-dir', "test-#{@char_1}.txt"], :rev => r1
+          assert_response :success
+          assert_template 'entry'
+          assert_tag :tag => 'th',
+                 :content => '1',
+                 :attributes => { :class => 'line-num' },
+                 :sibling => { :tag => 'td',
+                               :content => /test-#{@char_1}.txt/ }
+        end
+      end
+    end
+
     def test_entry_download
-      get :entry, :id => PRJ_ID, :path => ['sources', 'watchers_controller.rb'], :format => 'raw'
+      get :entry, :id => PRJ_ID,
+          :path => ['sources', 'watchers_controller.rb'], :format => 'raw'
       assert_response :success
       # File content
       assert @response.body.include?('WITHOUT ANY WARRANTY')
@@ -245,7 +267,7 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
           # Line 22 removed
           assert_tag :tag => 'th',
                      :content => '22',
-                     :sibling => { :tag => 'td', 
+                     :sibling => { :tag => 'td',
                                    :attributes => { :class => /diff_out/ },
                                    :content => /def remove/ }
           assert_tag :tag => 'h2', :content => /4:def6d2f1254a/
@@ -270,16 +292,27 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       end
     end
 
-    def test_diff_latin_1
-      [21, 'adf805632193'].each do |r1|
-        get :diff, :id => PRJ_ID, :rev => r1
-        assert_response :success
-        assert_template 'diff'
-        assert_tag :tag => 'th',
-                   :content => '2',
-                   :sibling => { :tag => 'td', 
-                               :attributes => { :class => /diff_in/ },
-                               :content => /It is written in Python/ }
+    def test_diff_latin_1_path
+      with_settings :repositories_encodings => 'UTF-8,ISO-8859-1' do
+        [21, 'adf805632193'].each do |r1|
+          get :diff, :id => PRJ_ID, :rev => r1
+          assert_response :success
+          assert_template 'diff'
+          assert_tag :tag => 'thead',
+                     :descendant => {
+                       :tag => 'th',
+                       :attributes => { :class => 'filename' } ,
+                       :content => /latin-1-dir\/test-#{@char_1}-2.txt/ ,
+                      },
+                     :sibling => {
+                       :tag => 'tbody',
+                       :descendant => {
+                          :tag => 'td',
+                          :attributes => { :class => /diff_in/ },
+                          :content => /It is written in Python/
+                       }
+                     }
+        end
       end
     end
 
@@ -316,16 +349,18 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       @repository.fetch_changesets
       @repository.reload
       [2, '400bb8672109', '400', 400].each do |r1|
-        get :annotate, :id => PRJ_ID, :rev => r1, :path => ['sources', 'watchers_controller.rb']
+        get :annotate, :id => PRJ_ID, :rev => r1,
+            :path => ['sources', 'watchers_controller.rb']
         assert_response :success
         assert_template 'annotate'
         assert_tag :tag => 'h2', :content => /@ 2:400bb8672109/
       end
     end
 
-    def test_annotate_latin_1
+    def test_annotate_latin_1_path
       [21, '21', 'adf805632193'].each do |r1|
-      get :annotate, :id => PRJ_ID, :path => ['latin-1-dir', "test-#{@char_1}-2.txt"], :rev => r1
+        get :annotate, :id => PRJ_ID,
+            :path => ['latin-1-dir', "test-#{@char_1}-2.txt"], :rev => r1
         assert_response :success
         assert_template 'annotate'
         assert_tag :tag => 'th',
@@ -345,7 +380,6 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
                           :tag     => 'td'    ,
                           :content => 'jsmith' ,
                           :attributes => { :class   => 'author' },
-                          
                         }
         assert_tag :tag => 'th',
                  :content => '1',
@@ -353,6 +387,20 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
                  :sibling => { :tag => 'td',
                                :content => /Mercurial is a distributed version control system/ }
 
+      end
+    end
+
+    def test_annotate_latin_1_contents
+      with_settings :repositories_encodings => 'UTF-8,ISO-8859-1' do
+        [27, '7bbf4c738e71'].each do |r1|
+          get :annotate, :id => PRJ_ID,
+              :path => ['latin-1-dir', "test-#{@char_1}.txt"], :rev => r1
+          assert_tag :tag => 'th',
+                     :content => '1',
+                     :attributes => { :class => 'line-num' },
+                     :sibling => { :tag => 'td',
+                                   :content => /test-#{@char_1}.txt/ }
+        end
       end
     end
 

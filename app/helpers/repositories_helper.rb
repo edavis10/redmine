@@ -163,18 +163,18 @@ module RepositoriesHelper
         scm_options << ["Repository::#{scm}".constantize.scm_name, scm]
       end
     end
-    select_tag('repository_scm', 
+    select_tag('repository_scm',
                options_for_select(scm_options, repository.class.name.demodulize),
                :disabled => (repository && !repository.new_record?),
                :onchange => remote_function(
                   :url => {
                       :controller => 'repositories',
-                      :action => 'edit',
-                      :id => @project
-                        },
+                      :action     => 'edit',
+                      :id         => @project
+                   },
                :method => :get,
-               :with => "Form.serialize(this.form)")
-               )
+               :with   => "Form.serialize(this.form)")
+             )
   end
 
   def with_leading_slash(path)
@@ -199,82 +199,82 @@ module RepositoriesHelper
 
   def darcs_field_tags(form, repository)
     content_tag('p', form.text_field(
-                     :url, :label => l("field_path_to_repository"),
+                     :url, :label => l(:field_path_to_repository),
                      :size => 60, :required => true,
                      :disabled => (repository && !repository.new_record?))) +
     content_tag('p', form.select(
                      :log_encoding, [nil] + Setting::ENCODINGS,
-                     :label => l("field_commit_logs_encoding"), :required => true))
+                     :label => l(:field_commit_logs_encoding), :required => true))
   end
 
   def mercurial_field_tags(form, repository)
     content_tag('p', form.text_field(
-                       :url, :label => l("field_path_to_repository"),
+                       :url, :label => l(:field_path_to_repository),
                        :size => 60, :required => true,
                        :disabled => (repository && !repository.root_url.blank?)
                          ) +
-                     '<br />' + l("text_mercurial_repository_note")) +
+                     '<br />' + l(:text_mercurial_repository_note)) +
     content_tag('p', form.select(
                         :path_encoding, [nil] + Setting::ENCODINGS,
-                        :label => l("field_scm_path_encoding")
+                        :label => l(:field_scm_path_encoding)
                         ) +
-                     '<br />' + l("text_scm_path_encoding_note"))
+                     '<br />' + l(:text_scm_path_encoding_note))
   end
 
   def git_field_tags(form, repository)
     content_tag('p', form.text_field(
-                       :url, :label => l("field_path_to_repository"),
+                       :url, :label => l(:field_path_to_repository),
                        :size => 60, :required => true,
                        :disabled => (repository && !repository.root_url.blank?)
                          ) +
-                      '<br />' + l("text_git_repository_note")) +
+                      '<br />' + l(:text_git_repository_note)) +
     content_tag('p', form.select(
                         :path_encoding, [nil] + Setting::ENCODINGS,
-                        :label => l("field_scm_path_encoding")
+                        :label => l(:field_scm_path_encoding)
                         ) +
-                     '<br />' + l("text_scm_path_encoding_note"))
+                     '<br />' + l(:text_scm_path_encoding_note))
   end
 
   def cvs_field_tags(form, repository)
     content_tag('p', form.text_field(
                      :root_url,
-                     :label => l("field_cvsroot"),
+                     :label => l(:field_cvsroot),
                      :size => 60, :required => true,
                      :disabled => !repository.new_record?)) +
     content_tag('p', form.text_field(
                      :url,
-                     :label => l("field_cvs_module"),
+                     :label => l(:field_cvs_module),
                      :size => 30, :required => true,
                      :disabled => !repository.new_record?)) +
     content_tag('p', form.select(
                      :log_encoding, [nil] + Setting::ENCODINGS,
-                     :label => l("field_commit_logs_encoding"), :required => true)) +
+                     :label => l(:field_commit_logs_encoding), :required => true)) +
     content_tag('p', form.select(
                         :path_encoding, [nil] + Setting::ENCODINGS,
-                        :label => l("field_scm_path_encoding")
+                        :label => l(:field_scm_path_encoding)
                         ) +
-                     '<br />' + l("text_scm_path_encoding_note"))
+                     '<br />' + l(:text_scm_path_encoding_note))
   end
 
   def bazaar_field_tags(form, repository)
     content_tag('p', form.text_field(
-                     :url, :label => l("field_path_to_repository"),
+                     :url, :label => l(:field_path_to_repository),
                      :size => 60, :required => true,
                      :disabled => (repository && !repository.new_record?))) +
     content_tag('p', form.select(
                      :log_encoding, [nil] + Setting::ENCODINGS,
-                     :label => l("field_commit_logs_encoding"), :required => true))
+                     :label => l(:field_commit_logs_encoding), :required => true))
   end
 
   def filesystem_field_tags(form, repository)
     content_tag('p', form.text_field(
-                     :url, :label => l("field_root_directory"),
+                     :url, :label => l(:field_root_directory),
                      :size => 60, :required => true,
                      :disabled => (repository && !repository.root_url.blank?))) +
     content_tag('p', form.select(
                         :path_encoding, [nil] + Setting::ENCODINGS,
-                        :label => l("field_scm_path_encoding")
+                        :label => l(:field_scm_path_encoding)
                         ) +
-                     '<br />' + l("text_scm_path_encoding_note"))
+                     '<br />' + l(:text_scm_path_encoding_note))
   end
 end

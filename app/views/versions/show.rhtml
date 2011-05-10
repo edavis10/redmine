@@ -6,6 +6,10 @@
 
 <h2><%= h(@version.name) %></h2>
 
+<div id="roadmap">
+<%= render :partial => 'versions/overview', :locals => {:version => @version} %>
+<%= render(:partial => "wiki/content", :locals => {:content => @version.wiki_page.content}) if @version.wiki_page %>
+
 <div id="version-summary">
 <% if @version.estimated_hours > 0 || User.current.allowed_to?(:view_time_entries, @project) %>
 <fieldset><legend><%= l(:label_time_tracking) %></legend>
@@ -29,18 +33,19 @@
 </div>
 </div>
 
-<div id="roadmap">
-<%= render :partial => 'versions/overview', :locals => {:version => @version} %>
-<%= render(:partial => "wiki/content", :locals => {:content => @version.wiki_page.content}) if @version.wiki_page %>
-
 <% if @issues.present? %>
-<fieldset class="related-issues"><legend><%= l(:label_related_issues) %></legend>
-<ul>
-<% @issues.each do |issue| -%>
-    <li><%= link_to_issue(issue) %></li>
-<% end -%>
-</ul>
-</fieldset>
+<% form_tag({}) do -%>
+  <table class="list related-issues">
+  <caption><%= l(:label_related_issues) %></caption>
+  <%- @issues.each do |issue| -%>
+    <tr class="hascontextmenu">
+      <td class="checkbox"><%= check_box_tag 'ids[]', issue.id %></td>
+      <td><%= link_to_issue(issue, :project => (@project != issue.project)) %></td>
+    </tr>
+  <% end %>
+  </table>
+<% end %>
+<%= context_menu issues_context_menu_path %>
 <% end %>
 </div>
 

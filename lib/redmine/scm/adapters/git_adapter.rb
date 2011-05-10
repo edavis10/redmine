@@ -1,16 +1,16 @@
-# redMine - project management software
-# Copyright (C) 2006-2007  Jean-Philippe Lang
+# Redmine - project management software
+# Copyright (C) 2006-2011  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -21,8 +21,6 @@ module Redmine
   module Scm
     module Adapters
       class GitAdapter < AbstractAdapter
-
-        SCM_GIT_REPORT_LAST_COMMIT = true
 
         # Git executable name
         GIT_BIN = Redmine::Configuration['scm_git_command'] || "git"
@@ -64,8 +62,7 @@ module Redmine
 
         def initialize(url, root_url=nil, login=nil, password=nil, path_encoding=nil)
           super
-          @path_encoding = path_encoding || 'UTF-8'
-          @flag_report_last_commit = SCM_GIT_REPORT_LAST_COMMIT
+          @path_encoding = path_encoding.blank? ? 'UTF-8' : path_encoding
         end
 
         def info
@@ -106,7 +103,22 @@ module Redmine
           bras.include?('master') ? 'master' : bras.first
         end
 
-        def entries(path=nil, identifier=nil)
+        def entry(path=nil, identifier=nil)
+          parts = path.to_s.split(%r{[\/\\]}).select {|n| !n.blank?}
+          search_path = parts[0..-2].join('/')
+          search_name = parts[-1]
+          if search_path.blank? && search_name.blank?
+            # Root entry
+            Entry.new(:path => '', :kind => 'dir')
+          else
+            # Search for the entry in the parent directory
+            es = entries(search_path, identifier,
+                         options = {:report_last_commit => false})
+            es ? es.detect {|e| e.name == search_name} : nil
+          end
+        end
+
+        def entries(path=nil, identifier=nil, options={})
           path ||= ''
           p = scm_iconv(@path_encoding, 'UTF-8', path)
           entries = Entries.new
@@ -131,7 +143,8 @@ module Redmine
                  :path => full_p,
                  :kind => (type == "tree") ? 'dir' : 'file',
                  :size => (type == "tree") ? nil : size,
-                 :lastrev => @flag_report_last_commit ? lastrev(full_path, identifier) : Revision.new
+                 :lastrev => options[:report_last_commit] ?
+                                 lastrev(full_path, identifier) : Revision.new
                 }) unless entries.detect{|entry| entry.name == name}
               end
             end
@@ -170,7 +183,7 @@ module Redmine
         end
 
         def revisions(path, identifier_from, identifier_to, options={})
-          revisions = Revisions.new
+          revs = Revisions.new
           cmd_args = %w|log --no-color --encoding=UTF-8 --raw --date=iso --pretty=fuller|
           cmd_args << "--reverse" if options[:reverse]
           cmd_args << "--all" if options[:all]
@@ -201,11 +214,7 @@ module Redmine
                     :message    => changeset[:description],
                     :paths      => files
                   })
-                  if block_given?
-                    yield revision
-                  else
-                    revisions << revision
-                  end
+                  revs << revision
                   changeset = {}
                   files = []
                 end
@@ -250,18 +259,13 @@ module Redmine
                 :time       => Time.parse(changeset[:date]),
                 :message    => changeset[:description],
                 :paths      => files
-              })
-
-              if block_given?
-                yield revision
-              else
-                revisions << revision
-              end
+                 })
+              revs << revision
             end
           end
-          revisions
+          revs
         rescue ScmCommandAborted
-          revisions
+          revs
         end
 
         def diff(path, identifier_from, identifier_to=nil)

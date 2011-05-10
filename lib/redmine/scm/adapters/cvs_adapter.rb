@@ -67,7 +67,7 @@ module Redmine
         #  password -> unnecessary too
         def initialize(url, root_url=nil, login=nil, password=nil,
                        path_encoding=nil)
-          @path_encoding = path_encoding || 'UTF-8'
+          @path_encoding = path_encoding.blank? ? 'UTF-8' : path_encoding
           @url      = url
           # TODO: better Exception here (IllegalArgumentException)
           raise CommandFailed if root_url.blank?
@@ -90,7 +90,7 @@ module Redmine
         # Returns an Entries collection
         # or nil if the given path doesn't exist in the repository
         # this method is used by the repository-browser (aka LIST)
-        def entries(path=nil, identifier=nil)
+        def entries(path=nil, identifier=nil, options={})
           logger.debug "<cvs> entries '#{path}' with identifier '#{identifier}'"
           path_locale = scm_iconv(@path_encoding, 'UTF-8', path)
           path_locale.force_encoding("ASCII-8BIT") if path_locale.respond_to?(:force_encoding)
