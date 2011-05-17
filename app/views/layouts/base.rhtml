@@ -20,6 +20,10 @@
 <%= call_hook :view_layouts_base_html_head %>
 <!-- page specific tags -->
 <%= yield :header_tags -%>
+<% if Setting.noreferrer? %>
+<%= javascript_tag 'Event.observe(window, "load", enchantExternalLinks);' %>
+<%= javascript_include_tag '/javascripts/noreferrer.js' %>
+<% end %>
 </head>
 <body class="<%=h body_css_classes %>">
 <div id="wrapper">

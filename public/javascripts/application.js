@@ -369,3 +369,21 @@ function hideOnLoad() {
 }
 
 Event.observe(window, 'load', hideOnLoad);
+
+function enchantExternalLinks() {
+    var root = location.href.replace(/^(https?:\/\/[^\/]+\/).*/, '$1');
+    var re_internal_url = new RegExp('^' + root.replace(/\W/g,'\\$&'), 'i');
+    $$('a[href^=http://]', 'a[href^=https://]').each(
+        function(a) {
+            var href = a.href;
+            if (!href.match(re_internal_url)) {
+                if (a.rel)
+                    a.rel += ' ' + 'noreferrer';
+                else
+                    a.rel = 'noreferrer';
+                if (a.target || '_self' == '_self')
+                    a.target = '_blank';
+                Element.addClassName(a, 'external');
+	    }
+        });
+}
