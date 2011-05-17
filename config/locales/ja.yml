@@ -170,6 +170,7 @@ ja:
   notice_can_t_change_password: このアカウントでは外部認証を使っています。パスワードは変更できません。
   notice_account_lost_email_sent: 新しいパスワードのメールを送信しました。
   notice_account_activated: アカウントが有効になりました。ログインできます。
+  notice_account_open_id_already_used: このOpenIDは他のアカウントですでに使われています。
   notice_successful_create: 作成しました。
   notice_successful_update: 更新しました。
   notice_successful_delete: 削除しました。
@@ -826,6 +827,8 @@ ja:
   label_principal_search: "ユーザまたはグループの検索:"
   label_user_search: "ユーザの検索:"
   label_git_report_last_commit: ファイルとディレクトリの最新コミットを表示する
+  label_login_options: "または次でログイン"
+  label_authenticate_options: "次で認証"
 
   button_login: ログイン
   button_submit: 変更
@@ -873,6 +876,7 @@ ja:
   button_quote: 引用
   button_duplicate: 複製
   button_show: 表示
+  button_authenticate: 認証する
   
   status_active: 有効
   status_registered: 登録

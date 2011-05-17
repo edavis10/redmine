@@ -150,6 +150,7 @@ en:
   notice_can_t_change_password: This account uses an external authentication source. Impossible to change the password.
   notice_account_lost_email_sent: An email with instructions to choose a new password has been sent to you.
   notice_account_activated: Your account has been activated. You can now log in.
+  notice_account_open_id_already_used: This OpenID is already used by another account.
   notice_successful_create: Successful creation.
   notice_successful_update: Successful update.
   notice_successful_delete: Successful deletion.
@@ -820,6 +821,8 @@ en:
   label_issues_visibility_public: All non private issues
   label_issues_visibility_own: Issues created by or assigned to the user
   label_git_report_last_commit: Report last commit for files and directories
+  label_login_options: "Or login with ..."
+  label_authenticate_options: "Authenticate with ..."
 
   button_login: Login
   button_submit: Submit
@@ -867,6 +870,7 @@ en:
   button_quote: Quote
   button_duplicate: Duplicate
   button_show: Show
+  button_authenticate: Authenticate
   
   status_active: active
   status_registered: registered

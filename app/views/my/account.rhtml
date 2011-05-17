@@ -17,7 +17,7 @@
 <p><%= f.text_field :mail, :required => true %></p>
 <p><%= f.select :language, lang_options_for_select %></p>
 <% if Setting.openid? %>
-<p><%= f.text_field :identity_url  %></p>
+<p><%= f.text_field :identity_url  %><%= content_tag(:button, l(:button_authenticate), :onclick => '(function(f){var u=f["user[identity_url]"].value;if(!u||u=="")return;f["openid_url"].value=u;f.submit();})(this.form)') %><%= hidden_field_tag :openid_url, nil %></p>
 <% end %>
 
 <% @user.custom_field_values.select(&:editable?).each do |value| %>

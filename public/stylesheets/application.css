@@ -90,6 +90,7 @@ html>body #content { min-height: 600px; }
 #login-form table td {padding: 6px;}
 #login-form label {font-weight: bold;}
 #login-form input#username, #login-form input#password { width: 300px; }
+#login-form input#openid_url { width: 282px; }
 
 input#openid_url { background: url(../images/openid-bg.gif) no-repeat; background-color: #fff; background-position: 0 50%; padding-left: 18px; }
 
