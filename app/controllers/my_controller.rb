@@ -53,6 +53,10 @@ class MyController < ApplicationController
   def account
     @user = User.current
     @pref = @user.pref
+    if Setting.openid? && using_open_id?
+      open_id_authenticate(params[:openid_url])
+      return
+    end
     if request.post?
       @user.safe_attributes = params[:user]
       @user.pref.attributes = params[:pref]
@@ -65,6 +69,21 @@ class MyController < ApplicationController
         redirect_to :action => 'account'
         return
       end
+    end
+  end
+
+  def open_id_authenticate(openid_url)
+    authenticate_with_open_id(openid_url) do |result, identity_url|
+      if result.successful?
+        user = User.find_by_identity_url(identity_url)
+        if user && user != @user
+          flash[:error] = l(:notice_account_open_id_already_used)
+        else
+          @user.identity_url = identity_url
+          @user.save
+        end
+      end
+      redirect_to :action => 'account'
     end
   end
 

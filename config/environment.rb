@@ -52,7 +52,8 @@ Rails::Initializer.run do |config|
 
   config.gem 'rubytree', :lib => 'tree'
   config.gem 'coderay', :version => '~>0.9.7'
-  
+  config.gem 'ruby-openid-apps-discovery', :lib => 'gapps_openid'
+
   # Load any local configuration that is kept out of source control
   # (e.g. gems, patches).
   if File.exists?(File.join(File.dirname(__FILE__), 'additional_environment.rb'))
