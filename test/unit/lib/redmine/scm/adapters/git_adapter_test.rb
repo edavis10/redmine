@@ -93,23 +93,32 @@ begin
       end
 
       def test_revisions_master_all
-        revs1  = @adapter.revisions('', nil, "master",{})
+        revs1 = []
+        @adapter.revisions('', nil, "master",{}) do |rev|
+          revs1 << rev
+        end
         assert_equal 15, revs1.length
         assert_equal '83ca5fd546063a3c7dc2e568ba3355661a9e2b2c', revs1[ 0].identifier
         assert_equal '7234cb2750b63f47bff735edc50a1c0a433c2518', revs1[-1].identifier
 
-        revs2  = @adapter.revisions('', nil, "master",
-                                    {:reverse => true})
+        revs2 = []
+        @adapter.revisions('', nil, "master",
+                                    {:reverse => true}) do |rev|
+          revs2 << rev
+        end
         assert_equal 15, revs2.length
         assert_equal '83ca5fd546063a3c7dc2e568ba3355661a9e2b2c', revs2[-1].identifier
         assert_equal '7234cb2750b63f47bff735edc50a1c0a433c2518', revs2[ 0].identifier
       end
 
       def test_revisions_master_merged_rev
-        revs1  = @adapter.revisions('',
-                                    "713f4944648826f558cf548222f813dabe7cbb04",
-                                    "master",
-                                    {:reverse => true})
+        revs1 = []
+        @adapter.revisions('',
+                           "713f4944648826f558cf548222f813dabe7cbb04",
+                           "master",
+                           {:reverse => true}) do |rev|
+          revs1 << rev
+        end
         assert_equal 8, revs1.length
         assert_equal 'fba357b886984ee71185ad2065e65fc0417d9b92', revs1[ 0].identifier
         assert_equal '7e61ac704deecde634b51e59daa8110435dcb3da', revs1[ 1].identifier
@@ -119,10 +128,13 @@ begin
         assert_equal '32ae898b720c2f7eec2723d5bdd558b4cb2d3ddf', revs1[ 3].identifier
         assert_equal '83ca5fd546063a3c7dc2e568ba3355661a9e2b2c', revs1[-1].identifier
 
-        revs2  = @adapter.revisions('',
-                                    "fba357b886984ee71185ad2065e65fc0417d9b92",
-                                    "master",
-                                    {:reverse => true})
+        revs2 = []
+        @adapter.revisions('',
+                           "fba357b886984ee71185ad2065e65fc0417d9b92",
+                           "master",
+                           {:reverse => true}) do |rev|
+          revs2 << rev
+        end
         assert_equal 7, revs2.length
         assert_equal '7e61ac704deecde634b51e59daa8110435dcb3da', revs2[ 0].identifier
         # 4a07fe31b is not a child of fba357b8869
@@ -133,34 +145,57 @@ begin
       end
 
       def test_revisions_branch_latin_1_path_encoding_all
-        revs1  = @adapter.revisions('', nil, "latin-1-path-encoding",{})
+        revs1 = []
+        @adapter.revisions('', nil, "latin-1-path-encoding",{}) do |rev|
+          revs1 << rev
+        end
         assert_equal 8, revs1.length
         assert_equal '1ca7f5ed374f3cb31a93ae5215c2e25cc6ec5127', revs1[ 0].identifier
         assert_equal '7234cb2750b63f47bff735edc50a1c0a433c2518', revs1[-1].identifier
 
-        revs2  = @adapter.revisions('', nil, "latin-1-path-encoding",
-                                    {:reverse => true})
+        revs2 = []
+        @adapter.revisions('', nil, "latin-1-path-encoding",
+                                    {:reverse => true}) do |rev|
+          revs2 << rev
+        end
         assert_equal 8, revs2.length
         assert_equal '1ca7f5ed374f3cb31a93ae5215c2e25cc6ec5127', revs2[-1].identifier
         assert_equal '7234cb2750b63f47bff735edc50a1c0a433c2518', revs2[ 0].identifier
       end
 
       def test_revisions_branch_latin_1_path_encoding_with_rev
-        revs1  = @adapter.revisions('',
-                                    '7234cb2750b63f47bff735edc50a1c0a433c2518',
-                                    "latin-1-path-encoding",
-                                    {:reverse => true})
+        revs1 = []
+        @adapter.revisions('',
+                           '7234cb2750b63f47bff735edc50a1c0a433c2518',
+                           "latin-1-path-encoding",
+                           {:reverse => true}) do |rev|
+          revs1 << rev
+        end
         assert_equal 7, revs1.length
         assert_equal '899a15dba03a3b350b89c3f537e4bbe02a03cdc9', revs1[ 0].identifier
         assert_equal '1ca7f5ed374f3cb31a93ae5215c2e25cc6ec5127', revs1[-1].identifier
 
-        revs2  = @adapter.revisions('',
-                                    '57ca437c0acbbcb749821fdf3726a1367056d364',
-                                    "latin-1-path-encoding",
-                                    {:reverse => true})
+        revs2 = []
+        @adapter.revisions('',
+                           '57ca437c0acbbcb749821fdf3726a1367056d364',
+                           "latin-1-path-encoding",
+                           {:reverse => true}) do |rev|
+          revs2 << rev
+        end
         assert_equal 3, revs2.length
         assert_equal '4fc55c43bf3d3dc2efb66145365ddc17639ce81e', revs2[ 0].identifier
         assert_equal '1ca7f5ed374f3cb31a93ae5215c2e25cc6ec5127', revs2[-1].identifier
+      end
+
+      def test_revisions_invalid_rev
+        revs1 = []
+        @adapter.revisions('',
+                                    '1234abcd',
+                                    "master",
+                                    {:reverse => true}) do |rev|
+          revs1 << rev
+        end
+        assert_equal [], revs1
       end
 
       def test_getting_revisions_with_spaces_in_filename
@@ -297,6 +332,21 @@ begin
           assert_equal "latin-1-dir/test-#{@char_1}-subdir/test-#{@char_1}-2.txt", f1.path
           assert_equal 'file', f1.kind
         end
+      end
+
+      def test_path_encoding_default_utf8
+        adpt1 = Redmine::Scm::Adapters::GitAdapter.new(
+                                  REPOSITORY_PATH
+                                )
+        assert_equal "UTF-8", adpt1.path_encoding
+        adpt2 = Redmine::Scm::Adapters::GitAdapter.new(
+                                  REPOSITORY_PATH,
+                                  nil,
+                                  nil,
+                                  nil,
+                                  ""
+                                )
+        assert_equal "UTF-8", adpt2.path_encoding
       end
 
       private

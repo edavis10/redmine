@@ -3,9 +3,9 @@ require File.expand_path('../../../../../../test_helper', __FILE__)
 
 class FilesystemAdapterTest < ActiveSupport::TestCase
 
-  REPOSITORY_PATH = RAILS_ROOT.gsub(%r{config\/\.\.}, '') + '/tmp/test/filesystem_repository'  
+  REPOSITORY_PATH = RAILS_ROOT.gsub(%r{config\/\.\.}, '') + '/tmp/test/filesystem_repository'
 
-  if File.directory?(REPOSITORY_PATH)    
+  if File.directory?(REPOSITORY_PATH)
     def setup
       @adapter = Redmine::Scm::Adapters::FilesystemAdapter.new(REPOSITORY_PATH)
     end
@@ -30,6 +30,21 @@ class FilesystemAdapterTest < ActiveSupport::TestCase
       assert_equal "TEST CAT\n", @adapter.cat("/test")
       # Revision number is ignored
       assert_equal "TEST CAT\n", @adapter.cat("/test", 1)
+    end
+
+    def test_path_encoding_default_utf8
+      adpt1 = Redmine::Scm::Adapters::FilesystemAdapter.new(
+                                  REPOSITORY_PATH
+                                )
+      assert_equal "UTF-8", adpt1.path_encoding
+      adpt2 = Redmine::Scm::Adapters::FilesystemAdapter.new(
+                                  REPOSITORY_PATH,
+                                  nil,
+                                  nil,
+                                  nil,
+                                  ""
+                                )
+      assert_equal "UTF-8", adpt2.path_encoding
     end
   else
     puts "Filesystem test repository NOT FOUND. Skipping unit tests !!! See doc/RUNNING_TESTS."

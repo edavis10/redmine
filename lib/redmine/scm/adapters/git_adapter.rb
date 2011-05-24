@@ -65,6 +65,10 @@ module Redmine
           @path_encoding = path_encoding.blank? ? 'UTF-8' : path_encoding
         end
 
+        def path_encoding
+          @path_encoding
+        end
+
         def info
           begin
             Info.new(:root_url => url, :lastrev => lastrev('',nil))
@@ -214,7 +218,11 @@ module Redmine
                     :message    => changeset[:description],
                     :paths      => files
                   })
-                  revs << revision
+                  if block_given?
+                    yield revision
+                  else
+                    revs << revision
+                  end
                   changeset = {}
                   files = []
                 end
@@ -260,11 +268,16 @@ module Redmine
                 :message    => changeset[:description],
                 :paths      => files
                  })
-              revs << revision
+              if block_given?
+                yield revision
+              else
+                revs << revision
+              end
             end
           end
           revs
-        rescue ScmCommandAborted
+        rescue ScmCommandAborted => e
+          logger.error("git log #{from_to.to_s} error: #{e.message}")
           revs
         end
 

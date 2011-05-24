@@ -1,16 +1,16 @@
 # Redmine - project management software
-# Copyright (C) 2006-2009  Jean-Philippe Lang
+# Copyright (C) 2006-2011  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -41,7 +41,18 @@ class RepositoriesController < ApplicationController
       @repository.project = @project if @repository
     end
     if request.post? && @repository
-      @repository.attributes = params[:repository]
+      p1 = params[:repository]
+      p       = {}
+      p_extra = {}
+      p1.each do |k, v|
+        if k =~ /^extra_/
+          p_extra[k] = v
+        else
+          p[k] = v
+        end
+      end
+      @repository.attributes = p
+      @repository.merge_extra_info(p_extra)
       @repository.save
     end
     render(:update) do |page|
@@ -71,7 +82,10 @@ class RepositoriesController < ApplicationController
 
   def destroy
     @repository.destroy
-    redirect_to :controller => 'projects', :action => 'settings', :id => @project, :tab => 'repository'
+    redirect_to :controller => 'projects',
+                :action     => 'settings',
+                :id         => @project,
+                :tab        => 'repository'
   end
 
   def show
@@ -143,7 +157,7 @@ class RepositoriesController < ApplicationController
 
   def is_entry_text_data?(ent, path)
     # UTF-16 contains "\x00".
-    # It is very strict that file contains less than 30% of ascii symbols 
+    # It is very strict that file contains less than 30% of ascii symbols
     # in non Western Europe.
     return true if Redmine::MimeType.is_type?('text', path)
     # Ruby 1.8.6 has a bug of integer divisions.
@@ -187,13 +201,14 @@ class RepositoriesController < ApplicationController
     else
       @diff_type = params[:type] || User.current.pref[:diff_type] || 'inline'
       @diff_type = 'inline' unless %w(inline sbs).include?(@diff_type)
-      
+
       # Save diff type as user preference
       if User.current.logged? && @diff_type != User.current.pref[:diff_type]
         User.current.pref[:diff_type] = @diff_type
         User.current.preference.save
       end
-      @cache_key = "repositories/diff/#{@repository.id}/" + Digest::MD5.hexdigest("#{@path}-#{@rev}-#{@rev_to}-#{@diff_type}")
+      @cache_key = "repositories/diff/#{@repository.id}/" + 
+                      Digest::MD5.hexdigest("#{@path}-#{@rev}-#{@rev_to}-#{@diff_type}")
       unless read_fragment(@cache_key)
         @diff = @repository.diff(@path, @rev, @rev_to)
         show_error_not_found unless @diff
@@ -297,7 +312,7 @@ class RepositoriesController < ApplicationController
       :data => changes_by_month[0..11].reverse,
       :title => l(:label_change_plural)
     )
-    
+
     graph.burn
   end
 
@@ -307,18 +322,18 @@ class RepositoriesController < ApplicationController
 
     changes_by_author = repository.changes.count(:all, :group => :committer)
     h = changes_by_author.inject({}) {|o, i| o[i.first] = i.last; o}
-    
+
     fields = commits_by_author.collect {|r| r.first}
     commits_data = commits_by_author.collect {|r| r.last}
     changes_data = commits_by_author.collect {|r| h[r.first] || 0}
-    
+
     fields = fields + [""]*(10 - fields.length) if fields.length<10
     commits_data = commits_data + [0]*(10 - commits_data.length) if commits_data.length<10
     changes_data = changes_data + [0]*(10 - changes_data.length) if changes_data.length<10
-    
+
     # Remove email adress in usernames
     fields = fields.collect {|c| c.gsub(%r{<.+@.+>}, '') }
-    
+
     graph = SVG::Graph::BarHorizontal.new(
       :height => 400,
       :width => 800,

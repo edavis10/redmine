@@ -4,8 +4,8 @@ begin
 
   class MercurialAdapterTest < ActiveSupport::TestCase
 
-    HELPERS_DIR = Redmine::Scm::Adapters::MercurialAdapter::HELPERS_DIR
-    TEMPLATE_NAME = Redmine::Scm::Adapters::MercurialAdapter::TEMPLATE_NAME
+    HELPERS_DIR        = Redmine::Scm::Adapters::MercurialAdapter::HELPERS_DIR
+    TEMPLATE_NAME      = Redmine::Scm::Adapters::MercurialAdapter::TEMPLATE_NAME
     TEMPLATE_EXTENSION = Redmine::Scm::Adapters::MercurialAdapter::TEMPLATE_EXTENSION
 
     REPOSITORY_PATH = RAILS_ROOT.gsub(%r{config\/\.\.}, '') +
@@ -247,7 +247,7 @@ begin
       end
 
       def test_tagmap
-        tm = { 
+        tm = {
           @tag_char_1         => 'adf805632193',
           'tag_test.00'       => '6987191f453a',
           'tag-init-revision' => '0885933ad4f6',
@@ -332,6 +332,21 @@ begin
         end
       end
 
+      def test_path_encoding_default_utf8
+        adpt1 = Redmine::Scm::Adapters::MercurialAdapter.new(
+                                  REPOSITORY_PATH
+                                )
+        assert_equal "UTF-8", adpt1.path_encoding
+        adpt2 = Redmine::Scm::Adapters::MercurialAdapter.new(
+                                  REPOSITORY_PATH,
+                                  nil,
+                                  nil,
+                                  nil,
+                                  ""
+                                )
+        assert_equal "UTF-8", adpt2.path_encoding
+      end
+
       private
 
       def test_hgversion_for(hgversion, version)
@@ -349,10 +364,8 @@ begin
       def test_fake; assert true end
     end
   end
-
 rescue LoadError
   class MercurialMochaFake < ActiveSupport::TestCase
     def test_fake; assert(false, "Requires mocha to run those tests")  end
   end
 end
-

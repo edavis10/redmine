@@ -22,6 +22,8 @@ class Repository < ActiveRecord::Base
   has_many :changesets, :order => "#{Changeset.table_name}.committed_on DESC, #{Changeset.table_name}.id DESC"
   has_many :changes, :through => :changesets
 
+  serialize :extra_info
+
   # Raw SQL to delete changesets and changes in the database
   # has_many :changesets, :dependent => :destroy is too slow for big repositories
   before_destroy :clear_changesets
@@ -69,6 +71,17 @@ class Repository < ActiveRecord::Base
 
   def scm_name
     self.class.scm_name
+  end
+
+  def merge_extra_info(arg)
+    h = extra_info || {}
+    return h if arg.nil?
+    h.merge!(arg)
+    write_attribute(:extra_info, h)
+  end
+
+  def report_last_commit
+    true
   end
 
   def supports_cat?

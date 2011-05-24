@@ -38,8 +38,15 @@ class Repository::Git < Repository
     'Git'
   end
 
+  def report_last_commit
+    extra_report_last_commit
+  end
+
   def extra_report_last_commit
-    true
+    return false if extra_info.nil?
+    v = extra_info["extra_report_last_commit"]
+    return false if v.nil?
+    v.to_s != '0'
   end
 
   def supports_directory_revisions?
@@ -82,53 +89,52 @@ class Repository::Git < Repository
   end
 
   # In Git and Mercurial, revisions are not in date order.
-  # Mercurial fixed issues.
+  # Redmine Mercurial fixed issues.
   #    * Redmine Takes Too Long On Large Mercurial Repository
   #      http://www.redmine.org/issues/3449
   #    * Sorting for changesets might go wrong on Mercurial repos
   #      http://www.redmine.org/issues/3567
+  #
   # Database revision column is text, so Redmine can not sort by revision.
   # Mercurial has revision number, and revision number guarantees revision order.
-  # Mercurial adapter uses "hg log -r 0:tip --limit 10"
+  # Redmine Mercurial model stored revisions ordered by database id to database.
+  # So, Redmine Mercurial model can use correct ordering revisions.
+  #
+  # Redmine Mercurial adapter uses "hg log -r 0:tip --limit 10"
   # to get limited revisions from old to new.
-  # And Mercurial model stored revisions ordered by database id in database.
-  # So, Mercurial can use correct order revisions.
-  #
   # But, Git 1.7.3.4 does not support --reverse with -n or --skip.
-  #
-  # With SCM's that have a sequential commit numbering, redmine is able to be
-  # clever and only fetch changesets going forward from the most recent one
-  # it knows about.
-  # However, with git, you never know if people have merged
-  # commits into the middle of the repository history, so we should parse
-  # the entire log.
-  #
-  # Since it's way too slow for large repositories,
-  # we only parse 1 week before the last known commit.
   #
   # The repository can still be fully reloaded by calling #clear_changesets
   # before fetching changesets (eg. for offline resync)
   def fetch_changesets
-    c = changesets.find(:first, :order => 'committed_on DESC')
-    since = (c ? c.committed_on - 7.days : nil)
-
-    revisions = scm.revisions('', nil, nil, {:all => true, :since => since, :reverse => true})
-    return if revisions.nil? || revisions.empty?
-
-    recent_changesets = changesets.find(:all, :conditions => ['committed_on >= ?', since])
-
-    # Clean out revisions that are no longer in git
-    recent_changesets.each {|c| c.destroy unless revisions.detect {|r| r.scmid.to_s == c.scmid.to_s }}
-
-    # Subtract revisions that redmine already knows about
-    recent_revisions = recent_changesets.map{|c| c.scmid}
-    revisions.reject!{|r| recent_revisions.include?(r.scmid)}
-
-    # Save the remaining ones to the database
-    unless revisions.nil?
-      revisions.each do |rev|
+    scm_brs = branches
+    return if scm_brs.nil? || scm_brs.empty?
+    h1 = extra_info || {}
+    h  = h1.dup
+    h["branches"]       ||= {}
+    h["db_consistent"]  ||= {}
+    if changesets.count == 0
+      h["db_consistent"]["ordering"] = 1
+      merge_extra_info(h)
+      self.save
+    elsif ! h["db_consistent"].has_key?("ordering")
+      h["db_consistent"]["ordering"] = 0
+      merge_extra_info(h)
+      self.save
+    end
+    scm_brs.each do |br|
+      from_scmid = nil
+      from_scmid = h["branches"][br]["last_scmid"] if h["branches"][br]
+      h["branches"][br] ||= {}
+      scm.revisions('', from_scmid, br, {:reverse => true}) do |rev|
+        db_rev = find_changeset_by_name(rev.revision)
         transaction do
-          save_revision(rev)
+          if db_rev.nil?
+            save_revision(rev)
+          end
+          h["branches"][br]["last_scmid"] = rev.scmid
+          merge_extra_info(h)
+          self.save
         end
       end
     end

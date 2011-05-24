@@ -1,14 +1,14 @@
 require File.expand_path('../../../../../../test_helper', __FILE__)
 begin
   require 'mocha'
-  
+
   class CvsAdapterTest < ActiveSupport::TestCase
-    
+
     REPOSITORY_PATH = RAILS_ROOT.gsub(%r{config\/\.\.}, '') + '/tmp/test/cvs_repository'
     REPOSITORY_PATH.gsub!(/\//, "\\") if Redmine::Platform.mswin?
     MODULE_NAME = 'test'
 
-    if File.directory?(REPOSITORY_PATH)  
+    if File.directory?(REPOSITORY_PATH)
       def setup
         @adapter = Redmine::Scm::Adapters::CvsAdapter.new(MODULE_NAME, REPOSITORY_PATH)
       end
@@ -45,6 +45,22 @@ begin
         assert_equal 2, entries.size
         assert_equal entries[0].name, "watchers_controller.rb"
         assert_equal entries[0].lastrev.time, Time.gm(2007, 12, 13, 16, 27, 22)
+      end
+
+      def test_path_encoding_default_utf8
+        adpt1 = Redmine::Scm::Adapters::CvsAdapter.new(
+                                  MODULE_NAME,
+                                  REPOSITORY_PATH
+                                )
+        assert_equal "UTF-8", adpt1.path_encoding
+        adpt2 = Redmine::Scm::Adapters::CvsAdapter.new(
+                                  MODULE_NAME,
+                                  REPOSITORY_PATH,
+                                  nil,
+                                  nil,
+                                  ""
+                                )
+        assert_equal "UTF-8", adpt2.path_encoding
       end
 
       private
