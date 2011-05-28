@@ -59,9 +59,10 @@ module Redmine
 
         # Get info about the repository
         def info
-          cmd = "#{self.class.sq_bin} revno #{target('')}"
+          cmd_args = %w|revno|
+          cmd_args << bzr_target('')
           info = nil
-          shellout(cmd) do |io|
+          scm_cmd(*cmd_args) do |io|
             if io.read =~ %r{^(\d+)\r?$}
               info = Info.new({:root_url => url,
                                :lastrev => Revision.new({
@@ -70,9 +71,8 @@ module Redmine
                              })
             end
           end
-          return nil if $? && $?.exitstatus != 0
           info
-        rescue CommandFailed
+        rescue ScmCommandAborted
           return nil
         end
 
@@ -81,11 +81,11 @@ module Redmine
         def entries(path=nil, identifier=nil, options={})
           path ||= ''
           entries = Entries.new
-          cmd = "#{self.class.sq_bin} ls -v --show-ids"
           identifier = -1 unless identifier && identifier.to_i > 0
-          cmd << " -r#{identifier.to_i}"
-          cmd << " #{target(path)}"
-          shellout(cmd) do |io|
+          cmd_args = %w|ls -v --show-ids|
+          cmd_args << "-r#{identifier.to_i}"
+          cmd_args << bzr_target(path)
+          scm_cmd(*cmd_args) do |io|
             prefix = "#{url}/#{path}".gsub('\\', '/')
             logger.debug "PREFIX: #{prefix}"
             re = %r{^V\s+(#{Regexp.escape(prefix)})?(\/?)([^\/]+)(\/?)\s+(\S+)\r?$}
@@ -99,9 +99,12 @@ module Redmine
                                   })
             end
           end
-          return nil if $? && $?.exitstatus != 0
-          logger.debug("Found #{entries.size} entries in the repository for #{target(path)}") if logger && logger.debug?
+          if logger && logger.debug?
+            logger.debug("Found #{entries.size} entries in the repository for #{target(path)}")
+          end
           entries.sort_by_name
+        rescue ScmCommandAborted
+          return nil
         end
 
         def revisions(path=nil, identifier_from=nil, identifier_to=nil, options={})
@@ -109,10 +112,12 @@ module Redmine
           identifier_from = (identifier_from and identifier_from.to_i > 0) ? identifier_from.to_i : 'last:1'
           identifier_to = (identifier_to and identifier_to.to_i > 0) ? identifier_to.to_i : 1
           revisions = Revisions.new
-          cmd = "#{self.class.sq_bin} log -v --show-ids -r#{identifier_to}..#{identifier_from} #{target(path)}"
-          shellout(cmd) do |io|
+          cmd_args = %w|log -v --show-ids|
+          cmd_args << "-r#{identifier_to}..#{identifier_from}"
+          cmd_args << bzr_target(path)
+          scm_cmd(*cmd_args) do |io|
             revision = nil
-            parsing = nil
+            parsing  = nil
             io.each_line do |line|
               if line =~ /^----/
                 revisions << revision if revision
@@ -160,8 +165,9 @@ module Redmine
             end
             revisions << revision if revision
           end
-          return nil if $? && $?.exitstatus != 0
           revisions
+        rescue ScmCommandAborted
+          return nil
         end
 
         def diff(path, identifier_from, identifier_to=nil)
@@ -174,37 +180,39 @@ module Redmine
           if identifier_from
             identifier_from = identifier_from.to_i
           end
-          cmd = "#{self.class.sq_bin} diff -r#{identifier_to}..#{identifier_from} #{target(path)}"
           diff = []
-          shellout(cmd) do |io|
+          cmd_args = %w|diff|
+          cmd_args << "-r#{identifier_to}..#{identifier_from}"
+          cmd_args << bzr_target(path)
+          scm_cmd_no_raise(*cmd_args) do |io|
             io.each_line do |line|
               diff << line
             end
           end
-          #return nil if $? && $?.exitstatus != 0
           diff
         end
 
         def cat(path, identifier=nil)
-          cmd = "#{self.class.sq_bin} cat"
-          cmd << " -r#{identifier.to_i}" if identifier && identifier.to_i > 0
-          cmd << " #{target(path)}"
           cat = nil
-          shellout(cmd) do |io|
+          cmd_args = %w|cat|
+          cmd_args << "-r#{identifier.to_i}" if identifier && identifier.to_i > 0
+          cmd_args << bzr_target(path)
+          scm_cmd(*cmd_args) do |io|
             io.binmode
             cat = io.read
           end
-          return nil if $? && $?.exitstatus != 0
           cat
+        rescue ScmCommandAborted
+          return nil
         end
 
         def annotate(path, identifier=nil)
-          cmd = "#{self.class.sq_bin} annotate --all"
-          cmd << " -r#{identifier.to_i}" if identifier && identifier.to_i > 0
-          cmd << " #{target(path)}"
           blame = Annotate.new
-          shellout(cmd) do |io|
-            author = nil
+          cmd_args = %w|annotate -q --all|
+          cmd_args << "-r#{identifier.to_i}" if identifier && identifier.to_i > 0
+          cmd_args << bzr_target(path)
+          scm_cmd(*cmd_args) do |io|
+            author     = nil
             identifier = nil
             io.each_line do |line|
               next unless line =~ %r{^(\d+) ([^|]+)\| (.*)$}
@@ -217,9 +225,81 @@ module Redmine
                   ))
             end
           end
-          return nil if $? && $?.exitstatus != 0
           blame
+        rescue ScmCommandAborted
+          return nil
         end
+
+        def self.branch_conf_path(path)
+          bcp = nil
+          m = path.match(%r{^(.*[/\\])\.bzr.*$})
+          if m
+            bcp = m[1]
+          else
+            bcp = path
+          end
+          bcp.gsub!(%r{[\/\\]$}, "")
+          if bcp
+            bcp = File.join(bcp, ".bzr", "branch", "branch.conf")
+          end
+          bcp
+        end
+
+        def append_revisions_only
+          return @aro if ! @aro.nil?
+          @aro = false
+          bcp = self.class.branch_conf_path(url)
+          if bcp && File.exist?(bcp)
+            begin
+              f = File::open(bcp, "r")
+              cnt = 0
+              f.each_line do |line|
+                l = line.chomp.to_s
+                if l =~ /^\s*append_revisions_only\s*=\s*(\w+)\s*$/
+                  str_aro = $1
+                  if str_aro.upcase == "TRUE"
+                    @aro = true
+                    cnt += 1
+                  elsif str_aro.upcase == "FALSE"
+                    @aro = false
+                    cnt += 1
+                  end
+                  if cnt > 1
+                    @aro = false
+                    break
+                  end
+                end
+              end
+            ensure
+              f.close
+            end
+          end
+          @aro
+        end
+
+        def scm_cmd(*args, &block)
+          full_args = [BZR_BIN]
+          full_args += args
+          ret = shellout(full_args.map { |e| shell_quote e.to_s }.join(' '), &block)
+          if $? && $?.exitstatus != 0
+            raise ScmCommandAborted, "bzr exited with non-zero status: #{$?.exitstatus}"
+          end
+          ret
+        end
+        private :scm_cmd
+
+        def scm_cmd_no_raise(*args, &block)
+          full_args = [BZR_BIN]
+          full_args += args
+          ret = shellout(full_args.map { |e| shell_quote e.to_s }.join(' '), &block)
+          ret
+        end
+        private :scm_cmd_no_raise
+
+        def bzr_target(path)
+          target(path, false)
+        end
+        private :bzr_target
       end
     end
   end

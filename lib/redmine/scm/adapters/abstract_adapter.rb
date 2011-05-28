@@ -24,6 +24,10 @@ module Redmine
       end
 
       class AbstractAdapter #:nodoc:
+
+        # raised if scm command exited with error, e.g. unknown revision.
+        class ScmCommandAborted < CommandFailed; end
+
         class << self
           def client_command
             ""
@@ -180,10 +184,14 @@ module Redmine
           info ? info.root_url : nil
         end
 
-        def target(path)
+        def target(path, sq=true)
           path ||= ''
           base = path.match(/^\//) ? root_url : url
-          shell_quote("#{base}/#{path}".gsub(/[?<>\*]/, ''))
+          str = "#{base}/#{path}".gsub(/[?<>\*]/, '')
+          if sq
+            str = shell_quote(str)
+          end
+          str
         end
 
         def logger

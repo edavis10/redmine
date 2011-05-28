@@ -26,7 +26,8 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
            :repositories, :enabled_modules
 
   # No '..' in the repository path
-  REPOSITORY_PATH = RAILS_ROOT.gsub(%r{config\/\.\.}, '') + '/tmp/test/bazaar_repository'
+  REPOSITORY_PATH = RAILS_ROOT.gsub(%r{config\/\.\.}, '') + 
+                         '/tmp/test/bazaar_repository/trunk'
   PRJ_ID = 3
 
   def setup
@@ -43,14 +44,6 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
   end
 
   if File.directory?(REPOSITORY_PATH)
-    def test_show
-      get :show, :id => PRJ_ID
-      assert_response :success
-      assert_template 'show'
-      assert_not_nil assigns(:entries)
-      assert_not_nil assigns(:changesets)
-    end
-
     def test_browse_root
       get :show, :id => PRJ_ID
       assert_response :success
@@ -132,10 +125,23 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
       get :annotate, :id => PRJ_ID, :path => ['doc-mkdir.txt']
       assert_response :success
       assert_template 'annotate'
-      # Line 2, revision 3
-      assert_tag :tag => 'th', :content => /2/,
-                 :sibling => { :tag => 'td', :child => { :tag => 'a', :content => /3/ } },
-                 :sibling => { :tag => 'td', :content => /jsmith/ },
+      assert_tag :tag => 'th', :content => '2',
+                 :sibling => {
+                    :tag => 'td',
+                    :child => {
+                       :tag => 'a',
+                       :content => /3/
+                       }
+                    },
+                 :sibling => { :tag => 'td', :content => /jsmith/ }
+      assert_tag :tag => 'th', :content => '2',
+                 :sibling => {
+                    :tag => 'td',
+                    :child => {
+                       :tag => 'a',
+                       :content => /3/
+                       }
+                    },
                  :sibling => { :tag => 'td', :content => /Main purpose/ }
     end
   else
