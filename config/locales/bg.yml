@@ -946,6 +946,8 @@ bg:
   text_mercurial_repository_note: Локално хранилище (например /hgrepo, c:\hgrepo)
   text_scm_command: SCM команда
   text_scm_command_version: Версия
+  text_scm_config: Можете да конфигурирате SCM командите в config/configuration.yml. За да активирате промените, рестартирайте Redmine.
+  text_scm_command_not_available: SCM командата не е налична или достъпна. Проверете конфигурацията в административния панел.
 
   default_role_manager: Мениджър
   default_role_developer: Разработчик
