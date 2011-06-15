@@ -24,8 +24,12 @@ class PdfTest < ActiveSupport::TestCase
   def test_fix_text_encoding_nil
     set_language_if_valid 'ja'
     assert_equal 'CP932', l(:general_pdf_encoding)
-    if RUBY_VERSION < '1.9'
-      ic = Iconv.new(l(:general_pdf_encoding), 'UTF-8')
+    if RUBY_VERSION < '1.9' 
+      if RUBY_PLATFORM == 'java'
+        ic = Iconv.new("SJIS", 'UTF-8')
+      else
+        ic = Iconv.new(l(:general_pdf_encoding), 'UTF-8')
+      end
     end
     assert_equal '', Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, nil)
   end
@@ -34,7 +38,11 @@ class PdfTest < ActiveSupport::TestCase
     set_language_if_valid 'ja'
     assert_equal 'CP932', l(:general_pdf_encoding)
     if RUBY_VERSION < '1.9'
-      ic = Iconv.new(l(:general_pdf_encoding), 'UTF-8')
+      if RUBY_PLATFORM == 'java'
+        ic = Iconv.new("SJIS", 'UTF-8')
+      else
+        ic = Iconv.new(l(:general_pdf_encoding), 'UTF-8')
+      end
     end
     utf8_txt_1  = "\xe7\x8b\x80\xe6\x85\x8b"
     utf8_txt_2  = "\xe7\x8b\x80\xe6\x85\x8b\xe7\x8b\x80"
@@ -49,6 +57,13 @@ class PdfTest < ActiveSupport::TestCase
       assert_equal "ASCII-8BIT", txt_1.encoding.to_s
       assert_equal "ASCII-8BIT", txt_2.encoding.to_s
       assert_equal "ASCII-8BIT", txt_3.encoding.to_s
+    elsif RUBY_PLATFORM == 'java'
+      assert_equal "??",
+                   Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, utf8_txt_1)
+      assert_equal "???",
+                   Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, utf8_txt_2)
+      assert_equal "????",
+                   Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, utf8_txt_3)
     else
       assert_equal "???\x91\xd4",
                    Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, utf8_txt_1)
@@ -87,7 +102,11 @@ class PdfTest < ActiveSupport::TestCase
     str1.force_encoding("UTF-8") if str1.respond_to?(:force_encoding)
     str2.force_encoding("ASCII-8BIT") if str2.respond_to?(:force_encoding)
     if RUBY_VERSION < '1.9'
-      ic = Iconv.new(l(:general_pdf_encoding), 'UTF-8')
+      if RUBY_PLATFORM == 'java'
+        ic = Iconv.new("SJIS", 'UTF-8')
+      else
+        ic = Iconv.new(l(:general_pdf_encoding), 'UTF-8')
+      end
     end
     txt_1 = Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, str1)
     txt_2 = Redmine::Export::PDF::RDMPdfEncoding::rdm_pdf_iconv(ic, str2)

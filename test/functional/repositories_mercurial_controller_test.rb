@@ -22,11 +22,10 @@ require 'repositories_controller'
 class RepositoriesController; def rescue_action(e) raise e end; end
 
 class RepositoriesMercurialControllerTest < ActionController::TestCase
-  fixtures :projects, :users, :roles, :members, :member_roles, :repositories, :enabled_modules
+  fixtures :projects, :users, :roles, :members, :member_roles,
+           :repositories, :enabled_modules
 
-  # No '..' in the repository path
-  REPOSITORY_PATH = RAILS_ROOT.gsub(%r{config\/\.\.}, '') +
-                       '/tmp/test/mercurial_repository'
+  REPOSITORY_PATH = Rails.root.join('tmp/test/mercurial_repository').to_s
   CHAR_1_HEX = "\xc3\x9c"
   PRJ_ID     = 3
 
@@ -260,17 +259,19 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       @repository.reload
       [4, '4', 'def6d2f1254a'].each do |r1|
         # Full diff of changeset 4
-        get :diff, :id => PRJ_ID, :rev => r1
-        assert_response :success
-        assert_template 'diff'
-        if @diff_c_support
-          # Line 22 removed
-          assert_tag :tag => 'th',
-                     :content => '22',
-                     :sibling => { :tag => 'td',
-                                   :attributes => { :class => /diff_out/ },
-                                   :content => /def remove/ }
-          assert_tag :tag => 'h2', :content => /4:def6d2f1254a/
+        ['inline', 'sbs'].each do |dt|
+          get :diff, :id => PRJ_ID, :rev => r1, :type => dt
+          assert_response :success
+          assert_template 'diff'
+          if @diff_c_support
+            # Line 22 removed
+            assert_tag :tag => 'th',
+                       :content => '22',
+                       :sibling => { :tag => 'td',
+                                     :attributes => { :class => /diff_out/ },
+                                     :content => /def remove/ }
+            assert_tag :tag => 'h2', :content => /4:def6d2f1254a/
+          end
         end
       end
     end
@@ -280,14 +281,19 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       @repository.reload
       [2, '400bb8672109', '400', 400].each do |r1|
         [4, 'def6d2f1254a'].each do |r2|
-          get :diff, :id => PRJ_ID, :rev    => r1,
-                                    :rev_to => r2
-          assert_response :success
-          assert_template 'diff'
-
-          diff = assigns(:diff)
-          assert_not_nil diff
-          assert_tag :tag => 'h2', :content => /4:def6d2f1254a 2:400bb8672109/
+          ['inline', 'sbs'].each do |dt|
+            get :diff,
+                :id     => PRJ_ID,
+                :rev    => r1,
+                :rev_to => r2,
+                :type => dt
+            assert_response :success
+            assert_template 'diff'
+            diff = assigns(:diff)
+            assert_not_nil diff
+            assert_tag :tag => 'h2',
+                       :content => /4:def6d2f1254a 2:400bb8672109/
+          end
         end
       end
     end
@@ -295,23 +301,25 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
     def test_diff_latin_1_path
       with_settings :repositories_encodings => 'UTF-8,ISO-8859-1' do
         [21, 'adf805632193'].each do |r1|
-          get :diff, :id => PRJ_ID, :rev => r1
-          assert_response :success
-          assert_template 'diff'
-          assert_tag :tag => 'thead',
-                     :descendant => {
-                       :tag => 'th',
-                       :attributes => { :class => 'filename' } ,
-                       :content => /latin-1-dir\/test-#{@char_1}-2.txt/ ,
-                      },
-                     :sibling => {
-                       :tag => 'tbody',
+          ['inline', 'sbs'].each do |dt|
+            get :diff, :id => PRJ_ID, :rev => r1, :type => dt
+            assert_response :success
+            assert_template 'diff'
+            assert_tag :tag => 'thead',
                        :descendant => {
-                          :tag => 'td',
-                          :attributes => { :class => /diff_in/ },
-                          :content => /It is written in Python/
+                         :tag => 'th',
+                         :attributes => { :class => 'filename' } ,
+                         :content => /latin-1-dir\/test-#{@char_1}-2.txt/ ,
+                        },
+                       :sibling => {
+                         :tag => 'tbody',
+                         :descendant => {
+                            :tag => 'td',
+                            :attributes => { :class => /diff_in/ },
+                            :content => /It is written in Python/
+                         }
                        }
-                     }
+          end
         end
       end
     end
@@ -343,6 +351,17 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
                  :content => '23',
                  :attributes => { :class => 'line-num' },
                  :sibling => { :tag => 'td', :content => /watcher =/ }
+    end
+
+    def test_annotate_not_in_tip
+      @repository.fetch_changesets
+      @repository.reload
+      assert @repository.changesets.size > 0
+
+      get :annotate, :id => PRJ_ID,
+          :path => ['sources', 'welcome_controller.rb']
+      assert_response 404
+      assert_error_tag :content => /was not found/
     end
 
     def test_annotate_at_given_revision

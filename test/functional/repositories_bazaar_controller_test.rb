@@ -25,9 +25,7 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
   fixtures :projects, :users, :roles, :members, :member_roles,
            :repositories, :enabled_modules
 
-  # No '..' in the repository path
-  REPOSITORY_PATH = RAILS_ROOT.gsub(%r{config\/\.\.}, '') + 
-                         '/tmp/test/bazaar_repository/trunk'
+  REPOSITORY_PATH = Rails.root.join('tmp/test/bazaar_repository/trunk').to_s
   PRJ_ID = 3
 
   def setup
@@ -110,15 +108,17 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
 
     def test_diff
       # Full diff of changeset 3
-      get :diff, :id => PRJ_ID, :rev => 3
-      assert_response :success
-      assert_template 'diff'
-      # Line 11 removed
-      assert_tag :tag => 'th',
-                 :content => /11/,
-                 :sibling => { :tag => 'td',
-                               :attributes => { :class => /diff_out/ },
-                               :content => /Display more information/ }
+      ['inline', 'sbs'].each do |dt|
+        get :diff, :id => PRJ_ID, :rev => 3, :type => dt
+        assert_response :success
+        assert_template 'diff'
+        # Line 11 removed
+        assert_tag :tag => 'th',
+                   :content => '11',
+                   :sibling => { :tag => 'td',
+                                 :attributes => { :class => /diff_out/ },
+                                 :content => /Display more information/ }
+      end
     end
 
     def test_annotate
@@ -130,18 +130,20 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
                     :tag => 'td',
                     :child => {
                        :tag => 'a',
-                       :content => /3/
+                       :content => '3'
                        }
-                    },
+                    }
+      assert_tag :tag => 'th', :content => '2',
                  :sibling => { :tag => 'td', :content => /jsmith/ }
       assert_tag :tag => 'th', :content => '2',
                  :sibling => {
                     :tag => 'td',
                     :child => {
                        :tag => 'a',
-                       :content => /3/
+                       :content => '3'
                        }
-                    },
+                    }
+      assert_tag :tag => 'th', :content => '2',
                  :sibling => { :tag => 'td', :content => /Main purpose/ }
     end
   else

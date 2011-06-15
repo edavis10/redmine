@@ -22,13 +22,21 @@ require 'repositories_controller'
 class RepositoriesController; def rescue_action(e) raise e end; end
 
 class RepositoriesGitControllerTest < ActionController::TestCase
-  fixtures :projects, :users, :roles, :members, :member_roles, :repositories, :enabled_modules
+  fixtures :projects, :users, :roles, :members, :member_roles,
+           :repositories, :enabled_modules
 
-  # No '..' in the repository path
-  REPOSITORY_PATH = RAILS_ROOT.gsub(%r{config\/\.\.}, '') + '/tmp/test/git_repository'
+  REPOSITORY_PATH = Rails.root.join('tmp/test/git_repository').to_s
   REPOSITORY_PATH.gsub!(/\//, "\\") if Redmine::Platform.mswin?
   PRJ_ID     = 3
   CHAR_1_HEX = "\xc3\x9c"
+
+  ## Git, Mercurial and CVS path encodings are binary.
+  ## Subversion supports URL encoding for path.
+  ## Redmine Mercurial adapter and extension use URL encoding.
+  ## Git accepts only binary path in command line parameter.
+  ## So, there is no way to use binary command line parameter in JRuby.
+  JRUBY_SKIP     = (RUBY_PLATFORM == 'java')
+  JRUBY_SKIP_STR = "TODO: This test fails in JRuby"
 
   def setup
     @ruby19_non_utf8_pass =
@@ -48,6 +56,8 @@ class RepositoriesGitControllerTest < ActionController::TestCase
     if @char_1.respond_to?(:force_encoding)
       @char_1.force_encoding('UTF-8')
     end
+
+    Setting.default_language = 'en'
   end
 
   if File.directory?(REPOSITORY_PATH)
@@ -155,6 +165,8 @@ class RepositoriesGitControllerTest < ActionController::TestCase
     def test_entry_show_latin_1
       if @ruby19_non_utf8_pass
         puts_ruby19_non_utf8_pass()
+      elsif JRUBY_SKIP
+        puts JRUBY_SKIP_STR
       else
         with_settings :repositories_encodings => 'UTF-8,ISO-8859-1' do
           ['57ca437c', '57ca437c0acbbcb749821fdf3726a1367056d364'].each do |r1|
@@ -192,29 +204,59 @@ class RepositoriesGitControllerTest < ActionController::TestCase
       @repository.fetch_changesets
       @repository.reload
       # Full diff of changeset 2f9c0091
-      get :diff, :id => PRJ_ID, :rev => '2f9c0091c754a91af7a9c478e36556b4bde8dcf7'
-      assert_response :success
-      assert_template 'diff'
-      # Line 22 removed
-      assert_tag :tag => 'th',
-                 :content => /22/,
-                 :sibling => { :tag => 'td',
-                               :attributes => { :class => /diff_out/ },
-                               :content => /def remove/ }
-      assert_tag :tag => 'h2', :content => /2f9c0091/
+      ['inline', 'sbs'].each do |dt|
+        get :diff,
+            :id   => PRJ_ID,
+            :rev  => '2f9c0091c754a91af7a9c478e36556b4bde8dcf7',
+            :type => dt
+        assert_response :success
+        assert_template 'diff'
+        # Line 22 removed
+        assert_tag :tag => 'th',
+                   :content => /22/,
+                   :sibling => { :tag => 'td',
+                                 :attributes => { :class => /diff_out/ },
+                                 :content => /def remove/ }
+        assert_tag :tag => 'h2', :content => /2f9c0091/
+      end
+    end
+
+    def test_diff_truncated
+      @repository.fetch_changesets
+      @repository.reload
+      Setting.diff_max_lines_displayed = 5
+
+      # Truncated diff of changeset 2f9c0091
+      with_cache do
+        get :diff, :id   => PRJ_ID, :type => 'inline',
+            :rev  => '2f9c0091c754a91af7a9c478e36556b4bde8dcf7'
+        assert_response :success
+        assert @response.body.include?("... This diff was truncated")
+
+        Setting.default_language = 'fr'
+        get :diff, :id   => PRJ_ID, :type => 'inline',
+            :rev  => '2f9c0091c754a91af7a9c478e36556b4bde8dcf7'
+        assert_response :success
+        assert ! @response.body.include?("... This diff was truncated")
+        assert @response.body.include?("... Ce diff")
+      end
     end
 
     def test_diff_two_revs
       @repository.fetch_changesets
       @repository.reload
-      get :diff, :id => PRJ_ID,
-          :rev    => '61b685fbe55ab05b5ac68402d5720c1a6ac973d1',
-          :rev_to => '2f9c0091c754a91af7a9c478e36556b4bde8dcf7'
-      assert_response :success
-      assert_template 'diff'
-      diff = assigns(:diff)
-      assert_not_nil diff
-      assert_tag :tag => 'h2', :content => /2f9c0091:61b685fb/
+      ['inline', 'sbs'].each do |dt|
+        get :diff,
+            :id     => PRJ_ID,
+            :rev    => '61b685fbe55ab05b5ac68402d5720c1a6ac973d1',
+            :rev_to => '2f9c0091c754a91af7a9c478e36556b4bde8dcf7',
+            :type   => dt
+        assert_response :success
+        assert_template 'diff'
+        diff = assigns(:diff)
+        assert_not_nil diff
+        assert_tag :tag => 'h2', :content => /2f9c0091:61b685fb/
+      end
     end
 
     def test_diff_latin_1
@@ -223,23 +265,25 @@ class RepositoriesGitControllerTest < ActionController::TestCase
       else
         with_settings :repositories_encodings => 'UTF-8,ISO-8859-1' do
           ['57ca437c', '57ca437c0acbbcb749821fdf3726a1367056d364'].each do |r1|
-            get :diff, :id => PRJ_ID, :rev => r1
-            assert_response :success
-            assert_template 'diff'
-            assert_tag :tag => 'thead',
-                       :descendant => {
-                         :tag => 'th',
-                         :attributes => { :class => 'filename' } ,
-                         :content => /latin-1-dir\/test-#{@char_1}.txt/ ,
-                        },
-                       :sibling => {
-                         :tag => 'tbody',
+            ['inline', 'sbs'].each do |dt|
+              get :diff, :id => PRJ_ID, :rev => r1, :type => dt
+              assert_response :success
+              assert_template 'diff'
+              assert_tag :tag => 'thead',
                          :descendant => {
-                            :tag => 'td',
-                            :attributes => { :class => /diff_in/ },
-                            :content => /test-#{@char_1}.txt/
+                           :tag => 'th',
+                           :attributes => { :class => 'filename' } ,
+                           :content => /latin-1-dir\/test-#{@char_1}.txt/ ,
+                          },
+                         :sibling => {
+                           :tag => 'tbody',
+                           :descendant => {
+                              :tag => 'td',
+                              :attributes => { :class => /diff_in/ },
+                              :content => /test-#{@char_1}.txt/
+                           }
                          }
-                       }
+            end
           end
         end
       end
@@ -255,18 +299,20 @@ class RepositoriesGitControllerTest < ActionController::TestCase
                     :tag => 'td',
                     :child => {
                        :tag => 'a',
-                       :content => /2f9c0091c754a91af7a9c478e36556b4bde8dcf7/
+                       :content => /2f9c0091/
                        }
-                    },
+                    }
+      assert_tag :tag => 'th', :content => '24',
                  :sibling => { :tag => 'td', :content => /jsmith/ }
       assert_tag :tag => 'th', :content => '24',
                  :sibling => {
                     :tag => 'td',
                     :child => {
                        :tag => 'a',
-                       :content => /2f9c0091c754a91af7a9c478e36556b4bde8dcf7/
+                       :content => /2f9c0091/
                        }
-                    },
+                    }
+      assert_tag :tag => 'th', :content => '24',
                  :sibling => { :tag => 'td', :content => /watcher =/ }
     end
 
@@ -290,6 +336,8 @@ class RepositoriesGitControllerTest < ActionController::TestCase
     def test_annotate_latin_1
       if @ruby19_non_utf8_pass
         puts_ruby19_non_utf8_pass()
+      elsif JRUBY_SKIP
+        puts JRUBY_SKIP_STR
       else
         with_settings :repositories_encodings => 'UTF-8,ISO-8859-1' do
           ['57ca437c', '57ca437c0acbbcb749821fdf3726a1367056d364'].each do |r1|
@@ -335,5 +383,13 @@ class RepositoriesGitControllerTest < ActionController::TestCase
   else
     puts "Git test repository NOT FOUND. Skipping functional tests !!!"
     def test_fake; assert true end
+  end
+
+  private
+  def with_cache(&block)
+    before = ActionController::Base.perform_caching
+    ActionController::Base.perform_caching = true
+    block.call
+    ActionController::Base.perform_caching = before
   end
 end
