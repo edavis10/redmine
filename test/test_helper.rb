@@ -5,12 +5,12 @@
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -19,7 +19,7 @@ ENV["RAILS_ENV"] = "test"
 require File.expand_path(File.dirname(__FILE__) + "/../config/environment")
 require 'test_help'
 require File.expand_path(File.dirname(__FILE__) + '/helper_testcase')
-require File.join(RAILS_ROOT,'test', 'mocks', 'open_id_authentication_mock.rb')
+require Rails.root.join('test', 'mocks', 'open_id_authentication_mock.rb')
 
 require File.expand_path(File.dirname(__FILE__) + '/object_daddy_helpers')
 include ObjectDaddyHelpers
@@ -106,26 +106,30 @@ class ActiveSupport::TestCase
     # LDAP is not listening
     return nil
   end
-  
+
   # Returns the path to the test +vendor+ repository
   def self.repository_path(vendor)
-    File.join(RAILS_ROOT.gsub(%r{config\/\.\.}, ''), "/tmp/test/#{vendor.downcase}_repository")
+    Rails.root.join("tmp/test/#{vendor.downcase}_repository").to_s
   end
-  
+
   # Returns the url of the subversion test repository
   def self.subversion_repository_url
     path = repository_path('subversion')
     path = '/' + path unless path.starts_with?('/')
     "file://#{path}"
   end
-  
+
   # Returns true if the +vendor+ test repository is configured
   def self.repository_configured?(vendor)
     File.directory?(repository_path(vendor))
   end
-  
+
   def assert_error_tag(options={})
     assert_tag({:attributes => { :id => 'errorExplanation' }}.merge(options))
+  end
+  
+  def assert_include(expected, s)
+    assert s.include?(expected), "\"#{expected}\" not found in \"#{s}\""
   end
 
   # Shoulda macros

@@ -27,7 +27,8 @@ class IssuesController < ApplicationController
   before_filter :find_optional_project, :only => [:index]
   before_filter :check_for_default_issue_status, :only => [:new, :create]
   before_filter :build_new_issue_from_params, :only => [:new, :create]
-  accept_key_auth :index, :show, :create, :update, :destroy
+  accept_rss_auth :index, :show
+  accept_api_auth :index, :show, :create, :update, :destroy
 
   rescue_from Query::StatementInvalid, :with => :query_statement_invalid
 
@@ -138,11 +139,11 @@ class IssuesController < ApplicationController
     call_hook(:controller_issues_new_before_save, { :params => params, :issue => @issue })
     if @issue.save
       attachments = Attachment.attach_files(@issue, params[:attachments])
-      render_attachment_warning_if_needed(@issue)
-      flash[:notice] = l(:notice_successful_create)
       call_hook(:controller_issues_new_after_save, { :params => params, :issue => @issue})
       respond_to do |format|
         format.html {
+          render_attachment_warning_if_needed(@issue)
+          flash[:notice] = l(:notice_issue_successful_create, :id => "<a href='#{issue_path(@issue)}'>##{@issue.id}</a>")
           redirect_to(params[:continue] ?  { :action => 'new', :project_id => @project, :issue => {:tracker_id => @issue.tracker, :parent_issue_id => @issue.parent_issue_id}.reject {|k,v| v.nil?} } :
                       { :action => 'show', :id => @issue })
         }

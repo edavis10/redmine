@@ -18,9 +18,6 @@
 require File.expand_path('../../test_helper', __FILE__)
 require 'issues_controller'
 
-# Re-raise errors caught by the controller.
-class IssuesController; def rescue_action(e) raise e end; end
-
 class IssuesControllerTest < ActionController::TestCase
   fixtures :projects,
            :users,
@@ -193,6 +190,30 @@ class IssuesControllerTest < ActionController::TestCase
     assert_not_nil assigns(:issues)
     assert_not_nil assigns(:issue_count_by_group)
   end
+  
+  def test_private_query_should_not_be_available_to_other_users
+    q = Query.create!(:name => "private", :user => User.find(2), :is_public => false, :project => nil)
+    @request.session[:user_id] = 3
+    
+    get :index, :query_id => q.id
+    assert_response 403
+  end
+  
+  def test_private_query_should_be_available_to_its_user
+    q = Query.create!(:name => "private", :user => User.find(2), :is_public => false, :project => nil)
+    @request.session[:user_id] = 2
+    
+    get :index, :query_id => q.id
+    assert_response :success
+  end
+  
+  def test_public_query_should_be_available_to_other_users
+    q = Query.create!(:name => "private", :user => User.find(2), :is_public => true, :project => nil)
+    @request.session[:user_id] = 3
+    
+    get :index, :query_id => q.id
+    assert_response :success
+  end
 
   def test_index_sort_by_field_not_included_in_columns
     Setting.issue_list_default_columns = %w(subject author)
@@ -267,6 +288,12 @@ class IssuesControllerTest < ActionController::TestCase
     assert_kind_of Hash, session[:query]
     assert_kind_of Array, session[:query][:column_names]
     assert_equal columns, session[:query][:column_names].map(&:to_s)
+
+    # ensure only these columns are kept in the selected columns list
+    assert_tag :tag => 'select', :attributes => { :id => 'selected_columns' },
+                                 :children => { :count => 3 }
+    assert_no_tag :tag => 'option', :attributes => { :value => 'project' },
+                                    :parent => { :tag => 'select', :attributes => { :id => "selected_columns" } }
   end
 
   def test_index_with_custom_field_column
@@ -531,13 +558,16 @@ class IssuesControllerTest < ActionController::TestCase
 
   def test_post_create_and_continue
     @request.session[:user_id] = 2
-    post :create, :project_id => 1,
-               :issue => {:tracker_id => 3,
-                          :subject => 'This is first issue',
-                          :priority_id => 5},
-               :continue => ''
-    assert_redirected_to :controller => 'issues', :action => 'new', :project_id => 'ecookbook',
-                         :issue => {:tracker_id => 3}
+    assert_difference 'Issue.count' do
+      post :create, :project_id => 1,
+        :issue => {:tracker_id => 3, :subject => 'This is first issue', :priority_id => 5},
+        :continue => ''
+    end
+    
+    issue = Issue.first(:order => 'id DESC')
+    assert_redirected_to :controller => 'issues', :action => 'new', :project_id => 'ecookbook', :issue => {:tracker_id => 3}
+    assert_not_nil flash[:notice], "flash was not set"
+    assert flash[:notice].include?("<a href='/issues/#{issue.id}'>##{issue.id}</a>"), "issue link not found in flash: #{flash[:notice]}"
   end
 
   def test_post_create_without_custom_fields_param

@@ -361,6 +361,34 @@ begin
         assert_equal "UTF-8", adpt2.path_encoding
       end
 
+      def test_cat_path_invalid
+        assert_nil @adapter.cat('invalid')
+      end
+
+      def test_cat_revision_invalid
+        assert     @adapter.cat('README')
+        assert_nil @adapter.cat('README', 'abcd1234efgh')
+      end
+
+      def test_diff_path_invalid
+        assert_equal [], @adapter.diff('invalid', '713f4944648826f5')
+      end
+
+      def test_diff_revision_invalid
+        assert_nil @adapter.diff(nil, 'abcd1234efgh')
+        assert_nil @adapter.diff(nil, '713f4944648826f5', 'abcd1234efgh')
+        assert_nil @adapter.diff(nil, 'abcd1234efgh', '713f4944648826f5')
+      end
+
+      def test_annotate_path_invalid
+        assert_nil @adapter.annotate('invalid')
+      end
+
+      def test_annotate_revision_invalid
+        assert     @adapter.annotate('README')
+        assert_nil @adapter.annotate('README', 'abcd1234efgh')
+      end
+
       private
 
       def test_scm_version_for(scm_command_version, version)

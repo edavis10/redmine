@@ -1,5 +1,5 @@
-# redMine - project management software
-# Copyright (C) 2006-2007  Jean-Philippe Lang
+# Redmine - project management software
+# Copyright (C) 2006-2011  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,15 +16,40 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class IssueRelationsController < ApplicationController
-  before_filter :find_issue, :find_project_from_association, :authorize
+  before_filter :find_issue, :find_project_from_association, :authorize, :only => [:index, :create]
+  before_filter :find_relation, :except => [:index, :create]
   
-  def new
+  accept_api_auth :index, :show, :create, :destroy
+  
+  def index
+    @relations = @issue.relations
+    
+    respond_to do |format|
+      format.html { render :nothing => true }
+      format.api
+    end
+  end
+  
+  def show
+    raise Unauthorized unless @relation.visible?
+
+    respond_to do |format|
+      format.html { render :nothing => true }
+      format.api
+    end
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+  
+  verify :method => :post, :only => :create, :render => {:nothing => true, :status => :method_not_allowed }
+  def create
     @relation = IssueRelation.new(params[:relation])
     @relation.issue_from = @issue
     if params[:relation] && m = params[:relation][:issue_to_id].to_s.match(/^#?(\d+)$/)
       @relation.issue_to = Issue.visible.find_by_id(m[1].to_i)
     end
-    @relation.save if request.post?
+    saved = @relation.save
+    
     respond_to do |format|
       format.html { redirect_to :controller => 'issues', :action => 'show', :id => @issue }
       format.js do
@@ -37,27 +62,39 @@ class IssueRelationsController < ApplicationController
           end
         end
       end
+      format.api { 
+        if saved
+          render :action => 'show', :status => :created, :location => relation_url(@relation)
+        else
+          render_validation_errors(@relation)
+        end
+      }
     end
   end
   
+  verify :method => :delete, :only => :destroy, :render => {:nothing => true, :status => :method_not_allowed }
   def destroy
-    relation = IssueRelation.find(params[:id])
-    if request.post? && @issue.relations.include?(relation)
-      relation.destroy
-      @issue.reload
-    end
+    raise Unauthorized unless @relation.deletable?
+    @relation.destroy
+    
     respond_to do |format|
       format.html { redirect_to :controller => 'issues', :action => 'show', :id => @issue }
-      format.js {
-        @relations = @issue.relations.select {|r| r.other_issue(@issue) && r.other_issue(@issue).visible? }
-        render(:update) {|page| page.replace_html "relations", :partial => 'issues/relations'}
-      }
+      format.js   { render(:update) {|page| page.remove "relation-#{@relation.id}"} }
+      format.api  { head :ok }
     end
+  rescue ActiveRecord::RecordNotFound
+    render_404
   end
   
 private
   def find_issue
     @issue = @object = Issue.find(params[:issue_id])
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+  
+  def find_relation
+    @relation = IssueRelation.find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render_404
   end

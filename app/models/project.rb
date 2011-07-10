@@ -118,6 +118,11 @@ class Project < ActiveRecord::Base
     visible(user).find(:all, :limit => count, :order => "created_on DESC")	
   end	
 
+  # Returns true if the project is visible to +user+ or to the current user.
+  def visible?(user=User.current)
+    user.allowed_to?(:view_project, self)
+  end
+  
   def self.visible_by(user=nil)
     ActiveSupport::Deprecation.warn "Project.visible_by is deprecated and will be removed in Redmine 1.3.0. Use Project.visible_condition instead."
     visible_condition(user || User.current)
@@ -544,7 +549,27 @@ class Project < ActiveRecord::Base
   def enabled_module_names
     enabled_modules.collect(&:name)
   end
-  
+
+  # Enable a specific module
+  #
+  # Examples:
+  #   project.enable_module!(:issue_tracking)
+  #   project.enable_module!("issue_tracking")
+  def enable_module!(name)
+    enabled_modules << EnabledModule.new(:name => name.to_s) unless module_enabled?(name)
+  end
+
+  # Disable a module if it exists
+  #
+  # Examples:
+  #   project.disable_module!(:issue_tracking)
+  #   project.disable_module!("issue_tracking")
+  #   project.disable_module!(project.enabled_modules.first)
+  def disable_module!(target)
+    target = enabled_modules.detect{|mod| target.to_s == mod.name} unless enabled_modules.include?(target)
+    target.destroy unless target.blank?
+  end
+
   safe_attributes 'name',
     'description',
     'homepage',

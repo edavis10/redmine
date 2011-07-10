@@ -107,6 +107,44 @@ class QueryTest < ActiveSupport::TestCase
     assert query.statement.include?("#{Issue.table_name}.done_ratio >= 40")
     find_issues_with_query(query)
   end
+  
+  def test_operator_greater_than_on_custom_field
+    f = IssueCustomField.create!(:name => 'filter', :field_format => 'int', :is_filter => true, :is_for_all => true)
+    query = Query.new(:project => Project.find(1), :name => '_')
+    query.add_filter("cf_#{f.id}", '>=', ['40'])
+    assert query.statement.include?("CAST(custom_values.value AS decimal(60,3)) >= 40")
+    find_issues_with_query(query)
+  end
+  
+  def test_operator_lesser_than
+    query = Query.new(:project => Project.find(1), :name => '_')
+    query.add_filter('done_ratio', '<=', ['30'])
+    assert query.statement.include?("#{Issue.table_name}.done_ratio <= 30")
+    find_issues_with_query(query)
+  end
+  
+  def test_operator_lesser_than_on_custom_field
+    f = IssueCustomField.create!(:name => 'filter', :field_format => 'int', :is_filter => true, :is_for_all => true)
+    query = Query.new(:project => Project.find(1), :name => '_')
+    query.add_filter("cf_#{f.id}", '<=', ['30'])
+    assert query.statement.include?("CAST(custom_values.value AS decimal(60,3)) <= 30")
+    find_issues_with_query(query)
+  end
+  
+  def test_operator_between
+    query = Query.new(:project => Project.find(1), :name => '_')
+    query.add_filter('done_ratio', '><', ['30', '40'])
+    assert_include "#{Issue.table_name}.done_ratio BETWEEN 30 AND 40", query.statement
+    find_issues_with_query(query)
+  end
+  
+  def test_operator_between_on_custom_field
+    f = IssueCustomField.create!(:name => 'filter', :field_format => 'int', :is_filter => true, :is_for_all => true)
+    query = Query.new(:project => Project.find(1), :name => '_')
+    query.add_filter("cf_#{f.id}", '><', ['30', '40'])
+    assert_include "CAST(custom_values.value AS decimal(60,3)) BETWEEN 30 AND 40", query.statement
+    find_issues_with_query(query)
+  end
 
   def test_operator_in_more_than
     Issue.find(7).update_attribute(:due_date, (Date.today + 15))
@@ -416,6 +454,16 @@ class QueryTest < ActiveSupport::TestCase
     assert q.editable_by?(admin)
     assert !q.editable_by?(manager)
     assert !q.editable_by?(developer)
+  end
+  
+  def test_visible_scope
+    query_ids = Query.visible(User.anonymous).map(&:id)
+    
+    assert query_ids.include?(1), 'public query on public project was not visible'
+    assert query_ids.include?(4), 'public query for all projects was not visible'
+    assert !query_ids.include?(2), 'private query on public project was visible'
+    assert !query_ids.include?(3), 'private query for all projects was visible'
+    assert !query_ids.include?(7), 'public query on private project was visible'
   end
 
   context "#available_filters" do

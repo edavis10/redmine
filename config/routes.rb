@@ -77,6 +77,7 @@ ActionController::Routing::Routes.draw do |map|
   end
 
   map.resources :issue_moves, :only => [:new, :create], :path_prefix => '/issues', :as => 'move'
+  map.resources :queries, :only => [:index]
 
   # Misc issue routes. TODO: move into resources
   map.auto_complete_issues '/issues/auto_complete', :controller => 'auto_completes', :action => 'issues'
@@ -110,15 +111,11 @@ ActionController::Routing::Routes.draw do |map|
   
   map.resources :issues, :member => { :edit => :post }, :collection => {} do |issues|
     issues.resources :time_entries, :controller => 'timelog'
+    issues.resources :relations, :shallow => true, :controller => 'issue_relations', :only => [:index, :show, :create, :destroy]
   end
   
   map.resources :issues, :path_prefix => '/projects/:project_id', :collection => { :create => :post } do |issues|
     issues.resources :time_entries, :controller => 'timelog'
-  end
-
-  map.with_options  :controller => 'issue_relations', :conditions => {:method => :post} do |relations|
-    relations.connect 'issues/:issue_id/relations/:id', :action => 'new'
-    relations.connect 'issues/:issue_id/relations/:id/destroy', :action => 'destroy'
   end
 
   map.connect 'projects/:id/members/new', :controller => 'members', :action => 'new'
@@ -156,7 +153,7 @@ ActionController::Routing::Routes.draw do |map|
   } do |project|
     project.resource :project_enumerations, :as => 'enumerations', :only => [:update, :destroy]
     project.resources :files, :only => [:index, :new, :create]
-    project.resources :versions, :collection => {:close_completed => :put}, :member => {:status_by => :post}
+    project.resources :versions, :shallow => true, :collection => {:close_completed => :put}, :member => {:status_by => :post}
     project.resources :news, :shallow => true
     project.resources :time_entries, :controller => 'timelog', :path_prefix => 'projects/:project_id'
 
@@ -235,7 +232,6 @@ ActionController::Routing::Routes.draw do |map|
   map.connect 'projects/:project_id/boards/:action/:id', :controller => 'boards'
   map.connect 'boards/:board_id/topics/:action/:id', :controller => 'messages'
   map.connect 'wiki/:id/:page/:action', :page => nil, :controller => 'wiki'
-  map.connect 'issues/:issue_id/relations/:action/:id', :controller => 'issue_relations'
   map.connect 'projects/:project_id/news/:action', :controller => 'news'  
   map.connect 'projects/:project_id/timelog/:action/:id', :controller => 'timelog', :project_id => /.+/
   map.with_options :controller => 'repositories' do |omap|

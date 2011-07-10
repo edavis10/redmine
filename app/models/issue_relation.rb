@@ -1,5 +1,5 @@
-# redMine - project management software
-# Copyright (C) 2006-2007  Jean-Philippe Lang
+# Redmine - project management software
+# Copyright (C) 2006-2011  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -43,11 +43,34 @@ class IssueRelation < ActiveRecord::Base
   
   attr_protected :issue_from_id, :issue_to_id
   
+  def visible?(user=User.current)
+    (issue_from.nil? || issue_from.visible?(user)) && (issue_to.nil? || issue_to.visible?(user))
+  end
+  
+  def deletable?(user=User.current)
+    visible?(user) &&
+      ((issue_from.nil? || user.allowed_to?(:manage_issue_relations, issue_from.project)) ||
+        (issue_to.nil? || user.allowed_to?(:manage_issue_relations, issue_to.project)))
+  end
+  
+  def after_initialize
+    if new_record?
+      if relation_type.blank?
+        self.relation_type = IssueRelation::TYPE_RELATES
+      end
+    end
+  end
+  
   def validate
     if issue_from && issue_to
       errors.add :issue_to_id, :invalid if issue_from_id == issue_to_id
       errors.add :issue_to_id, :not_same_project unless issue_from.project_id == issue_to.project_id || Setting.cross_project_issue_relations?
-      errors.add_to_base :circular_dependency if issue_to.all_dependent_issues.include? issue_from
+      #detect circular dependencies depending wether the relation should be reversed
+      if TYPES.has_key?(relation_type) && TYPES[relation_type][:reverse]
+        errors.add_to_base :circular_dependency if issue_from.all_dependent_issues.include? issue_to
+      else
+        errors.add_to_base :circular_dependency if issue_to.all_dependent_issues.include? issue_from
+      end
       errors.add_to_base :cant_link_an_issue_with_a_descendant if issue_from.is_descendant_of?(issue_to) || issue_from.is_ancestor_of?(issue_to)
     end
   end
@@ -102,6 +125,8 @@ class IssueRelation < ActiveRecord::Base
   private
   
   # Reverses the relation if needed so that it gets stored in the proper way
+  # Should not be reversed before validation so that it can be displayed back
+  # as entered on new relation form
   def reverse_if_needed
     if TYPES.has_key?(relation_type) && TYPES[relation_type][:reverse]
       issue_tmp = issue_to

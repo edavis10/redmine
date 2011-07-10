@@ -101,6 +101,7 @@ class Query < ActiveRecord::Base
                   "*"   => :label_all,
                   ">="  => :label_greater_or_equal,
                   "<="  => :label_less_or_equal,
+                  "><"  => :label_between,
                   "<t+" => :label_in_less_than,
                   ">t+" => :label_in_more_than,
                   "t+"  => :label_in,
@@ -122,7 +123,7 @@ class Query < ActiveRecord::Base
                                  :date_past => [ ">t-", "<t-", "t-", "t", "w" ],
                                  :string => [ "=", "~", "!", "!~" ],
                                  :text => [  "~", "!~" ],
-                                 :integer => [ "=", ">=", "<=", "!*", "*" ] }
+                                 :integer => [ "=", ">=", "<=", "><", "!*", "*" ] }
 
   cattr_reader :operators_by_filter_type
 
@@ -146,6 +147,16 @@ class Query < ActiveRecord::Base
   ]
   cattr_reader :available_columns
 
+  named_scope :visible, lambda {|*args|
+    user = args.shift || User.current
+    base = Project.allowed_to_condition(user, :view_issues, *args)
+    user_id = user.logged? ? user.id : 0
+    {
+      :conditions => ["(#{table_name}.project_id IS NULL OR (#{base})) AND (#{table_name}.is_public = ? OR #{table_name}.user_id = ?)", true, user_id],
+      :include => :project
+    }
+  }
+  
   def initialize(attributes = nil)
     super attributes
     self.filters ||= { 'status_id' => {:operator => "o", :values => [""]} }
@@ -164,6 +175,11 @@ class Query < ActiveRecord::Base
           # filter doesn't require any value
           ["o", "c", "!*", "*", "t", "w"].include? operator_for(field)
     end if filters
+  end
+  
+  # Returns true if the query is visible to +user+ or the current user.
+  def visible?(user=User.current)
+    (project.nil? || user.allowed_to?(:view_issues, project)) && (self.is_public? || self.user_id == user.id)
   end
 
   def editable_by?(user)
@@ -290,6 +306,10 @@ class Query < ActiveRecord::Base
 
   def values_for(field)
     has_filter?(field) ? filters[field][:values] : nil
+  end
+  
+  def value_for(field, index=0)
+    (values_for(field) || [])[index]
   end
 
   def label_for(field)
@@ -601,9 +621,23 @@ class Query < ActiveRecord::Base
       sql = "#{db_table}.#{db_field} IS NOT NULL"
       sql << " AND #{db_table}.#{db_field} <> ''" if is_custom_filter
     when ">="
-      sql = "#{db_table}.#{db_field} >= #{value.first.to_i}"
+      if is_custom_filter
+        sql = "CAST(#{db_table}.#{db_field} AS decimal(60,3)) >= #{value.first.to_i}"
+      else
+        sql = "#{db_table}.#{db_field} >= #{value.first.to_i}"
+      end
     when "<="
-      sql = "#{db_table}.#{db_field} <= #{value.first.to_i}"
+      if is_custom_filter
+        sql = "CAST(#{db_table}.#{db_field} AS decimal(60,3)) <= #{value.first.to_i}"
+      else
+        sql = "#{db_table}.#{db_field} <= #{value.first.to_i}"
+      end
+    when "><"
+      if is_custom_filter
+        sql = "CAST(#{db_table}.#{db_field} AS decimal(60,3)) BETWEEN #{value[0].to_i} AND #{value[1].to_i}"
+      else
+        sql = "#{db_table}.#{db_field} BETWEEN #{value[0].to_i} AND #{value[1].to_i}"
+      end
     when "o"
       sql = "#{IssueStatus.table_name}.is_closed=#{connection.quoted_false}" if field == "status_id"
     when "c"
@@ -631,6 +665,8 @@ class Query < ActiveRecord::Base
       sql = "LOWER(#{db_table}.#{db_field}) LIKE '%#{connection.quote_string(value.first.to_s.downcase)}%'"
     when "!~"
       sql = "LOWER(#{db_table}.#{db_field}) NOT LIKE '%#{connection.quote_string(value.first.to_s.downcase)}%'"
+    else
+      raise "Unknown query operator #{operator}"
     end
 
     return sql
@@ -649,6 +685,8 @@ class Query < ActiveRecord::Base
         options = { :type => :date, :order => 20 }
       when "bool"
         options = { :type => :list, :values => [[l(:general_text_yes), "1"], [l(:general_text_no), "0"]], :order => 20 }
+      when "int", "float"
+        options = { :type => :integer, :order => 20 }
       when "user", "version"
         next unless project
         options = { :type => :list_optional, :values => field.possible_values_options(project), :order => 20}
