@@ -39,7 +39,7 @@ module Redmine
           end
 
           def sq_bin
-            @@sq_bin ||= shell_quote(HG_BIN)
+            @@sq_bin ||= shell_quote_command
           end
 
           def client_version
@@ -95,6 +95,10 @@ module Redmine
           Info.new(:root_url => CGI.unescape(summary['repository']['root']),
                    :lastrev => Revision.new(:revision => tip['revision'],
                                             :scmid => tip['node']))
+        # rescue HgCommandAborted
+        rescue Exception => e
+          logger.error "hg: error during getting info: #{e.message}"
+          nil
         end
 
         def tags
@@ -290,11 +294,14 @@ module Redmine
         # Runs 'hg' command with the given args
         def hg(*args, &block)
           repo_path = root_url || url
-          full_args = [HG_BIN, '-R', repo_path, '--encoding', 'utf-8']
+          full_args = ['-R', repo_path, '--encoding', 'utf-8']
           full_args << '--config' << "extensions.redminehelper=#{HG_HELPER_EXT}"
           full_args << '--config' << 'diff.git=false'
           full_args += args
-          ret = shellout(full_args.map { |e| shell_quote e.to_s }.join(' '), &block)
+          ret = shellout(
+                   self.class.sq_bin + ' ' + full_args.map { |e| shell_quote e.to_s }.join(' '),
+                   &block
+                   )
           if $? && $?.exitstatus != 0
             raise HgCommandAborted, "hg exited with non-zero status: #{$?.exitstatus}"
           end

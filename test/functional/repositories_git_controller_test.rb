@@ -46,9 +46,10 @@ class RepositoriesGitControllerTest < ActionController::TestCase
     @request    = ActionController::TestRequest.new
     @response   = ActionController::TestResponse.new
     User.current = nil
+    @project    = Project.find(PRJ_ID)
     @repository = Repository::Git.create(
-                      :project => Project.find(3),
-                      :url     => REPOSITORY_PATH,
+                      :project       => @project,
+                      :url           => REPOSITORY_PATH,
                       :path_encoding => 'ISO-8859-1'
                       )
     assert @repository
@@ -371,6 +372,45 @@ class RepositoriesGitControllerTest < ActionController::TestCase
         assert_response 404
         assert_error_tag :content => /was not found/
       end
+    end
+
+    def test_destroy_valid_repository
+      @request.session[:user_id] = 1 # admin
+      @repository.fetch_changesets
+      @repository.reload
+      assert @repository.changesets.count > 0
+
+      get :destroy, :id => PRJ_ID
+      assert_response 302
+      @project.reload
+      assert_nil @project.repository
+    end
+
+    def test_destroy_invalid_repository
+      @request.session[:user_id] = 1 # admin
+      @repository.fetch_changesets
+      @repository.reload
+      assert @repository.changesets.count > 0
+
+      get :destroy, :id => PRJ_ID
+      assert_response 302
+      @project.reload
+      assert_nil @project.repository
+
+      @repository = Repository::Git.create(
+                      :project       => @project,
+                      :url           => "/invalid",
+                      :path_encoding => 'ISO-8859-1'
+                      )
+      assert @repository
+      @repository.fetch_changesets
+      @repository.reload
+      assert_equal 0, @repository.changesets.count
+
+      get :destroy, :id => PRJ_ID
+      assert_response 302
+      @project.reload
+      assert_nil @project.repository
     end
 
     private

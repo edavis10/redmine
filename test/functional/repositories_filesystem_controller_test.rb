@@ -36,8 +36,9 @@ class RepositoriesFilesystemControllerTest < ActionController::TestCase
     @response   = ActionController::TestResponse.new
     User.current = nil
     Setting.enabled_scm << 'Filesystem' unless Setting.enabled_scm.include?('Filesystem')
+    @project = Project.find(PRJ_ID)
     @repository = Repository::Filesystem.create(
-                      :project       => Project.find(PRJ_ID),
+                      :project       => @project,
                       :url           => REPOSITORY_PATH,
                       :path_encoding => ''
                       )
@@ -114,6 +115,36 @@ class RepositoriesFilesystemControllerTest < ActionController::TestCase
         assert_response :success
         assert_equal 'text/plain', @response.content_type
       end
+    end
+
+    def test_destroy_valid_repository
+      @request.session[:user_id] = 1 # admin
+
+      get :destroy, :id => PRJ_ID
+      assert_response 302
+      @project.reload
+      assert_nil @project.repository
+    end
+
+    def test_destroy_invalid_repository
+      @request.session[:user_id] = 1 # admin
+
+      get :destroy, :id => PRJ_ID
+      assert_response 302
+      @project.reload
+      assert_nil @project.repository
+
+      @repository = Repository::Filesystem.create(
+                      :project       => Project.find(PRJ_ID),
+                      :url           => "/invalid",
+                      :path_encoding => ''
+                      )
+      assert @repository
+
+      get :destroy, :id => PRJ_ID
+      assert_response 302
+      @project.reload
+      assert_nil @project.repository
     end
   else
     puts "Filesystem test repository NOT FOUND. Skipping functional tests !!!"

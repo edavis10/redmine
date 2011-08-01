@@ -22,7 +22,7 @@ class Issue < ActiveRecord::Base
   belongs_to :tracker
   belongs_to :status, :class_name => 'IssueStatus', :foreign_key => 'status_id'
   belongs_to :author, :class_name => 'User', :foreign_key => 'author_id'
-  belongs_to :assigned_to, :class_name => 'User', :foreign_key => 'assigned_to_id'
+  belongs_to :assigned_to, :class_name => 'Principal', :foreign_key => 'assigned_to_id'
   belongs_to :fixed_version, :class_name => 'Version', :foreign_key => 'fixed_version_id'
   belongs_to :priority, :class_name => 'IssuePriority', :foreign_key => 'priority_id'
   belongs_to :category, :class_name => 'IssueCategory', :foreign_key => 'category_id'
@@ -35,7 +35,7 @@ class Issue < ActiveRecord::Base
   has_many :relations_to, :class_name => 'IssueRelation', :foreign_key => 'issue_to_id', :dependent => :delete_all
 
   acts_as_nested_set :scope => 'root_id', :dependent => :destroy
-  acts_as_attachable :after_remove => :attachment_removed
+  acts_as_attachable :after_add => :attachment_added, :after_remove => :attachment_removed
   acts_as_customizable
   acts_as_watchable
   acts_as_searchable :columns => ['subject', "#{table_name}.description", "#{Journal.table_name}.notes"],
@@ -93,9 +93,11 @@ class Issue < ActiveRecord::Base
       when 'all'
         nil
       when 'default'
-        "(#{table_name}.is_private = #{connection.quoted_false} OR #{table_name}.author_id = #{user.id} OR #{table_name}.assigned_to_id = #{user.id})"
+        user_ids = [user.id] + user.groups.map(&:id)
+        "(#{table_name}.is_private = #{connection.quoted_false} OR #{table_name}.author_id = #{user.id} OR #{table_name}.assigned_to_id IN (#{user_ids}))"
       when 'own'
-        "(#{table_name}.author_id = #{user.id} OR #{table_name}.assigned_to_id = #{user.id})"
+        user_ids = [user.id] + user.groups.map(&:id)
+        "(#{table_name}.author_id = #{user.id} OR #{table_name}.assigned_to_id IN (#{user_ids}))"
       else
         '1=0'
       end
@@ -109,9 +111,9 @@ class Issue < ActiveRecord::Base
       when 'all'
         true
       when 'default'
-        !self.is_private? || self.author == user || self.assigned_to == user
+        !self.is_private? || self.author == user || user.is_or_belongs_to?(assigned_to)
       when 'own'
-        self.author == user || self.assigned_to == user
+        self.author == user || user.is_or_belongs_to?(assigned_to)
       else
         false
       end
@@ -449,6 +451,7 @@ class Issue < ActiveRecord::Base
   def assignable_users
     users = project.assignable_users
     users << author if author
+    users << assigned_to if assigned_to
     users.uniq.sort
   end
 
@@ -482,7 +485,13 @@ class Issue < ActiveRecord::Base
     # Author and assignee are always notified unless they have been
     # locked or don't want to be notified
     notified << author if author && author.active? && author.notify_about?(self)
-    notified << assigned_to if assigned_to && assigned_to.active? && assigned_to.notify_about?(self)
+    if assigned_to
+      if assigned_to.is_a?(Group)
+        notified += assigned_to.users.select {|u| u.active? && u.notify_about?(self)}
+      else
+        notified << assigned_to if assigned_to.active? && assigned_to.notify_about?(self)
+      end
+    end
     notified.uniq!
     # Remove users that can not view the issue
     notified.reject! {|user| !visible?(user)}
@@ -499,7 +508,17 @@ class Issue < ActiveRecord::Base
   end
 
   def relations
-    (relations_from + relations_to).sort
+    @relations ||= (relations_from + relations_to).sort
+  end
+  
+  # Preloads relations for a collection of issues
+  def self.load_relations(issues)
+    if issues.any?
+      relations = IssueRelation.all(:conditions => ["issue_from_id IN (:ids) OR issue_to_id IN (:ids)", {:ids => issues.map(&:id)}])
+      issues.each do |issue|
+        issue.instance_variable_set "@relations", relations.select {|r| r.issue_from_id == issue.id || r.issue_to_id == issue.id}
+      end
+    end
   end
   
   # Finds an issue relation given its id.
@@ -603,8 +622,6 @@ class Issue < ActiveRecord::Base
 
       if valid?
         attachments = Attachment.attach_files(self, params[:attachments])
-
-        attachments[:files].each {|a| @current_journal.details << JournalDetail.new(:property => 'attachment', :prop_key => a.id, :value => a.filename)}
         # TODO: Rename hook
         Redmine::Hook.call_hook(:controller_issues_edit_before_save, { :params => params, :issue => self, :time_entry => @time_entry, :journal => @current_journal})
         begin
@@ -831,6 +848,13 @@ class Issue < ActiveRecord::Base
         issue.fixed_version = nil
         issue.save
       end
+    end
+  end
+  
+  # Callback on attachment deletion
+  def attachment_added(obj)
+    if @current_journal && !obj.new_record?
+      @current_journal.details << JournalDetail.new(:property => 'attachment', :prop_key => obj.id, :value => obj.filename)
     end
   end
 

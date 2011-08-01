@@ -31,7 +31,7 @@ module Redmine
           end
 
           def sq_bin
-            @@sq_bin ||= shell_quote(BZR_BIN)
+            @@sq_bin ||= shell_quote_command
           end
 
           def client_version
@@ -278,9 +278,12 @@ module Redmine
         end
 
         def scm_cmd(*args, &block)
-          full_args = [BZR_BIN]
+          full_args = []
           full_args += args
-          ret = shellout(full_args.map { |e| shell_quote e.to_s }.join(' '), &block)
+          ret = shellout(
+                   self.class.sq_bin + ' ' + full_args.map { |e| shell_quote e.to_s }.join(' '),
+                   &block
+                   )
           if $? && $?.exitstatus != 0
             raise ScmCommandAborted, "bzr exited with non-zero status: #{$?.exitstatus}"
           end
@@ -289,9 +292,12 @@ module Redmine
         private :scm_cmd
 
         def scm_cmd_no_raise(*args, &block)
-          full_args = [BZR_BIN]
+          full_args = []
           full_args += args
-          ret = shellout(full_args.map { |e| shell_quote e.to_s }.join(' '), &block)
+          ret = shellout(
+                   self.class.sq_bin + ' ' + full_args.map { |e| shell_quote e.to_s }.join(' '),
+                   &block
+                   )
           ret
         end
         private :scm_cmd_no_raise

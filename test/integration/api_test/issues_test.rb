@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2010  Jean-Philippe Lang
+# Copyright (C) 2006-2011  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -40,13 +40,14 @@ class ApiTest::IssuesTest < ActionController::IntegrationTest
     :time_entries,
     :journals,
     :journal_details,
-    :queries
+    :queries,
+    :attachments
 
   def setup
     Setting.rest_api_enabled = '1'
   end
 
-  context "/index.xml" do
+  context "/issues" do
     # Use a private project to make sure auth is really working and not just
     # only showing public issues.
     should_allow_api_authentication(:get, "/projects/private-child/issues.xml")
@@ -100,6 +101,35 @@ class ApiTest::IssuesTest < ActionController::IntegrationTest
           }
       end
     end
+    
+    context "with relations" do
+      should "display relations" do
+        get '/issues.xml?include=relations'
+        
+        assert_response :success
+        assert_equal 'application/xml', @response.content_type
+        assert_tag 'relations',
+          :parent => {:tag => 'issue', :child => {:tag => 'id', :content => '3'}},
+          :children => {:count => 1},
+          :child => {
+            :tag => 'relation',
+            :attributes => {:id => '2', :issue_id => '2', :issue_to_id => '3', :relation_type => 'relates'}
+          }
+        assert_tag 'relations',
+          :parent => {:tag => 'issue', :child => {:tag => 'id', :content => '1'}},
+          :children => {:count => 0}
+      end
+    end
+    
+    context "with invalid query params" do
+      should "return errors" do
+        get '/issues.xml', {:f => ['start_date'], :op => {:start_date => '='}}
+        
+        assert_response :unprocessable_entity
+        assert_equal 'application/xml', @response.content_type
+        assert_tag 'errors', :child => {:tag => 'error', :content => "Start date can't be blank"}
+      end
+    end
   end
 
   context "/index.json" do
@@ -107,8 +137,6 @@ class ApiTest::IssuesTest < ActionController::IntegrationTest
   end
 
   context "/index.xml with filter" do
-    should_allow_api_authentication(:get, "/projects/private-child/issues.xml?status_id=5")
-
     should "show only issues with the status_id" do
       get '/issues.xml?status_id=5'
       assert_tag :tag => 'issues',
@@ -118,8 +146,6 @@ class ApiTest::IssuesTest < ActionController::IntegrationTest
   end
 
   context "/index.json with filter" do
-    should_allow_api_authentication(:get, "/projects/private-child/issues.json?status_id=5")
-
     should "show only issues with the status_id" do
       get '/issues.json?status_id=5'
 
@@ -201,6 +227,31 @@ class ApiTest::IssuesTest < ActionController::IntegrationTest
       end
     end
     
+    context "with attachments" do
+      context ".xml" do
+        should "display attachments" do
+          get '/issues/3.xml?include=attachments'
+          
+          assert_tag :tag => 'issue',
+            :child => {
+              :tag => 'attachments',
+              :children => {:count => 5},
+              :child => {
+                :tag => 'attachment',
+                :child => {
+                  :tag => 'filename',
+                  :content => 'source.rb',
+                  :sibling => {
+                    :tag => 'content_url',
+                    :content => 'http://www.example.com/attachments/download/4/source.rb'
+                  }
+                }
+              }
+            }
+        end
+      end
+    end
+    
     context "with subtasks" do
       setup do
         @c1 = Issue.generate!(:status_id => 1, :subject => "child c1", :tracker_id => 1, :project_id => 1, :parent_issue_id => 1)
@@ -278,11 +329,6 @@ class ApiTest::IssuesTest < ActionController::IntegrationTest
   end
   
   context "POST /issues.xml with failure" do
-    should_allow_api_authentication(:post,
-                                    '/issues.xml',
-                                    {:issue => {:project_id => 1}},
-                                    {:success_code => :unprocessable_entity})
-
     should "have an errors tag" do
       assert_no_difference('Issue.count') do
         post '/issues.xml', {:issue => {:project_id => 1}}, :authorization => credentials('jsmith')
@@ -313,11 +359,6 @@ class ApiTest::IssuesTest < ActionController::IntegrationTest
   end
   
   context "POST /issues.json with failure" do
-    should_allow_api_authentication(:post,
-                                    '/issues.json',
-                                    {:issue => {:project_id => 1}},
-                                    {:success_code => :unprocessable_entity})
-
     should "have an errors element" do
       assert_no_difference('Issue.count') do
         post '/issues.json', {:issue => {:project_id => 1}}, :authorization => credentials('jsmith')
@@ -391,11 +432,6 @@ class ApiTest::IssuesTest < ActionController::IntegrationTest
       @headers = { :authorization => credentials('jsmith') }
     end
 
-    should_allow_api_authentication(:put,
-                                    '/issues/6.xml',
-                                    {:issue => {:subject => ''}}, # Missing subject should fail
-                                    {:success_code => :unprocessable_entity})
-
     should "not create a new issue" do
       assert_no_difference('Issue.count') do
         put '/issues/6.xml', @parameters, @headers
@@ -459,11 +495,6 @@ class ApiTest::IssuesTest < ActionController::IntegrationTest
       @parameters = {:issue => {:subject => ''}}
       @headers = { :authorization => credentials('jsmith') }
     end
-
-    should_allow_api_authentication(:put,
-                                    '/issues/6.json',
-                                    {:issue => {:subject => ''}}, # Missing subject should fail
-                                    {:success_code => :unprocessable_entity})
 
     should "not create a new issue" do
       assert_no_difference('Issue.count') do

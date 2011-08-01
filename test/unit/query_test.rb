@@ -101,10 +101,35 @@ class QueryTest < ActiveSupport::TestCase
     find_issues_with_query(query)
   end
   
+  def test_numeric_filter_should_not_accept_non_numeric_values
+    query = Query.new(:name => '_')
+    query.add_filter('estimated_hours', '=', ['a'])
+    
+    assert query.has_filter?('estimated_hours')
+    assert !query.valid?
+  end
+  
+  def test_operator_is_on_float
+    Issue.update_all("estimated_hours = 171.2", "id=2")
+    
+    query = Query.new(:name => '_')
+    query.add_filter('estimated_hours', '=', ['171.20'])
+    issues = find_issues_with_query(query)
+    assert_equal 1, issues.size
+    assert_equal 2, issues.first.id
+  end
+  
   def test_operator_greater_than
     query = Query.new(:project => Project.find(1), :name => '_')
     query.add_filter('done_ratio', '>=', ['40'])
-    assert query.statement.include?("#{Issue.table_name}.done_ratio >= 40")
+    assert query.statement.include?("#{Issue.table_name}.done_ratio >= 40.0")
+    find_issues_with_query(query)
+  end
+  
+  def test_operator_greater_than_a_float
+    query = Query.new(:project => Project.find(1), :name => '_')
+    query.add_filter('estimated_hours', '>=', ['40.5'])
+    assert query.statement.include?("#{Issue.table_name}.estimated_hours >= 40.5")
     find_issues_with_query(query)
   end
   
@@ -112,14 +137,14 @@ class QueryTest < ActiveSupport::TestCase
     f = IssueCustomField.create!(:name => 'filter', :field_format => 'int', :is_filter => true, :is_for_all => true)
     query = Query.new(:project => Project.find(1), :name => '_')
     query.add_filter("cf_#{f.id}", '>=', ['40'])
-    assert query.statement.include?("CAST(custom_values.value AS decimal(60,3)) >= 40")
+    assert query.statement.include?("CAST(custom_values.value AS decimal(60,3)) >= 40.0")
     find_issues_with_query(query)
   end
   
   def test_operator_lesser_than
     query = Query.new(:project => Project.find(1), :name => '_')
     query.add_filter('done_ratio', '<=', ['30'])
-    assert query.statement.include?("#{Issue.table_name}.done_ratio <= 30")
+    assert query.statement.include?("#{Issue.table_name}.done_ratio <= 30.0")
     find_issues_with_query(query)
   end
   
@@ -127,14 +152,14 @@ class QueryTest < ActiveSupport::TestCase
     f = IssueCustomField.create!(:name => 'filter', :field_format => 'int', :is_filter => true, :is_for_all => true)
     query = Query.new(:project => Project.find(1), :name => '_')
     query.add_filter("cf_#{f.id}", '<=', ['30'])
-    assert query.statement.include?("CAST(custom_values.value AS decimal(60,3)) <= 30")
+    assert query.statement.include?("CAST(custom_values.value AS decimal(60,3)) <= 30.0")
     find_issues_with_query(query)
   end
   
   def test_operator_between
     query = Query.new(:project => Project.find(1), :name => '_')
     query.add_filter('done_ratio', '><', ['30', '40'])
-    assert_include "#{Issue.table_name}.done_ratio BETWEEN 30 AND 40", query.statement
+    assert_include "#{Issue.table_name}.done_ratio BETWEEN 30.0 AND 40.0", query.statement
     find_issues_with_query(query)
   end
   
@@ -142,7 +167,59 @@ class QueryTest < ActiveSupport::TestCase
     f = IssueCustomField.create!(:name => 'filter', :field_format => 'int', :is_filter => true, :is_for_all => true)
     query = Query.new(:project => Project.find(1), :name => '_')
     query.add_filter("cf_#{f.id}", '><', ['30', '40'])
-    assert_include "CAST(custom_values.value AS decimal(60,3)) BETWEEN 30 AND 40", query.statement
+    assert_include "CAST(custom_values.value AS decimal(60,3)) BETWEEN 30.0 AND 40.0", query.statement
+    find_issues_with_query(query)
+  end
+  
+  def test_date_filter_should_not_accept_non_date_values
+    query = Query.new(:name => '_')
+    query.add_filter('created_on', '=', ['a'])
+    
+    assert query.has_filter?('created_on')
+    assert !query.valid?
+  end
+  
+  def test_date_filter_should_not_accept_invalid_date_values
+    query = Query.new(:name => '_')
+    query.add_filter('created_on', '=', ['2011-01-34'])
+    
+    assert query.has_filter?('created_on')
+    assert !query.valid?
+  end
+  
+  def test_relative_date_filter_should_not_accept_non_integer_values
+    query = Query.new(:name => '_')
+    query.add_filter('created_on', '>t-', ['a'])
+    
+    assert query.has_filter?('created_on')
+    assert !query.valid?
+  end
+
+  def test_operator_date_equals
+    query = Query.new(:name => '_')
+    query.add_filter('due_date', '=', ['2011-07-10'])
+    assert_match /issues\.due_date > '2011-07-09 23:59:59(\.9+)?' AND issues\.due_date <= '2011-07-10 23:59:59(\.9+)?/, query.statement
+    find_issues_with_query(query)
+  end
+
+  def test_operator_date_lesser_than
+    query = Query.new(:name => '_')
+    query.add_filter('due_date', '<=', ['2011-07-10'])
+    assert_match /issues\.due_date <= '2011-07-10 23:59:59(\.9+)?/, query.statement
+    find_issues_with_query(query)
+  end
+
+  def test_operator_date_greater_than
+    query = Query.new(:name => '_')
+    query.add_filter('due_date', '>=', ['2011-07-10'])
+    assert_match /issues\.due_date > '2011-07-09 23:59:59(\.9+)?'/, query.statement
+    find_issues_with_query(query)
+  end
+
+  def test_operator_date_between
+    query = Query.new(:name => '_')
+    query.add_filter('due_date', '><', ['2011-06-23', '2011-07-10'])
+    assert_match /issues\.due_date > '2011-06-22 23:59:59(\.9+)?' AND issues\.due_date <= '2011-07-10 23:59:59(\.9+)?/, query.statement
     find_issues_with_query(query)
   end
 
@@ -257,6 +334,24 @@ class QueryTest < ActiveSupport::TestCase
     query.add_filter('subject', '!~', ['uNable'])
     assert query.statement.include?("LOWER(#{Issue.table_name}.subject) NOT LIKE '%unable%'")
     find_issues_with_query(query)
+  end
+  
+  def test_filter_assigned_to_me
+    user = User.find(2)
+    group = Group.find(10)
+    User.current = user
+    i1 = Issue.generate!(:project_id => 1, :tracker_id => 1, :assigned_to => user)
+    i2 = Issue.generate!(:project_id => 1, :tracker_id => 1, :assigned_to => group)
+    i3 = Issue.generate!(:project_id => 1, :tracker_id => 1, :assigned_to => Group.find(11))
+    group.users << user
+    
+    query = Query.new(:name => '_', :filters => { 'assigned_to_id' => {:operator => '=', :values => ['me']}})
+    result = query.issues
+    assert_equal Issue.visible.all(:conditions => {:assigned_to_id => ([2] + user.reload.group_ids)}).sort_by(&:id), result.sort_by(&:id)
+    
+    assert result.include?(i1)
+    assert result.include?(i2)
+    assert !result.include?(i3)
   end
   
   def test_filter_watched_issues
@@ -394,7 +489,21 @@ class QueryTest < ActiveSupport::TestCase
       q.issues(:conditions => "foo = 1")
     end
   end
-  
+
+  def test_issue_count
+    q = Query.new(:name => '_')
+    issue_count = q.issue_count
+    assert_equal q.issues.size, issue_count
+  end
+
+  def test_issue_count_with_archived_issues
+    p = Project.generate!( :status => Project::STATUS_ARCHIVED )
+    i = Issue.generate!( :project => p, :tracker => p.trackers.first )
+    assert !i.visible?
+
+    test_issue_count
+  end
+
   def test_issue_count_by_association_group
     q = Query.new(:name => '_', :group_by => 'assigned_to')
     count_by_group = q.issue_count_by_group
