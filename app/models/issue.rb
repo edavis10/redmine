@@ -281,7 +281,7 @@ class Issue < ActiveRecord::Base
   safe_attributes 'is_private',
     :if => lambda {|issue, user|
       user.allowed_to?(:set_issues_private, issue.project) ||
-        (issue.author == user && user.allowed_to?(:set_own_issues_private, issue.project))
+        ((issue.author == user || issue.author == nil) && user.allowed_to?(:set_own_issues_private, issue.project))
     }
 
   # Safely sets attributes
