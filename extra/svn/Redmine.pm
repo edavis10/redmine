@@ -62,6 +62,9 @@ Authen::Simple::LDAP (and IO::Socket::SSL if LDAPS is used):
      # RedmineDbWhereClause "and members.role_id IN (1,2)"
      ## Optional credentials cache size
      # RedmineCacheCredsMax 50
+     ## Optional Redmine project identifier 
+     # If not specified, identifier is generated from uri and location. 
+     # RedmineProjectId hoge
   </Location>
 
 To be able to browse repository inside redmine, you must add something
@@ -142,6 +145,11 @@ my @directives = (
     args_how => TAKE1,
     errmsg => 'RedmineCacheCredsMax must be decimal number',
   },
+  {
+    name => 'RedmineProjectId',
+    req_override => OR_AUTHCFG,
+    args_how => TAKE1,
+  },
 );
 
 sub RedmineDSN { 
@@ -177,6 +185,8 @@ sub RedmineCacheCredsMax {
     $self->{RedmineCacheCredsMax} = $arg;
   }
 }
+
+sub RedmineProjectId { set_val('RedmineProjectId', @_); }
 
 sub trim {
   my $string = shift;
@@ -371,9 +381,18 @@ sub is_member {
 
 sub get_project_identifier {
     my $r = shift;
-    
+    my $cfg = Apache2::Module::get_config(__PACKAGE__, $r->server, $r->per_dir_config);
+
     my $location = $r->location;
-    my ($identifier) = $r->uri =~ m{$location/*([^/]+)};
+    my $identifier;
+
+    if($cfg->{RedmineProjectId}) {        
+        $location =~ /([^\/]+)\Z/;
+	$identifier = $1
+    } else {
+        $identifier = $r->uri =~ m{$location/*([^/]+)};
+    }
+
     $identifier;
 }
 
