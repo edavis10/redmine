@@ -386,9 +386,8 @@ sub get_project_identifier {
     my $location = $r->location;
     my $identifier;
 
-    if($cfg->{RedmineProjectId}) {        
-        $location =~ /([^\/]+)\Z/;
-	$identifier = $1
+    if($cfg->{RedmineProjectId}) {
+	$identifier = $cfg->{RedmineProjectId};
     } else {
         $identifier = $r->uri =~ m{$location/*([^/]+)};
     }
