@@ -694,6 +694,7 @@ en:
   label_statistics: Statistics
   label_commits_per_month: Commits per month
   label_commits_per_weekday: Commits per weekday
+  label_commits_per_hour: Commits per hour
   label_commits_per_author: Commits per author
   label_diff: diff
   label_view_diff: View differences
