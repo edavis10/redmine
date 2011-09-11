@@ -228,6 +228,8 @@ class RepositoriesController < ApplicationController
     case params[:graph]
     when "commits_per_month"
       data = graph_commits_per_month(@repository)
+    when "commits_per_weekday"
+      data = graph_commits_per_weekday(@repository)
     when "commits_per_author"
       data = graph_commits_per_author(@repository)
     end
@@ -310,6 +312,50 @@ class RepositoriesController < ApplicationController
 
     graph.add_data(
       :data => changes_by_month[0..11].reverse,
+      :title => l(:label_change_plural)
+    )
+
+    graph.burn
+  end
+
+  def graph_commits_per_weekday(repository)
+    @date_to = Date.today
+    @date_from = @date_to << 11
+    @date_from = Date.civil(@date_from.year, @date_from.month, 1)
+    commits_by_day = repository.changesets.count(
+                          :all, :group => :commit_date,
+                          :conditions => ["commit_date BETWEEN ? AND ?", @date_from, @date_to])
+    commits_by_weekday = [0] * 7
+    commits_by_day.each {|c| commits_by_weekday[c.first.to_date.wday] += c.last }
+
+    changes_by_day = repository.changes.count(
+                          :all, :group => :commit_date,
+                          :conditions => ["commit_date BETWEEN ? AND ?", @date_from, @date_to])
+    changes_by_weekday = [0] * 7
+    changes_by_day.each {|c| changes_by_weekday[c.first.to_date.wday] += c.last }
+
+    fields = []
+    7.times {|d| fields << day_name(d)}
+
+    graph = SVG::Graph::Bar.new(
+      :height => 300,
+      :width => 800,
+      :fields => fields,
+      :stack => :side,
+      :scale_integers => true,
+      :step_x_labels => 1,
+      :show_data_values => false,
+      :graph_title => l(:label_commits_per_weekday),
+      :show_graph_title => true
+    )
+
+    graph.add_data(
+      :data => commits_by_weekday[0..6],
+      :title => l(:label_revision_plural)
+    )
+
+    graph.add_data(
+      :data => changes_by_weekday[0..6],
       :title => l(:label_change_plural)
     )
 
