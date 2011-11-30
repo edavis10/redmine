@@ -82,6 +82,14 @@
 
 </div>
 
+<% if User.current.wants_comments_in_reverse_order? && authorize_for('issues', 'edit') %>
+  <div id="update" style="display:none;">
+  <h3><%= l(:button_update) %></h3>
+  <%= render :partial => 'edit' %>
+  </div>
+  <div style="clear: both;"></div>
+<% end %>
+
 <% if @changesets.present? %>
 <div id="issue-changesets">
 <h3><%=l(:label_associated_revisions)%></h3>
@@ -101,7 +109,7 @@
 <%= render :partial => 'action_menu' %>
 
 <div style="clear: both;"></div>
-<% if authorize_for('issues', 'edit') %>
+<% if not User.current.wants_comments_in_reverse_order? && authorize_for('issues', 'edit') %>
   <div id="update" style="display:none;">
   <h3><%= l(:button_update) %></h3>
   <%= render :partial => 'edit' %>
