@@ -88,9 +88,9 @@ module ProjectsHelper
 		s = ''
     if project.issues.open.count > 0
       issues_closed_pourcent = (1 - project.issues.open.count.to_f/project.issues.count) * 100
-      s << "<div>Issues: " +
-        link_to("#{project.issues.open.count} open", :controller => 'issues', :action => 'index', :project_id => project, :set_filter => 1) +
-        "<small> / #{project.issues.count} total</small></div>" +
+      s << "<div>" + l(:label_issue_plural) + ": " +
+        link_to_if(project.issues.open.count > 0, l(:label_x_open_issues_abbr, :count => project.issues.open.count), :controller => 'issues', :action => 'index', :project_id => project, :set_filter => 1) +
+        " <small>(" + l(:label_total) + ": #{project.issues.count})</small></div>" +
         progress_bar(issues_closed_pourcent, :width => '30em', :legend => '%0.0f%' % issues_closed_pourcent)
     end
 
@@ -98,7 +98,7 @@ module ProjectsHelper
       s << "<div>"
       project.versions.open.reverse_each do |version|
         unless version.completed?
-          s << "Version " + link_to_version(version) + ": " +
+          s << l(:label_version) + " " + link_to_version(version) + ": " +
             link_to_if(version.open_issues_count > 0, l(:label_x_open_issues_abbr, :count => version.open_issues_count), :controller => 'issues', :action => 'index', :project_id => version.project, :status_id => 'o', :fixed_version_id => version, :set_filter => 1) +
             "<small> / " + link_to_if(version.closed_issues_count > 0, l(:label_x_closed_issues_abbr, :count => version.closed_issues_count), :controller => 'issues', :action => 'index', :project_id => version.project, :status_id => 'c', :fixed_version_id => version, :set_filter => 1) + "</small>" + ". "
           s << due_date_distance_in_words(version.effective_date) if version.effective_date
@@ -108,6 +108,7 @@ module ProjectsHelper
       end
       s << "</div>"
     end
+		s.html_safe
 	end
 
   # Returns a set of options for a select field, grouped by project.
