@@ -74,7 +74,7 @@ module ProjectsHelper
         s << "<li class='#{classes}'><div class='#{classes}'>" +
                link_to_project(project, {}, :class => "project #{User.current.member_of?(project) ? 'my-project' : nil}")
         #s << "<div class='wiki description'>#{textilizable(project.short_description, :project => project)}</div>" unless project.description.blank?
-				s << render_project_progress(project)
+        s << render_project_progress(project)
         s << "</div>\n"
         ancestors << project
       end
@@ -84,8 +84,8 @@ module ProjectsHelper
     s.html_safe
   end
 
-	def render_project_progress(project)
-		s = ''
+  def render_project_progress(project)
+    s = ''
     if project.issues.open.count > 0
       issues_closed_pourcent = (1 - project.issues.open.count.to_f/project.issues.count) * 100
       s << "<div>" + l(:label_issue_plural) + ": " +
@@ -108,8 +108,8 @@ module ProjectsHelper
       end
       s << "</div>"
     end
-		s.html_safe
-	end
+    s.html_safe
+  end
 
   # Returns a set of options for a select field, grouped by project.
   def version_options_for_select(versions, selected=nil)
