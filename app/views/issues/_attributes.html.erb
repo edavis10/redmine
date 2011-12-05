@@ -9,15 +9,13 @@
 
 <p><%= f.select :priority_id, (@priorities.collect {|p| [p.name, p.id]}), {:required => true}, :disabled => !@issue.leaf? %></p>
 <p><%= f.select :assigned_to_id, principals_options_for_select(@issue.assignable_users, @issue.assigned_to), :include_blank => true %></p>
-<% unless @project.issue_categories.empty? %>
 <p><%= f.select :category_id, (@project.issue_categories.collect {|c| [c.name, c.id]}), :include_blank => true %>
 <%= prompt_to_remote(image_tag('add.png', :style => 'vertical-align: middle;'),
                      l(:label_issue_category_new),
-                     'category[name]',
+                     'issue_category[name]',
                      {:controller => 'issue_categories', :action => 'create', :project_id => @project},
                      :title => l(:label_issue_category_new),
                      :tabindex => 199) if authorize_for('issue_categories', 'new') %></p>
-<% end %>
 <% unless @issue.assignable_versions.empty? %>
 <p><%= f.select :fixed_version_id, version_options_for_select(@issue.assignable_versions, @issue.fixed_version), :include_blank => true %>
 <%= prompt_to_remote(image_tag('add.png', :style => 'vertical-align: middle;'),
