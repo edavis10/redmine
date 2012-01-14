@@ -54,6 +54,7 @@ class RepositoriesController < ApplicationController
       @repository.attributes = p
       @repository.merge_extra_info(p_extra)
       @repository.save
+      @repository.fetch_changesets
     end
     render(:update) do |page|
       page.replace_html "tab-content-repository",
