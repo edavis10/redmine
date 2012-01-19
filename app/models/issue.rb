@@ -77,6 +77,7 @@ class Issue < ActiveRecord::Base
   before_save :close_duplicates, :update_done_ratio_from_issue_status
   after_save {|issue| issue.send :after_project_change if !issue.id_changed? && issue.project_id_changed?} 
   after_save :reschedule_following_issues, :update_nested_set_attributes, :update_parent_attributes, :create_journal
+  before_destroy :remove_from_parent
   after_destroy :update_parent_attributes
 
   # Returns a SQL conditions string used to find all issues visible by the specified user
@@ -301,7 +302,7 @@ class Issue < ActiveRecord::Base
   safe_attributes 'is_private',
     :if => lambda {|issue, user|
       user.allowed_to?(:set_issues_private, issue.project) ||
-        (issue.author == user && user.allowed_to?(:set_own_issues_private, issue.project))
+        ((issue.author == user || issue.author == nil) && user.allowed_to?(:set_own_issues_private, issue.project))
     }
 
   safe_attributes 'parent_issue_id',
@@ -863,6 +864,11 @@ class Issue < ActiveRecord::Base
       recalculate_attributes_for(former_parent_id) if former_parent_id
     end
     remove_instance_variable(:@parent_issue) if instance_variable_defined?(:@parent_issue)
+  end
+
+  def remove_from_parent
+    self.parent_issue_id = nil
+    update_nested_set_attributes
   end
 
   def update_parent_attributes
