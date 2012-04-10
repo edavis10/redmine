@@ -84,9 +84,10 @@ class IssuesController < ApplicationController
         format.api  {
           Issue.load_relations(@issues) if include_in_api_response?('relations')
         }
-        format.atom { render_feed(@issues, :title => "#{@project || Setting.app_title}: #{l(:label_issue_plural)}") }
-        format.csv  { send_data(issues_to_csv(@issues, @project, @query, params), :type => 'text/csv; header=present', :filename => 'export.csv') }
-        format.pdf  { send_data(issues_to_pdf(@issues, @project, @query), :type => 'application/pdf', :filename => 'export.pdf') }
+        export_title = "#{@project || Setting.app_title} - #{l(:label_issue_plural)}"
+        format.atom { render_feed(@issues, :title => export_title) }
+        format.csv  { send_data(issues_to_csv(@issues, @project, @query, params), :type => 'text/csv; header=present', :filename => "#{export_title}.csv") }
+        format.pdf  { send_data(issues_to_pdf(@issues, @project, @query), :type => 'application/pdf', :filename => "#{export_title}.pdf") }
       end
     else
       respond_to do |format|
