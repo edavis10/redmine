@@ -65,7 +65,25 @@ class TimeEntry < ActiveRecord::Base
      {}
     end
   }
-
+  scope :on_user, lambda {|user| {
+    :conditions => ["#{TimeEntry.table_name}.user_id = ?", user]
+  }}
+  scope :on_activity, lambda {|activity| {
+    :conditions => ["#{TimeEntry.table_name}.activity_id = ?", activity]
+  }}
+  scope :on_tracker, lambda {|tracker| {
+    :include => :issue,
+    :conditions => ["#{Issue.table_name}.tracker_id = ?", tracker]
+  }}
+  scope :on_version, lambda {|version| {
+    :include => :issue,
+    :conditions => ["#{Issue.table_name}.fixed_version_id = ?", version]
+  }}
+  scope :on_category, lambda {|category| {
+    :include => :issue,
+    :conditions => ["#{Issue.table_name}.category_id = ?", category]
+  }}
+  
   safe_attributes 'hours', 'comments', 'issue_id', 'activity_id', 'spent_on', 'custom_field_values', 'custom_fields'
 
   def initialize(attributes=nil, *args)
