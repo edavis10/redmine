@@ -25,6 +25,8 @@
           <% when @report.columns.to_s == 'month'; period_from = Date.civil(data[0]['tyear'].to_f, data[0]['tmonth'].to_f, 1); period_to = (period_from >> 1) - 1 -%>
           <% when @report.columns.to_s == 'year'; period_from = Date.civil(data[0]['tyear'].to_f, 1, 1); period_to = Date.civil(data[0]['tyear'].to_f, 12, 31) -%>
           <% end -%>
+        <% period_from = params[:from].to_s.to_date if !params[:from].blank? && params[:from].to_s.to_date > period_from %>
+        <% period_to = params[:to].to_s.to_date if !params[:from].blank? && params[:to].to_s.to_date < period_to %>
           <% (level+1).times do |i|  -%>
             <%  criteria_set[criteria[i].to_sym] = data[0][criteria[i]].to_s -%>
           <% end unless grand_total %>
