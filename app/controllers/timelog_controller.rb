@@ -49,6 +49,14 @@ class TimelogController < ApplicationController
     retrieve_date_range
 
     scope = TimeEntry.visible.spent_between(@from, @to)
+    scope = scope.on_user(params[:member]) unless params[:member].nil?
+    scope = scope.on_activity(params[:activity]) unless params[:activity].nil?
+    scope = scope.on_tracker(params[:tracker]) unless params[:tracker].nil?
+    scope = scope.on_version(params[:version]) unless params[:version].nil?
+    scope = scope.on_category(params[:category]) unless params[:category].nil?
+    scope = scope.on_project(Project.find(params[:project].to_i), false) unless params[:project].nil?
+    scope = scope.on_project(Project.find(params[:parent_project].to_i), true) unless params[:parent_project].nil?
+    @issue = Issue.find(params[:issue]) unless params[:issue].nil?
     if @issue
       scope = scope.on_issue(@issue)
     elsif @project
