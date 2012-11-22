@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,16 +15,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+#require 'shoulda'
 ENV["RAILS_ENV"] = "test"
 require File.expand_path(File.dirname(__FILE__) + "/../config/environment")
-require 'test_help'
-require File.expand_path(File.dirname(__FILE__) + '/helper_testcase')
+require 'rails/test_help'
 require Rails.root.join('test', 'mocks', 'open_id_authentication_mock.rb').to_s
 
-require File.expand_path(File.dirname(__FILE__) + '/object_daddy_helpers')
-include ObjectDaddyHelpers
+require File.expand_path(File.dirname(__FILE__) + '/object_helpers')
+include ObjectHelpers
 
 class ActiveSupport::TestCase
+  include ActionDispatch::TestProcess
+  
   # Transactional fixtures accelerate your tests by wrapping each test method
   # in a transaction that's rolled back on completion.  This ensures that the
   # test database remains unchanged so your fixtures don't have to be reloaded
@@ -59,8 +61,11 @@ class ActiveSupport::TestCase
   end
 
   def uploaded_test_file(name, mime)
-    ActionController::TestUploadedFile.new(
-      ActiveSupport::TestCase.fixture_path + "/files/#{name}", mime, true)
+    fixture_file_upload("files/#{name}", mime, true)
+  end
+
+  def credentials(user, password=nil)
+    {'HTTP_AUTHORIZATION' => ActionController::HttpAuthentication::Basic.encode_credentials(user, password || user)}
   end
 
   # Mock out a file
@@ -97,6 +102,10 @@ class ActiveSupport::TestCase
     Attachment.storage_path = "#{Rails.root}/tmp/test/attachments"
   end
 
+  def set_fixtures_attachments_directory
+    Attachment.storage_path = "#{Rails.root}/test/fixtures/files"
+  end
+
   def with_settings(options, &block)
     saved_settings = options.keys.inject({}) {|h, k| h[k] = Setting[k].is_a?(Symbol) ? Setting[k] : Setting[k].dup; h}
     options.each {|k, v| Setting[k] = v}
@@ -119,6 +128,10 @@ class ActiveSupport::TestCase
     return nil
   end
 
+  def self.convert_installed?
+    Redmine::Thumbnail.convert_available?
+  end
+
   # Returns the path to the test +vendor+ repository
   def self.repository_path(vendor)
     Rails.root.join("tmp/test/#{vendor.downcase}_repository").to_s
@@ -136,12 +149,43 @@ class ActiveSupport::TestCase
     File.directory?(repository_path(vendor))
   end
 
+  def repository_path_hash(arr)
+    hs = {}
+    hs[:path]  = arr.join("/")
+    hs[:param] = arr.join("/")
+    hs
+  end
+
   def assert_error_tag(options={})
     assert_tag({:attributes => { :id => 'errorExplanation' }}.merge(options))
   end
 
-  def assert_include(expected, s)
-    assert s.include?(expected), "\"#{expected}\" not found in \"#{s}\""
+  def assert_include(expected, s, message=nil)
+    assert s.include?(expected), (message || "\"#{expected}\" not found in \"#{s}\"")
+  end
+
+  def assert_not_include(expected, s)
+    assert !s.include?(expected), "\"#{expected}\" found in \"#{s}\""
+  end
+
+  def assert_mail_body_match(expected, mail)
+    if expected.is_a?(String)
+      assert_include expected, mail_body(mail)
+    else
+      assert_match expected, mail_body(mail)
+    end
+  end
+
+  def assert_mail_body_no_match(expected, mail)
+    if expected.is_a?(String)
+      assert_not_include expected, mail_body(mail)
+    else
+      assert_no_match expected, mail_body(mail)
+    end
+  end
+
+  def mail_body(mail)
+    mail.parts.first.body.encoded
   end
 
   # Shoulda macros
@@ -169,46 +213,6 @@ class ActiveSupport::TestCase
         filter.method == expected.method && filter.kind == expected.kind &&
         filter.options == expected.options && filter.class == expected.class
       }.size
-    end
-  end
-
-  def self.should_show_the_old_and_new_values_for(prop_key, model, &block)
-    context "" do
-      setup do
-        if block_given?
-          instance_eval &block
-        else
-          @old_value = model.generate!
-          @new_value = model.generate!
-        end
-      end
-
-      should "use the new value's name" do
-        @detail = JournalDetail.generate!(:property => 'attr',
-                                          :old_value => @old_value.id,
-                                          :value => @new_value.id,
-                                          :prop_key => prop_key)
-
-        assert_match @new_value.name, show_detail(@detail, true)
-      end
-
-      should "use the old value's name" do
-        @detail = JournalDetail.generate!(:property => 'attr',
-                                          :old_value => @old_value.id,
-                                          :value => @new_value.id,
-                                          :prop_key => prop_key)
-
-        assert_match @old_value.name, show_detail(@detail, true)
-      end
-    end
-  end
-
-  def self.should_create_a_new_user(&block)
-    should "create a new user" do
-      user = instance_eval &block
-      assert user
-      assert_kind_of User, user
-      assert !user.new_record?
     end
   end
 
@@ -245,9 +249,11 @@ class ActiveSupport::TestCase
     context "should allow http basic auth using a username and password for #{http_method} #{url}" do
       context "with a valid HTTP authentication" do
         setup do
-          @user = User.generate_with_protected!(:password => 'my_password', :password_confirmation => 'my_password', :admin => true) # Admin so they can access the project
-          @authorization = ActionController::HttpAuthentication::Basic.encode_credentials(@user.login, 'my_password')
-          send(http_method, url, parameters, {:authorization => @authorization})
+          @user = User.generate! do |user|
+            user.admin = true
+            user.password = 'my_password'
+          end
+          send(http_method, url, parameters, credentials(@user.login, 'my_password'))
         end
 
         should_respond_with success_code
@@ -259,9 +265,8 @@ class ActiveSupport::TestCase
 
       context "with an invalid HTTP authentication" do
         setup do
-          @user = User.generate_with_protected!
-          @authorization = ActionController::HttpAuthentication::Basic.encode_credentials(@user.login, 'wrong_password')
-          send(http_method, url, parameters, {:authorization => @authorization})
+          @user = User.generate!
+          send(http_method, url, parameters, credentials(@user.login, 'wrong_password'))
         end
 
         should_respond_with failure_code
@@ -273,7 +278,7 @@ class ActiveSupport::TestCase
 
       context "without credentials" do
         setup do
-          send(http_method, url, parameters, {:authorization => ''})
+          send(http_method, url, parameters)
         end
 
         should_respond_with failure_code
@@ -283,7 +288,6 @@ class ActiveSupport::TestCase
         end
       end
     end
-
   end
 
   # Test that a request allows the API key with HTTP BASIC
@@ -301,12 +305,12 @@ class ActiveSupport::TestCase
     context "should allow http basic auth with a key for #{http_method} #{url}" do
       context "with a valid HTTP authentication using the API token" do
         setup do
-          @user = User.generate_with_protected!(:admin => true)
-          @token = Token.generate!(:user => @user, :action => 'api')
-          @authorization = ActionController::HttpAuthentication::Basic.encode_credentials(@token.value, 'X')
-          send(http_method, url, parameters, {:authorization => @authorization})
+          @user = User.generate! do |user|
+            user.admin = true
+          end
+          @token = Token.create!(:user => @user, :action => 'api')
+          send(http_method, url, parameters, credentials(@token.value, 'X'))
         end
-
         should_respond_with success_code
         should_respond_with_content_type_based_on_url(url)
         should_be_a_valid_response_string_based_on_url(url)
@@ -317,12 +321,10 @@ class ActiveSupport::TestCase
 
       context "with an invalid HTTP authentication" do
         setup do
-          @user = User.generate_with_protected!
-          @token = Token.generate!(:user => @user, :action => 'feeds')
-          @authorization = ActionController::HttpAuthentication::Basic.encode_credentials(@token.value, 'X')
-          send(http_method, url, parameters, {:authorization => @authorization})
+          @user = User.generate!
+          @token = Token.create!(:user => @user, :action => 'feeds')
+          send(http_method, url, parameters, credentials(@token.value, 'X'))
         end
-
         should_respond_with failure_code
         should_respond_with_content_type_based_on_url(url)
         should "not login as the user" do
@@ -347,8 +349,10 @@ class ActiveSupport::TestCase
     context "should allow key based auth using key=X for #{http_method} #{url}" do
       context "with a valid api token" do
         setup do
-          @user = User.generate_with_protected!(:admin => true)
-          @token = Token.generate!(:user => @user, :action => 'api')
+          @user = User.generate! do |user|
+            user.admin = true
+          end
+          @token = Token.create!(:user => @user, :action => 'api')
           # Simple url parse to add on ?key= or &key=
           request_url = if url.match(/\?/)
                           url + "&key=#{@token.value}"
@@ -357,7 +361,6 @@ class ActiveSupport::TestCase
                         end
           send(http_method, request_url, parameters)
         end
-
         should_respond_with success_code
         should_respond_with_content_type_based_on_url(url)
         should_be_a_valid_response_string_based_on_url(url)
@@ -368,8 +371,10 @@ class ActiveSupport::TestCase
 
       context "with an invalid api token" do
         setup do
-          @user = User.generate_with_protected!
-          @token = Token.generate!(:user => @user, :action => 'feeds')
+          @user = User.generate! do |user|
+            user.admin = true
+          end
+          @token = Token.create!(:user => @user, :action => 'feeds')
           # Simple url parse to add on ?key= or &key=
           request_url = if url.match(/\?/)
                           url + "&key=#{@token.value}"
@@ -378,7 +383,6 @@ class ActiveSupport::TestCase
                         end
           send(http_method, request_url, parameters)
         end
-
         should_respond_with failure_code
         should_respond_with_content_type_based_on_url(url)
         should "not login as the user" do
@@ -389,11 +393,12 @@ class ActiveSupport::TestCase
 
     context "should allow key based auth using X-Redmine-API-Key header for #{http_method} #{url}" do
       setup do
-        @user = User.generate_with_protected!(:admin => true)
-        @token = Token.generate!(:user => @user, :action => 'api')
+        @user = User.generate! do |user|
+          user.admin = true
+        end
+        @token = Token.create!(:user => @user, :action => 'api')
         send(http_method, url, parameters, {'X-Redmine-API-Key' => @token.value.to_s})
       end
-
       should_respond_with success_code
       should_respond_with_content_type_based_on_url(url)
       should_be_a_valid_response_string_based_on_url(url)
@@ -412,13 +417,16 @@ class ActiveSupport::TestCase
   def self.should_respond_with_content_type_based_on_url(url)
     case
     when url.match(/xml/i)
-      should_respond_with_content_type :xml
+      should "respond with XML" do
+        assert_equal 'application/xml', @response.content_type
+      end
     when url.match(/json/i)
-      should_respond_with_content_type :json
+      should "respond with JSON" do
+        assert_equal 'application/json', @response.content_type
+      end
     else
       raise "Unknown content type for should_respond_with_content_type_based_on_url: #{url}"
     end
-
   end
 
   # Uses the url to assert which format the response should be in
@@ -436,7 +444,6 @@ class ActiveSupport::TestCase
     else
       raise "Unknown content type for should_be_a_valid_response_based_on_url: #{url}"
     end
-
   end
 
   # Checks that the response is a valid JSON string
@@ -453,6 +460,11 @@ class ActiveSupport::TestCase
     end
   end
 
+  def self.should_respond_with(status)
+    should "respond with #{status}" do
+      assert_response status
+    end
+  end
 end
 
 # Simple module to "namespace" all of the API tests

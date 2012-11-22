@@ -48,7 +48,7 @@ vi:
         # These three are to override number.format and are optional
         # separator:
         delimiter: ""
-        precision: 1
+        precision: 3
       storage_units:
         format: "%n %u"
         units:
@@ -79,6 +79,9 @@ vi:
       about_x_hours:
         one:   "khoảng 1 giờ"
         other: "khoảng %{count} giờ"
+      x_hours:
+        one:   "1 hour"
+        other: "%{count} hours"
       x_days:
         one:   "1 ngày"
         other: "%{count} ngày"
@@ -178,7 +181,7 @@ vi:
       words_connector: ", "
       two_words_connector: " và "
       last_word_connector: ", và "
-  
+
   actionview_instancetag_blank_option: Vui lòng chọn
 
   general_text_No: 'Không'
@@ -216,13 +219,13 @@ vi:
   notice_account_pending: "Thông tin tài khoản đã được tạo ra và đang chờ chứng thực từ ban quản trị."
   notice_default_data_loaded: Đã nạp cấu hình mặc định.
   notice_unable_delete_version: Không thể xóa phiên bản.
-  
+
   error_can_t_load_default_data: "Không thể nạp cấu hình mặc định: %{value}"
   error_scm_not_found: "The entry or revision was not found in the repository."
   error_scm_command_failed: "Lỗi xảy ra khi truy cập vào kho lưu trữ: %{value}"
   error_scm_annotate: "The entry does not exist or can not be annotated."
   error_issue_not_found_in_project: 'Vấn đề không tồn tại hoặc không thuộc dự án'
-  
+
   mail_subject_lost_password: "%{value}: mật mã của bạn"
   mail_body_lost_password: "Để đổi mật mã, hãy click chuột vào liên kết sau:"
   mail_subject_register: "%{value}: kích hoạt tài khoản"
@@ -233,10 +236,10 @@ vi:
   mail_body_account_activation_request: "Người dùng (%{value}) mới đăng ký và cần bạn xác nhận:"
   mail_subject_reminder: "%{count} vấn đề hết hạn trong các %{days} ngày tới"
   mail_body_reminder: "%{count} vấn đề gán cho bạn sẽ hết hạn trong %{days} ngày tới:"
-  
+
   gui_validation_error: 1 lỗi
   gui_validation_error_plural: "%{count} lỗi"
-  
+
   field_name: Tên
   field_description: Mô tả
   field_summary: Tóm tắt
@@ -321,7 +324,7 @@ vi:
   field_default_value: Giá trị mặc định
   field_comments_sorting: Liệt kê bình luận
   field_parent_title: Trang mẹ
-  
+
   setting_app_title: Tựa đề ứng dụng
   setting_app_subtitle: Tựa đề nhỏ của ứng dụng
   setting_welcome_text: Thông điệp chào mừng
@@ -356,7 +359,7 @@ vi:
   setting_mail_handler_api_enabled: Enable WS for incoming emails
   setting_mail_handler_api_key: Mã số API
   setting_sequential_project_identifiers: Tự sinh chuỗi ID dự án
-  
+
   project_module_issue_tracking: Theo dõi vấn đề
   project_module_time_tracking: Theo dõi thời gian
   project_module_news: Tin tức
@@ -365,7 +368,7 @@ vi:
   project_module_wiki: Wiki
   project_module_repository: Kho lưu trữ
   project_module_boards: Diễn đàn
-  
+
   label_user: Tài khoản
   label_user_plural: Tài khoản
   label_user_new: Tài khoản mới
@@ -677,7 +680,7 @@ vi:
   label_incoming_emails: Nhận mail
   label_generate_key: Tạo mã
   label_issue_watchers: Theo dõi
-  
+
   button_login: Đăng nhập
   button_submit: Gửi
   button_save: Lưu
@@ -716,11 +719,11 @@ vi:
   button_update: Cập nhật
   button_configure: Cấu hình
   button_quote: Trích dẫn
-  
+
   status_active: hoạt động
   status_registered: đăng ký
   status_locked: khóa
-  
+
   text_select_mail_notifications: Chọn hành động đối với mỗi email thông báo sẽ gửi.
   text_regexp_info: eg. ^[A-Z0-9]+$
   text_min_max_length_info: 0 để chỉ không hạn chế
@@ -731,7 +734,6 @@ vi:
   text_tip_issue_begin_day: ngày bắt đầu
   text_tip_issue_end_day: ngày kết thúc
   text_tip_issue_begin_end_day: bắt đầu và kết thúc cùng ngày
-  text_project_identifier_info: 'Chỉ cho phép chữ cái thường (a-z), con số và dấu gạch ngang.<br />Sau khi lưu, chỉ số ID không thể thay đổi.'
   text_caracters_maximum: "Tối đa %{count} ký tự."
   text_caracters_minimum: "Phải gồm ít nhất %{count} ký tự."
   text_length_between: "Length between %{min} and %{max} characters."
@@ -762,7 +764,7 @@ vi:
   text_enumeration_destroy_question: "%{count} objects are assigned to this value."
   text_enumeration_category_reassign_to: 'Reassign them to this value:'
   text_email_delivery_not_configured: "Email delivery is not configured, and notifications are disabled.\nConfigure your SMTP server in config/configuration.yml and restart the application to enable them."
-  
+
   default_role_manager: Điều hành
   default_role_developer: Phát triển
   default_role_reporter: Báo cáo
@@ -784,11 +786,11 @@ vi:
   default_priority_immediate: Trung bình
   default_activity_design: Thiết kế
   default_activity_development: Phát triển
-  
+
   enumeration_issue_priorities: Mức độ ưu tiên vấn đề
   enumeration_doc_categories: Chủ đề tài liệu
   enumeration_activities: Hoạt động (theo dõi thời gian)
-  
+
   setting_plain_text_mail: mail dạng text đơn giản (không dùng HTML)
   setting_gravatar_enabled: Dùng biểu tượng Gravatar
   permission_edit_project: Chỉnh dự án
@@ -1057,3 +1059,58 @@ vi:
   button_export: Export
   label_export_options: "%{export_format} export options"
   error_attachment_too_big: This file cannot be uploaded because it exceeds the maximum allowed file size (%{max_size})
+  notice_failed_to_save_time_entries: "Failed to save %{count} time entrie(s) on %{total} selected: %{ids}."
+  label_x_issues:
+    zero:  0 vấn đề
+    one:   1 vấn đề
+    other: "%{count} vấn đề"
+  label_repository_new: New repository
+  field_repository_is_default: Main repository
+  label_copy_attachments: Copy attachments
+  label_item_position: "%{position}/%{count}"
+  label_completed_versions: Completed versions
+  text_project_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_multiple: Multiple values
+  setting_commit_cross_project_ref: Allow issues of all the other projects to be referenced and fixed
+  text_issue_conflict_resolution_add_notes: Add my notes and discard my other changes
+  text_issue_conflict_resolution_overwrite: Apply my changes anyway (previous notes will be kept but some changes may be overwritten)
+  notice_issue_update_conflict: The issue has been updated by an other user while you were editing it.
+  text_issue_conflict_resolution_cancel: Discard all my changes and redisplay %{link}
+  permission_manage_related_issues: Manage related issues
+  field_auth_source_ldap_filter: LDAP filter
+  label_search_for_watchers: Search for watchers to add
+  notice_account_deleted: Your account has been permanently deleted.
+  setting_unsubscribe: Allow users to delete their own account
+  button_delete_my_account: Delete my account
+  text_account_destroy_confirmation: |-
+    Are you sure you want to proceed?
+    Your account will be permanently deleted, with no way to reactivate it.
+  error_session_expired: Your session has expired. Please login again.
+  text_session_expiration_settings: "Warning: changing these settings may expire the current sessions including yours."
+  setting_session_lifetime: Session maximum lifetime
+  setting_session_timeout: Session inactivity timeout
+  label_session_expiration: Session expiration
+  permission_close_project: Close / reopen the project
+  label_show_closed_projects: View closed projects
+  button_close: Close
+  button_reopen: Reopen
+  project_status_active: active
+  project_status_closed: closed
+  project_status_archived: archived
+  text_project_closed: This project is closed and read-only.
+  notice_user_successful_create: User %{id} created.
+  field_core_fields: Standard fields
+  field_timeout: Timeout (in seconds)
+  setting_thumbnails_enabled: Display attachment thumbnails
+  setting_thumbnails_size: Thumbnails size (in pixels)
+  label_status_transitions: Status transitions
+  label_fields_permissions: Fields permissions
+  label_readonly: Read-only
+  label_required: Required
+  text_repository_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_board_parent: Parent forum
+  label_attribute_of_project: Project's %{name}
+  label_attribute_of_author: Author's %{name}
+  label_attribute_of_assigned_to: Assignee's %{name}
+  label_attribute_of_fixed_version: Target version's %{name}
+  label_copy_subtasks: Copy subtasks

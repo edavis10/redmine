@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -89,6 +89,29 @@ class Redmine::UnifiedDiffTest < ActiveSupport::TestCase
     assert_equal [37, -1], diff[8].offsets
     assert_equal [0, -38], diff[10].offsets
 
+  end
+
+  def test_partials_with_html_entities
+    raw = <<-DIFF
+--- test.orig.txt Wed Feb 15 16:10:39 2012
++++ test.new.txt  Wed Feb 15 16:11:25 2012
+@@ -1,5 +1,5 @@
+ Semicolons were mysteriously appearing in code diffs in the repository
+ 
+-void DoSomething(std::auto_ptr<MyClass> myObj)
++void DoSomething(const MyClass& myObj)
+ 
+DIFF
+
+    diff = Redmine::UnifiedDiff.new(raw, :type => 'sbs')
+    assert_equal 1, diff.size
+    assert_equal 'void DoSomething(<span>std::auto_ptr&lt;MyClass&gt;</span> myObj)', diff.first[2].html_line_left
+    assert_equal 'void DoSomething(<span>const MyClass&amp;</span> myObj)', diff.first[2].html_line_right
+
+    diff = Redmine::UnifiedDiff.new(raw, :type => 'inline')
+    assert_equal 1, diff.size
+    assert_equal 'void DoSomething(<span>std::auto_ptr&lt;MyClass&gt;</span> myObj)', diff.first[2].html_line
+    assert_equal 'void DoSomething(<span>const MyClass&amp;</span> myObj)', diff.first[3].html_line
   end
 
   def test_line_starting_with_dashes

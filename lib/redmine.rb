@@ -13,13 +13,13 @@ require 'redmine/wiki_formatting'
 require 'redmine/scm/base'
 
 begin
-  require_library_or_gem 'RMagick' unless Object.const_defined?(:Magick)
+  require 'RMagick' unless Object.const_defined?(:Magick)
 rescue LoadError
   # RMagick is not available
 end
 
 if RUBY_VERSION < '1.9'
-  require 'faster_csv'
+  require 'fastercsv'
 else
   require 'csv'
   FCSV = CSV
@@ -34,25 +34,26 @@ Redmine::Scm::Base.add "Git"
 Redmine::Scm::Base.add "Filesystem"
 
 Redmine::CustomFieldFormat.map do |fields|
-  fields.register Redmine::CustomFieldFormat.new('string', :label => :label_string, :order => 1)
-  fields.register Redmine::CustomFieldFormat.new('text', :label => :label_text, :order => 2)
-  fields.register Redmine::CustomFieldFormat.new('int', :label => :label_integer, :order => 3)
-  fields.register Redmine::CustomFieldFormat.new('float', :label => :label_float, :order => 4)
-  fields.register Redmine::CustomFieldFormat.new('list', :label => :label_list, :order => 5)
-  fields.register Redmine::CustomFieldFormat.new('date', :label => :label_date, :order => 6)
-  fields.register Redmine::CustomFieldFormat.new('bool', :label => :label_boolean, :order => 7)
-  fields.register Redmine::CustomFieldFormat.new('user', :label => :label_user, :only => %w(Issue TimeEntry Version Project), :edit_as => 'list', :order => 8)
-  fields.register Redmine::CustomFieldFormat.new('version', :label => :label_version, :only => %w(Issue TimeEntry Version Project), :edit_as => 'list', :order => 9)
+  fields.register 'string'
+  fields.register 'text'
+  fields.register 'int', :label => :label_integer
+  fields.register 'float'
+  fields.register 'list'
+  fields.register 'date'
+  fields.register 'bool', :label => :label_boolean
+  fields.register 'user', :only => %w(Issue TimeEntry Version Project), :edit_as => 'list'
+  fields.register 'version', :only => %w(Issue TimeEntry Version Project), :edit_as => 'list'
 end
 
 # Permissions
 Redmine::AccessControl.map do |map|
-  map.permission :view_project, {:projects => [:show], :activities => [:index]}, :public => true
-  map.permission :search_project, {:search => :index}, :public => true
+  map.permission :view_project, {:projects => [:show], :activities => [:index]}, :public => true, :read => true
+  map.permission :search_project, {:search => :index}, :public => true, :read => true
   map.permission :add_project, {:projects => [:new, :create]}, :require => :loggedin
   map.permission :edit_project, {:projects => [:settings, :edit, :update]}, :require => :member
+  map.permission :close_project, {:projects => [:close, :reopen]}, :require => :member, :read => true
   map.permission :select_project_modules, {:projects => :modules}, :require => :member
-  map.permission :manage_members, {:projects => :settings, :members => [:new, :edit, :destroy, :autocomplete_for_member]}, :require => :member
+  map.permission :manage_members, {:projects => :settings, :members => [:index, :show, :create, :update, :destroy, :autocomplete]}, :require => :member
   map.permission :manage_versions, {:projects => :settings, :versions => [:new, :create, :edit, :update, :close_completed, :destroy]}, :require => :member
   map.permission :add_subprojects, {:projects => [:new, :create]}, :require => :member
 
@@ -66,30 +67,31 @@ Redmine::AccessControl.map do |map|
                                   :versions => [:index, :show, :status_by],
                                   :journals => [:index, :diff],
                                   :queries => :index,
-                                  :reports => [:issue_report, :issue_report_details]}
-    map.permission :add_issues, {:issues => [:new, :create, :update_form]}
-    map.permission :edit_issues, {:issues => [:edit, :update, :bulk_edit, :bulk_update, :update_form], :journals => [:new]}
+                                  :reports => [:issue_report, :issue_report_details]},
+                                  :read => true
+    map.permission :add_issues, {:issues => [:new, :create, :update_form], :attachments => :upload}
+    map.permission :edit_issues, {:issues => [:edit, :update, :bulk_edit, :bulk_update, :update_form], :journals => [:new], :attachments => :upload}
     map.permission :manage_issue_relations, {:issue_relations => [:index, :show, :create, :destroy]}
     map.permission :manage_subtasks, {}
     map.permission :set_issues_private, {}
     map.permission :set_own_issues_private, {}, :require => :loggedin
-    map.permission :add_issue_notes, {:issues => [:edit, :update], :journals => [:new]}
+    map.permission :add_issue_notes, {:issues => [:edit, :update], :journals => [:new], :attachments => :upload}
     map.permission :edit_issue_notes, {:journals => :edit}, :require => :loggedin
     map.permission :edit_own_issue_notes, {:journals => :edit}, :require => :loggedin
-    map.permission :move_issues, {:issue_moves => [:new, :create]}, :require => :loggedin
+    map.permission :move_issues, {:issues => [:bulk_edit, :bulk_update]}, :require => :loggedin
     map.permission :delete_issues, {:issues => :destroy}, :require => :member
     # Queries
     map.permission :manage_public_queries, {:queries => [:new, :create, :edit, :update, :destroy]}, :require => :member
     map.permission :save_queries, {:queries => [:new, :create, :edit, :update, :destroy]}, :require => :loggedin
     # Watchers
-    map.permission :view_issue_watchers, {}
+    map.permission :view_issue_watchers, {}, :read => true
     map.permission :add_issue_watchers, {:watchers => :new}
     map.permission :delete_issue_watchers, {:watchers => :destroy}
   end
 
   map.project_module :time_tracking do |map|
     map.permission :log_time, {:timelog => [:new, :create]}, :require => :loggedin
-    map.permission :view_time_entries, :timelog => [:index, :show], :time_entry_reports => [:report]
+    map.permission :view_time_entries, {:timelog => [:index, :report, :show]}, :read => true
     map.permission :edit_time_entries, {:timelog => [:edit, :update, :destroy, :bulk_edit, :bulk_update]}, :require => :member
     map.permission :edit_own_time_entries, {:timelog => [:edit, :update, :destroy,:bulk_edit, :bulk_update]}, :require => :loggedin
     map.permission :manage_project_activities, {:project_enumerations => [:update, :destroy]}, :require => :member
@@ -97,42 +99,43 @@ Redmine::AccessControl.map do |map|
 
   map.project_module :news do |map|
     map.permission :manage_news, {:news => [:new, :create, :edit, :update, :destroy], :comments => [:destroy]}, :require => :member
-    map.permission :view_news, {:news => [:index, :show]}, :public => true
+    map.permission :view_news, {:news => [:index, :show]}, :public => true, :read => true
     map.permission :comment_news, {:comments => :create}
   end
 
   map.project_module :documents do |map|
-    map.permission :manage_documents, {:documents => [:new, :edit, :destroy, :add_attachment]}, :require => :loggedin
-    map.permission :view_documents, :documents => [:index, :show, :download]
+    map.permission :manage_documents, {:documents => [:new, :create, :edit, :update, :destroy, :add_attachment]}, :require => :loggedin
+    map.permission :view_documents, {:documents => [:index, :show, :download]}, :read => true
   end
 
   map.project_module :files do |map|
     map.permission :manage_files, {:files => [:new, :create]}, :require => :loggedin
-    map.permission :view_files, :files => :index, :versions => :download
+    map.permission :view_files, {:files => :index, :versions => :download}, :read => true
   end
 
   map.project_module :wiki do |map|
     map.permission :manage_wiki, {:wikis => [:edit, :destroy]}, :require => :member
     map.permission :rename_wiki_pages, {:wiki => :rename}, :require => :member
     map.permission :delete_wiki_pages, {:wiki => :destroy}, :require => :member
-    map.permission :view_wiki_pages, :wiki => [:index, :show, :special, :date_index]
-    map.permission :export_wiki_pages, :wiki => [:export]
-    map.permission :view_wiki_edits, :wiki => [:history, :diff, :annotate]
+    map.permission :view_wiki_pages, {:wiki => [:index, :show, :special, :date_index]}, :read => true
+    map.permission :export_wiki_pages, {:wiki => [:export]}, :read => true
+    map.permission :view_wiki_edits, {:wiki => [:history, :diff, :annotate]}, :read => true
     map.permission :edit_wiki_pages, :wiki => [:edit, :update, :preview, :add_attachment]
     map.permission :delete_wiki_pages_attachments, {}
     map.permission :protect_wiki_pages, {:wiki => :protect}, :require => :member
   end
 
   map.project_module :repository do |map|
-    map.permission :manage_repository, {:repositories => [:edit, :committers, :destroy]}, :require => :member
-    map.permission :browse_repository, :repositories => [:show, :browse, :entry, :annotate, :changes, :diff, :stats, :graph]
-    map.permission :view_changesets, :repositories => [:show, :revisions, :revision]
+    map.permission :manage_repository, {:repositories => [:new, :create, :edit, :update, :committers, :destroy]}, :require => :member
+    map.permission :browse_repository, {:repositories => [:show, :browse, :entry, :raw, :annotate, :changes, :diff, :stats, :graph]}, :read => true
+    map.permission :view_changesets, {:repositories => [:show, :revisions, :revision]}, :read => true
     map.permission :commit_access, {}
+    map.permission :manage_related_issues, {:repositories => [:add_related_issue, :remove_related_issue]}
   end
 
   map.project_module :boards do |map|
-    map.permission :manage_boards, {:boards => [:new, :edit, :destroy]}, :require => :member
-    map.permission :view_messages, {:boards => [:index, :show], :messages => [:show]}, :public => true
+    map.permission :manage_boards, {:boards => [:new, :create, :edit, :update, :destroy]}, :require => :member
+    map.permission :view_messages, {:boards => [:index, :show], :messages => [:show]}, :public => true, :read => true
     map.permission :add_messages, {:messages => [:new, :reply, :quote]}
     map.permission :edit_messages, {:messages => :edit}, :require => :member
     map.permission :edit_own_messages, {:messages => :edit}, :require => :loggedin
@@ -141,11 +144,11 @@ Redmine::AccessControl.map do |map|
   end
 
   map.project_module :calendar do |map|
-    map.permission :view_calendar, :calendars => [:show, :update]
+    map.permission :view_calendar, {:calendars => [:show, :update]}, :read => true
   end
 
   map.project_module :gantt do |map|
-    map.permission :view_gantt, :gantts => [:show, :update]
+    map.permission :view_gantt, {:gantts => [:show, :update]}, :read => true
   end
 end
 
@@ -159,7 +162,7 @@ end
 
 Redmine::MenuManager.map :account_menu do |menu|
   menu.push :login, :signin_path, :if => Proc.new { !User.current.logged? }
-  menu.push :register, { :controller => 'account', :action => 'register' }, :if => Proc.new { !User.current.logged? && Setting.self_registration? }
+  menu.push :register, :register_path, :if => Proc.new { !User.current.logged? && Setting.self_registration? }
   menu.push :my_account, { :controller => 'my', :action => 'account' }, :if => Proc.new { User.current.logged? }
   menu.push :logout, :signout_path, :if => Proc.new { User.current.logged? }
 end
@@ -181,7 +184,7 @@ Redmine::MenuManager.map :admin_menu do |menu|
             :html => {:class => 'custom_fields'}
   menu.push :enumerations, {:controller => 'enumerations'}
   menu.push :settings, {:controller => 'settings'}
-  menu.push :ldap_authentication, {:controller => 'ldap_auth_sources', :action => 'index'},
+  menu.push :ldap_authentication, {:controller => 'auth_sources', :action => 'index'},
             :html => {:class => 'server_authentication'}
   menu.push :plugins, {:controller => 'admin', :action => 'plugins'}, :last => true
   menu.push :info, {:controller => 'admin', :action => 'info'}, :caption => :label_information_plural, :last => true
@@ -204,7 +207,7 @@ Redmine::MenuManager.map :project_menu do |menu|
   menu.push :boards, { :controller => 'boards', :action => 'index', :id => nil }, :param => :project_id,
               :if => Proc.new { |p| p.boards.any? }, :caption => :label_board_plural
   menu.push :files, { :controller => 'files', :action => 'index' }, :caption => :label_file_plural, :param => :project_id
-  menu.push :repository, { :controller => 'repositories', :action => 'show' },
+  menu.push :repository, { :controller => 'repositories', :action => 'show', :repository_id => nil, :path => nil, :rev => nil },
               :if => Proc.new { |p| p.repository && !p.repository.new_record? }
   menu.push :settings, { :controller => 'projects', :action => 'settings' }, :last => true
 end

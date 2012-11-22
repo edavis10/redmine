@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -23,7 +23,7 @@ class VersionsController < ApplicationController
   before_filter :find_project, :only => [:index, :new, :create, :close_completed]
   before_filter :authorize
 
-  accept_api_auth :index, :create, :update, :destroy
+  accept_api_auth :index, :show, :create, :update, :destroy
 
   helper :custom_fields
   helper :projects
@@ -39,17 +39,19 @@ class VersionsController < ApplicationController
         @versions = @project.shared_versions || []
         @versions += @project.rolled_up_versions.visible if @with_subprojects
         @versions = @versions.uniq.sort
-        @versions.reject! {|version| version.closed? || version.completed? } unless params[:completed]
+        unless params[:completed]
+          @completed_versions = @versions.select {|version| version.closed? || version.completed? }
+          @versions -= @completed_versions
+        end
 
         @issues_by_version = {}
-        unless @selected_tracker_ids.empty?
-          @versions.each do |version|
-            issues = version.fixed_issues.visible.find(:all,
-                                                       :include => [:project, :status, :tracker, :priority],
-                                                       :conditions => {:tracker_id => @selected_tracker_ids, :project_id => project_ids},
-                                                       :order => "#{Project.table_name}.lft, #{Tracker.table_name}.position, #{Issue.table_name}.id")
-            @issues_by_version[version] = issues
-          end
+        if @selected_tracker_ids.any? && @versions.any?
+          issues = Issue.visible.all(
+            :include => [:project, :status, :tracker, :priority, :fixed_version],
+            :conditions => {:tracker_id => @selected_tracker_ids, :project_id => project_ids, :fixed_version_id => @versions.map(&:id)},
+            :order => "#{Project.table_name}.lft, #{Tracker.table_name}.position, #{Issue.table_name}.id"
+          )
+          @issues_by_version = issues.group_by(&:fixed_version)
         end
         @versions.reject! {|version| !project_ids.include?(version.project_id) && @issues_by_version[version].blank?}
       }
@@ -72,20 +74,20 @@ class VersionsController < ApplicationController
 
   def new
     @version = @project.versions.build
-    if params[:version]
-      attributes = params[:version].dup
-      attributes.delete('sharing') unless attributes.nil? || @version.allowed_sharings.include?(attributes['sharing'])
-      @version.attributes = attributes
+    @version.safe_attributes = params[:version]
+
+    respond_to do |format|
+      format.html
+      format.js
     end
   end
 
   def create
-    # TODO: refactor with code above in #new
     @version = @project.versions.build
     if params[:version]
       attributes = params[:version].dup
       attributes.delete('sharing') unless attributes.nil? || @version.allowed_sharings.include?(attributes['sharing'])
-      @version.attributes = attributes
+      @version.safe_attributes = attributes
     end
 
     if request.post?
@@ -95,12 +97,7 @@ class VersionsController < ApplicationController
             flash[:notice] = l(:notice_successful_create)
             redirect_back_or_default :controller => 'projects', :action => 'settings', :tab => 'versions', :id => @project
           end
-          format.js do
-            # IE doesn't support the replace_html rjs method for select box options
-            render(:update) {|page| page.replace "issue_fixed_version_id",
-              content_tag('select', '<option></option>' + version_options_for_select(@project.shared_versions.open, @version), :id => 'issue_fixed_version_id', :name => 'issue[fixed_version_id]')
-            }
-          end
+          format.js
           format.api do
             render :action => 'show', :status => :created, :location => version_url(@version)
           end
@@ -108,9 +105,7 @@ class VersionsController < ApplicationController
       else
         respond_to do |format|
           format.html { render :action => 'new' }
-          format.js do
-            render(:update) {|page| page.alert(@version.errors.full_messages.join('\n')) }
-          end
+          format.js   { render :action => 'new' }
           format.api  { render_validation_errors(@version) }
         end
       end
@@ -124,13 +119,14 @@ class VersionsController < ApplicationController
     if request.put? && params[:version]
       attributes = params[:version].dup
       attributes.delete('sharing') unless @version.allowed_sharings.include?(attributes['sharing'])
-      if @version.update_attributes(attributes)
+      @version.safe_attributes = attributes
+      if @version.save
         respond_to do |format|
           format.html {
             flash[:notice] = l(:notice_successful_update)
             redirect_back_or_default :controller => 'projects', :action => 'settings', :tab => 'versions', :id => @project
           }
-          format.api  { head :ok }
+          format.api  { render_api_ok }
         end
       else
         respond_to do |format|
@@ -148,13 +144,12 @@ class VersionsController < ApplicationController
     redirect_to :controller => 'projects', :action => 'settings', :tab => 'versions', :id => @project
   end
 
-  verify :method => :delete, :only => :destroy, :render => {:nothing => true, :status => :method_not_allowed }
   def destroy
     if @version.fixed_issues.empty?
       @version.destroy
       respond_to do |format|
         format.html { redirect_back_or_default :controller => 'projects', :action => 'settings', :tab => 'versions', :id => @project }
-        format.api  { head :ok }
+        format.api  { render_api_ok }
       end
     else
       respond_to do |format|
@@ -170,7 +165,7 @@ class VersionsController < ApplicationController
   def status_by
     respond_to do |format|
       format.html { render :action => 'show' }
-      format.js { render(:update) {|page| page.replace_html 'status_by', render_issue_status_by(@version, params[:status_by])} }
+      format.js
     end
   end
 

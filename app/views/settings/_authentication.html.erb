@@ -1,4 +1,4 @@
-<% form_tag({:action => 'edit', :tab => 'authentication'}) do %>
+<%= form_tag({:action => 'edit', :tab => 'authentication'}) do %>
 
 <div class="box tabular settings">
 <p><%= setting_check_box :login_required %></p>
@@ -10,6 +10,8 @@
                                            [l(:label_registration_manual_activation), "2"],
                                            [l(:label_registration_automatic_activation), "3"]] %></p>
 
+<p><%= setting_check_box :unsubscribe %></p>
+
 <p><%= setting_text_field :password_min_length, :size => 6 %></p>
 
 <p><%= setting_check_box :lost_password, :label => :label_password_lost %></p>
@@ -18,6 +20,17 @@
 
 <p><%= setting_check_box :rest_api_enabled %></p>
 </div>
+
+<fieldset class="box">
+  <legend><%= l(:label_session_expiration) %></legend>
+
+  <div class="tabular settings">
+    <p><%= setting_select :session_lifetime, [[l(:label_disabled), 0]] + [1, 7, 30, 60, 365].collect{|days| [l('datetime.distance_in_words.x_days', :count => days), (days * 60 * 24).to_s]} %></p>
+    <p><%= setting_select :session_timeout, [[l(:label_disabled), 0]] + [1, 2, 4, 8, 12, 24, 48].collect{|hours| [l('datetime.distance_in_words.x_hours', :count => hours), (hours * 60).to_s]} %></p>
+  </div>
+  
+  <p><em class="info"><%= l(:text_session_expiration_settings) %></em></p>
+</fieldset>
 
 <%= submit_tag l(:button_save) %>
 <% end %>

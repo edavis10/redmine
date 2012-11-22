@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -26,7 +26,6 @@ module Redmine
       'text/x-c' => 'c,cpp,cc,h,hh',
       'text/x-csharp' => 'cs',
       'text/x-java' => 'java',
-      'text/x-javascript' => 'js',
       'text/x-html-template' => 'rhtml',
       'text/x-perl' => 'pl,pm',
       'text/x-php' => 'php,php3,php4,php5',
@@ -44,6 +43,8 @@ module Redmine
       'image/tiff' => 'tiff,tif',
       'image/x-ms-bmp' => 'bmp',
       'image/x-xpixmap' => 'xpm',
+      'image/svg+xml'=> 'svg',
+      'application/javascript' => 'js',
       'application/pdf' => 'pdf',
       'application/rtf' => 'rtf',
       'application/msword' => 'doc',

@@ -21,7 +21,7 @@ pl:
     human:
       format:
         delimiter: ""
-        precision: 1
+        precision: 3
       storage_units:
         format: "%n %u"
         units:
@@ -39,10 +39,10 @@ pl:
       default: "%Y-%m-%d"
       short: "%d %b"
       long: "%d %B %Y"
-    
+
     day_names: [Niedziela, Poniedziałek, Wtorek, Środa, Czwartek, Piątek, Sobota]
     abbr_day_names: [nie, pon, wto, śro, czw, pia, sob]
-    
+
     month_names: [~, Styczeń, Luty, Marzec, Kwiecień, Maj, Czerwiec, Lipiec, Sierpień, Wrzesień, Październik, Listopad, Grudzień]
     abbr_month_names: [~, sty, lut, mar, kwi, maj, cze, lip, sie, wrz, paź, lis, gru]
     order:
@@ -81,6 +81,9 @@ pl:
       about_x_hours:
         one:   "około godziny"
         other: "około %{count} godzin"
+      x_hours:
+        one:   "1 hour"
+        other: "%{count} hours"
       x_days:
         one:   "1 dzień"
         other: "%{count} dni"
@@ -133,7 +136,7 @@ pl:
         not_same_project: "nie należy do tego samego projektu"
         circular_dependency: "Ta relacja może wytworzyć kołową zależność"
         cant_link_an_issue_with_a_descendant: "Zagadnienie nie może zostać powiązane z jednym z własnych podzagadnień"
-      
+
   support:
     array:
       sentence_connector: "i"
@@ -143,7 +146,7 @@ pl:
   # Best regards from Lublin@Poland :-)
   # PL translation by Mariusz@Olejnik.net,
   actionview_instancetag_blank_option: Proszę wybierz
-  
+
   button_activate: Aktywuj
   button_add: Dodaj
   button_annotate: Adnotuj
@@ -788,7 +791,6 @@ pl:
   text_min_max_length_info: 0 oznacza brak restrykcji
   text_no_configuration_data: "Role użytkowników, typy zagadnień, statusy zagadnień oraz przepływ pracy nie zostały jeszcze skonfigurowane.\nJest wysoce rekomendowane by załadować domyślną konfigurację. Po załadowaniu będzie możliwość edycji tych danych."
   text_project_destroy_confirmation: Jesteś pewien, że chcesz usunąć ten projekt i wszystkie powiązane dane?
-  text_project_identifier_info: 'Małe litery (a-z), liczby i myślniki dozwolone.<br />Raz zapisany, identyfikator nie może być zmieniony.'
   text_reassign_time_entries: 'Przepnij przepracowany czas do tego zagadnienia:'
   text_regexp_info: np. ^[A-Z0-9]+$
   text_repository_usernames_mapping: "Wybierz lub uaktualnij przyporządkowanie użytkowników Redmine do użytkowników repozytorium.\nUżytkownicy z taką samą nazwą lub adresem email są przyporządkowani automatycznie."
@@ -806,7 +808,7 @@ pl:
   text_user_wrote: "%{value} napisał:"
   text_wiki_destroy_confirmation: Jesteś pewien, że chcesz usunąć to wiki i całą jego zawartość ?
   text_workflow_edit: Zaznacz rolę i typ zagadnienia do edycji przepływu
-  
+
   label_user_activity: "Aktywność: %{value}"
   label_updated_time_by: "Uaktualnione przez %{author} %{age} temu"
   text_diff_truncated: '... Ten plik różnic został przycięty ponieważ jest zbyt długi.'
@@ -908,7 +910,7 @@ pl:
   version_status_closed: zamknięta
   version_status_locked: zablokowana
   version_status_open: otwarta
-  
+
   label_board_sticky: Przyklejona
   label_board_locked: Zamknięta
   permission_export_wiki_pages: Eksport stron wiki
@@ -1023,3 +1025,58 @@ pl:
   button_export: Export
   label_export_options: "%{export_format} export options"
   error_attachment_too_big: This file cannot be uploaded because it exceeds the maximum allowed file size (%{max_size})
+  notice_failed_to_save_time_entries: "Failed to save %{count} time entrie(s) on %{total} selected: %{ids}."
+  label_x_issues:
+    zero:  0 zagadnienie
+    one:   1 zagadnienie
+    other: "%{count} zagadnienia"
+  label_repository_new: New repository
+  field_repository_is_default: Main repository
+  label_copy_attachments: Copy attachments
+  label_item_position: "%{position}/%{count}"
+  label_completed_versions: Completed versions
+  text_project_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_multiple: Multiple values
+  setting_commit_cross_project_ref: Allow issues of all the other projects to be referenced and fixed
+  text_issue_conflict_resolution_add_notes: Add my notes and discard my other changes
+  text_issue_conflict_resolution_overwrite: Apply my changes anyway (previous notes will be kept but some changes may be overwritten)
+  notice_issue_update_conflict: The issue has been updated by an other user while you were editing it.
+  text_issue_conflict_resolution_cancel: Discard all my changes and redisplay %{link}
+  permission_manage_related_issues: Manage related issues
+  field_auth_source_ldap_filter: LDAP filter
+  label_search_for_watchers: Search for watchers to add
+  notice_account_deleted: Your account has been permanently deleted.
+  setting_unsubscribe: Allow users to delete their own account
+  button_delete_my_account: Delete my account
+  text_account_destroy_confirmation: |-
+    Are you sure you want to proceed?
+    Your account will be permanently deleted, with no way to reactivate it.
+  error_session_expired: Your session has expired. Please login again.
+  text_session_expiration_settings: "Warning: changing these settings may expire the current sessions including yours."
+  setting_session_lifetime: Session maximum lifetime
+  setting_session_timeout: Session inactivity timeout
+  label_session_expiration: Session expiration
+  permission_close_project: Close / reopen the project
+  label_show_closed_projects: View closed projects
+  button_close: Close
+  button_reopen: Reopen
+  project_status_active: active
+  project_status_closed: closed
+  project_status_archived: archived
+  text_project_closed: This project is closed and read-only.
+  notice_user_successful_create: User %{id} created.
+  field_core_fields: Standard fields
+  field_timeout: Timeout (in seconds)
+  setting_thumbnails_enabled: Display attachment thumbnails
+  setting_thumbnails_size: Thumbnails size (in pixels)
+  label_status_transitions: Status transitions
+  label_fields_permissions: Fields permissions
+  label_readonly: Read-only
+  label_required: Required
+  text_repository_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_board_parent: Parent forum
+  label_attribute_of_project: Project's %{name}
+  label_attribute_of_author: Author's %{name}
+  label_attribute_of_assigned_to: Assignee's %{name}
+  label_attribute_of_fixed_version: Target version's %{name}
+  label_copy_subtasks: Copy subtasks

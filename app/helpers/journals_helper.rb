@@ -1,5 +1,7 @@
+# encoding: utf-8
+#
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,22 +23,24 @@ module JournalsHelper
     editable = User.current.logged? && (User.current.allowed_to?(:edit_issue_notes, issue.project) || (journal.user == User.current && User.current.allowed_to?(:edit_own_issue_notes, issue.project)))
     links = []
     if !journal.notes.blank?
-      links << link_to_remote(image_tag('comment.png'),
-                              { :url => {:controller => 'journals', :action => 'new', :id => issue, :journal_id => journal} },
-                              :title => l(:button_quote)) if options[:reply_links]
+      links << link_to(image_tag('comment.png'),
+                       {:controller => 'journals', :action => 'new', :id => issue, :journal_id => journal},
+                       :remote => true,
+                       :method => 'post',
+                       :title => l(:button_quote)) if options[:reply_links]
       links << link_to_in_place_notes_editor(image_tag('edit.png'), "journal-#{journal.id}-notes",
-                                             { :controller => 'journals', :action => 'edit', :id => journal },
+                                             { :controller => 'journals', :action => 'edit', :id => journal, :format => 'js' },
                                                 :title => l(:button_edit)) if editable
     end
-    content << content_tag('div', links.join(' '), :class => 'contextual') unless links.empty?
+    content << content_tag('div', links.join(' ').html_safe, :class => 'contextual') unless links.empty?
     content << textilizable(journal, :notes)
     css_classes = "wiki"
     css_classes << " editable" if editable
-    content_tag('div', content, :id => "journal-#{journal.id}-notes", :class => css_classes)
+    content_tag('div', content.html_safe, :id => "journal-#{journal.id}-notes", :class => css_classes)
   end
 
   def link_to_in_place_notes_editor(text, field_id, url, options={})
-    onclick = "new Ajax.Request('#{url_for(url)}', {asynchronous:true, evalScripts:true, method:'get'}); return false;"
+    onclick = "$.ajax({url: '#{url_for(url)}', type: 'get'}); return false;"
     link_to text, '#', options.merge(:onclick => onclick)
   end
 end

@@ -1,5 +1,7 @@
+# encoding: utf-8
+#
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,6 +20,8 @@
 module AdminHelper
   def project_status_options_for_select(selected)
     options_for_select([[l(:label_all), ''],
-                        [l(:status_active), 1]], selected)
+                        [l(:project_status_active), '1'],
+                        [l(:project_status_closed), '5'],
+                        [l(:project_status_archived), '9']], selected.to_s)
   end
 end

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -23,7 +23,7 @@ class JournalObserver < ActiveRecord::Observer
           (Setting.notified_events.include?('issue_status_updated') && journal.new_status.present?) ||
           (Setting.notified_events.include?('issue_priority_updated') && journal.new_value_for('priority_id').present?)
         )
-      Mailer.deliver_issue_edit(journal)
+      Mailer.issue_edit(journal).deliver
     end
   end
 end

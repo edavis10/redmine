@@ -1,8 +1,7 @@
 <div class="contextual">
 <%= link_to(l(:button_edit), edit_version_path(@version), :class => 'icon icon-edit') if User.current.allowed_to?(:manage_versions, @version.project) %>
 <%= link_to_if_authorized(l(:button_edit_associated_wikipage, :page_title => @version.wiki_page_title), {:controller => 'wiki', :action => 'edit', :project_id => @version.project, :id => Wiki.titleize(@version.wiki_page_title)}, :class => 'icon icon-edit') unless @version.wiki_page_title.blank? || @version.project.wiki.nil? %>
-<%= link_to(l(:button_delete), version_path(@version, :back_url => url_for(:controller => 'versions', :action => 'index', :project_id => @version.project)),
-  :confirm => l(:text_are_you_sure), :method => :delete, :class => 'icon icon-del') if User.current.allowed_to?(:manage_versions, @version.project) %>
+<%= delete_link version_path(@version, :back_url => url_for(:controller => 'versions', :action => 'index', :project_id => @version.project)) if User.current.allowed_to?(:manage_versions, @version.project) %>
 <%= call_hook(:view_versions_show_contextual, { :version => @version, :project => @project }) %>
 </div>
 
@@ -14,16 +13,16 @@
 
 <div id="version-summary">
 <% if @version.estimated_hours > 0 || User.current.allowed_to?(:view_time_entries, @project) %>
-<fieldset><legend><%= l(:label_time_tracking) %></legend>
+<fieldset class="time-tracking"><legend><%= l(:label_time_tracking) %></legend>
 <table>
 <tr>
-    <td width="130px" align="right"><%= l(:field_estimated_hours) %></td>
-    <td width="240px" class="total-hours"width="130px" align="right"><%= html_hours(l_hours(@version.estimated_hours)) %></td>
+    <th><%= l(:field_estimated_hours) %></th>
+    <td class="total-hours"><%= html_hours(l_hours(@version.estimated_hours)) %></td>
 </tr>
 <% if User.current.allowed_to?(:view_time_entries, @project) %>
 <tr>
-    <td width="130px" align="right"><%= l(:label_spent_time) %></td>
-    <td width="240px" class="total-hours"><%= html_hours(l_hours(@version.spent_hours)) %></td>
+    <th><%= l(:label_spent_time) %></th>
+    <td class="total-hours"><%= html_hours(l_hours(@version.spent_hours)) %></td>
 </tr>
 <% end %>
 </table>
@@ -36,12 +35,12 @@
 </div>
 
 <% if @issues.present? %>
-<% form_tag({}) do -%>
+<%= form_tag({}) do -%>
   <table class="list related-issues">
   <caption><%= l(:label_related_issues) %></caption>
   <%- @issues.each do |issue| -%>
     <tr class="hascontextmenu">
-      <td class="checkbox"><%= check_box_tag 'ids[]', issue.id %></td>
+      <td class="checkbox"><%= check_box_tag 'ids[]', issue.id, false, :id => nil %></td>
       <td><%= link_to_issue(issue, :project => (@project != issue.project)) %></td>
     </tr>
   <% end %>

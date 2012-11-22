@@ -54,14 +54,13 @@
 #
 # ==== SMTP server at using TLS (GMail)
 #
-# This requires some additional configuration.  See the article at:
-# http://redmineblog.com/articles/setup-redmine-to-send-email-using-gmail/
+# This might require some additional configuration. See the guides at:
+# http://www.redmine.org/projects/redmine/wiki/EmailConfiguration
 #
 # production:
 #   email_delivery:
 #     delivery_method: :smtp
 #     smtp_settings:
-#       tls: true
 #       enable_starttls_auto: true
 #       address: "smtp.gmail.com"
 #       port: 587
@@ -147,6 +146,25 @@ default:
   # * change the cipher key here in your configuration file
   # * encrypt data using 'rake db:encrypt RAILS_ENV=production'
   database_cipher_key:
+
+  # Set this to false to disable plugins' assets mirroring on startup.
+  # You can use `rake redmine:plugins:assets` to manually mirror assets
+  # to public/plugin_assets when you install/upgrade a Redmine plugin.
+  #
+  #mirror_plugins_assets_on_startup: false
+
+  # Your secret key for verifying cookie session data integrity. If you
+  # change this key, all old sessions will become invalid! Make sure the
+  # secret is at least 30 characters and all random, no regular words or
+  # you'll be exposed to dictionary attacks.
+  #
+  # If you have a load-balancing Redmine cluster, you have to use the
+  # same secret token on each machine.
+  #secret_token: 'change it to a long random string'
+
+  # Absolute path (e.g. /usr/bin/convert, c:/im/convert.exe) to
+  # the ImageMagick's `convert` binary. Used to generate attachment thumbnails.
+  #imagemagick_convert_command:
 
 # specific configuration options for production environment
 # that overrides the default ones

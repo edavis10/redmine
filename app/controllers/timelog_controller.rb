@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,11 +17,16 @@
 
 class TimelogController < ApplicationController
   menu_item :issues
-  before_filter :find_project, :only => [:new, :create]
+
+  before_filter :find_project_for_new_time_entry, :only => [:create]
   before_filter :find_time_entry, :only => [:show, :edit, :update]
   before_filter :find_time_entries, :only => [:bulk_edit, :bulk_update, :destroy]
-  before_filter :authorize, :except => [:index]
-  before_filter :find_optional_project, :only => [:index]
+  before_filter :authorize, :except => [:new, :index, :report]
+
+  before_filter :find_optional_project, :only => [:index, :report]
+  before_filter :find_optional_project_for_new_time_entry, :only => [:new]
+  before_filter :authorize_global, :only => [:new, :index, :report]
+
   accept_rss_auth :index
   accept_api_auth :index, :show, :create, :update, :destroy
 
@@ -34,64 +39,73 @@ class TimelogController < ApplicationController
 
   def index
     sort_init 'spent_on', 'desc'
-    sort_update 'spent_on' => 'spent_on',
+    sort_update 'spent_on' => ['spent_on', "#{TimeEntry.table_name}.created_on"],
                 'user' => 'user_id',
                 'activity' => 'activity_id',
                 'project' => "#{Project.table_name}.name",
                 'issue' => 'issue_id',
                 'hours' => 'hours'
 
-    cond = ARCondition.new
-    if @issue
-      cond << "#{Issue.table_name}.root_id = #{@issue.root_id} AND #{Issue.table_name}.lft >= #{@issue.lft} AND #{Issue.table_name}.rgt <= #{@issue.rgt}"
-    elsif @project
-      cond << @project.project_condition(Setting.display_subprojects_issues?)
-    end
-
     retrieve_date_range
-    cond << ['spent_on BETWEEN ? AND ?', @from, @to]
+
+    scope = TimeEntry.visible.spent_between(@from, @to)
+    if @issue
+      scope = scope.on_issue(@issue)
+    elsif @project
+      scope = scope.on_project(@project, Setting.display_subprojects_issues?)
+    end
 
     respond_to do |format|
       format.html {
         # Paginate results
-        @entry_count = TimeEntry.visible.count(:include => [:project, :issue], :conditions => cond.conditions)
+        @entry_count = scope.count
         @entry_pages = Paginator.new self, @entry_count, per_page_option, params['page']
-        @entries = TimeEntry.visible.find(:all,
-                                  :include => [:project, :activity, :user, {:issue => :tracker}],
-                                  :conditions => cond.conditions,
-                                  :order => sort_clause,
-                                  :limit  =>  @entry_pages.items_per_page,
-                                  :offset =>  @entry_pages.current.offset)
-        @total_hours = TimeEntry.visible.sum(:hours, :include => [:project, :issue], :conditions => cond.conditions).to_f
+        @entries = scope.all(
+          :include => [:project, :activity, :user, {:issue => :tracker}],
+          :order => sort_clause,
+          :limit  =>  @entry_pages.items_per_page,
+          :offset =>  @entry_pages.current.offset
+        )
+        @total_hours = scope.sum(:hours).to_f
 
         render :layout => !request.xhr?
       }
       format.api  {
-        @entry_count = TimeEntry.visible.count(:include => [:project, :issue], :conditions => cond.conditions)
+        @entry_count = scope.count
         @offset, @limit = api_offset_and_limit
-        @entries = TimeEntry.visible.find(:all,
-                                  :include => [:project, :activity, :user, {:issue => :tracker}],
-                                  :conditions => cond.conditions,
-                                  :order => sort_clause,
-                                  :limit  => @limit,
-                                  :offset => @offset)
+        @entries = scope.all(
+          :include => [:project, :activity, :user, {:issue => :tracker}],
+          :order => sort_clause,
+          :limit  => @limit,
+          :offset => @offset
+        )
       }
       format.atom {
-        entries = TimeEntry.visible.find(:all,
-                                 :include => [:project, :activity, :user, {:issue => :tracker}],
-                                 :conditions => cond.conditions,
-                                 :order => "#{TimeEntry.table_name}.created_on DESC",
-                                 :limit => Setting.feeds_limit.to_i)
+        entries = scope.all(
+          :include => [:project, :activity, :user, {:issue => :tracker}],
+          :order => "#{TimeEntry.table_name}.created_on DESC",
+          :limit => Setting.feeds_limit.to_i
+        )
         render_feed(entries, :title => l(:label_spent_time))
       }
       format.csv {
         # Export all entries
-        @entries = TimeEntry.visible.find(:all,
-                                  :include => [:project, :activity, :user, {:issue => [:tracker, :assigned_to, :priority]}],
-                                  :conditions => cond.conditions,
-                                  :order => sort_clause)
+        @entries = scope.all(
+          :include => [:project, :activity, :user, {:issue => [:tracker, :assigned_to, :priority]}],
+          :order => sort_clause
+        )
         send_data(entries_to_csv(@entries), :type => 'text/csv; header=present', :filename => 'timelog.csv')
       }
+    end
+  end
+
+  def report
+    retrieve_date_range
+    @report = Redmine::Helpers::TimeReport.new(@project, @issue, params[:criteria], params[:columns], @from, @to)
+
+    respond_to do |format|
+      format.html { render :layout => !request.xhr? }
+      format.csv  { send_data(report_to_csv(@report), :type => 'text/csv; header=present', :filename => 'timelog.csv') }
     end
   end
 
@@ -105,44 +119,49 @@ class TimelogController < ApplicationController
 
   def new
     @time_entry ||= TimeEntry.new(:project => @project, :issue => @issue, :user => User.current, :spent_on => User.current.today)
-    @time_entry.attributes = params[:time_entry]
-
-    call_hook(:controller_timelog_edit_before_save, { :params => params, :time_entry => @time_entry })
-    render :action => 'edit'
+    @time_entry.safe_attributes = params[:time_entry]
   end
 
-  verify :method => :post, :only => :create, :render => {:nothing => true, :status => :method_not_allowed }
   def create
     @time_entry ||= TimeEntry.new(:project => @project, :issue => @issue, :user => User.current, :spent_on => User.current.today)
-    @time_entry.attributes = params[:time_entry]
+    @time_entry.safe_attributes = params[:time_entry]
 
     call_hook(:controller_timelog_edit_before_save, { :params => params, :time_entry => @time_entry })
 
     if @time_entry.save
       respond_to do |format|
         format.html {
-          flash[:notice] = l(:notice_successful_update)
-          redirect_back_or_default :action => 'index', :project_id => @time_entry.project
+          flash[:notice] = l(:notice_successful_create)
+          if params[:continue]
+            if params[:project_id]
+              redirect_to :action => 'new', :project_id => @time_entry.project, :issue_id => @time_entry.issue,
+                :time_entry => {:issue_id => @time_entry.issue_id, :activity_id => @time_entry.activity_id},
+                :back_url => params[:back_url]
+            else
+              redirect_to :action => 'new', 
+                :time_entry => {:project_id => @time_entry.project_id, :issue_id => @time_entry.issue_id, :activity_id => @time_entry.activity_id},
+                :back_url => params[:back_url]
+            end
+          else
+            redirect_back_or_default :action => 'index', :project_id => @time_entry.project
+          end
         }
         format.api  { render :action => 'show', :status => :created, :location => time_entry_url(@time_entry) }
       end
     else
       respond_to do |format|
-        format.html { render :action => 'edit' }
+        format.html { render :action => 'new' }
         format.api  { render_validation_errors(@time_entry) }
       end
     end
   end
 
   def edit
-    @time_entry.attributes = params[:time_entry]
-
-    call_hook(:controller_timelog_edit_before_save, { :params => params, :time_entry => @time_entry })
+    @time_entry.safe_attributes = params[:time_entry]
   end
 
-  verify :method => :put, :only => :update, :render => {:nothing => true, :status => :method_not_allowed }
   def update
-    @time_entry.attributes = params[:time_entry]
+    @time_entry.safe_attributes = params[:time_entry]
 
     call_hook(:controller_timelog_edit_before_save, { :params => params, :time_entry => @time_entry })
 
@@ -152,7 +171,7 @@ class TimelogController < ApplicationController
           flash[:notice] = l(:notice_successful_update)
           redirect_back_or_default :action => 'index', :project_id => @time_entry.project
         }
-        format.api  { head :ok }
+        format.api  { render_api_ok }
       end
     else
       respond_to do |format|
@@ -173,7 +192,7 @@ class TimelogController < ApplicationController
     unsaved_time_entry_ids = []
     @time_entries.each do |time_entry|
       time_entry.reload
-      time_entry.attributes = attributes
+      time_entry.safe_attributes = attributes
       call_hook(:controller_time_entries_bulk_edit_before_save, { :params => params, :time_entry => time_entry })
       unless time_entry.save
         # Keep unsaved time_entry ids to display them in flash error
@@ -184,32 +203,31 @@ class TimelogController < ApplicationController
     redirect_back_or_default({:controller => 'timelog', :action => 'index', :project_id => @projects.first})
   end
 
-  verify :method => :delete, :only => :destroy, :render => {:nothing => true, :status => :method_not_allowed }
   def destroy
-    @time_entries.each do |t|
-      begin
+    destroyed = TimeEntry.transaction do
+      @time_entries.each do |t|
         unless t.destroy && t.destroyed?
-          respond_to do |format|
-            format.html {
-              flash[:error] = l(:notice_unable_delete_time_entry)
-              redirect_to :back
-            }
-            format.api  { render_validation_errors(t) }
-          end
-          return
+          raise ActiveRecord::Rollback
         end
-      rescue ::ActionController::RedirectBackError
-        redirect_to :action => 'index', :project_id => @projects.first
-        return
       end
     end
 
     respond_to do |format|
       format.html {
-        flash[:notice] = l(:notice_successful_delete)
+        if destroyed
+          flash[:notice] = l(:notice_successful_delete)
+        else
+          flash[:error] = l(:notice_unable_delete_time_entry)
+        end
         redirect_back_or_default(:action => 'index', :project_id => @projects.first)
       }
-      format.api  { head :ok }
+      format.api  {
+        if destroyed
+          render_api_ok
+        else
+          render_validation_errors(@time_entries)
+        end
+      }
     end
   end
 
@@ -245,18 +263,23 @@ private
     end
   end
 
-  def find_project
+  def find_optional_project_for_new_time_entry
+    if (project_id = (params[:project_id] || params[:time_entry] && params[:time_entry][:project_id])).present?
+      @project = Project.find(project_id)
+    end
     if (issue_id = (params[:issue_id] || params[:time_entry] && params[:time_entry][:issue_id])).present?
       @issue = Issue.find(issue_id)
-      @project = @issue.project
-    elsif (project_id = (params[:project_id] || params[:time_entry] && params[:time_entry][:project_id])).present?
-      @project = Project.find(project_id)
-    else
-      render_404
-      return false
+      @project ||= @issue.project
     end
   rescue ActiveRecord::RecordNotFound
     render_404
+  end
+
+  def find_project_for_new_time_entry
+    find_optional_project_for_new_time_entry
+    if @project.nil?
+      render_404
+    end
   end
 
   def find_optional_project
@@ -266,7 +289,6 @@ private
     elsif !params[:project_id].blank?
       @project = Project.find(params[:project_id])
     end
-    deny_access unless User.current.allowed_to?(:view_time_entries, @project, :global => true)
   end
 
   # Retrieves the date range based on predefined ranges or specific from/to param dates
@@ -311,8 +333,6 @@ private
     end
 
     @from, @to = @to, @from if @from && @to && @from > @to
-    @from ||= (TimeEntry.earilest_date_for_project(@project) || Date.today)
-    @to   ||= (TimeEntry.latest_date_for_project(@project) || Date.today)
   end
 
   def parse_params_for_bulk_time_entry_attributes(params)

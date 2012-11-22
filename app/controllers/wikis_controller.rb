@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,9 +22,8 @@ class WikisController < ApplicationController
   # Create or update a project's wiki
   def edit
     @wiki = @project.wiki || Wiki.new(:project => @project)
-    @wiki.attributes = params[:wiki]
+    @wiki.safe_attributes = params[:wiki]
     @wiki.save if request.post?
-    render(:update) {|page| page.replace_html "tab-content-wiki", :partial => 'projects/settings/wiki'}
   end
 
   # Delete a project's wiki

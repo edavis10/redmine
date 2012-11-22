@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,19 +20,16 @@ require File.expand_path('../../test_helper', __FILE__)
 class RepositoryGitTest < ActiveSupport::TestCase
   fixtures :projects, :repositories, :enabled_modules, :users, :roles
 
+  include Redmine::I18n
+
   REPOSITORY_PATH = Rails.root.join('tmp/test/git_repository').to_s
   REPOSITORY_PATH.gsub!(/\//, "\\") if Redmine::Platform.mswin?
 
-  NUM_REV = 21
+  NUM_REV = 28
+  NUM_HEAD = 6
 
   FELIX_HEX  = "Felix Sch\xC3\xA4fer"
   CHAR_1_HEX = "\xc3\x9c"
-
-  ## Ruby uses ANSI api to fork a process on Windows.
-  ## Japanese Shift_JIS and Traditional Chinese Big5 have 0x5c(backslash) problem
-  ## and these are incompatible with ASCII.
-  # WINDOWS_PASS = Redmine::Platform.mswin?
-  WINDOWS_PASS = false
 
   ## Git, Mercurial and CVS path encodings are binary.
   ## Subversion supports URL encoding for path.
@@ -42,25 +39,67 @@ class RepositoryGitTest < ActiveSupport::TestCase
   JRUBY_SKIP     = (RUBY_PLATFORM == 'java')
   JRUBY_SKIP_STR = "TODO: This test fails in JRuby"
 
+  def setup
+    @project = Project.find(3)
+    @repository = Repository::Git.create(
+                        :project       => @project,
+                        :url           => REPOSITORY_PATH,
+                        :path_encoding => 'ISO-8859-1'
+                        )
+    assert @repository
+    @char_1        = CHAR_1_HEX.dup
+    if @char_1.respond_to?(:force_encoding)
+      @char_1.force_encoding('UTF-8')
+    end
+  end
+
+  def test_blank_path_to_repository_error_message
+    set_language_if_valid 'en'
+    repo = Repository::Git.new(
+                          :project      => @project,
+                          :identifier   => 'test'
+                        )
+    assert !repo.save
+    assert_include "Path to repository can't be blank",
+                   repo.errors.full_messages
+  end
+
+  def test_blank_path_to_repository_error_message_fr
+    set_language_if_valid 'fr'
+    str = "Chemin du d\xc3\xa9p\xc3\xb4t doit \xc3\xaatre renseign\xc3\xa9(e)"
+    str.force_encoding('UTF-8') if str.respond_to?(:force_encoding)
+    repo = Repository::Git.new(
+                          :project      => @project,
+                          :url          => "",
+                          :identifier   => 'test',
+                          :path_encoding => ''
+                        )
+    assert !repo.save
+    assert_include str, repo.errors.full_messages
+  end
+
   if File.directory?(REPOSITORY_PATH)
-    def setup
+    ## Ruby uses ANSI api to fork a process on Windows.
+    ## Japanese Shift_JIS and Traditional Chinese Big5 have 0x5c(backslash) problem
+    ## and these are incompatible with ASCII.
+    ## Git for Windows (msysGit) changed internal API from ANSI to Unicode in 1.7.10
+    ## http://code.google.com/p/msysgit/issues/detail?id=80
+    ## So, Latin-1 path tests fail on Japanese Windows
+    WINDOWS_PASS = (Redmine::Platform.mswin? &&
+                         Redmine::Scm::Adapters::GitAdapter.client_version_above?([1, 7, 10]))
+    WINDOWS_SKIP_STR = "TODO: This test fails in Git for Windows above 1.7.10"
+
+    def test_scm_available
       klass = Repository::Git
       assert_equal "Git", klass.scm_name
       assert klass.scm_adapter_class
       assert_not_equal "", klass.scm_command
       assert_equal true, klass.scm_available
+    end
 
-      @project = Project.find(3)
-      @repository = Repository::Git.create(
-                        :project       => @project,
-                        :url           => REPOSITORY_PATH,
-                        :path_encoding => 'ISO-8859-1'
-                        )
-      assert @repository
-      @char_1        = CHAR_1_HEX.dup
-      if @char_1.respond_to?(:force_encoding)
-        @char_1.force_encoding('UTF-8')
-      end
+    def test_entries
+      entries = @repository.entries
+      assert_kind_of Redmine::Scm::Adapters::Entries, entries
     end
 
     def test_fetch_changesets_from_scratch
@@ -71,23 +110,23 @@ class RepositoryGitTest < ActiveSupport::TestCase
       @project.reload
 
       assert_equal NUM_REV, @repository.changesets.count
-      assert_equal 33, @repository.changes.count
+      assert_equal 39, @repository.filechanges.count
 
-      commit = @repository.changesets.find(:first, :order => 'committed_on ASC')
+      commit = @repository.changesets.find_by_revision("7234cb2750b63f47bff735edc50a1c0a433c2518")
+      assert_equal "7234cb2750b63f47bff735edc50a1c0a433c2518", commit.scmid
       assert_equal "Initial import.\nThe repository contains 3 files.", commit.comments
       assert_equal "jsmith <jsmith@foo.bar>", commit.committer
       assert_equal User.find_by_login('jsmith'), commit.user
       # TODO: add a commit with commit time <> author time to the test repository
       assert_equal "2007-12-14 09:22:52".to_time, commit.committed_on
       assert_equal "2007-12-14".to_date, commit.commit_date
-      assert_equal "7234cb2750b63f47bff735edc50a1c0a433c2518", commit.revision
-      assert_equal "7234cb2750b63f47bff735edc50a1c0a433c2518", commit.scmid
-      assert_equal 3, commit.changes.count
-      change = commit.changes.sort_by(&:path).first
+      assert_equal 3, commit.filechanges.count
+      change = commit.filechanges.sort_by(&:path).first
       assert_equal "README", change.path
+      assert_equal nil, change.from_path
       assert_equal "A", change.action
 
-      assert_equal 4, @repository.extra_info["branches"].size
+      assert_equal NUM_HEAD, @repository.extra_info["heads"].size
     end
 
     def test_fetch_changesets_incremental
@@ -95,13 +134,10 @@ class RepositoryGitTest < ActiveSupport::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      assert_equal 33, @repository.changes.count
-      extra_info_db = @repository.extra_info["branches"]
-      assert_equal 4, extra_info_db.size
-      assert_equal "1ca7f5ed374f3cb31a93ae5215c2e25cc6ec5127",
-                    extra_info_db["latin-1-path-encoding"]["last_scmid"]
-      assert_equal "83ca5fd546063a3c7dc2e568ba3355661a9e2b2c",
-                    extra_info_db["master"]["last_scmid"]
+      extra_info_heads = @repository.extra_info["heads"].dup
+      assert_equal NUM_HEAD, extra_info_heads.size
+      extra_info_heads.delete_if { |x| x == "83ca5fd546063a3c7dc2e568ba3355661a9e2b2c" }
+      assert_equal 4, extra_info_heads.size
 
       del_revs = [
           "83ca5fd546063a3c7dc2e568ba3355661a9e2b2c",
@@ -116,33 +152,30 @@ class RepositoryGitTest < ActiveSupport::TestCase
       end
       @project.reload
       cs1 = @repository.changesets
-      assert_equal 15, cs1.count
-      h = @repository.extra_info.dup
-      h["branches"]["master"]["last_scmid"] =
-            "4a07fe31bffcf2888791f3e6cbc9c4545cefe3e8"
+      assert_equal NUM_REV - 6, cs1.count
+      extra_info_heads << "4a07fe31bffcf2888791f3e6cbc9c4545cefe3e8"
+      h = {}
+      h["heads"] = extra_info_heads
       @repository.merge_extra_info(h)
       @repository.save
       @project.reload
-      extra_info_db_1 = @repository.extra_info["branches"]
-      assert_equal "4a07fe31bffcf2888791f3e6cbc9c4545cefe3e8",
-                    extra_info_db_1["master"]["last_scmid"]
-
+      assert @repository.extra_info["heads"].index("4a07fe31bffcf2888791f3e6cbc9c4545cefe3e8")
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
+      assert_equal NUM_HEAD, @repository.extra_info["heads"].size
+      assert @repository.extra_info["heads"].index("83ca5fd546063a3c7dc2e568ba3355661a9e2b2c")
     end
 
-    def test_fetch_changesets_invalid_rev
+    def test_fetch_changesets_history_editing
       assert_equal 0, @repository.changesets.count
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      extra_info_db = @repository.extra_info["branches"]
-      assert_equal 4, extra_info_db.size
-      assert_equal "1ca7f5ed374f3cb31a93ae5215c2e25cc6ec5127",
-                    extra_info_db["latin-1-path-encoding"]["last_scmid"]
-      assert_equal "83ca5fd546063a3c7dc2e568ba3355661a9e2b2c",
-                    extra_info_db["master"]["last_scmid"]
+      extra_info_heads = @repository.extra_info["heads"].dup
+      assert_equal NUM_HEAD, extra_info_heads.size
+      extra_info_heads.delete_if { |x| x == "83ca5fd546063a3c7dc2e568ba3355661a9e2b2c" }
+      assert_equal 4, extra_info_heads.size
 
       del_revs = [
           "83ca5fd546063a3c7dc2e568ba3355661a9e2b2c",
@@ -156,21 +189,66 @@ class RepositoryGitTest < ActiveSupport::TestCase
         rev.destroy if del_revs.detect {|r| r == rev.scmid.to_s }
       end
       @project.reload
-      cs1 = @repository.changesets
-      assert_equal 15, cs1.count
-      h = @repository.extra_info.dup
-      h["branches"]["master"]["last_scmid"] =
-            "abcd1234efgh"
+      assert_equal NUM_REV - 6, @repository.changesets.count
+
+      c = Changeset.new(:repository   => @repository,
+                        :committed_on => Time.now,
+                        :revision     => "abcd1234efgh",
+                        :scmid        => "abcd1234efgh",
+                        :comments     => 'test')
+      assert c.save
+      @project.reload
+      assert_equal NUM_REV - 5, @repository.changesets.count
+
+      extra_info_heads << "1234abcd5678"
+      h = {}
+      h["heads"] = extra_info_heads
       @repository.merge_extra_info(h)
       @repository.save
       @project.reload
-      extra_info_db_1 = @repository.extra_info["branches"]
-      assert_equal "abcd1234efgh",
-                    extra_info_db_1["master"]["last_scmid"]
+      h1 = @repository.extra_info["heads"].dup
+      assert h1.index("1234abcd5678")
+      assert_equal 5, h1.size
 
       @repository.fetch_changesets
       @project.reload
-      assert_equal 15, @repository.changesets.count
+      assert_equal NUM_REV - 5, @repository.changesets.count
+      h2 = @repository.extra_info["heads"].dup
+      assert_equal h1, h2
+    end
+
+    def test_keep_extra_report_last_commit_in_clear_changesets
+      assert_nil @repository.extra_info
+      h = {}
+      h["extra_report_last_commit"] = "1"
+      @repository.merge_extra_info(h)
+      @repository.save
+      @project.reload
+
+      assert_equal 0, @repository.changesets.count
+      @repository.fetch_changesets
+      @project.reload
+
+      assert_equal NUM_REV, @repository.changesets.count
+      @repository.send(:clear_changesets)
+      assert_equal 1, @repository.extra_info.size
+      assert_equal "1", @repository.extra_info["extra_report_last_commit"]
+    end
+
+    def test_refetch_after_clear_changesets
+      assert_nil @repository.extra_info
+      assert_equal 0, @repository.changesets.count
+      @repository.fetch_changesets
+      @project.reload
+      assert_equal NUM_REV, @repository.changesets.count
+
+      @repository.send(:clear_changesets)
+      @project.reload
+      assert_equal 0, @repository.changesets.count
+
+      @repository.fetch_changesets
+      @project.reload
+      assert_equal NUM_REV, @repository.changesets.count
     end
 
     def test_parents
@@ -206,14 +284,19 @@ class RepositoryGitTest < ActiveSupport::TestCase
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
       assert_not_nil @repository.extra_info
-      @repository.write_attribute(:extra_info, nil)
+      h = {}
+      h["heads"] = []
+      h["branches"] = {}
+      h["db_consistent"] = {}
+      @repository.merge_extra_info(h)
       @repository.save
-      assert_nil @repository.extra_info
       assert_equal NUM_REV, @repository.changesets.count
       @repository.fetch_changesets
       @project.reload
       assert_equal 0, @repository.extra_info["db_consistent"]["ordering"]
 
+      extra_info_heads = @repository.extra_info["heads"].dup
+      extra_info_heads.delete_if { |x| x == "83ca5fd546063a3c7dc2e568ba3355661a9e2b2c" }
       del_revs = [
           "83ca5fd546063a3c7dc2e568ba3355661a9e2b2c",
           "ed5bb786bbda2dee66a2d50faf51429dbc043a7b",
@@ -227,21 +310,38 @@ class RepositoryGitTest < ActiveSupport::TestCase
       end
       @project.reload
       cs1 = @repository.changesets
-      assert_equal 15, cs1.count
+      assert_equal NUM_REV - 6, cs1.count
       assert_equal 0, @repository.extra_info["db_consistent"]["ordering"]
-      h = @repository.extra_info.dup
-      h["branches"]["master"]["last_scmid"] =
-            "4a07fe31bffcf2888791f3e6cbc9c4545cefe3e8"
+
+      extra_info_heads << "4a07fe31bffcf2888791f3e6cbc9c4545cefe3e8"
+      h = {}
+      h["heads"] = extra_info_heads
       @repository.merge_extra_info(h)
       @repository.save
       @project.reload
-      extra_info_db_1 = @repository.extra_info["branches"]
-      assert_equal "4a07fe31bffcf2888791f3e6cbc9c4545cefe3e8",
-                    extra_info_db_1["master"]["last_scmid"]
-
+      assert @repository.extra_info["heads"].index("4a07fe31bffcf2888791f3e6cbc9c4545cefe3e8")
       @repository.fetch_changesets
+      @project.reload
       assert_equal NUM_REV, @repository.changesets.count
+      assert_equal NUM_HEAD, @repository.extra_info["heads"].size
+
       assert_equal 0, @repository.extra_info["db_consistent"]["ordering"]
+    end
+
+    def test_heads_from_branches_hash
+      assert_nil @repository.extra_info
+      assert_equal 0, @repository.changesets.count
+      assert_equal [], @repository.heads_from_branches_hash
+      h = {}
+      h["branches"] = {}
+      h["branches"]["test1"] = {}
+      h["branches"]["test1"]["last_scmid"] = "1234abcd"
+      h["branches"]["test2"] = {}
+      h["branches"]["test2"]["last_scmid"] = "abcd1234"
+      @repository.merge_extra_info(h)
+      @repository.save
+      @project.reload
+      assert_equal ["1234abcd", "abcd1234"], @repository.heads_from_branches_hash.sort
     end
 
     def test_latest_changesets
@@ -250,11 +350,11 @@ class RepositoryGitTest < ActiveSupport::TestCase
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
       # with limit
-      changesets = @repository.latest_changesets('', nil, 2)
+      changesets = @repository.latest_changesets('', 'master', 2)
       assert_equal 2, changesets.size
 
       # with path
-      changesets = @repository.latest_changesets('images', nil)
+      changesets = @repository.latest_changesets('images', 'master')
       assert_equal [
               'deff712f05a90d96edbd70facc47d944be5897e3',
               '899a15dba03a3b350b89c3f537e4bbe02a03cdc9',
@@ -343,7 +443,9 @@ class RepositoryGitTest < ActiveSupport::TestCase
               '61b685fbe55ab05b5ac68402d5720c1a6ac973d1',
           ], changesets.collect(&:revision)
 
-      if JRUBY_SKIP
+      if WINDOWS_PASS
+        puts WINDOWS_SKIP_STR
+      elsif JRUBY_SKIP
         puts JRUBY_SKIP_STR
       else
         # latin-1 encoding path
@@ -364,7 +466,7 @@ class RepositoryGitTest < ActiveSupport::TestCase
 
     def test_latest_changesets_latin_1_dir
       if WINDOWS_PASS
-        #
+        puts WINDOWS_SKIP_STR
       elsif JRUBY_SKIP
         puts JRUBY_SKIP_STR
       else
@@ -463,7 +565,7 @@ class RepositoryGitTest < ActiveSupport::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      %w|7234cb2750b63f47bff735edc50a1c0a433c2518 7234cb2|.each do |r1|
+      %w|7234cb2750b63f47bff735edc50a1c0a433c2518 7234cb275|.each do |r1|
         changeset = @repository.find_changeset_by_name(r1)
         assert_nil changeset.previous
       end
@@ -487,7 +589,7 @@ class RepositoryGitTest < ActiveSupport::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      %w|67e7792ce20ccae2e4bb73eed09bb397819c8834 67e7792ce20cca|.each do |r1|
+      %w|2a682156a3b6e77a8bf9cd4590e8db757f3c6c78 2a682156a3b6e77a|.each do |r1|
         changeset = @repository.find_changeset_by_name(r1)
         assert_nil changeset.next
       end

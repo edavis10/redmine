@@ -1,45 +1,41 @@
-require 'rails_generator/base'
-require 'rails_generator/generators/components/model/model_generator'
-
-class RedminePluginModelGenerator < ModelGenerator
-  attr_accessor :plugin_path, :plugin_name, :plugin_pretty_name
+class RedminePluginModelGenerator < Rails::Generators::NamedBase
   
-  def initialize(runtime_args, runtime_options = {})
-    runtime_args = runtime_args.dup
-    usage if runtime_args.empty?
-    @plugin_name = "redmine_" + runtime_args.shift.underscore
+  source_root File.expand_path("../templates", __FILE__)
+  argument :model, :type => :string
+  argument :attributes, :type => :array, :default => [], :banner => "field[:type][:index] field[:type][:index]"
+  class_option :migration,  :type => :boolean
+  class_option :timestamps, :type => :boolean
+  class_option :parent,     :type => :string, :desc => "The parent class for the generated model"
+  class_option :indexes,    :type => :boolean, :default => true, :desc => "Add indexes for references and belongs_to columns"
+
+  attr_reader :plugin_path, :plugin_name, :plugin_pretty_name
+
+  def initialize(*args)
+    super
+    @plugin_name = file_name.underscore
     @plugin_pretty_name = plugin_name.titleize
-    @plugin_path = "vendor/plugins/#{plugin_name}"
-    super(runtime_args, runtime_options)
+    @plugin_path = "plugins/#{plugin_name}"
+    @model_class = model.camelize
+    @table_name = @model_class.tableize
+    @migration_filename = "create_#{@table_name}"
+    @migration_class_name = @migration_filename.camelize
   end
-  
-  def destination_root
-    File.join(Rails.root, plugin_path)
+
+  def copy_templates
+    template 'model.rb.erb', "#{plugin_path}/app/models/#{model.underscore}.rb"
+    template 'unit_test.rb.erb', "#{plugin_path}/test/unit/#{model.underscore}_test.rb"
+    
+    migration_filename = "%03i_#{@migration_filename}.rb" % (migration_number + 1)
+    template "migration.rb", "#{plugin_path}/db/migrate/#{migration_filename}"
   end
-  
-  def manifest
-    record do |m|
-      # Check for class naming collisions.
-      m.class_collisions class_path, class_name, "#{class_name}Test"
 
-      # Model, test, and fixture directories.
-      m.directory File.join('app/models', class_path)
-      m.directory File.join('test/unit', class_path)
-      m.directory File.join('test/fixtures', class_path)
+  def attributes_with_index
+    attributes.select { |a| a.has_index? || (a.reference? && options[:indexes]) }
+  end
 
-      # Model class, unit test, and fixtures.
-      m.template 'model.rb.erb',      File.join('app/models', class_path, "#{file_name}.rb")
-      m.template 'unit_test.rb.erb',  File.join('test/unit', class_path, "#{file_name}_test.rb")
-
-      unless options[:skip_fixture] 
-       	m.template 'fixtures.yml',  File.join('test/fixtures', "#{table_name}.yml")
-      end
-
-      unless options[:skip_migration]
-        m.migration_template 'migration.rb.erb', 'db/migrate', :assigns => {
-          :migration_name => "Create#{class_name.pluralize.gsub(/::/, '')}"
-        }, :migration_file_name => "create_#{file_path.gsub(/\//, '_').pluralize}"
-      end
-    end
+  def migration_number
+    current = Dir.glob("#{plugin_path}/db/migrate/*.rb").map do |file|
+      File.basename(file).split("_").first.to_i
+    end.max.to_i
   end
 end

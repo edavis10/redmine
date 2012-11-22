@@ -9,17 +9,17 @@
 <% else %>
 <div id="roadmap">
 <% @versions.each do |version| %>
-    <h3 class="version"><%= tag 'a', :name => h(version.name) %><%= link_to_version version %></h3>
+    <h3 class="version"><%= link_to_version version, :name => version_anchor(version) %></h3>
     <%= render :partial => 'versions/overview', :locals => {:version => version} %>
     <%= render(:partial => "wiki/content", :locals => {:content => version.wiki_page.content}) if version.wiki_page %>
 
     <% if (issues = @issues_by_version[version]) && issues.size > 0 %>
-    <% form_tag({}) do -%>
+    <%= form_tag({}) do -%>
     <table class="list related-issues">
     <caption><%= l(:label_related_issues) %></caption>
     <% issues.each do |issue| -%>
       <tr class="hascontextmenu">
-        <td class="checkbox"><%= check_box_tag 'ids[]', issue.id %></td>
+        <td class="checkbox"><%= check_box_tag 'ids[]', issue.id, false, :id => nil %></td>
         <td><%= link_to_issue(issue, :project => (@project != issue.project)) %></td>
       </tr>
     <% end -%>
@@ -32,7 +32,7 @@
 <% end %>
 
 <% content_for :sidebar do %>
-<% form_tag({}, :method => :get) do %>
+<%= form_tag({}, :method => :get) do %>
 <h3><%= l(:label_roadmap) %></h3>
 <% @trackers.each do |tracker| %>
   <label><%= check_box_tag "tracker_ids[]", tracker.id, (@selected_tracker_ids.include? tracker.id.to_s), :id => nil %>
@@ -49,7 +49,17 @@
 
 <h3><%= l(:label_version_plural) %></h3>
 <% @versions.each do |version| %>
-<%= link_to format_version_name(version), "##{version.name}" %><br />
+<%= link_to format_version_name(version), "##{version_anchor(version)}" %><br />
+<% end %>
+<% if @completed_versions.present? %>
+<p>
+	<%= link_to_function l(:label_completed_versions), 
+	                     '$("#toggle-completed-versions").toggleClass("collapsed"); $("#completed-versions").toggle()',
+	                     :id => 'toggle-completed-versions', :class => 'collapsible collapsed' %><br />
+	<span id="completed-versions" style="display:none;">
+	  <%= @completed_versions.map {|version| link_to format_version_name(version), version_path(version)}.join("<br />\n").html_safe %>
+	</span>
+</p>
 <% end %>
 <% end %>
 

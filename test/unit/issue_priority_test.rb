@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,6 +20,19 @@ require File.expand_path('../../test_helper', __FILE__)
 class IssuePriorityTest < ActiveSupport::TestCase
   fixtures :enumerations, :issues
 
+  def test_named_scope
+    assert_equal Enumeration.find_by_name('Normal'), Enumeration.named('normal').first
+  end
+
+  def test_default_should_return_the_default_priority
+    assert_equal Enumeration.find_by_name('Normal'), IssuePriority.default
+  end
+
+  def test_default_should_return_nil_when_no_default_priority
+    IssuePriority.update_all :is_default => false
+    assert_nil IssuePriority.default
+  end
+
   def test_should_be_an_enumeration
     assert IssuePriority.ancestors.include?(Enumeration)
   end
@@ -34,5 +47,30 @@ class IssuePriorityTest < ActiveSupport::TestCase
   def test_option_name
     assert_equal :enumeration_issue_priorities, IssuePriority.new.option_name
   end
-end
 
+  def test_should_be_created_at_last_position
+    IssuePriority.delete_all
+
+    priorities = [1, 2, 3].map {|i| IssuePriority.create!(:name => "P#{i}")}
+    assert_equal [1, 2, 3], priorities.map(&:position)
+  end
+
+  def test_reset_positions_in_list_should_set_sequential_positions
+    IssuePriority.delete_all
+
+    priorities = [1, 2, 3].map {|i| IssuePriority.create!(:name => "P#{i}")}
+    priorities[0].update_attribute :position, 4
+    priorities[1].update_attribute :position, 2
+    priorities[2].update_attribute :position, 7
+    assert_equal [4, 2, 7], priorities.map(&:reload).map(&:position)
+
+    priorities[0].reset_positions_in_list
+    assert_equal [2, 1, 3], priorities.map(&:reload).map(&:position)
+  end
+
+  def test_moving_in_list_should_reset_positions
+    priority = IssuePriority.first
+    priority.expects(:reset_positions_in_list).once
+    priority.move_to = 'higher'
+  end
+end

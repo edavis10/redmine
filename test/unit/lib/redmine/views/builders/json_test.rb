@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -73,8 +73,21 @@ class Redmine::Views::Builders::JsonTest < ActiveSupport::TestCase
     end
   end
 
+  def test_nested_arrays
+    assert_json_output({'books' => [{'authors' => ['B. Smith', 'G. Cooper']}]}) do |b|
+      b.array :books do |books|
+        books.book do |book|
+          book.array :authors do |authors|
+            authors.author 'B. Smith'
+            authors.author 'G. Cooper'
+          end
+        end
+      end
+    end
+  end
+
   def assert_json_output(expected, &block)
-    builder = Redmine::Views::Builders::Json.new
+    builder = Redmine::Views::Builders::Json.new(ActionDispatch::TestRequest.new, ActionDispatch::TestResponse.new)
     block.call(builder)
     assert_equal(expected, ActiveSupport::JSON.decode(builder.output))
   end

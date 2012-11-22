@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,10 +18,10 @@
 module Redmine
   module Views
     module Builders
-      def self.for(format, &block)
+      def self.for(format, request, response, &block)
         builder = case format
-          when 'xml',  :xml;  Builders::Xml.new
-          when 'json', :json; Builders::Json.new
+          when 'xml',  :xml;  Builders::Xml.new(request, response)
+          when 'json', :json; Builders::Json.new(request, response)
           else; raise "No builder for format #{format}"
         end
         if block

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,6 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class Wiki < ActiveRecord::Base
+  include Redmine::SafeAttributes
   belongs_to :project
   has_many :pages, :class_name => 'WikiPage', :dependent => :destroy, :order => 'title'
   has_many :redirects, :class_name => 'WikiRedirect', :dependent => :delete_all
@@ -24,6 +25,8 @@ class Wiki < ActiveRecord::Base
 
   validates_presence_of :start_page
   validates_format_of :start_page, :with => /^[^,\.\/\?\;\|\:]*$/
+
+  safe_attributes 'start_page'
 
   def visible?(user=User.current)
     !user.nil? && user.allowed_to?(:view_wiki_pages, project)

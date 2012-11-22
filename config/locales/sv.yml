@@ -13,7 +13,7 @@ sv:
       delimiter: "."
       # Number of decimals, behind the separator (the number 1 with a precision of 2 gives: 1.00)
       precision: 2
-      
+
     # Used in number_to_currency()
     currency:
       format:
@@ -24,15 +24,15 @@ sv:
         # separator: "."
         # delimiter: ","
         # precision: 2
-        
+
     # Used in number_to_percentage()
     percentage:
       format:
         # These three are to override number.format and are optional
-        # separator: 
+        # separator:
         delimiter: ""
-        # precision: 
-        
+        # precision:
+
     # Used in number_to_precision()
     precision:
       format:
@@ -40,21 +40,21 @@ sv:
         # separator:
         delimiter: ""
         # precision:
-        
+
     # Used in number_to_human_size()
     human:
       format:
         # These three are to override number.format and are optional
-        # separator: 
+        # separator:
         delimiter: ""
-        # precision: 1
+        precision: 3
       storage_units:
         format: "%n %u"
         units:
           byte:
             one: "Byte"
             other: "Bytes"
-          kb: "kB"
+          kb: "KB"
           mb: "MB"
           gb: "GB"
           tb: "TB"
@@ -78,6 +78,9 @@ sv:
       about_x_hours:
         one:   "ungefär en timme"
         other: "ungefär %{count} timmar"
+      x_hours:
+        one:   "1 hour"
+        other: "%{count} hours"
       x_days:
         one:   "en dag"
         other: "%{count} dagar"
@@ -96,7 +99,7 @@ sv:
       almost_x_years:
         one:   "nästan 1 år"
         other: "nästan %{count} år"
-        
+
   activerecord:
     errors:
       template:
@@ -141,10 +144,10 @@ sv:
       default: "%Y-%m-%d"
       short: "%e %b"
       long: "%e %B, %Y"
-      
+
     day_names: [söndag, måndag, tisdag, onsdag, torsdag, fredag, lördag]
     abbr_day_names: [sön, mån, tis, ons, tor, fre, lör]
-      
+
     # Don't forget the nil at the beginning; there's no such thing as a 0th month
     month_names: [~, januari, februari, mars, april, maj, juni, juli, augusti, september, oktober, november, december]
     abbr_month_names: [~, jan, feb, mar, apr, maj, jun, jul, aug, sep, okt, nov, dec]
@@ -162,7 +165,7 @@ sv:
       long: "%d %B, %Y %H:%M"
     am: ""
     pm: ""
-      
+
 # Used in array.to_sentence.
   support:
     array:
@@ -170,7 +173,7 @@ sv:
       skip_last_comma: true
 
   actionview_instancetag_blank_option: Var god välj
-  
+
   general_text_No: 'Nej'
   general_text_Yes: 'Ja'
   general_text_no: 'nej'
@@ -181,7 +184,7 @@ sv:
   general_csv_encoding: ISO-8859-1
   general_pdf_encoding: UTF-8
   general_first_day_of_week: '1'
-  
+
   notice_account_updated: Kontot har uppdaterats
   notice_account_invalid_creditentials: Fel användarnamn eller lösenord
   notice_account_password_updated: Lösenordet har uppdaterats
@@ -203,7 +206,8 @@ sv:
   notice_email_error: "Ett fel inträffade när mail skickades (%{value})"
   notice_feeds_access_key_reseted: Din RSS-nyckel återställdes.
   notice_api_access_key_reseted: Din API-nyckel återställdes.
-  notice_failed_to_save_issues: "Misslyckades med att spara %{count} ärende(n) på %{total} valt: %{ids}."
+  notice_failed_to_save_issues: "Misslyckades med att spara %{count} ärende(n) på %{total} valda: %{ids}."
+  notice_failed_to_save_time_entries: "Misslyckades med att spara %{count} tidloggning(ar) på %{total} valda: %{ids}."
   notice_failed_to_save_members: "Misslyckades med att spara medlem(mar): %{errors}."
   notice_no_issue_selected: "Inget ärende är markerat! Var vänlig, markera de ärenden du vill ändra."
   notice_account_pending: "Ditt konto skapades och avvaktar nu administratörens godkännande."
@@ -213,11 +217,14 @@ sv:
   notice_issue_done_ratios_updated: "% klart uppdaterade."
   notice_gantt_chart_truncated: "Schemat förminskades eftersom det överskrider det maximala antalet aktiviteter som får visas (%{max})"
   notice_issue_successful_create: Ärende %{id} skapades.
-  
+  notice_issue_update_conflict: Detta ärende har uppdaterats av en annan användare samtidigt som du redigerade det.
+  notice_account_deleted: Ditt konto har avslutats permanent.
+
   error_can_t_load_default_data: "Standardkonfiguration gick inte att läsa in: %{value}"
   error_scm_not_found: "Inlägg och/eller revision finns inte i detta versionsarkiv."
   error_scm_command_failed: "Ett fel inträffade vid försök att nå versionsarkivet: %{value}"
   error_scm_annotate: "Inlägget existerar inte eller kan inte kommenteras."
+  error_scm_annotate_big_text_file: Inlägget kan  inte annoteras eftersom det överskrider maximal storlek för textfiler.
   error_issue_not_found_in_project: 'Ärendet hittades inte eller så tillhör det inte detta projekt'
   error_no_tracker_in_project: 'Ingen ärendetyp är associerad med projektet. Vänligen kontrollera projektinställningarna.'
   error_no_default_issue_status: 'Ingen status är definierad som standard för nya ärenden. Vänligen kontrollera din konfiguration (Gå till "Administration -> Ärendestatus").'
@@ -231,9 +238,9 @@ sv:
   error_workflow_copy_target: 'Vänligen välj ärendetyp(er) och roll(er) för mål'
   error_unable_delete_issue_status: 'Ärendestatus kunde inte tas bort'
   error_unable_to_connect: "Kan inte ansluta (%{value})"
-  
+  error_attachment_too_big: Denna fil kan inte laddas upp eftersom den överstiger maximalt tillåten filstorlek (%{max_size})
   warning_attachments_not_saved: "%{count} fil(er) kunde inte sparas."
-  
+
   mail_subject_lost_password: "Ditt %{value} lösenord"
   mail_body_lost_password: 'För att ändra ditt lösenord, klicka på följande länk:'
   mail_subject_register: "Din %{value} kontoaktivering"
@@ -248,10 +255,10 @@ sv:
   mail_body_wiki_content_added: "The '%{id}' wikisida has lagts till av %{author}."
   mail_subject_wiki_content_updated: "'%{id}' wikisida har uppdaterats"
   mail_body_wiki_content_updated: "The '%{id}' wikisida har uppdaterats av %{author}."
-  
+
   gui_validation_error: 1 fel
   gui_validation_error_plural: "%{count} fel"
-  
+
   field_name: Namn
   field_description: Beskrivning
   field_summary: Sammanfattning
@@ -339,7 +346,7 @@ sv:
   field_comments_sorting: Visa kommentarer
   field_parent_title: Föräldersida
   field_editable: Redigerbar
-  field_watcher: Bevakare  
+  field_watcher: Bevakare
   field_identity_url: OpenID URL
   field_content: Innehåll
   field_group_by: Gruppera resultat efter
@@ -358,7 +365,10 @@ sv:
   field_root_directory: Rotmapp
   field_cvsroot: CVSROOT
   field_cvs_module: Modul
-  
+  field_repository_is_default: Huvudarkiv
+  field_multiple: Flera värden
+  field_auth_source_ldap_filter: LDAP-filter
+
   setting_app_title: Applikationsrubrik
   setting_app_subtitle: Applikationsunderrubrik
   setting_welcome_text: Välkomsttext
@@ -384,6 +394,7 @@ sv:
   setting_time_format: Tidsformat
   setting_cross_project_issue_relations: Tillåt ärenderelationer mellan projekt
   setting_issue_list_default_columns: Standardkolumner i ärendelistan
+  setting_repositories_encodings: Encoding för bilagor och versionsarkiv
   setting_emails_header: Mail-header
   setting_emails_footer: Signatur
   setting_protocol: Protokoll
@@ -416,7 +427,10 @@ sv:
   setting_commit_logtime_activity_id: Aktivitet för loggad tid
   setting_gantt_items_limit: Maximalt antal aktiviteter som visas i gantt-schemat
   setting_issue_group_assignment: Tillåt att ärenden tilldelas till grupper
-  
+  setting_default_issue_start_date_to_creation_date: Använd dagens datum som startdatum för nya ärenden
+  setting_commit_cross_project_ref: Tillåt ärende i alla de andra projekten att bli refererade och fixade
+  setting_unsubscribe: Tillåt användare att avsluta prenumereration
+
   permission_add_project: Skapa projekt
   permission_add_subprojects: Skapa underprojekt
   permission_edit_project: Ändra projekt
@@ -474,7 +488,8 @@ sv:
   permission_delete_own_messages: Ta bort egna meddelanden
   permission_export_wiki_pages: Exportera wikisidor
   permission_manage_subtasks: Hantera underaktiviteter
-  
+  permission_manage_related_issues: Hantera relaterade ärenden
+
   project_module_issue_tracking: Ärendeuppföljning
   project_module_time_tracking: Tidsuppföljning
   project_module_news: Nyheter
@@ -485,7 +500,7 @@ sv:
   project_module_boards: Forum
   project_module_calendar: Kalender
   project_module_gantt: Gantt
-  
+
   label_user: Användare
   label_user_plural: Användare
   label_user_new: Ny användare
@@ -624,6 +639,10 @@ sv:
     zero:  0 stängda
     one:   1 stängd
     other: "%{count} stängda"
+  label_x_issues:
+    zero:  0 ärenden
+    one:   1 ärende
+    other: "%{count} ärenden"
   label_total: Total
   label_permissions: Behörigheter
   label_current_status: Nuvarande status
@@ -684,6 +703,7 @@ sv:
   label_not_contains: innehåller inte
   label_day_plural: dagar
   label_repository: Versionsarkiv
+  label_repository_new: Nytt versionsarkiv
   label_repository_plural: Versionsarkiv
   label_browse: Bläddra
   label_modification: "%{count} ändring"
@@ -736,6 +756,7 @@ sv:
   label_statistics: Statistik
   label_commits_per_month: Commits per månad
   label_commits_per_author: Commits per författare
+  label_diff: diff
   label_view_diff: Visa skillnader
   label_diff_inline: i texten
   label_diff_side_by_side: sida vid sida
@@ -864,7 +885,14 @@ sv:
   label_issues_visibility_public: Alla icke-privata ärenden
   label_issues_visibility_own: Ärenden skapade av eller tilldelade till användaren
   label_git_report_last_commit: Rapportera senaste commit av filer och mappar
-  
+  label_parent_revision: Förälder
+  label_child_revision: Barn
+  label_export_options: "%{export_format} exportalternativ"
+  label_copy_attachments: Kopiera bilagor
+  label_item_position: "%{position}/%{count}"
+  label_completed_versions: Klara versioner
+  label_search_for_watchers: Sök efter bevakare att lägga till
+
   button_login: Logga in
   button_submit: Skicka
   button_save: Spara
@@ -911,17 +939,20 @@ sv:
   button_quote: Citera
   button_duplicate: Duplicera
   button_show: Visa
-  
+  button_edit_section: Redigera denna sektion
+  button_export: Exportera
+  button_delete_my_account: Ta bort mitt konto
+
   status_active: aktiv
   status_registered: registrerad
   status_locked: låst
-  
+
   version_status_open: öppen
   version_status_locked: låst
   version_status_closed: stängd
-  
+
   field_active: Aktiv
-  
+
   text_select_mail_notifications: Välj för vilka händelser mail ska skickas.
   text_regexp_info: eg. ^[A-Z0-9]+$
   text_min_max_length_info: 0 betyder ingen gräns
@@ -938,7 +969,7 @@ sv:
   text_tip_issue_begin_day: ärende som börjar denna dag
   text_tip_issue_end_day: ärende som slutar denna dag
   text_tip_issue_begin_end_day: ärende som börjar och slutar denna dag
-  text_project_identifier_info: 'Små bokstäver (a-z), siffror och streck tillåtna.<br />När den är sparad kan identifieraren inte ändras.'
+  text_project_identifier_info: Ändast gemener (a-z), siffror, streck och understreck är tillåtna.<br />När identifieraren sparats kan den inte ändras.
   text_caracters_maximum: "max %{count} tecken."
   text_caracters_minimum: "Måste vara minst %{count} tecken lång."
   text_length_between: "Längd mellan %{min} och %{max} tecken."
@@ -986,12 +1017,17 @@ sv:
   text_zoom_in: Zooma in
   text_warn_on_leaving_unsaved: Nuvarande sida innehåller osparad text som kommer försvinna om du lämnar sidan.
   text_scm_path_encoding_note: "Standard: UTF-8"
+  text_git_repository_note: Versionsarkiv är tomt och lokalt (t.ex. /gitrepo, c:\gitrepo)
   text_mercurial_repository_note: Lokalt versionsarkiv (t.ex. /hgrepo, c:\hgrepo)
   text_scm_command: Kommando
   text_scm_command_version: Version
   text_scm_config: Du kan konfigurera dina scm-kommando i config/configuration.yml. Vänligen starta om applikationen när ändringar gjorts.
   text_scm_command_not_available: Scm-kommando är inte tillgängligt. Vänligen kontrollera inställningarna i administratörspanelen.
-  
+  text_issue_conflict_resolution_overwrite: Använd mina ändringar i alla fall (tidigare anteckningar kommer behållas men några ändringar kan bli överskrivna)
+  text_issue_conflict_resolution_add_notes: Lägg till mina anteckningar och kasta mina andra ändringar
+  text_issue_conflict_resolution_cancel: Kasta alla mina ändringar och visa igen %{link}
+  text_account_destroy_confirmation: "Är du säker på att du vill fortsätta?\nDitt konto kommer tas bort permanent, utan möjlighet att återaktivera det."
+
   default_role_manager: Projektledare
   default_role_developer: Utvecklare
   default_role_reporter: Rapportör
@@ -1013,37 +1049,55 @@ sv:
   default_priority_immediate: Omedelbar
   default_activity_design: Design
   default_activity_development: Utveckling
-  
+
   enumeration_issue_priorities: Ärendeprioriteter
   enumeration_doc_categories: Dokumentkategorier
   enumeration_activities: Aktiviteter (tidsuppföljning)
   enumeration_system_activity: Systemaktivitet
-  label_diff: diff
-  text_git_repository_note: Repository is bare and local (e.g. /gitrepo, c:\gitrepo)
-  description_query_sort_criteria_direction: Sort direction
-  description_project_scope: Search scope
   description_filter: Filter
-  description_user_mail_notification: Mail notification settings
-  description_date_from: Enter start date
-  description_message_content: Message content
-  description_available_columns: Available Columns
-  description_date_range_interval: Choose range by selecting start and end date
-  description_issue_category_reassign: Choose issue category
-  description_search: Searchfield
-  description_notes: Notes
-  description_date_range_list: Choose range from list
-  description_choose_project: Projects
-  description_date_to: Enter end date
-  description_query_sort_criteria_attribute: Sort attribute
-  description_wiki_subpages_reassign: Choose new parent page
-  description_selected_columns: Selected Columns
-  label_parent_revision: Parent
-  label_child_revision: Child
-  error_scm_annotate_big_text_file: The entry cannot be annotated, as it exceeds the maximum text file size.
-  setting_default_issue_start_date_to_creation_date: Use current date as start date for new issues
-  button_edit_section: Edit this section
-  setting_repositories_encodings: Attachments and repositories encodings
-  description_all_columns: All Columns
-  button_export: Export
-  label_export_options: "%{export_format} export options"
-  error_attachment_too_big: This file cannot be uploaded because it exceeds the maximum allowed file size (%{max_size})
+  description_search: Sökfält
+  description_choose_project: Projekt
+  description_project_scope: Sökomfång
+  description_notes: Anteckningar
+  description_message_content: Meddelandeinnehåll
+  description_query_sort_criteria_attribute: Sorteringsattribut
+  description_query_sort_criteria_direction: Sorteringsriktning
+  description_user_mail_notification: Mailnotifieringsinställningar
+  description_available_columns: Tillgängliga Kolumner
+  description_selected_columns: Valda Kolumner
+  description_all_columns: Alla kolumner
+  description_issue_category_reassign: Välj ärendekategori
+  description_wiki_subpages_reassign: Välj ny föräldersida
+  description_date_range_list: Välj intervall från listan
+  description_date_range_interval: Ange intervall genom att välja start- och slutdatum
+  description_date_from: Ange startdatum
+  description_date_to: Ange slutdatum
+  error_session_expired: Your session has expired. Please login again.
+  text_session_expiration_settings: "Warning: changing these settings may expire the current sessions including yours."
+  setting_session_lifetime: Session maximum lifetime
+  setting_session_timeout: Session inactivity timeout
+  label_session_expiration: Session expiration
+  permission_close_project: Close / reopen the project
+  label_show_closed_projects: View closed projects
+  button_close: Close
+  button_reopen: Reopen
+  project_status_active: active
+  project_status_closed: closed
+  project_status_archived: archived
+  text_project_closed: This project is closed and read-only.
+  notice_user_successful_create: User %{id} created.
+  field_core_fields: Standard fields
+  field_timeout: Timeout (in seconds)
+  setting_thumbnails_enabled: Display attachment thumbnails
+  setting_thumbnails_size: Thumbnails size (in pixels)
+  label_status_transitions: Status transitions
+  label_fields_permissions: Fields permissions
+  label_readonly: Read-only
+  label_required: Required
+  text_repository_identifier_info: Ändast gemener (a-z), siffror, streck och understreck är tillåtna.<br />När identifieraren sparats kan den inte ändras.
+  field_board_parent: Parent forum
+  label_attribute_of_project: Project's %{name}
+  label_attribute_of_author: Author's %{name}
+  label_attribute_of_assigned_to: Assignee's %{name}
+  label_attribute_of_fixed_version: Target version's %{name}
+  label_copy_subtasks: Copy subtasks

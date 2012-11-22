@@ -13,10 +13,10 @@ cs:
       default: "%Y-%m-%d"
       short: "%b %d"
       long: "%B %d, %Y"
-      
+
     day_names: [Neděle, Pondělí, Úterý, Středa, Čtvrtek, Pátek, Sobota]
     abbr_day_names: [Ne, Po, Út, St, Čt, Pá, So]
-      
+
     # Don't forget the nil at the beginning; there's no such thing as a 0th month
     month_names: [~, Leden, Únor, Březen, Duben, Květen, Červen, Červenec, Srpen, Září, Říjen, Listopad, Prosinec]
     abbr_month_names: [~, Led, Úno, Bře, Dub, Kvě, Čer, Čec, Srp, Zář, Říj, Lis, Pro]
@@ -34,7 +34,7 @@ cs:
       long: "%B %d, %Y %H:%M"
     am: "dop."
     pm: "odp."
-      
+
   datetime:
     distance_in_words:
       half_a_minute: "půl minuty"
@@ -53,6 +53,9 @@ cs:
       about_x_hours:
         one:   "asi 1 hodina"
         other: "asi %{count} hodin"
+      x_hours:
+        one:   "1 hour"
+        other: "%{count} hours"
       x_days:
         one:   "1 den"
         other: "%{count} dnů"
@@ -75,31 +78,30 @@ cs:
   number:
     # Výchozí formát pro čísla
     format:
-      separator: "." 
+      separator: "."
       delimiter: ""
       precision: 3
     human:
       format:
         delimiter: ""
-        precision: 1
+        precision: 3
       storage_units:
         format: "%n %u"
         units:
           byte:
             one: "Bajt"
             other: "Bajtů"
-          kb: "kB"
+          kb: "KB"
           mb: "MB"
           gb: "GB"
           tb: "TB"
 
-        
 # Used in array.to_sentence.
   support:
     array:
       sentence_connector: "a"
       skip_last_comma: false
-      
+
   activerecord:
     errors:
       template:
@@ -133,7 +135,7 @@ cs:
         cant_link_an_issue_with_a_descendant: "Úkol nemůže být spojen s jedním z jeho dílčích úkolů"
 
   actionview_instancetag_blank_option: Prosím vyberte
-  
+
   general_text_No: 'Ne'
   general_text_Yes: 'Ano'
   general_text_no: 'ne'
@@ -144,7 +146,7 @@ cs:
   general_csv_encoding: UTF-8
   general_pdf_encoding: UTF-8
   general_first_day_of_week: '1'
-  
+
   notice_account_updated: Účet byl úspěšně změněn.
   notice_account_invalid_creditentials: Chybné jméno nebo heslo
   notice_account_password_updated: Heslo bylo úspěšně změněno.
@@ -175,7 +177,7 @@ cs:
   notice_unable_delete_time_entry: Nelze smazat čas ze záznamu.
   notice_issue_done_ratios_updated: Koeficienty dokončení úkolu byly aktualizovány.
   notice_gantt_chart_truncated: Graf byl oříznut, počet položek přesáhl limit pro zobrazení (%{max})
-  
+
   error_can_t_load_default_data: "Výchozí konfigurace nebyla nahrána: %{value}"
   error_scm_not_found: "Položka a/nebo revize neexistují v repozitáři."
   error_scm_command_failed: "Při pokusu o přístup k repozitáři došlo k chybě: %{value}"
@@ -194,7 +196,7 @@ cs:
   error_unable_delete_issue_status: Nelze smazat stavy úkolů
   error_unable_to_connect: Nelze se připojit (%{value})
   warning_attachments_not_saved: "%{count} soubor(ů) nebylo možné uložit."
-  
+
   mail_subject_lost_password: "Vaše heslo (%{value})"
   mail_body_lost_password: 'Pro změnu vašeho hesla klikněte na následující odkaz:'
   mail_subject_register: "Aktivace účtu (%{value})"
@@ -209,10 +211,10 @@ cs:
   mail_body_wiki_content_added: "'%{id}' Wiki stránka byla přidána od %{author}."
   mail_subject_wiki_content_updated: "'%{id}' Wiki stránka byla aktualizována"
   mail_body_wiki_content_updated: "'%{id}' Wiki stránka byla aktualizována od %{author}."
-  
+
   gui_validation_error: 1 chyba
   gui_validation_error_plural: "%{count} chyb(y)"
-  
+
   field_name: Název
   field_description: Popis
   field_summary: Přehled
@@ -310,7 +312,7 @@ cs:
   field_assigned_to_role: Role přiřaditele
   field_text: Textové pole
   field_visible: Viditelný
-  
+
   setting_app_title: Název aplikace
   setting_app_subtitle: Podtitulek aplikace
   setting_welcome_text: Uvítací text
@@ -367,7 +369,7 @@ cs:
   setting_commit_logtime_enabled: Povolit zapisování času
   setting_commit_logtime_activity_id: Aktivita pro zapsaný čas
   setting_gantt_items_limit: Maximální počet položek zobrazený na ganttově grafu
-  
+
   permission_add_project: Vytvořit projekt
   permission_add_subprojects: Vytvořit podprojekty
   permission_edit_project: Úprava projektů
@@ -423,7 +425,7 @@ cs:
   permission_delete_own_messages: Smazat vlastní zprávy
   permission_export_wiki_pages: Exportovat Wiki stránky
   permission_manage_subtasks: Spravovat podúkoly
-  
+
   project_module_issue_tracking: Sledování úkolů
   project_module_time_tracking: Sledování času
   project_module_news: Novinky
@@ -434,7 +436,7 @@ cs:
   project_module_boards: Diskuse
   project_module_calendar: Kalendář
   project_module_gantt: Gantt
-  
+
   label_user: Uživatel
   label_user_plural: Uživatelé
   label_user_new: Nový uživatel
@@ -792,13 +794,13 @@ cs:
   label_display_used_statuses_only: Zobrazit pouze stavy které jsou použité touto frontou
   label_api_access_key: API přístupový klíč
   label_missing_api_access_key: Chybějící přístupový klíč API
-  label_api_access_key_created_on: API přístupový klíč vytvořen %{value} 
+  label_api_access_key_created_on: API přístupový klíč vytvořen %{value}
   label_profile: Profil
   label_subtask_plural: Podúkol
   label_project_copy_notifications: Odeslat email oznámení v průběhu kopie projektu
   label_principal_search: "Hledat uživatele nebo skupinu:"
   label_user_search: "Hledat uživatele:"
-  
+
   button_login: Přihlásit
   button_submit: Potvrdit
   button_save: Uložit
@@ -843,17 +845,17 @@ cs:
   button_quote: Citovat
   button_duplicate: Duplikovat
   button_show: Zobrazit
-  
+
   status_active: aktivní
   status_registered: registrovaný
   status_locked: uzamčený
-  
+
   version_status_open: otevřený
   version_status_locked: uzamčený
   version_status_closed: zavřený
-  
+
   field_active: Aktivní
-  
+
   text_select_mail_notifications: Vyberte akci při které bude zasláno upozornění emailem.
   text_regexp_info: např. ^[A-Z0-9]+$
   text_min_max_length_info: 0 znamená bez limitu
@@ -869,7 +871,6 @@ cs:
   text_tip_issue_begin_day: úkol začíná v tento den
   text_tip_issue_end_day: úkol končí v tento den
   text_tip_issue_begin_end_day: úkol začíná a končí v tento den
-  text_project_identifier_info: 'Jsou povolena malá písmena (a-z), čísla a pomlčky.<br />Po uložení již není možné identifikátor změnit.'
   text_caracters_maximum: "%{count} znaků maximálně."
   text_caracters_minimum: "Musí být alespoň %{count} znaků dlouhé."
   text_length_between: "Délka mezi %{min} a %{max} znaky."
@@ -913,7 +914,7 @@ cs:
   text_own_membership_delete_confirmation: "Chystáte se odebrat si některá nebo všechny svá oprávnění a potom již nemusíte být schopni upravit tento projekt.\nOpravdu chcete pokračovat?"
   text_zoom_in: Přiblížit
   text_zoom_out: Oddálit
-  
+
   default_role_manager: Manažer
   default_role_developer: Vývojář
   default_role_reporter: Reportér
@@ -935,7 +936,7 @@ cs:
   default_priority_immediate: Okamžitá
   default_activity_design: Návhr
   default_activity_development: Vývoj
-  
+
   enumeration_issue_priorities: Priority úkolů
   enumeration_doc_categories: Kategorie dokumentů
   enumeration_activities: Aktivity (sledování času)
@@ -1010,3 +1011,58 @@ cs:
   button_export: Export
   label_export_options: "%{export_format} export options"
   error_attachment_too_big: This file cannot be uploaded because it exceeds the maximum allowed file size (%{max_size})
+  notice_failed_to_save_time_entries: "Failed to save %{count} time entrie(s) on %{total} selected: %{ids}."
+  label_x_issues:
+    zero:  0 Úkol
+    one:   1 Úkol
+    other: "%{count} Úkoly"
+  label_repository_new: New repository
+  field_repository_is_default: Main repository
+  label_copy_attachments: Copy attachments
+  label_item_position: "%{position}/%{count}"
+  label_completed_versions: Completed versions
+  text_project_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_multiple: Multiple values
+  setting_commit_cross_project_ref: Allow issues of all the other projects to be referenced and fixed
+  text_issue_conflict_resolution_add_notes: Add my notes and discard my other changes
+  text_issue_conflict_resolution_overwrite: Apply my changes anyway (previous notes will be kept but some changes may be overwritten)
+  notice_issue_update_conflict: The issue has been updated by an other user while you were editing it.
+  text_issue_conflict_resolution_cancel: Discard all my changes and redisplay %{link}
+  permission_manage_related_issues: Manage related issues
+  field_auth_source_ldap_filter: LDAP filter
+  label_search_for_watchers: Search for watchers to add
+  notice_account_deleted: Your account has been permanently deleted.
+  setting_unsubscribe: Allow users to delete their own account
+  button_delete_my_account: Delete my account
+  text_account_destroy_confirmation: |-
+    Are you sure you want to proceed?
+    Your account will be permanently deleted, with no way to reactivate it.
+  error_session_expired: Your session has expired. Please login again.
+  text_session_expiration_settings: "Warning: changing these settings may expire the current sessions including yours."
+  setting_session_lifetime: Session maximum lifetime
+  setting_session_timeout: Session inactivity timeout
+  label_session_expiration: Session expiration
+  permission_close_project: Close / reopen the project
+  label_show_closed_projects: View closed projects
+  button_close: Close
+  button_reopen: Reopen
+  project_status_active: active
+  project_status_closed: closed
+  project_status_archived: archived
+  text_project_closed: This project is closed and read-only.
+  notice_user_successful_create: User %{id} created.
+  field_core_fields: Standard fields
+  field_timeout: Timeout (in seconds)
+  setting_thumbnails_enabled: Display attachment thumbnails
+  setting_thumbnails_size: Thumbnails size (in pixels)
+  label_status_transitions: Status transitions
+  label_fields_permissions: Fields permissions
+  label_readonly: Read-only
+  label_required: Required
+  text_repository_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_board_parent: Parent forum
+  label_attribute_of_project: Project's %{name}
+  label_attribute_of_author: Author's %{name}
+  label_attribute_of_assigned_to: Assignee's %{name}
+  label_attribute_of_fixed_version: Target version's %{name}
+  label_copy_subtasks: Copy subtasks

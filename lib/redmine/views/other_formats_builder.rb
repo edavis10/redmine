@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -23,7 +23,7 @@ module Redmine
       end
 
       def link_to(name, options={})
-        url = { :format => name.to_s.downcase }.merge(options.delete(:url) || {})
+        url = { :format => name.to_s.downcase }.merge(options.delete(:url) || {}).except('page')
         caption = options.delete(:caption) || name
         html_options = { :class => name.to_s.downcase, :rel => 'nofollow' }.merge(options)
         @view.content_tag('span', @view.link_to(caption, url, html_options))

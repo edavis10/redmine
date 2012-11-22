@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,12 +17,12 @@
 
 class WikiContentObserver < ActiveRecord::Observer
   def after_create(wiki_content)
-    Mailer.deliver_wiki_content_added(wiki_content) if Setting.notified_events.include?('wiki_content_added')
+    Mailer.wiki_content_added(wiki_content).deliver if Setting.notified_events.include?('wiki_content_added')
   end
 
   def after_update(wiki_content)
     if wiki_content.text_changed?
-      Mailer.deliver_wiki_content_updated(wiki_content) if Setting.notified_events.include?('wiki_content_updated')
+      Mailer.wiki_content_updated(wiki_content).deliver if Setting.notified_events.include?('wiki_content_updated')
     end
   end
 end

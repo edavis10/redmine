@@ -4,15 +4,17 @@
   <%= render :partial => 'navigation' %>
 </div>
 
-<h2>
-  <%= render :partial => 'breadcrumbs', :locals => { :path => @path, :kind => (@entry ? @entry.kind : nil), :revision => @rev } %>
-</h2>
+<h2><%= render :partial => 'breadcrumbs', :locals => { :path => @path, :kind => (@entry ? @entry.kind : nil), :revision => @rev } %></h2>
 
-<p><%= render :partial => 'link_to_functions' %></p>
+<%= render :partial => 'link_to_functions' %>
 
 <%= render_properties(@properties) %>
 
 <%= render(:partial => 'revisions',
            :locals => {:project => @project, :path => @path, :revisions => @changesets, :entry => @entry }) unless @changesets.empty? %>
+
+<% content_for :header_tags do %>
+<%=   stylesheet_link_tag "scm" %>
+<% end %>
 
 <% html_title(l(:label_change_plural)) -%>

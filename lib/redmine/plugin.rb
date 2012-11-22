@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -43,6 +43,12 @@ module Redmine #:nodoc:
   #
   # When rendered, the plugin settings value is available as the local variable +settings+
   class Plugin
+    cattr_accessor :directory
+    self.directory = File.join(Rails.root, 'plugins')
+
+    cattr_accessor :public_directory
+    self.public_directory = File.join(Rails.root, 'public', 'plugin_assets')
+
     @registered_plugins = {}
     class << self
       attr_reader :registered_plugins
@@ -67,9 +73,23 @@ module Redmine #:nodoc:
       p.instance_eval(&block)
       # Set a default name if it was not provided during registration
       p.name(id.to_s.humanize) if p.name.nil?
+
       # Adds plugin locales if any
       # YAML translation files should be found under <plugin>/config/locales/
-      ::I18n.load_path += Dir.glob(File.join(Rails.root, 'vendor', 'plugins', id.to_s, 'config', 'locales', '*.yml'))
+      ::I18n.load_path += Dir.glob(File.join(p.directory, 'config', 'locales', '*.yml'))
+
+      # Prepends the app/views directory of the plugin to the view path
+      view_path = File.join(p.directory, 'app', 'views')
+      if File.directory?(view_path)
+        ActionController::Base.prepend_view_path(view_path)
+        ActionMailer::Base.prepend_view_path(view_path)
+      end
+
+      # Adds the app/{controllers,helpers,models} directories of the plugin to the autoload path
+      Dir.glob File.expand_path(File.join(p.directory, 'app', '{controllers,helpers,models}')) do |dir|
+        ActiveSupport::Dependencies.autoload_paths += [dir]
+      end
+
       registered_plugins[id] = p
     end
 
@@ -97,8 +117,36 @@ module Redmine #:nodoc:
       registered_plugins[id.to_sym].present?
     end
 
+    def self.load
+      Dir.glob(File.join(self.directory, '*')).sort.each do |directory|
+        if File.directory?(directory)
+          lib = File.join(directory, "lib")
+          if File.directory?(lib)
+            $:.unshift lib
+            ActiveSupport::Dependencies.autoload_paths += [lib]
+          end
+          initializer = File.join(directory, "init.rb")
+          if File.file?(initializer)
+            require initializer
+          end
+        end
+      end
+    end
+
     def initialize(id)
       @id = id.to_sym
+    end
+
+    def directory
+      File.join(self.class.directory, id.to_s)
+    end
+
+    def public_directory
+      File.join(self.class.public_directory, id.to_s)
+    end
+
+    def assets_directory
+      File.join(directory, 'assets')
     end
 
     def <=>(plugin)
@@ -197,13 +245,15 @@ module Redmine #:nodoc:
     #   permission :destroy_contacts, { :contacts => :destroy }
     #   permission :view_contacts, { :contacts => [:index, :show] }
     #
-    # The +options+ argument can be used to make the permission public (implicitly given to any user)
-    # or to restrict users the permission can be given to.
+    # The +options+ argument is a hash that accept the following keys:
+    # * :public => the permission is public if set to true (implicitly given to any user)
+    # * :require => can be set to one of the following values to restrict users the permission can be given to: :loggedin, :member
+    # * :read => set it to true so that the permission is still granted on closed projects
     #
     # Examples
     #   # A permission that is implicitly given to any user
     #   # This permission won't appear on the Roles & Permissions setup screen
-    #   permission :say_hello, { :example => :say_hello }, :public => true
+    #   permission :say_hello, { :example => :say_hello }, :public => true, :read => true
     #
     #   # A permission that can be given to any user
     #   permission :say_hello, { :example => :say_hello }
@@ -273,6 +323,129 @@ module Redmine #:nodoc:
     # Returns +true+ if the plugin can be configured.
     def configurable?
       settings && settings.is_a?(Hash) && !settings[:partial].blank?
+    end
+
+    def mirror_assets
+      source = assets_directory
+      destination = public_directory
+      return unless File.directory?(source)
+
+      source_files = Dir[source + "/**/*"]
+      source_dirs = source_files.select { |d| File.directory?(d) }
+      source_files -= source_dirs
+
+      unless source_files.empty?
+        base_target_dir = File.join(destination, File.dirname(source_files.first).gsub(source, ''))
+        begin
+          FileUtils.mkdir_p(base_target_dir)
+        rescue Exception => e
+          raise "Could not create directory #{base_target_dir}: " + e.message
+        end
+      end
+
+      source_dirs.each do |dir|
+        # strip down these paths so we have simple, relative paths we can
+        # add to the destination
+        target_dir = File.join(destination, dir.gsub(source, ''))
+        begin
+          FileUtils.mkdir_p(target_dir)
+        rescue Exception => e
+          raise "Could not create directory #{target_dir}: " + e.message
+        end
+      end
+
+      source_files.each do |file|
+        begin
+          target = File.join(destination, file.gsub(source, ''))
+          unless File.exist?(target) && FileUtils.identical?(file, target)
+            FileUtils.cp(file, target)
+          end
+        rescue Exception => e
+          raise "Could not copy #{file} to #{target}: " + e.message
+        end
+      end
+    end
+
+    # Mirrors assets from one or all plugins to public/plugin_assets
+    def self.mirror_assets(name=nil)
+      if name.present?
+        find(name).mirror_assets
+      else
+        all.each do |plugin|
+          plugin.mirror_assets
+        end
+      end
+    end
+
+    # The directory containing this plugin's migrations (<tt>plugin/db/migrate</tt>)
+    def migration_directory
+      File.join(Rails.root, 'plugins', id.to_s, 'db', 'migrate')
+    end
+
+    # Returns the version number of the latest migration for this plugin. Returns
+    # nil if this plugin has no migrations.
+    def latest_migration
+      migrations.last
+    end
+
+    # Returns the version numbers of all migrations for this plugin.
+    def migrations
+      migrations = Dir[migration_directory+"/*.rb"]
+      migrations.map { |p| File.basename(p).match(/0*(\d+)\_/)[1].to_i }.sort
+    end
+
+    # Migrate this plugin to the given version
+    def migrate(version = nil)
+      puts "Migrating #{id} (#{name})..."
+      Redmine::Plugin::Migrator.migrate_plugin(self, version)
+    end
+
+    # Migrates all plugins or a single plugin to a given version
+    # Exemples:
+    #   Plugin.migrate
+    #   Plugin.migrate('sample_plugin')
+    #   Plugin.migrate('sample_plugin', 1)
+    #
+    def self.migrate(name=nil, version=nil)
+      if name.present?
+        find(name).migrate(version)
+      else
+        all.each do |plugin|
+          plugin.migrate
+        end
+      end
+    end
+
+    class Migrator < ActiveRecord::Migrator
+      # We need to be able to set the 'current' plugin being migrated.
+      cattr_accessor :current_plugin
+    
+      class << self
+        # Runs the migrations from a plugin, up (or down) to the version given
+        def migrate_plugin(plugin, version)
+          self.current_plugin = plugin
+          return if current_version(plugin) == version
+          migrate(plugin.migration_directory, version)
+        end
+        
+        def current_version(plugin=current_plugin)
+          # Delete migrations that don't match .. to_i will work because the number comes first
+          ::ActiveRecord::Base.connection.select_values(
+            "SELECT version FROM #{schema_migrations_table_name}"
+          ).delete_if{ |v| v.match(/-#{plugin.id}/) == nil }.map(&:to_i).max || 0
+        end
+      end
+           
+      def migrated
+        sm_table = self.class.schema_migrations_table_name
+        ::ActiveRecord::Base.connection.select_values(
+          "SELECT version FROM #{sm_table}"
+        ).delete_if{ |v| v.match(/-#{current_plugin.id}/) == nil }.map(&:to_i).sort
+      end
+      
+      def record_version_state_after_migrating(version)
+        super(version.to_s + "-" + current_plugin.id.to_s)
+      end
     end
   end
 end

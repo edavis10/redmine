@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -45,5 +45,15 @@ class Redmine::AccessControlTest < ActiveSupport::TestCase
     assert_nil perm.project_module
     assert perm.actions.is_a?(Array)
     assert perm.actions.include?('projects/settings')
+  end
+
+  def test_read_action_should_return_true_for_read_actions
+    assert_equal true, @access_module.read_action?(:view_project)
+    assert_equal true, @access_module.read_action?(:controller => 'projects', :action => 'show')
+  end
+
+  def test_read_action_should_return_false_for_update_actions
+    assert_equal false, @access_module.read_action?(:edit_project)
+    assert_equal false, @access_module.read_action?(:controller => 'projects', :action => 'edit')
   end
 end

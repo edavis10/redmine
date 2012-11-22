@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,7 +15,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+# Generic exception for when the AuthSource can not be reached
+# (eg. can not connect to the LDAP)
+class AuthSourceException < Exception; end
+class AuthSourceTimeoutException < AuthSourceException; end
+
 class AuthSource < ActiveRecord::Base
+  include Redmine::SubclassFactory
   include Redmine::Ciphering
 
   has_many :users
@@ -53,7 +59,7 @@ class AuthSource < ActiveRecord::Base
 
   # Try to authenticate a user not yet registered against available sources
   def self.authenticate(login, password)
-    AuthSource.find(:all, :conditions => ["onthefly_register=?", true]).each do |source|
+    AuthSource.where(:onthefly_register => true).all.each do |source|
       begin
         logger.debug "Authenticating '#{login}' against '#{source.name}'" if logger && logger.debug?
         attrs = source.authenticate(login, password)

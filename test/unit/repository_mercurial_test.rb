@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,35 +20,70 @@ require File.expand_path('../../test_helper', __FILE__)
 class RepositoryMercurialTest < ActiveSupport::TestCase
   fixtures :projects
 
+  include Redmine::I18n
+
   REPOSITORY_PATH = Rails.root.join('tmp/test/mercurial_repository').to_s
   NUM_REV = 32
   CHAR_1_HEX = "\xc3\x9c"
 
+  def setup
+    @project    = Project.find(3)
+    @repository = Repository::Mercurial.create(
+                      :project => @project,
+                      :url     => REPOSITORY_PATH,
+                      :path_encoding => 'ISO-8859-1'
+                      )
+    assert @repository
+    @char_1        = CHAR_1_HEX.dup
+    @tag_char_1    = "tag-#{CHAR_1_HEX}-00"
+    @branch_char_0 = "branch-#{CHAR_1_HEX}-00"
+    @branch_char_1 = "branch-#{CHAR_1_HEX}-01"
+    if @char_1.respond_to?(:force_encoding)
+      @char_1.force_encoding('UTF-8')
+      @tag_char_1.force_encoding('UTF-8')
+      @branch_char_0.force_encoding('UTF-8')
+      @branch_char_1.force_encoding('UTF-8')
+    end
+  end
+
+
+  def test_blank_path_to_repository_error_message
+    set_language_if_valid 'en'
+    repo = Repository::Mercurial.new(
+                          :project      => @project,
+                          :identifier   => 'test'
+                        )
+    assert !repo.save
+    assert_include "Path to repository can't be blank",
+                   repo.errors.full_messages
+  end
+
+  def test_blank_path_to_repository_error_message_fr
+    set_language_if_valid 'fr'
+    str = "Chemin du d\xc3\xa9p\xc3\xb4t doit \xc3\xaatre renseign\xc3\xa9(e)"
+    str.force_encoding('UTF-8') if str.respond_to?(:force_encoding)
+    repo = Repository::Mercurial.new(
+                          :project      => @project,
+                          :url          => "",
+                          :identifier   => 'test',
+                          :path_encoding => ''
+                        )
+    assert !repo.save
+    assert_include str, repo.errors.full_messages
+  end
+
   if File.directory?(REPOSITORY_PATH)
-    def setup
+    def test_scm_available
       klass = Repository::Mercurial
       assert_equal "Mercurial", klass.scm_name
       assert klass.scm_adapter_class
       assert_not_equal "", klass.scm_command
       assert_equal true, klass.scm_available
+    end
 
-      @project    = Project.find(3)
-      @repository = Repository::Mercurial.create(
-                      :project => @project,
-                      :url     => REPOSITORY_PATH,
-                      :path_encoding => 'ISO-8859-1'
-                      )
-      assert @repository
-      @char_1        = CHAR_1_HEX.dup
-      @tag_char_1    = "tag-#{CHAR_1_HEX}-00"
-      @branch_char_0 = "branch-#{CHAR_1_HEX}-00"
-      @branch_char_1 = "branch-#{CHAR_1_HEX}-01"
-      if @char_1.respond_to?(:force_encoding)
-        @char_1.force_encoding('UTF-8')
-        @tag_char_1.force_encoding('UTF-8')
-        @branch_char_0.force_encoding('UTF-8')
-        @branch_char_1.force_encoding('UTF-8')
-      end
+    def test_entries
+      entries = @repository.entries
+      assert_kind_of Redmine::Scm::Adapters::Entries, entries
     end
 
     def test_fetch_changesets_from_scratch
@@ -56,7 +91,7 @@ class RepositoryMercurialTest < ActiveSupport::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      assert_equal 46, @repository.changes.count
+      assert_equal 46, @repository.filechanges.count
       assert_equal "Initial import.\nThe repository contains 3 files.",
                    @repository.changesets.find_by_revision('0').comments
     end
@@ -184,7 +219,7 @@ class RepositoryMercurialTest < ActiveSupport::TestCase
 
       cs1 = @repository.changesets.find_by_revision('13')
       assert_not_nil cs1
-      c1  = cs1.changes.sort_by(&:path)
+      c1  = cs1.filechanges.sort_by(&:path)
       assert_equal 2, c1.size
 
       assert_equal 'A', c1[0].action
@@ -197,7 +232,7 @@ class RepositoryMercurialTest < ActiveSupport::TestCase
       assert_equal '/sql_escape/underscore_dir/understrike_file.txt', c1[1].from_path
 
       cs2 = @repository.changesets.find_by_revision('15')
-      c2  = cs2.changes
+      c2  = cs2.filechanges
       assert_equal 1, c2.size
 
       assert_equal 'A', c2[0].action
@@ -206,7 +241,7 @@ class RepositoryMercurialTest < ActiveSupport::TestCase
       assert_equal '933ca60293d7', c2[0].from_revision
 
       cs3 = @repository.changesets.find_by_revision('19')
-      c3  = cs3.changes
+      c3  = cs3.filechanges
       assert_equal 1, c3.size
       assert_equal 'A', c3[0].action
       assert_equal "/latin-1-dir/test-#{@char_1}-1.txt",  c3[0].path

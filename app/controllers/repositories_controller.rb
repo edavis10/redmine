@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,52 +18,77 @@
 require 'SVG/Graph/Bar'
 require 'SVG/Graph/BarHorizontal'
 require 'digest/sha1'
+require 'redmine/scm/adapters/abstract_adapter'
 
 class ChangesetNotFound < Exception; end
 class InvalidRevisionParam < Exception; end
 
 class RepositoriesController < ApplicationController
   menu_item :repository
-  menu_item :settings, :only => :edit
+  menu_item :settings, :only => [:new, :create, :edit, :update, :destroy, :committers]
   default_search_scope :changesets
 
-  before_filter :find_repository, :except => :edit
-  before_filter :find_project, :only => :edit
+  before_filter :find_project_by_project_id, :only => [:new, :create]
+  before_filter :find_repository, :only => [:edit, :update, :destroy, :committers]
+  before_filter :find_project_repository, :except => [:new, :create, :edit, :update, :destroy, :committers]
+  before_filter :find_changeset, :only => [:revision, :add_related_issue, :remove_related_issue]
   before_filter :authorize
   accept_rss_auth :revisions
 
   rescue_from Redmine::Scm::Adapters::CommandFailed, :with => :show_error_command_failed
 
-  def edit
-    @repository = @project.repository
-    if !@repository && !params[:repository_scm].blank?
-      @repository = Repository.factory(params[:repository_scm])
-      @repository.project = @project if @repository
+  def new
+    scm = params[:repository_scm] || (Redmine::Scm::Base.all & Setting.enabled_scm).first
+    @repository = Repository.factory(scm)
+    @repository.is_default = @project.repository.nil?
+    @repository.project = @project
+  end
+
+  def create
+    attrs = pickup_extra_info
+    @repository = Repository.factory(params[:repository_scm])
+    @repository.safe_attributes = params[:repository]
+    if attrs[:attrs_extra].keys.any?
+      @repository.merge_extra_info(attrs[:attrs_extra])
     end
-    if request.post? && @repository
-      p1 = params[:repository]
-      p       = {}
-      p_extra = {}
-      p1.each do |k, v|
-        if k =~ /^extra_/
-          p_extra[k] = v
-        else
-          p[k] = v
-        end
-      end
-      @repository.attributes = p
-      @repository.merge_extra_info(p_extra)
-      @repository.save
-    end
-    render(:update) do |page|
-      page.replace_html "tab-content-repository",
-                        :partial => 'projects/settings/repository'
-      if @repository && !@project.repository
-        @project.reload # needed to reload association
-        page.replace_html "main-menu", render_main_menu(@project)
-      end
+    @repository.project = @project
+    if request.post? && @repository.save
+      redirect_to settings_project_path(@project, :tab => 'repositories')
+    else
+      render :action => 'new'
     end
   end
+
+  def edit
+  end
+
+  def update
+    attrs = pickup_extra_info
+    @repository.safe_attributes = attrs[:attrs]
+    if attrs[:attrs_extra].keys.any?
+      @repository.merge_extra_info(attrs[:attrs_extra])
+    end
+    @repository.project = @project
+    if request.put? && @repository.save
+      redirect_to settings_project_path(@project, :tab => 'repositories')
+    else
+      render :action => 'edit'
+    end
+  end
+
+  def pickup_extra_info
+    p       = {}
+    p_extra = {}
+    params[:repository].each do |k, v|
+      if k =~ /^extra_/
+        p_extra[k] = v
+      else
+        p[k] = v
+      end
+    end
+    {:attrs => p, :attrs_extra => p_extra}
+  end
+  private :pickup_extra_info
 
   def committers
     @committers = @repository.committers
@@ -76,16 +101,13 @@ class RepositoriesController < ApplicationController
       # Build a hash with repository usernames as keys and corresponding user ids as values
       @repository.committer_ids = params[:committers].values.inject({}) {|h, c| h[c.first] = c.last; h}
       flash[:notice] = l(:notice_successful_update)
-      redirect_to :action => 'committers', :id => @project
+      redirect_to settings_project_path(@project, :tab => 'repositories')
     end
   end
 
   def destroy
-    @repository.destroy
-    redirect_to :controller => 'projects',
-                :action     => 'settings',
-                :id         => @project,
-                :tab        => 'repository'
+    @repository.destroy if request.delete?
+    redirect_to settings_project_path(@project, :tab => 'repositories')
   end
 
   def show
@@ -99,6 +121,7 @@ class RepositoriesController < ApplicationController
       (show_error_not_found; return) unless @entries
       @changesets = @repository.latest_changesets(@path, @rev)
       @properties = @repository.properties(@path, @rev)
+      @repositories = @project.repositories
       render :action => 'show'
     end
   end
@@ -129,7 +152,15 @@ class RepositoriesController < ApplicationController
     end
   end
 
+  def raw
+    entry_and_raw(true)
+  end
+
   def entry
+    entry_and_raw(false)
+  end
+
+  def entry_and_raw(is_raw)
     @entry = @repository.entry(@path, @rev)
     (show_error_not_found; return) unless @entry
 
@@ -138,13 +169,14 @@ class RepositoriesController < ApplicationController
 
     @content = @repository.cat(@path, @rev)
     (show_error_not_found; return) unless @content
-    if 'raw' == params[:format] ||
+    if is_raw ||
          (@content.size && @content.size > Setting.file_max_size_displayed.to_i.kilobyte) ||
          ! is_entry_text_data?(@content, @path)
       # Force the download
       send_opt = { :filename => filename_for_content_disposition(@path.split('/').last) }
       send_type = Redmine::MimeType.of(@path)
       send_opt[:type] = send_type.to_s if send_type
+      send_opt[:disposition] = (Redmine::MimeType.is_type?('image', @path) && !is_raw ? 'inline' : 'attachment')
       send_data @content, send_opt
     else
       # Prevent empty lines when displaying a file with Windows style eol
@@ -154,6 +186,7 @@ class RepositoriesController < ApplicationController
       @changeset = @repository.find_changeset_by_name(@rev)
     end
   end
+  private :entry_and_raw
 
   def is_entry_text_data?(ent, path)
     # UTF-16 contains "\x00".
@@ -186,16 +219,32 @@ class RepositoriesController < ApplicationController
   end
 
   def revision
-    raise ChangesetNotFound if @rev.blank?
-    @changeset = @repository.find_changeset_by_name(@rev)
-    raise ChangesetNotFound unless @changeset
-
     respond_to do |format|
       format.html
       format.js {render :layout => false}
     end
-  rescue ChangesetNotFound
-    show_error_not_found
+  end
+
+  # Adds a related issue to a changeset
+  # POST /projects/:project_id/repository/(:repository_id/)revisions/:rev/issues
+  def add_related_issue
+    @issue = @changeset.find_referenced_issue_by_id(params[:issue_id])
+    if @issue && (!@issue.visible? || @changeset.issues.include?(@issue))
+      @issue = nil
+    end
+
+    if @issue
+      @changeset.issues << @issue
+    end
+  end
+
+  # Removes a related issue from a changeset
+  # DELETE /projects/:project_id/repository/(:repository_id/)revisions/:rev/issues/:issue_id
+  def remove_related_issue
+    @issue = Issue.visible.find_by_id(params[:issue_id])
+    if @issue 
+      @changeset.issues.delete(@issue)
+    end
   end
 
   def diff
@@ -250,14 +299,24 @@ class RepositoriesController < ApplicationController
 
   private
 
+  def find_repository
+    @repository = Repository.find(params[:id])
+    @project = @repository.project
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+
   REV_PARAM_RE = %r{\A[a-f0-9]*\Z}i
 
-  def find_repository
+  def find_project_repository
     @project = Project.find(params[:id])
-    @repository = @project.repository
+    if params[:repository_id].present?
+      @repository = @project.repositories.find_by_identifier_param(params[:repository_id])
+    else
+      @repository = @project.repository
+    end
     (render_404; return false) unless @repository
-    @path = params[:path].join('/') unless params[:path].nil?
-    @path ||= ''
+    @path = params[:path].is_a?(Array) ? params[:path].join('/') : params[:path].to_s
     @rev = params[:rev].blank? ? @repository.default_branch : params[:rev].to_s.strip
     @rev_to = params[:rev_to]
 
@@ -270,6 +329,13 @@ class RepositoriesController < ApplicationController
     render_404
   rescue InvalidRevisionParam
     show_error_not_found
+  end
+
+  def find_changeset
+    if @rev.present?
+      @changeset = @repository.find_changeset_by_name(@rev)
+    end
+    show_error_not_found unless @changeset
   end
 
   def show_error_not_found
@@ -285,17 +351,17 @@ class RepositoriesController < ApplicationController
     @date_to = Date.today
     @date_from = @date_to << 11
     @date_from = Date.civil(@date_from.year, @date_from.month, 1)
-    commits_by_day = repository.changesets.count(
+    commits_by_day = Changeset.count(
                           :all, :group => :commit_date,
-                          :conditions => ["commit_date BETWEEN ? AND ?", @date_from, @date_to])
+                          :conditions => ["repository_id = ? AND commit_date BETWEEN ? AND ?", repository.id, @date_from, @date_to])
     commits_by_month = [0] * 12
-    commits_by_day.each {|c| commits_by_month[c.first.to_date.months_ago] += c.last }
+    commits_by_day.each {|c| commits_by_month[(@date_to.month - c.first.to_date.month) % 12] += c.last }
 
-    changes_by_day = repository.changes.count(
-                          :all, :group => :commit_date,
-                          :conditions => ["commit_date BETWEEN ? AND ?", @date_from, @date_to])
+    changes_by_day = Change.count(
+                          :all, :group => :commit_date, :include => :changeset,
+                          :conditions => ["#{Changeset.table_name}.repository_id = ? AND #{Changeset.table_name}.commit_date BETWEEN ? AND ?", repository.id, @date_from, @date_to])
     changes_by_month = [0] * 12
-    changes_by_day.each {|c| changes_by_month[c.first.to_date.months_ago] += c.last }
+    changes_by_day.each {|c| changes_by_month[(@date_to.month - c.first.to_date.month) % 12] += c.last }
 
     fields = []
     12.times {|m| fields << month_name(((Date.today.month - 1 - m) % 12) + 1)}
@@ -326,10 +392,10 @@ class RepositoriesController < ApplicationController
   end
 
   def graph_commits_per_author(repository)
-    commits_by_author = repository.changesets.count(:all, :group => :committer)
+    commits_by_author = Changeset.count(:all, :group => :committer, :conditions => ["repository_id = ?", repository.id])
     commits_by_author.to_a.sort! {|x, y| x.last <=> y.last}
 
-    changes_by_author = repository.changes.count(:all, :group => :committer)
+    changes_by_author = Change.count(:all, :group => :committer, :include => :changeset, :conditions => ["#{Changeset.table_name}.repository_id = ?", repository.id])
     h = changes_by_author.inject({}) {|o, i| o[i.first] = i.last; o}
 
     fields = commits_by_author.collect {|r| r.first}
@@ -363,21 +429,5 @@ class RepositoriesController < ApplicationController
       :title => l(:label_change_plural)
     )
     graph.burn
-  end
-end
-
-class Date
-  def months_ago(date = Date.today)
-    (date.year - self.year)*12 + (date.month - self.month)
-  end
-
-  def weeks_ago(date = Date.today)
-    (date.year - self.year)*52 + (date.cweek - self.cweek)
-  end
-end
-
-class String
-  def with_leading_slash
-    starts_with?('/') ? self : "/#{self}"
   end
 end

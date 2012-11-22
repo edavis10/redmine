@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -34,8 +34,34 @@ class RepositoryTest < ActiveSupport::TestCase
            :roles,
            :enumerations
 
+  include Redmine::I18n
+
   def setup
     @repository = Project.find(1).repository
+  end
+
+  def test_blank_log_encoding_error_message
+    set_language_if_valid 'en'
+    repo = Repository::Bazaar.new(
+                        :project      => Project.find(3),
+                        :url          => "/test",
+                        :log_encoding => ''
+                      )
+    assert !repo.save
+    assert_include "Commit messages encoding can't be blank",
+                   repo.errors.full_messages
+  end
+
+  def test_blank_log_encoding_error_message_fr
+    set_language_if_valid 'fr'
+    str = "Encodage des messages de commit doit \xc3\xaatre renseign\xc3\xa9(e)"
+    str.force_encoding('UTF-8') if str.respond_to?(:force_encoding)
+    repo = Repository::Bazaar.new(
+                        :project      => Project.find(3),
+                        :url          => "/test"
+                      )
+    assert !repo.save
+    assert_include str, repo.errors.full_messages
   end
 
   def test_create
@@ -50,14 +76,95 @@ class RepositoryTest < ActiveSupport::TestCase
     assert_equal repository, project.repository
   end
 
+  def test_first_repository_should_be_set_as_default
+    repository1 = Repository::Subversion.new(
+                      :project => Project.find(3),
+                      :identifier => 'svn1',
+                      :url => 'file:///svn1'
+                    )
+    assert repository1.save
+    assert repository1.is_default?
+
+    repository2 = Repository::Subversion.new(
+                      :project => Project.find(3),
+                      :identifier => 'svn2',
+                      :url => 'file:///svn2'
+                    )
+    assert repository2.save
+    assert !repository2.is_default?
+
+    assert_equal repository1, Project.find(3).repository
+    assert_equal [repository1, repository2], Project.find(3).repositories.sort
+  end
+
+  def test_identifier_should_accept_letters_digits_dashes_and_underscores
+    r = Repository::Subversion.new(
+      :project_id => 3,
+      :identifier => 'svn-123_45',
+      :url => 'file:///svn'
+    )
+    assert r.save
+  end
+  
+  def test_identifier_should_not_be_frozen_for_a_new_repository
+    assert_equal false, Repository.new.identifier_frozen?
+  end
+
+  def test_identifier_should_not_be_frozen_for_a_saved_repository_with_blank_identifier
+    Repository.update_all(["identifier = ''"], "id = 10")
+
+    assert_equal false, Repository.find(10).identifier_frozen?
+  end
+
+  def test_identifier_should_be_frozen_for_a_saved_repository_with_valid_identifier
+    Repository.update_all(["identifier = 'abc123'"], "id = 10")
+
+    assert_equal true, Repository.find(10).identifier_frozen?
+  end
+
+  def test_identifier_should_not_accept_change_if_frozen
+    r = Repository.new(:identifier => 'foo')
+    r.stubs(:identifier_frozen?).returns(true)
+
+    r.identifier = 'bar'
+    assert_equal 'foo', r.identifier
+  end
+
+  def test_identifier_should_accept_change_if_not_frozen
+    r = Repository.new(:identifier => 'foo')
+    r.stubs(:identifier_frozen?).returns(false)
+
+    r.identifier = 'bar'
+    assert_equal 'bar', r.identifier
+  end
+
   def test_destroy
-    changesets = Changeset.count(:all, :conditions => "repository_id = 10")
-    changes = Change.count(:all, :conditions => "repository_id = 10",
-                           :include => :changeset)
+    repository = Repository.find(10)
+    changesets = repository.changesets.count
+    changes = repository.filechanges.count
+
     assert_difference 'Changeset.count', -changesets do
       assert_difference 'Change.count', -changes do
         Repository.find(10).destroy
       end
+    end
+  end
+
+  def test_destroy_should_delete_parents_associations
+    changeset = Changeset.find(102)
+    changeset.parents = Changeset.find_all_by_id([100, 101])
+
+    assert_difference 'Changeset.connection.select_all("select * from changeset_parents").size', -2 do
+      Repository.find(10).destroy
+    end
+  end
+
+  def test_destroy_should_delete_issues_associations
+    changeset = Changeset.find(102)
+    changeset.issues = Issue.find_all_by_id([1, 2])
+
+    assert_difference 'Changeset.connection.select_all("select * from changesets_issues").size', -2 do
+      Repository.find(10).destroy
     end
   end
 
@@ -67,14 +174,13 @@ class RepositoryTest < ActiveSupport::TestCase
       repository = Repository::Subversion.new(
                       :project => Project.find(3), :url => "svn://localhost")
       assert !repository.save
-      assert_equal I18n.translate('activerecord.errors.messages.invalid'),
-                                  repository.errors.on(:type)
+      assert_include I18n.translate('activerecord.errors.messages.invalid'),
+                     repository.errors[:type]
     end
   end
 
   def test_scan_changesets_for_issue_ids
     Setting.default_language = 'en'
-    Setting.notified_events = ['issue_added','issue_updated']
 
     # choosing a status to apply to fix issues
     Setting.commit_fix_status_id = IssueStatus.find(
@@ -91,7 +197,9 @@ class RepositoryTest < ActiveSupport::TestCase
     assert !fixed_issue.status.is_closed?
     old_status = fixed_issue.status
 
-    Repository.scan_changesets_for_issue_ids
+    with_settings :notified_events => %w(issue_added issue_updated) do
+      Repository.scan_changesets_for_issue_ids
+    end
     assert_equal [101, 102], Issue.find(3).changeset_ids
 
     # fixed issues
@@ -108,11 +216,11 @@ class RepositoryTest < ActiveSupport::TestCase
     # 2 email notifications
     assert_equal 2, ActionMailer::Base.deliveries.size
     mail = ActionMailer::Base.deliveries.first
-    assert_kind_of TMail::Mail, mail
+    assert_not_nil mail
     assert mail.subject.starts_with?(
         "[#{fixed_issue.project.name} - #{fixed_issue.tracker.name} ##{fixed_issue.id}]")
-    assert mail.body.include?(
-        "Status changed from #{old_status} to #{fixed_issue.status}")
+    assert_mail_body_match(
+        "Status changed from #{old_status} to #{fixed_issue.status}", mail)
 
     # ignoring commits referencing an issue of another project
     assert_equal [], Issue.find(4).changesets
@@ -252,5 +360,14 @@ class RepositoryTest < ActiveSupport::TestCase
     assert_nil repo.extra_info["test_2"]["test_21"]
     assert_equal "test_value_23",
                  repo.extra_info["test_2"]["test_23"]
+  end
+
+  def test_sort_should_not_raise_an_error_with_nil_identifiers
+    r1 = Repository.new
+    r2 = Repository.new
+
+    assert_nothing_raised do
+      [r1, r2].sort
+    end
   end
 end

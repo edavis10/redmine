@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -19,20 +19,42 @@ class ScmFetchError < Exception; end
 
 class Repository < ActiveRecord::Base
   include Redmine::Ciphering
+  include Redmine::SafeAttributes
+  
+  # Maximum length for repository identifiers
+  IDENTIFIER_MAX_LENGTH = 255
 
   belongs_to :project
   has_many :changesets, :order => "#{Changeset.table_name}.committed_on DESC, #{Changeset.table_name}.id DESC"
-  has_many :changes, :through => :changesets
+  has_many :filechanges, :class_name => 'Change', :through => :changesets
 
   serialize :extra_info
+
+  before_save :check_default
 
   # Raw SQL to delete changesets and changes in the database
   # has_many :changesets, :dependent => :destroy is too slow for big repositories
   before_destroy :clear_changesets
 
   validates_length_of :password, :maximum => 255, :allow_nil => true
+  validates_length_of :identifier, :maximum => IDENTIFIER_MAX_LENGTH, :allow_blank => true
+  validates_presence_of :identifier, :unless => Proc.new { |r| r.is_default? || r.set_as_default? }
+  validates_uniqueness_of :identifier, :scope => :project_id, :allow_blank => true
+  validates_exclusion_of :identifier, :in => %w(show entry raw changes annotate diff show stats graph)
+  # donwcase letters, digits, dashes, underscores but not digits only
+  validates_format_of :identifier, :with => /^(?!\d+$)[a-z0-9\-_]*$/, :allow_blank => true
   # Checks if the SCM is enabled when creating a repository
   validate :repo_create_validation, :on => :create
+
+  safe_attributes 'identifier',
+    'login',
+    'password',
+    'path_encoding',
+    'log_encoding',
+    'is_default'
+
+  safe_attributes 'url',
+    :if => lambda {|repository, user| repository.new_record?}
 
   def repo_create_validation
     unless Setting.enabled_scm.include?(self.class.name.demodulize)
@@ -40,12 +62,12 @@ class Repository < ActiveRecord::Base
     end
   end
 
-  def self.human_attribute_name(attribute_key_name)
-    attr_name = attribute_key_name
+  def self.human_attribute_name(attribute_key_name, *args)
+    attr_name = attribute_key_name.to_s
     if attr_name == "log_encoding"
       attr_name = "commit_logs_encoding"
     end
-    super(attr_name)
+    super(attr_name, *args)
   end
 
   # Removes leading and trailing whitespace
@@ -71,14 +93,64 @@ class Repository < ActiveRecord::Base
   end
 
   def scm
-    @scm ||= self.scm_adapter.new(url, root_url,
+    unless @scm
+      @scm = self.scm_adapter.new(url, root_url,
                                   login, password, path_encoding)
-    update_attribute(:root_url, @scm.root_url) if root_url.blank?
+      if root_url.blank? && @scm.root_url.present?
+        update_attribute(:root_url, @scm.root_url)
+      end
+    end
     @scm
   end
 
   def scm_name
     self.class.scm_name
+  end
+
+  def name
+    if identifier.present?
+      identifier
+    elsif is_default?
+      l(:field_repository_is_default)
+    else
+      scm_name
+    end
+  end
+
+  def identifier=(identifier)
+    super unless identifier_frozen?
+  end
+
+  def identifier_frozen?
+    errors[:identifier].blank? && !(new_record? || identifier.blank?)
+  end
+
+  def identifier_param
+    if is_default?
+      nil
+    elsif identifier.present?
+      identifier
+    else
+      id.to_s
+    end
+  end
+
+  def <=>(repository)
+    if is_default?
+      -1
+    elsif repository.is_default?
+      1
+    else
+      identifier.to_s <=> repository.identifier.to_s
+    end
+  end
+
+  def self.find_by_identifier_param(param)
+    if param.to_s =~ /^\d+$/
+      find_by_id(param)
+    else
+      find_by_identifier(param)
+    end
   end
 
   def merge_extra_info(arg)
@@ -117,7 +189,9 @@ class Repository < ActiveRecord::Base
   end
 
   def entries(path=nil, identifier=nil)
-    scm.entries(path, identifier)
+    entries = scm.entries(path, identifier)
+    load_entries_changesets(entries)
+    entries
   end
 
   def branches
@@ -159,8 +233,9 @@ class Repository < ActiveRecord::Base
   # Finds and returns a revision with a number or the beginning of a hash
   def find_changeset_by_name(name)
     return nil if name.blank?
-    changesets.find(:first, :conditions => (name.match(/^\d*$/) ?
-          ["revision = ?", name.to_s] : ["revision LIKE ?", name + '%']))
+    s = name.to_s
+    changesets.find(:first, :conditions => (s.match(/^\d*$/) ?
+          ["revision = ?", s] : ["revision LIKE ?", s + '%']))
   end
 
   def latest_changeset
@@ -177,7 +252,7 @@ class Repository < ActiveRecord::Base
          :order => "#{Changeset.table_name}.committed_on DESC, #{Changeset.table_name}.id DESC",
          :limit => limit)
     else
-      changes.find(
+      filechanges.find(
          :all,
          :include => {:changeset => :user},
          :conditions => ["path = ?", path.with_leading_slash],
@@ -249,10 +324,10 @@ class Repository < ActiveRecord::Base
   # Can be called periodically by an external script
   # eg. ruby script/runner "Repository.fetch_changesets"
   def self.fetch_changesets
-    Project.active.has_module(:repository).find(:all, :include => :repository).each do |project|
-      if project.repository
+    Project.active.has_module(:repository).all.each do |project|
+      project.repositories.each do |repository|
         begin
-          project.repository.fetch_changesets
+          repository.fetch_changesets
         rescue Redmine::Scm::Adapters::CommandFailed => e
           logger.error "scm: error during fetching changesets: #{e.message}"
         end
@@ -314,12 +389,47 @@ class Repository < ActiveRecord::Base
     ret
   end
 
+  def set_as_default?
+    new_record? && project && !Repository.first(:conditions => {:project_id => project.id})
+  end
+
+  protected
+
+  def check_default
+    if !is_default? && set_as_default?
+      self.is_default = true
+    end
+    if is_default? && is_default_changed?
+      Repository.update_all(["is_default = ?", false], ["project_id = ?", project_id])
+    end
+  end
+
+  def load_entries_changesets(entries)
+    if entries
+      entries.each do |entry|
+        if entry.lastrev && entry.lastrev.identifier
+          entry.changeset = find_changeset_by_name(entry.lastrev.identifier)
+        end
+      end
+    end
+  end
+
   private
 
+  # Deletes repository data
   def clear_changesets
-    cs, ch, ci = Changeset.table_name, Change.table_name, "#{table_name_prefix}changesets_issues#{table_name_suffix}"
+    cs = Changeset.table_name 
+    ch = Change.table_name
+    ci = "#{table_name_prefix}changesets_issues#{table_name_suffix}"
+    cp = "#{table_name_prefix}changeset_parents#{table_name_suffix}"
+
     connection.delete("DELETE FROM #{ch} WHERE #{ch}.changeset_id IN (SELECT #{cs}.id FROM #{cs} WHERE #{cs}.repository_id = #{id})")
     connection.delete("DELETE FROM #{ci} WHERE #{ci}.changeset_id IN (SELECT #{cs}.id FROM #{cs} WHERE #{cs}.repository_id = #{id})")
+    connection.delete("DELETE FROM #{cp} WHERE #{cp}.changeset_id IN (SELECT #{cs}.id FROM #{cs} WHERE #{cs}.repository_id = #{id})")
     connection.delete("DELETE FROM #{cs} WHERE #{cs}.repository_id = #{id}")
+    clear_extra_info_of_changesets
+  end
+
+  def clear_extra_info_of_changesets
   end
 end

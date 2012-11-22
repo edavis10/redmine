@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,6 +17,6 @@
 
 class MessageObserver < ActiveRecord::Observer
   def after_create(message)
-    Mailer.deliver_message_posted(message) if Setting.notified_events.include?('message_posted')
+    Mailer.message_posted(message).deliver if Setting.notified_events.include?('message_posted')
   end
 end

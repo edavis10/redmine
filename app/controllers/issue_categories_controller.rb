@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@ class IssueCategoriesController < ApplicationController
   model_object IssueCategory
   before_filter :find_model_object, :except => [:index, :new, :create]
   before_filter :find_project_from_association, :except => [:index, :new, :create]
-  before_filter :find_project, :only => [:index, :new, :create]
+  before_filter :find_project_by_project_id, :only => [:index, :new, :create]
   before_filter :authorize
   accept_api_auth :index, :show, :create, :update, :destroy
   
@@ -39,32 +39,31 @@ class IssueCategoriesController < ApplicationController
   end
 
   def new
-    @category = @project.issue_categories.build(params[:issue_category])
+    @category = @project.issue_categories.build
+    @category.safe_attributes = params[:issue_category]
+
+    respond_to do |format|
+      format.html
+      format.js
+    end
   end
 
-  verify :method => :post, :only => :create
   def create
-    @category = @project.issue_categories.build(params[:issue_category])
+    @category = @project.issue_categories.build
+    @category.safe_attributes = params[:issue_category]
     if @category.save
       respond_to do |format|
         format.html do
           flash[:notice] = l(:notice_successful_create)
           redirect_to :controller => 'projects', :action => 'settings', :tab => 'categories', :id => @project
         end
-        format.js do
-          # IE doesn't support the replace_html rjs method for select box options
-          render(:update) {|page| page.replace "issue_category_id",
-            content_tag('select', '<option></option>' + options_from_collection_for_select(@project.issue_categories, 'id', 'name', @category.id), :id => 'issue_category_id', :name => 'issue[category_id]')
-          }
-        end
+        format.js
         format.api { render :action => 'show', :status => :created, :location => issue_category_path(@category) }
       end
     else
       respond_to do |format|
         format.html { render :action => 'new'}
-        format.js do
-          render(:update) {|page| page.alert(@category.errors.full_messages.join('\n')) }
-        end
+        format.js   { render :action => 'new'}
         format.api { render_validation_errors(@category) }
       end
     end
@@ -73,15 +72,15 @@ class IssueCategoriesController < ApplicationController
   def edit
   end
 
-  verify :method => :put, :only => :update
   def update
-    if @category.update_attributes(params[:issue_category])
+    @category.safe_attributes = params[:issue_category]
+    if @category.save
       respond_to do |format|
         format.html {
           flash[:notice] = l(:notice_successful_update)
           redirect_to :controller => 'projects', :action => 'settings', :tab => 'categories', :id => @project
         }
-        format.api { head :ok }
+        format.api { render_api_ok }
       end
     else
       respond_to do |format|
@@ -91,7 +90,6 @@ class IssueCategoriesController < ApplicationController
     end
   end
 
-  verify :method => :delete, :only => :destroy
   def destroy
     @issue_count = @category.issues.size
     if @issue_count == 0 || params[:todo] || api_request? 
@@ -102,7 +100,7 @@ class IssueCategoriesController < ApplicationController
       @category.destroy(reassign_to)
       respond_to do |format|
         format.html { redirect_to :controller => 'projects', :action => 'settings', :id => @project, :tab => 'categories' }
-        format.api { head :ok }
+        format.api { render_api_ok }
       end
       return
     end
@@ -115,11 +113,5 @@ private
   def find_model_object
     super
     @category = @object
-  end
-
-  def find_project
-    @project = Project.find(params[:project_id])
-  rescue ActiveRecord::RecordNotFound
-    render_404
   end
 end

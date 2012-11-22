@@ -4,6 +4,8 @@ table.revision-info td {
     padding: 0px;
 }
 
+div.revision-graph { position: absolute; min-width: 1px; }
+
 div.changeset-changes ul { margin: 0; padding: 0; }
 div.changeset-changes ul > ul { margin-left: 18px; padding: 0; }
 
@@ -32,18 +34,23 @@ li.change .copied-from:before { content: " - "}
 #changes-legend { float: right; font-size: 0.8em; margin: 0; }
 #changes-legend li { float: left; background-position: 5px 0; }
 
-table.filecontent { border: 1px solid #ccc;  border-collapse: collapse; width:98%; background-color: #fafafa; }
-table.filecontent th { border: 1px solid #ccc; background-color: #eee; }
+table.filecontent { border: 1px solid #e2e2e2;  border-collapse: collapse; width:98%; background-color: #fafafa; }
+table.filecontent th { border: 1px solid #e2e2e2; background-color: #eee; }
 table.filecontent th.filename { background-color: #e4e4d4; text-align: left; padding: 0.2em;}
 table.filecontent tr.spacing th { text-align:center; }
 table.filecontent tr.spacing td { height: 0.4em; background: #EAF2F5;}
 table.filecontent th.line-num {
-    border: 1px solid #d7d7d7;
+    border: 1px solid #e2e2e2;
     font-size: 0.8em;
     text-align: right;
     width: 2%;
     padding-right: 3px;
     color: #999;
+    user-select: none;
+    -moz-user-select: none;
+    -o-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
 }
 table.filecontent th.line-num a {
     text-decoration: none;
@@ -91,97 +98,3 @@ table.annotate td.line-code { background-color: #fafafa; }
 div.action_M { background: #fd8 }
 div.action_D { background: #f88 }
 div.action_A { background: #bfb }
-
-/************* CodeRay styles *************/
-.syntaxhl div {display: inline;}
-.syntaxhl .line-numbers { padding: 2px 4px 2px 4px; background-color: #eee; margin:0px 5px 0px 0px; }
-.syntaxhl .code pre { overflow: auto }
-.syntaxhl .debug { color:white ! important; background:blue ! important; }
-
-.syntaxhl .attribute-name { color:#b48 }
-.syntaxhl .annotation { color:#007 }
-.syntaxhl .attribute-value { color:#700 }
-.syntaxhl .binary { color:#509 }
-
-.syntaxhl .comment { color:#777 }
-.syntaxhl .comment .char { color:#444 }
-.syntaxhl .comment .delimiter { color:#444 }
-
-.syntaxhl .char { color:#D20 }
-.syntaxhl .char .content { color:#D20 }
-.syntaxhl .char .delimiter { color:#710 }
-
-.syntaxhl .class { color:#B06; font-weight:bold }
-.syntaxhl .complex { color:#A08 }
-.syntaxhl .constant { color:#036; font-weight:bold }
-.syntaxhl .color { color:#0A0 }
-.syntaxhl .class-variable { color:#369 }
-.syntaxhl .decorator { color:#B0B }
-.syntaxhl .definition { color:#099; font-weight:bold }
-.syntaxhl .directive { color:#088; font-weight:bold }
-.syntaxhl .delimiter { color:black }
-.syntaxhl .doc { color:#970 }
-.syntaxhl .doctype { color:#34b }
-.syntaxhl .doc-string { color:#D42; font-weight:bold }
-.syntaxhl .escape  { color:#666 }
-.syntaxhl .entity { color:#800; font-weight:bold }
-.syntaxhl .error { color:#F00; background-color:#FAA }
-.syntaxhl .exception { color:#C00; font-weight:bold }
-.syntaxhl .float { color:#60E }
-.syntaxhl .function { color:#06B; font-weight:bold }
-.syntaxhl .global-variable { color:#d70 }
-.syntaxhl .hex { color:#02b }
-.syntaxhl .integer  { color:#00D }
-.syntaxhl .include { color:#B44; font-weight:bold }
-.syntaxhl .imaginary { color:#f00 }
-
-.syntaxhl .inline { background-color: hsla(0,0%,0%,0.07); color: black }
-.syntaxhl .inline-delimiter { font-weight: bold; color: #666 }
-
-.syntaxhl .instance-variable { color:#33B }
-.syntaxhl .label { color:#970; font-weight:bold }
-.syntaxhl .local-variable { color:#963 }
-.syntaxhl .namespace { color:#707; font-weight:bold }
-.syntaxhl .octal { color:#40E }
-.syntaxhl .operator { }
-.syntaxhl .predefined-constant { color:#069 }
-.syntaxhl .predefined { color:#369; font-weight:bold }
-.syntaxhl .predefined-type { color:#0a5; font-weight:bold }
-.syntaxhl .preprocessor { color:#579 }
-.syntaxhl .pseudo-class { color:#00C; font-weight:bold }
-.syntaxhl .reserved { color:#080; font-weight:bold }
-
-.syntaxhl .key .char { color: #60f }
-.syntaxhl .key .delimiter { color: #404 }
-.syntaxhl .key { color: #606 }
-.syntaxhl .keyword { color:#080; font-weight:bold }
-
-.syntaxhl .regexp { background-color:hsla(300,100%,50%,0.06); }
-.syntaxhl .regexp .content { color:#808 }
-.syntaxhl .regexp .delimiter { color:#404 }
-.syntaxhl .regexp .modifier { color:#C2C }
-
-.syntaxhl .string { background-color:hsla(0,100%,50%,0.05); }
-.syntaxhl .string .content { color: #D20 }
-.syntaxhl .string .char { color: #b0b }
-.syntaxhl .string .delimiter { color: #710 }
-.syntaxhl .string .modifier { color: #E40 }
-
-.syntaxhl .shell { background-color:hsla(120,100%,50%,0.06); }
-.syntaxhl .shell .content { color:#2B2 }
-.syntaxhl .shell .delimiter { color:#161 }
-
-.syntaxhl .symbol { color:#A60 }
-.syntaxhl .symbol .content { color:#A60 }
-.syntaxhl .symbol .delimiter { color:#630 }
-
-.syntaxhl .tag { color:#070 }
-.syntaxhl .type { color:#339; font-weight:bold }
-.syntaxhl .value { color: #088; }
-.syntaxhl .variable  { color:#037 }
-
-.syntaxhl .insert { background: hsla(120,100%,50%,0.12) }
-.syntaxhl .delete { background: hsla(0,100%,50%,0.12) }
-.syntaxhl .change { color: #bbf; background: #007; }
-.syntaxhl .head { color: #f8f; background: #505 }
-.syntaxhl .head .filename { color: white; }

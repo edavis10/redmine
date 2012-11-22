@@ -9,13 +9,24 @@ api.user do
 
   render_api_custom_values @user.visible_custom_field_values, api
 
+  api.array :groups do |groups|
+    @user.groups.each do |group|
+      api.group :id => group.id, :name => group.name
+    end
+  end if User.current.admin? && include_in_api_response?('groups')
+
   api.array :memberships do
     @memberships.each do |membership|
       api.membership do
+        api.id membership.id
         api.project :id => membership.project.id, :name => membership.project.name
         api.array :roles do
-          membership.roles.each do |role|
-            api.role :id => role.id, :name => role.name
+          membership.member_roles.each do |member_role|
+            if member_role.role
+              attrs = {:id => member_role.role.id, :name => member_role.role.name}
+              attrs.merge!(:inherited => true) if member_role.inherited_from.present?
+              api.role attrs
+            end 
           end
         end
       end if membership.project

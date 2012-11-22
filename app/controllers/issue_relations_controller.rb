@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -37,31 +37,21 @@ class IssueRelationsController < ApplicationController
       format.html { render :nothing => true }
       format.api
     end
-  rescue ActiveRecord::RecordNotFound
-    render_404
   end
 
-  verify :method => :post, :only => :create, :render => {:nothing => true, :status => :method_not_allowed }
   def create
     @relation = IssueRelation.new(params[:relation])
     @relation.issue_from = @issue
-    if params[:relation] && m = params[:relation][:issue_to_id].to_s.match(/^#?(\d+)$/)
+    if params[:relation] && m = params[:relation][:issue_to_id].to_s.strip.match(/^#?(\d+)$/)
       @relation.issue_to = Issue.visible.find_by_id(m[1].to_i)
     end
     saved = @relation.save
 
     respond_to do |format|
       format.html { redirect_to :controller => 'issues', :action => 'show', :id => @issue }
-      format.js do
+      format.js {
         @relations = @issue.relations.select {|r| r.other_issue(@issue) && r.other_issue(@issue).visible? }
-        render :update do |page|
-          page.replace_html "relations", :partial => 'issues/relations'
-          if @relation.errors.empty?
-            page << "$('relation_delay').value = ''"
-            page << "$('relation_issue_to_id').value = ''"
-          end
-        end
-      end
+      }
       format.api {
         if saved
           render :action => 'show', :status => :created, :location => relation_url(@relation)
@@ -72,18 +62,15 @@ class IssueRelationsController < ApplicationController
     end
   end
 
-  verify :method => :delete, :only => :destroy, :render => {:nothing => true, :status => :method_not_allowed }
   def destroy
     raise Unauthorized unless @relation.deletable?
     @relation.destroy
 
     respond_to do |format|
-      format.html { redirect_to :controller => 'issues', :action => 'show', :id => @issue }
-      format.js   { render(:update) {|page| page.remove "relation-#{@relation.id}"} }
-      format.api  { head :ok }
+      format.html { redirect_to issue_path } # TODO : does this really work since @issue is always nil? What is it useful to?
+      format.js
+      format.api  { render_api_ok }
     end
-  rescue ActiveRecord::RecordNotFound
-    render_404
   end
 
 private

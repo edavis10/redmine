@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -41,7 +41,13 @@ class VersionsControllerTest < ActionController::TestCase
     # Completed version doesn't appear
     assert !assigns(:versions).include?(Version.find(1))
     # Context menu on issues
-    assert_select "script", :text => Regexp.new(Regexp.escape("new ContextMenu('/issues/context_menu')"))
+    assert_select "script", :text => Regexp.new(Regexp.escape("contextMenuInit('/issues/context_menu')"))
+    # Links to versions anchors
+    assert_tag 'a', :attributes => {:href => '#2.0'},
+                    :ancestor => {:tag => 'div', :attributes => {:id => 'sidebar'}}
+    # Links to completed versions in the sidebar
+    assert_tag 'a', :attributes => {:href => '/versions/1'},
+                    :ancestor => {:tag => 'div', :attributes => {:id => 'sidebar'}}
   end
 
   def test_index_with_completed_versions
@@ -55,8 +61,16 @@ class VersionsControllerTest < ActionController::TestCase
     assert assigns(:versions).include?(Version.find(1))
   end
 
+  def test_index_with_tracker_ids
+    get :index, :project_id => 1, :tracker_ids => [1, 3]
+    assert_response :success
+    assert_template 'index'
+    assert_not_nil assigns(:issues_by_version)
+    assert_nil assigns(:issues_by_version).values.flatten.detect {|issue| issue.tracker_id == 2}
+  end
+
   def test_index_showing_subprojects_versions
-    @subproject_version = Version.generate!(:project => Project.find(3))
+    @subproject_version = Version.create!(:project => Project.find(3), :name => "Subproject version")
     get :index, :project_id => 1, :with_subprojects => 1
     assert_response :success
     assert_template 'index'
@@ -66,6 +80,20 @@ class VersionsControllerTest < ActionController::TestCase
     assert assigns(:versions).include?(@subproject_version), "Subproject version not found"
   end
 
+  def test_index_should_prepend_shared_versions
+    get :index, :project_id => 1
+    assert_response :success
+
+    assert_select '#sidebar' do
+      assert_select 'a[href=?]', '#2.0', :text => '2.0'
+      assert_select 'a[href=?]', '#subproject1-2.0', :text => 'eCookbook Subproject 1 - 2.0'
+    end
+    assert_select '#content' do
+      assert_select 'a[name=?]', '2.0', :text => '2.0'
+      assert_select 'a[name=?]', 'subproject1-2.0', :text => 'eCookbook Subproject 1 - 2.0'
+    end
+  end
+
   def test_show
     get :show, :id => 2
     assert_response :success
@@ -73,6 +101,21 @@ class VersionsControllerTest < ActionController::TestCase
     assert_not_nil assigns(:version)
 
     assert_tag :tag => 'h2', :content => /1.0/
+  end
+
+  def test_new
+    @request.session[:user_id] = 2
+    get :new, :project_id => '1'
+    assert_response :success
+    assert_template 'new'
+  end
+
+  def test_new_from_issue_form
+    @request.session[:user_id] = 2
+    xhr :get, :new, :project_id => '1'
+    assert_response :success
+    assert_template 'new'
+    assert_equal 'text/javascript', response.content_type
   end
 
   def test_create
@@ -87,15 +130,28 @@ class VersionsControllerTest < ActionController::TestCase
   end
 
   def test_create_from_issue_form
-    @request.session[:user_id] = 2 # manager
+    @request.session[:user_id] = 2
     assert_difference 'Version.count' do
       xhr :post, :create, :project_id => '1', :version => {:name => 'test_add_version_from_issue_form'}
     end
-    assert_response :success
-    assert_select_rjs :replace, 'issue_fixed_version_id'
     version = Version.find_by_name('test_add_version_from_issue_form')
     assert_not_nil version
     assert_equal 1, version.project_id
+
+    assert_response :success
+    assert_template 'create'
+    assert_equal 'text/javascript', response.content_type
+    assert_include 'test_add_version_from_issue_form', response.body
+  end
+
+  def test_create_from_issue_form_with_failure
+    @request.session[:user_id] = 2
+    assert_no_difference 'Version.count' do
+      xhr :post, :create, :project_id => '1', :version => {:name => ''}
+    end
+    assert_response :success
+    assert_template 'new'
+    assert_equal 'text/javascript', response.content_type
   end
 
   def test_get_edit
@@ -135,20 +191,36 @@ class VersionsControllerTest < ActionController::TestCase
 
   def test_destroy
     @request.session[:user_id] = 2
-    delete :destroy, :id => 3
+    assert_difference 'Version.count', -1 do
+      delete :destroy, :id => 3
+    end
     assert_redirected_to :controller => 'projects', :action => 'settings', :tab => 'versions', :id => 'ecookbook'
     assert_nil Version.find_by_id(3)
+  end
+
+  def test_destroy_version_in_use_should_fail
+    @request.session[:user_id] = 2
+    assert_no_difference 'Version.count' do
+      delete :destroy, :id => 2
+    end
+    assert_redirected_to :controller => 'projects', :action => 'settings', :tab => 'versions', :id => 'ecookbook'
+    assert flash[:error].match(/Unable to delete version/)
+    assert Version.find_by_id(2)
   end
 
   def test_issue_status_by
     xhr :get, :status_by, :id => 2
     assert_response :success
+    assert_template 'status_by'
     assert_template '_issue_counts'
   end
 
   def test_issue_status_by_status
     xhr :get, :status_by, :id => 2, :status_by => 'status'
     assert_response :success
+    assert_template 'status_by'
     assert_template '_issue_counts'
+    assert_include 'Assigned', response.body
+    assert_include 'Closed', response.body
   end
 end

@@ -9,7 +9,7 @@ function addOption(theSel, theText, theValue)
 
 function swapOptions(theSel, index1, index2)
 {
-	var text, value;
+  var text, value;
   text = theSel.options[index1].text;
   value = theSel.options[index1].value;
   theSel.options[index1].text = theSel.options[index2].text;
@@ -19,7 +19,7 @@ function swapOptions(theSel, index1, index2)
 }
 
 function deleteOption(theSel, theIndex)
-{ 
+{
   var selLength = theSel.length;
   if(selLength>0)
   {
@@ -29,14 +29,14 @@ function deleteOption(theSel, theIndex)
 
 function moveOptions(theSelFrom, theSelTo)
 {
-  
+
   var selLength = theSelFrom.length;
   var selectedText = new Array();
   var selectedValues = new Array();
   var selectedCount = 0;
-  
+
   var i;
-  
+
   for(i=selLength-1; i>=0; i--)
   {
     if(theSelFrom.options[i].selected)
@@ -47,36 +47,37 @@ function moveOptions(theSelFrom, theSelTo)
       selectedCount++;
     }
   }
-  
+
   for(i=selectedCount-1; i>=0; i--)
   {
     addOption(theSelTo, selectedText[i], selectedValues[i]);
   }
-  
+
   if(NS4) history.go(0);
 }
 
 function moveOptionUp(theSel) {
-	var index = theSel.selectedIndex;
-	if (index > 0) {
-		swapOptions(theSel, index-1, index);
-  	theSel.selectedIndex = index-1;
-	}
-}
-
-function moveOptionDown(theSel) {
-	var index = theSel.selectedIndex;
-	if (index < theSel.length - 1) {
-		swapOptions(theSel, index, index+1);
-  	theSel.selectedIndex = index+1;
-	}
-}
-
-function selectAllOptions(id)
-{
-  var select = $(id);
-  for (var i=0; i<select.options.length; i++) {
-    select.options[i].selected = true;
+  var index = theSel.selectedIndex;
+  if (index > 0) {
+    swapOptions(theSel, index-1, index);
+    theSel.selectedIndex = index-1;
   }
 }
 
+function moveOptionDown(theSel) {
+  var index = theSel.selectedIndex;
+  if (index < theSel.length - 1) {
+    swapOptions(theSel, index, index+1);
+    theSel.selectedIndex = index+1;
+  }
+}
+
+// OK
+function selectAllOptions(id)
+{
+  var select = $('#'+id);/*
+  for (var i=0; i<select.options.length; i++) {
+    select.options[i].selected = true;
+  }*/
+  select.children('option').attr('selected', true);
+}

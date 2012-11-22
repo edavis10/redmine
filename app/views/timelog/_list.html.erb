@@ -1,12 +1,13 @@
-<% form_tag({}) do -%>
+<%= form_tag({}) do -%>
 <%= hidden_field_tag 'back_url', url_for(params) %>
+<div class="autoscroll">
 <table class="list time-entries">
 <thead>
 <tr>
 <th class="checkbox hide-when-print">
   <%= link_to image_tag('toggle_check.png'),
     {},
-    :onclick => 'toggleIssuesSelection(Element.up(this, "form")); return false;',
+    :onclick => 'toggleIssuesSelection(this); return false;',
     :title => "#{l(:button_check_all)}/#{l(:button_uncheck_all)}" %>
 </th>
 <%= sort_header_tag('spent_on', :caption => l(:label_date), :default_order => 'desc') %>
@@ -36,10 +37,10 @@
 <td class="hours"><%= html_hours("%.2f" % entry.hours) %></td>
 <td align="center">
 <% if entry.editable_by?(User.current) -%>
-    <%= link_to image_tag('edit.png'), {:controller => 'timelog', :action => 'edit', :id => entry, :project_id => nil},
+    <%= link_to image_tag('edit.png'), edit_time_entry_path(entry),
                                        :title => l(:button_edit) %>
-    <%= link_to image_tag('delete.png'), {:controller => 'timelog', :action => 'destroy', :id => entry, :project_id => nil},
-                                         :confirm => l(:text_are_you_sure),
+    <%= link_to image_tag('delete.png'), time_entry_path(entry),
+                                         :data => {:confirm => l(:text_are_you_sure)},
                                          :method => :delete,
                                          :title => l(:button_delete) %>
 <% end -%>
@@ -48,6 +49,7 @@
 <% end -%>
 </tbody>
 </table>
+</div>
 <% end -%>
 
 <%= context_menu time_entries_context_menu_path %>

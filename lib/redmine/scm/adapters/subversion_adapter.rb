@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -71,7 +71,7 @@ module Redmine
               output.force_encoding('UTF-8')
             end
             begin
-              doc = ActiveSupport::XmlMini.parse(output)
+              doc = parse_xml(output)
               # root_url = doc.elements["info/entry/repository/root"].text
               info = Info.new({:root_url => doc['info']['entry']['repository']['root']['__content__'],
                                :lastrev => Revision.new({
@@ -103,7 +103,7 @@ module Redmine
               output.force_encoding('UTF-8')
             end
             begin
-              doc = ActiveSupport::XmlMini.parse(output)
+              doc = parse_xml(output)
               each_xml_element(doc['lists']['list'], 'entry') do |entry|
                 commit = entry['commit']
                 commit_date = commit['date']
@@ -146,7 +146,7 @@ module Redmine
               output.force_encoding('UTF-8')
             end
             begin
-              doc = ActiveSupport::XmlMini.parse(output)
+              doc = parse_xml(output)
               each_xml_element(doc['properties']['target'], 'property') do |property|
                 properties[ property['name'] ] = property['__content__'].to_s
               end
@@ -173,7 +173,7 @@ module Redmine
               output.force_encoding('UTF-8')
             end
             begin
-              doc = ActiveSupport::XmlMini.parse(output)
+              doc = parse_xml(output)
               each_xml_element(doc['log'], 'logentry') do |logentry|
                 paths = []
                 each_xml_element(logentry['paths'], 'path') do |path|
@@ -199,7 +199,7 @@ module Redmine
           revisions
         end
 
-        def diff(path, identifier_from, identifier_to=nil, type="inline")
+        def diff(path, identifier_from, identifier_to=nil)
           path ||= ''
           identifier_from = (identifier_from and identifier_from.to_i > 0) ? identifier_from.to_i : ''
 

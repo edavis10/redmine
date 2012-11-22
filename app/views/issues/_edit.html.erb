@@ -1,23 +1,17 @@
-<% labelled_tabular_form_for :issue, @issue,
-                             :url => {:action => 'update', :id => @issue},
-                             :html => {:id => 'issue-form',
-                                       :class => nil,
-                                       :method => :put,
-                                       :multipart => true} do |f| %>
+<%= labelled_form_for @issue, :html => {:id => 'issue-form', :multipart => true} do |f| %>
     <%= error_messages_for 'issue', 'time_entry' %>
+    <%= render :partial => 'conflict' if @conflict %>
     <div class="box">
     <% if @edit_allowed || !@allowed_statuses.empty? %>
-        <fieldset class="tabular"><legend><%= l(:label_change_properties) %>
-        <% if !@issue.new_record? && !@issue.errors.any? && @edit_allowed %>
-        <small>(<%= link_to l(:label_more), {}, :onclick => 'Effect.toggle("issue_descr_fields", "appear", {duration:0.3}); return false;' %>)</small>
-        <% end %>
-        </legend>
-        <%= render :partial => (@edit_allowed ? 'form' : 'form_update'), :locals => {:f => f} %>
+        <fieldset class="tabular"><legend><%= l(:label_change_properties) %></legend>
+        <div id="all_attributes">
+        <%= render :partial => 'form', :locals => {:f => f} %>
+        </div>
         </fieldset>
     <% end %>
     <% if User.current.allowed_to?(:log_time, @project) %>
         <fieldset class="tabular"><legend><%= l(:button_log_time) %></legend>
-        <% fields_for :time_entry, @time_entry, { :builder => TabularFormBuilder, :lang => current_language} do |time_entry| %>
+        <%= labelled_fields_for :time_entry, @time_entry do |time_entry| %>
         <div class="splitcontentleft">
         <p><%= time_entry.text_field :hours, :size => 6, :label => :label_spent_time %> <%= l(:field_hours) %></p>
         </div>
@@ -37,19 +31,14 @@
     <%= wikitoolbar_for 'notes' %>
     <%= call_hook(:view_issues_edit_notes_bottom, { :issue => @issue, :notes => @notes, :form => f }) %>
 
-    <p><%=l(:label_attachment_plural)%><br /><%= render :partial => 'attachments/form' %></p>
+    <p><%=l(:label_attachment_plural)%><br /><%= render :partial => 'attachments/form', :locals => {:container => @issue} %></p>
     </fieldset>
     </div>
 
     <%= f.hidden_field :lock_version %>
+    <%= hidden_field_tag 'last_journal_id', params[:last_journal_id] || @issue.last_journal_id %>
     <%= submit_tag l(:button_submit) %>
-    <%= link_to_remote l(:label_preview),
-                       { :url => preview_issue_path(:project_id => @project, :id => @issue),
-                         :method => 'post',
-                         :update => 'preview',
-                         :with => 'Form.serialize("issue-form")',
-                         :complete => "Element.scrollTo('preview')"
-                       }, :accesskey => accesskey(:preview) %>
+    <%= preview_link preview_edit_issue_path(:project_id => @project, :id => @issue), 'issue-form' %>
 <% end %>
 
 <div id="preview" class="wiki"></div>

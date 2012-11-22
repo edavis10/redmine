@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,12 +16,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 require File.expand_path('../../test_helper', __FILE__)
-require 'repositories_controller'
-
-# Re-raise errors caught by the controller.
-class RepositoriesController; def rescue_action(e) raise e end; end
 
 class RepositoriesMercurialControllerTest < ActionController::TestCase
+  tests RepositoriesController
+
   fixtures :projects, :users, :roles, :members, :member_roles,
            :repositories, :enabled_modules
 
@@ -34,9 +32,6 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
      (RUBY_VERSION >= '1.9' && Encoding.default_external.to_s != 'UTF-8')
 
   def setup
-    @controller = RepositoriesController.new
-    @request    = ActionController::TestRequest.new
-    @response   = ActionController::TestResponse.new
     User.current = nil
     @project    = Project.find(PRJ_ID)
     @repository = Repository::Mercurial.create(
@@ -64,6 +59,17 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
          "Current value is '#{Encoding.default_external.to_s}'"
     def test_fake; assert true end
   elsif File.directory?(REPOSITORY_PATH)
+
+    def test_get_new
+      @request.session[:user_id] = 1
+      @project.repository.destroy
+      get :new, :project_id => 'subproject1', :repository_scm => 'Mercurial'
+      assert_response :success
+      assert_template 'new'
+      assert_kind_of Repository::Mercurial, assigns(:repository)
+      assert assigns(:repository).new_record?
+    end
+
     def test_show_root
       assert_equal 0, @repository.changesets.count
       @repository.fetch_changesets
@@ -86,7 +92,7 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      get :show, :id => PRJ_ID, :path => ['images']
+      get :show, :id => PRJ_ID, :path => repository_path_hash(['images'])[:param]
       assert_response :success
       assert_template 'show'
       assert_not_nil assigns(:entries)
@@ -105,7 +111,8 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
       [0, '0', '0885933ad4f6'].each do |r1|
-        get :show, :id => PRJ_ID, :path => ['images'], :rev => r1
+        get :show, :id => PRJ_ID, :path => repository_path_hash(['images'])[:param],
+            :rev => r1
         assert_response :success
         assert_template 'show'
         assert_not_nil assigns(:entries)
@@ -121,7 +128,8 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
       [13, '13', '3a330eb32958'].each do |r1|
-        get :show, :id => PRJ_ID, :path => ['sql_escape', 'percent%dir'],
+        get :show, :id => PRJ_ID,
+            :path => repository_path_hash(['sql_escape', 'percent%dir'])[:param],
             :rev => r1
         assert_response :success
         assert_template 'show'
@@ -142,7 +150,9 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
       [21, '21', 'adf805632193'].each do |r1|
-        get :show, :id => PRJ_ID, :path => ['latin-1-dir'], :rev => r1
+        get :show, :id => PRJ_ID,
+            :path => repository_path_hash(['latin-1-dir'])[:param],
+            :rev => r1
         assert_response :success
         assert_template 'show'
 
@@ -155,6 +165,16 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
         assert_not_nil changesets
         assert_equal %w(21 20 19 18 17), changesets.collect(&:revision)
       end
+    end
+
+    def show_should_show_branch_selection_form
+      @repository.fetch_changesets
+      @project.reload
+      get :show, :id => PRJ_ID
+      assert_tag 'form', :attributes => {:id => 'revision_selector', :action => '/projects/subproject1/repository/show'}
+      assert_tag 'select', :attributes => {:name => 'branch'},
+        :child => {:tag => 'option', :attributes => {:value => 'test-branch-01'}},
+        :parent => {:tag => 'form', :attributes => {:id => 'revision_selector'}}
     end
 
     def test_show_branch
@@ -201,14 +221,16 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
     end
 
     def test_changes
-      get :changes, :id => PRJ_ID, :path => ['images', 'edit.png']
+      get :changes, :id => PRJ_ID,
+          :path => repository_path_hash(['images', 'edit.png'])[:param]
       assert_response :success
       assert_template 'changes'
       assert_tag :tag => 'h2', :content => 'edit.png'
     end
 
     def test_entry_show
-      get :entry, :id => PRJ_ID, :path => ['sources', 'watchers_controller.rb']
+      get :entry, :id => PRJ_ID,
+          :path => repository_path_hash(['sources', 'watchers_controller.rb'])[:param]
       assert_response :success
       assert_template 'entry'
       # Line 10
@@ -221,7 +243,8 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
     def test_entry_show_latin_1_path
       [21, '21', 'adf805632193'].each do |r1|
         get :entry, :id => PRJ_ID,
-            :path => ['latin-1-dir', "test-#{@char_1}-2.txt"], :rev => r1
+            :path => repository_path_hash(['latin-1-dir', "test-#{@char_1}-2.txt"])[:param],
+            :rev => r1
         assert_response :success
         assert_template 'entry'
         assert_tag :tag => 'th',
@@ -236,7 +259,8 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       with_settings :repositories_encodings => 'UTF-8,ISO-8859-1' do
         [27, '27', '7bbf4c738e71'].each do |r1|
           get :entry, :id => PRJ_ID,
-              :path => ['latin-1-dir', "test-#{@char_1}.txt"], :rev => r1
+              :path => repository_path_hash(['latin-1-dir', "test-#{@char_1}.txt"])[:param],
+              :rev => r1
           assert_response :success
           assert_template 'entry'
           assert_tag :tag => 'th',
@@ -250,20 +274,23 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
 
     def test_entry_download
       get :entry, :id => PRJ_ID,
-          :path => ['sources', 'watchers_controller.rb'], :format => 'raw'
+          :path => repository_path_hash(['sources', 'watchers_controller.rb'])[:param],
+          :format => 'raw'
       assert_response :success
       # File content
       assert @response.body.include?('WITHOUT ANY WARRANTY')
     end
 
     def test_entry_binary_force_download
-      get :entry, :id => PRJ_ID, :rev => 1, :path => ['images', 'edit.png']
+      get :entry, :id => PRJ_ID, :rev => 1,
+          :path => repository_path_hash(['images', 'edit.png'])[:param]
       assert_response :success
       assert_equal 'image/png', @response.content_type
     end
 
     def test_directory_entry
-      get :entry, :id => PRJ_ID, :path => ['sources']
+      get :entry, :id => PRJ_ID,
+          :path => repository_path_hash(['sources'])[:param]
       assert_response :success
       assert_template 'show'
       assert_not_nil assigns(:entry)
@@ -345,32 +372,18 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
     end
 
     def test_annotate
-      get :annotate, :id => PRJ_ID, :path => ['sources', 'watchers_controller.rb']
+      get :annotate, :id => PRJ_ID,
+          :path => repository_path_hash(['sources', 'watchers_controller.rb'])[:param]
       assert_response :success
       assert_template 'annotate'
-      # Line 23, revision 4:def6d2f1254a
-      assert_tag :tag => 'th',
-                 :content => '23',
-                 :attributes => { :class => 'line-num' },
-                 :sibling =>
-                       {
-                         :tag => 'td',
-                         :attributes => { :class => 'revision' },
-                         :child => { :tag => 'a', :content => '4:def6d2f1254a' }
-                       }
-      assert_tag :tag => 'th',
-                 :content => '23',
-                 :attributes => { :class => 'line-num' },
-                 :sibling =>
-                       {
-                          :tag     => 'td'    ,
-                          :content => 'jsmith' ,
-                          :attributes => { :class   => 'author' },
-                        }
-      assert_tag :tag => 'th',
-                 :content => '23',
-                 :attributes => { :class => 'line-num' },
-                 :sibling => { :tag => 'td', :content => /watcher =/ }
+
+      # Line 22, revision 4:def6d2f1254a
+      assert_select 'tr' do
+        assert_select 'th.line-num', :text => '22'
+        assert_select 'td.revision', :text => '4:def6d2f1254a'
+        assert_select 'td.author', :text => 'jsmith'
+        assert_select 'td', :text => /remove_watcher/
+      end
     end
 
     def test_annotate_not_in_tip
@@ -378,9 +391,8 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-
       get :annotate, :id => PRJ_ID,
-          :path => ['sources', 'welcome_controller.rb']
+          :path => repository_path_hash(['sources', 'welcome_controller.rb'])[:param]
       assert_response 404
       assert_error_tag :content => /was not found/
     end
@@ -392,7 +404,7 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       assert_equal NUM_REV, @repository.changesets.count
       [2, '400bb8672109', '400', 400].each do |r1|
         get :annotate, :id => PRJ_ID, :rev => r1,
-            :path => ['sources', 'watchers_controller.rb']
+            :path => repository_path_hash(['sources', 'watchers_controller.rb'])[:param]
         assert_response :success
         assert_template 'annotate'
         assert_tag :tag => 'h2', :content => /@ 2:400bb8672109/
@@ -402,7 +414,8 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
     def test_annotate_latin_1_path
       [21, '21', 'adf805632193'].each do |r1|
         get :annotate, :id => PRJ_ID,
-            :path => ['latin-1-dir', "test-#{@char_1}-2.txt"], :rev => r1
+            :path => repository_path_hash(['latin-1-dir', "test-#{@char_1}-2.txt"])[:param],
+            :rev => r1
         assert_response :success
         assert_template 'annotate'
         assert_tag :tag => 'th',
@@ -436,7 +449,8 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       with_settings :repositories_encodings => 'UTF-8,ISO-8859-1' do
         [27, '7bbf4c738e71'].each do |r1|
           get :annotate, :id => PRJ_ID,
-              :path => ['latin-1-dir', "test-#{@char_1}.txt"], :rev => r1
+              :path => repository_path_hash(['latin-1-dir', "test-#{@char_1}.txt"])[:param],
+              :rev => r1
           assert_tag :tag => 'th',
                      :content => '1',
                      :attributes => { :class => 'line-num' },
@@ -462,10 +476,11 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
       @request.session[:user_id] = 1 # admin
       assert_equal 0, @repository.changesets.count
       @repository.fetch_changesets
-      @project.reload
       assert_equal NUM_REV, @repository.changesets.count
 
-      get :destroy, :id => PRJ_ID
+      assert_difference 'Repository.count', -1 do
+        delete :destroy, :id => @repository.id
+      end
       assert_response 302
       @project.reload
       assert_nil @project.repository
@@ -473,27 +488,18 @@ class RepositoriesMercurialControllerTest < ActionController::TestCase
 
     def test_destroy_invalid_repository
       @request.session[:user_id] = 1 # admin
-      assert_equal 0, @repository.changesets.count
-      @repository.fetch_changesets
-      @project.reload
-      assert_equal NUM_REV, @repository.changesets.count
-
-      get :destroy, :id => PRJ_ID
-      assert_response 302
-      @project.reload
-      assert_nil @project.repository
-
-      @repository = Repository::Mercurial.create(
+      @project.repository.destroy
+      @repository = Repository::Mercurial.create!(
                       :project => Project.find(PRJ_ID),
                       :url     => "/invalid",
                       :path_encoding => 'ISO-8859-1'
                       )
-      assert @repository
       @repository.fetch_changesets
-      @project.reload
       assert_equal 0, @repository.changesets.count
 
-      get :destroy, :id => PRJ_ID
+      assert_difference 'Repository.count', -1 do
+        delete :destroy, :id => @repository.id
+      end
       assert_response 302
       @project.reload
       assert_nil @project.repository

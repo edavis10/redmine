@@ -1,0 +1,3 @@
+$('#notes').val("<%= raw escape_javascript(@content) %>");
+showAndScrollTo("update", "notes");
+$('#notes').scrollTop = $('#notes').scrollHeight - $('#notes').clientHeight;

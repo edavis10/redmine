@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -27,6 +27,13 @@ class WatcherTest < ActiveSupport::TestCase
   def setup
     @user = User.find(1)
     @issue = Issue.find(1)
+  end
+
+  def test_validate
+    user = User.find(5)
+    assert !user.active?
+    watcher = Watcher.new(:user_id => user.id)
+    assert !watcher.save
   end
 
   def test_watch
@@ -72,6 +79,13 @@ class WatcherTest < ActiveSupport::TestCase
     issue = Issue.new
     issue.watcher_user_ids = ['1', '3']
     assert issue.watched_by?(User.find(1))
+  end
+
+  def test_watcher_user_ids_should_make_ids_uniq
+    issue = Issue.new(:project => Project.find(1), :tracker_id => 1, :subject => "test", :author => User.find(2))
+    issue.watcher_user_ids = ['1', '3', '1']
+    issue.save!
+    assert_equal 2, issue.watchers.count
   end
 
   def test_addable_watcher_users
@@ -138,6 +152,14 @@ class WatcherTest < ActiveSupport::TestCase
     end
 
     assert Issue.find(1).watched_by?(user)
+    assert !Issue.find(4).watched_by?(user)
+  end
+
+  def test_prune_all
+    user = User.find(9)
+    Watcher.new(:watchable => Issue.find(4), :user => User.find(9)).save(:validate => false)
+
+    assert Watcher.prune > 0
     assert !Issue.find(4).watched_by?(user)
   end
 end

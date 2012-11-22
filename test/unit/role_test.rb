@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,15 +20,45 @@ require File.expand_path('../../test_helper', __FILE__)
 class RoleTest < ActiveSupport::TestCase
   fixtures :roles, :workflows
 
+  def test_sorted_scope
+    assert_equal Role.all.sort, Role.sorted.all
+  end
+
+  def test_givable_scope
+    assert_equal Role.all.reject(&:builtin?).sort, Role.givable.all
+  end
+
+  def test_builtin_scope
+    assert_equal Role.all.select(&:builtin?).sort, Role.builtin(true).all.sort
+    assert_equal Role.all.reject(&:builtin?).sort, Role.builtin(false).all.sort
+  end
+
+  def test_copy_from
+    role = Role.find(1)
+    copy = Role.new.copy_from(role)
+
+    assert_nil copy.id
+    assert_equal '', copy.name
+    assert_equal role.permissions, copy.permissions
+
+    copy.name = 'Copy'
+    assert copy.save
+  end
+
   def test_copy_workflows
     source = Role.find(1)
-    assert_equal 90, source.workflows.size
+    assert_equal 90, source.workflow_rules.size
 
     target = Role.new(:name => 'Target')
     assert target.save
-    target.workflows.copy(source)
+    target.workflow_rules.copy(source)
     target.reload
-    assert_equal 90, target.workflows.size
+    assert_equal 90, target.workflow_rules.size
+  end
+
+  def test_permissions_should_be_unserialized_with_its_coder
+    Role::PermissionsAttributeCoder.expects(:load).once
+    Role.find(1).permissions
   end
 
   def test_add_permission
@@ -55,6 +85,10 @@ class RoleTest < ActiveSupport::TestCase
     assert_equal 'Manager', Role.find(1).name
     assert_equal 'Anonyme', Role.anonymous.name
     assert_equal 'Non membre', Role.non_member.name
+  end
+
+  def test_find_all_givable
+    assert_equal Role.all.reject(&:builtin?).sort, Role.find_all_givable
   end
 
   context "#anonymous" do

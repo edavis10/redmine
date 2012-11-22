@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -169,6 +169,10 @@ private
     name = name.to_s
     raise "There's no setting named #{name}" unless @@available_settings.has_key?(name)
     setting = find_by_name(name)
-    setting ||= new(:name => name, :value => @@available_settings[name]['default']) if @@available_settings.has_key? name
+    unless setting
+      setting = new(:name => name)
+      setting.value = @@available_settings[name]['default']
+    end
+    setting
   end
 end

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -32,7 +32,7 @@ class AdminTest < ActionController::IntegrationTest
     get "/users/new"
     assert_response :success
     assert_template "users/new"
-    post "/users/create",
+    post "/users",
          :user => { :login => "psmith", :firstname => "Paul",
                     :lastname => "Smith", :mail => "psmith@somenet.foo",
                     :language => "en", :password => "psmith09",
@@ -53,7 +53,7 @@ class AdminTest < ActionController::IntegrationTest
   end
 
   test "Add a user as an anonymous user should fail" do
-    post '/users/create',
+    post '/users',
          :user => { :login => 'psmith', :firstname => 'Paul'},
          :password => "psmith09", :password_confirmation => "psmith09"
     assert_response :redirect

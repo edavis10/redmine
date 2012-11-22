@@ -21,6 +21,7 @@ custom_fields_002:
   min_length: 1
   regexp: ""
   is_for_all: true
+  is_filter: true
   type: IssueCustomField
   max_length: 100
   possible_values: ""
@@ -143,3 +144,12 @@ custom_fields_010:
   field_format: bool
   default_value: 0
   editable: true
+custom_fields_011:
+  id: 11
+  name: Binary
+  type: CustomField
+  possible_values: 
+  - !binary |
+    SGXDqWzDp2prc2Tigqw2NTTDuQ==
+  - Other value
+  field_format: list

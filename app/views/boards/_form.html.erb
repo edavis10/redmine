@@ -1,8 +1,9 @@
-<%= error_messages_for 'board' %>
+<%= error_messages_for @board %>
 
-<!--[form:board]-->
-<div class="box">
+<div class="box tabular">
 <p><%= f.text_field :name, :required => true %></p>
 <p><%= f.text_field :description, :required => true, :size => 80 %></p>
+<% if @board.valid_parents.any? %>
+<p><%= f.select :parent_id, boards_options_for_select(@board.valid_parents), :include_blank => true, :label => :field_board_parent %></p>
+<% end %>
 </div>
-<!--[eoform:board]-->

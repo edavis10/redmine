@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,6 +18,7 @@
 require File.expand_path('../../test_helper', __FILE__)
 
 class AuthSourceLdapTest < ActiveSupport::TestCase
+  include Redmine::I18n
   fixtures :auth_sources
 
   def setup
@@ -44,10 +45,23 @@ class AuthSourceLdapTest < ActiveSupport::TestCase
     assert_equal 389, a.port
   end
 
+  def test_filter_should_be_validated
+    set_language_if_valid 'en'
+
+    a = AuthSourceLdap.new(:name => 'My LDAP', :host => 'ldap.example.net', :port => 389, :attr_login => 'sn')
+    a.filter = "(mail=*@redmine.org"
+    assert !a.valid?
+    assert_include "LDAP filter is invalid", a.errors.full_messages
+
+    a.filter = "(mail=*@redmine.org)"
+    assert a.valid?
+  end
+
   if ldap_configured?
     context '#authenticate' do
       setup do
         @auth = AuthSourceLdap.find(1)
+        @auth.update_attribute :onthefly_register, true
       end
 
       context 'with a valid LDAP user' do
@@ -82,6 +96,33 @@ class AuthSourceLdapTest < ActiveSupport::TestCase
         end
       end
 
+      context 'without filter' do
+        should 'return any user' do
+          assert @auth.authenticate('example1','123456')
+          assert @auth.authenticate('edavis', '123456')
+        end
+      end
+
+      context 'with filter' do
+        setup do
+          @auth.filter = "(mail=*@redmine.org)"
+        end
+
+        should 'return user who matches the filter only' do
+          assert @auth.authenticate('example1','123456')
+          assert_nil @auth.authenticate('edavis', '123456')
+        end
+      end
+    end
+
+    def test_authenticate_should_timeout
+      auth_source = AuthSourceLdap.find(1)
+      auth_source.timeout = 1
+      def auth_source.initialize_ldap_con(*args); sleep(5); end
+
+      assert_raise AuthSourceTimeoutException do
+        auth_source.authenticate 'example1', '123456'
+      end
     end
   else
     puts '(Test LDAP server not configured)'

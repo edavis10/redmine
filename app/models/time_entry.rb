@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,6 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class TimeEntry < ActiveRecord::Base
+  include Redmine::SafeAttributes
   # could have used polymorphic association
   # project association here allows easy loading of time entries at project level with one database trip
   belongs_to :project
@@ -41,12 +42,34 @@ class TimeEntry < ActiveRecord::Base
   before_validation :set_project_if_nil
   validate :validate_time_entry
 
-  named_scope :visible, lambda {|*args| {
+  scope :visible, lambda {|*args| {
     :include => :project,
     :conditions => Project.allowed_to_condition(args.shift || User.current, :view_time_entries, *args)
   }}
+  scope :on_issue, lambda {|issue| {
+    :include => :issue,
+    :conditions => "#{Issue.table_name}.root_id = #{issue.root_id} AND #{Issue.table_name}.lft >= #{issue.lft} AND #{Issue.table_name}.rgt <= #{issue.rgt}"
+  }}
+  scope :on_project, lambda {|project, include_subprojects| {
+    :include => :project,
+    :conditions => project.project_condition(include_subprojects)
+  }}
+  scope :spent_between, lambda {|from, to|
+    if from && to
+     {:conditions => ["#{TimeEntry.table_name}.spent_on BETWEEN ? AND ?", from, to]}
+    elsif from
+     {:conditions => ["#{TimeEntry.table_name}.spent_on >= ?", from]}
+    elsif to
+     {:conditions => ["#{TimeEntry.table_name}.spent_on <= ?", to]}
+    else
+     {}
+    end
+  }
 
-  def after_initialize
+  safe_attributes 'hours', 'comments', 'issue_id', 'activity_id', 'spent_on', 'custom_field_values', 'custom_fields'
+
+  def initialize(attributes=nil, *args)
+    super
     if new_record? && self.activity.nil?
       if default_activity = TimeEntryActivity.default
         self.activity_id = default_activity.id
@@ -69,6 +92,15 @@ class TimeEntry < ActiveRecord::Base
     write_attribute :hours, (h.is_a?(String) ? (h.to_hours || h) : h)
   end
 
+  def hours
+    h = read_attribute(:hours)
+    if h.is_a?(Float)
+      h.round(2)
+    else
+      h
+    end
+  end
+
   # tyear, tmonth, tweek assigned where setting spent_on attributes
   # these attributes make time aggregations easier
   def spent_on=(date)
@@ -84,29 +116,5 @@ class TimeEntry < ActiveRecord::Base
   # Returns true if the time entry can be edited by usr, otherwise false
   def editable_by?(usr)
     (usr == user && usr.allowed_to?(:edit_own_time_entries, project)) || usr.allowed_to?(:edit_time_entries, project)
-  end
-
-  # TODO: remove this method in 1.3.0
-  def self.visible_by(usr)
-    ActiveSupport::Deprecation.warn "TimeEntry.visible_by is deprecated and will be removed in Redmine 1.3.0. Use the visible scope instead."
-    with_scope(:find => { :conditions => Project.allowed_to_condition(usr, :view_time_entries) }) do
-      yield
-    end
-  end
-
-  def self.earilest_date_for_project(project=nil)
-    finder_conditions = ARCondition.new(Project.allowed_to_condition(User.current, :view_time_entries))
-    if project
-      finder_conditions << ["project_id IN (?)", project.hierarchy.collect(&:id)]
-    end
-    TimeEntry.minimum(:spent_on, :include => :project, :conditions => finder_conditions.conditions)
-  end
-
-  def self.latest_date_for_project(project=nil)
-    finder_conditions = ARCondition.new(Project.allowed_to_condition(User.current, :view_time_entries))
-    if project
-      finder_conditions << ["project_id IN (?)", project.hierarchy.collect(&:id)]
-    end
-    TimeEntry.maximum(:spent_on, :include => :project, :conditions => finder_conditions.conditions)
   end
 end

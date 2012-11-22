@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -37,6 +37,16 @@ class IssueCategoriesControllerTest < ActionController::TestCase
     get :new, :project_id => '1'
     assert_response :success
     assert_template 'new'
+    assert_select 'input[name=?]', 'issue_category[name]'
+  end
+
+  def test_new_from_issue_form
+    @request.session[:user_id] = 2 # manager
+    xhr :get, :new, :project_id => '1'
+
+    assert_response :success
+    assert_template 'new'
+    assert_equal 'text/javascript', response.content_type
   end
 
   def test_create
@@ -57,11 +67,36 @@ class IssueCategoriesControllerTest < ActionController::TestCase
     assert_template 'new'
   end
 
+  def test_create_from_issue_form
+    @request.session[:user_id] = 2 # manager
+    assert_difference 'IssueCategory.count' do
+      xhr :post, :create, :project_id => '1', :issue_category => {:name => 'New category'}
+    end
+    category = IssueCategory.first(:order => 'id DESC')
+    assert_equal 'New category', category.name
+
+    assert_response :success
+    assert_template 'create'
+    assert_equal 'text/javascript', response.content_type
+  end
+
+  def test_create_from_issue_form_with_failure
+    @request.session[:user_id] = 2 # manager
+    assert_no_difference 'IssueCategory.count' do
+      xhr :post, :create, :project_id => '1', :issue_category => {:name => ''}
+    end
+
+    assert_response :success
+    assert_template 'new'
+    assert_equal 'text/javascript', response.content_type
+  end
+
   def test_edit
     @request.session[:user_id] = 2
     get :edit, :id => 2
     assert_response :success
     assert_template 'edit'
+    assert_select 'input[name=?][value=?]', 'issue_category[name]', 'Recipes'
   end
 
   def test_update

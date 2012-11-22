@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -31,7 +31,11 @@ module Redmine
       def safe_attributes(*args)
         @safe_attributes ||= []
         if args.empty?
-          @safe_attributes
+          if superclass.include?(Redmine::SafeAttributes)
+            @safe_attributes + superclass.safe_attributes 
+          else
+            @safe_attributes
+          end
         else
           options = args.last.is_a?(Hash) ? args.pop : {}
           @safe_attributes << [args, options]
@@ -44,14 +48,22 @@ module Redmine
     # Example:
     #   book.safe_attributes # => ['title', 'pages']
     #   book.safe_attributes(book.author) # => ['title', 'pages', 'isbn']
-    def safe_attribute_names(user=User.current)
+    def safe_attribute_names(user=nil)
+      return @safe_attribute_names if @safe_attribute_names && user.nil?
       names = []
       self.class.safe_attributes.collect do |attrs, options|
-        if options[:if].nil? || options[:if].call(self, user)
+        if options[:if].nil? || options[:if].call(self, user || User.current)
           names += attrs.collect(&:to_s)
         end
       end
-      names.uniq
+      names.uniq!
+      @safe_attribute_names = names if user.nil?
+      names
+    end
+
+    # Returns true if attr can be set by user or the current user
+    def safe_attribute?(attr, user=nil)
+      safe_attribute_names(user).include?(attr.to_s)
     end
 
     # Returns a hash with unsafe attributes removed

@@ -1,9 +1,12 @@
 <%= l(:text_issue_updated, :id => "##{@issue.id}", :author => @journal.user) %>
 
-<% for detail in @journal.details -%>
-<%= show_detail(detail, true) %>
+<% details_to_strings(@journal.details, true).each do |string| -%>
+<%= string %>
 <% end -%>
 
-<%= @journal.notes if @journal.notes? %>
+<% if @journal.notes? -%>
+<%= @journal.notes %>
+
+<% end -%>
 ----------------------------------------
-<%= render :partial => "issue.text.erb", :locals => { :issue => @issue, :issue_url => @issue_url } %>
+<%= render :partial => 'issue', :formats => [:text], :locals => { :issue => @issue, :issue_url => @issue_url } %>

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -34,8 +34,20 @@ class ApiTest::UsersTest < ActionController::IntegrationTest
       should "return requested user" do
         get '/users/2.xml'
 
+        assert_response :success
         assert_tag :tag => 'user',
           :child => {:tag => 'id', :content => '2'}
+      end
+
+      context "with include=memberships" do
+        should "include memberships" do
+          get '/users/2.xml?include=memberships'
+  
+          assert_response :success
+          assert_tag :tag => 'memberships',
+            :parent => {:tag => 'user'},
+            :children => {:count => 1}
+        end
       end
     end
 
@@ -43,10 +55,26 @@ class ApiTest::UsersTest < ActionController::IntegrationTest
       should "return requested user" do
         get '/users/2.json'
 
+        assert_response :success
         json = ActiveSupport::JSON.decode(response.body)
         assert_kind_of Hash, json
         assert_kind_of Hash, json['user']
         assert_equal 2, json['user']['id']
+      end
+
+      context "with include=memberships" do
+        should "include memberships" do
+          get '/users/2.json?include=memberships'
+  
+          assert_response :success
+          json = ActiveSupport::JSON.decode(response.body)
+          assert_kind_of Array, json['user']['memberships']
+          assert_equal [{
+            "id"=>1,
+            "project"=>{"name"=>"eCookbook", "id"=>1},
+            "roles"=>[{"name"=>"Manager", "id"=>1}]
+          }], json['user']['memberships']
+        end
       end
     end
   end
@@ -60,7 +88,7 @@ class ApiTest::UsersTest < ActionController::IntegrationTest
       end
 
       should "return current user" do
-        get '/users/current.xml', {}, :authorization => credentials('jsmith')
+        get '/users/current.xml', {}, credentials('jsmith')
 
         assert_tag :tag => 'user',
           :child => {:tag => 'id', :content => '2'}
@@ -71,18 +99,27 @@ class ApiTest::UsersTest < ActionController::IntegrationTest
   context "POST /users" do
     context "with valid parameters" do
       setup do
-        @parameters = {:user => {:login => 'foo', :firstname => 'Firstname', :lastname => 'Lastname', :mail => 'foo@example.net', :password => 'secret', :mail_notification => 'only_assigned'}}
+        @parameters = {
+          :user => {
+             :login => 'foo', :firstname => 'Firstname', :lastname => 'Lastname',
+             :mail => 'foo@example.net', :password => 'secret',
+             :mail_notification => 'only_assigned'
+          }
+        }
       end
 
       context ".xml" do
         should_allow_api_authentication(:post,
           '/users.xml',
-          {:user => {:login => 'foo', :firstname => 'Firstname', :lastname => 'Lastname', :mail => 'foo@example.net', :password => 'secret'}},
+           {:user => {
+              :login => 'foo', :firstname => 'Firstname', :lastname => 'Lastname',
+              :mail => 'foo@example.net', :password => 'secret'
+            }},
           {:success_code => :created})
 
         should "create a user with the attributes" do
           assert_difference('User.count') do
-            post '/users.xml', @parameters, :authorization => credentials('admin')
+            post '/users.xml', @parameters, credentials('admin')
           end
 
           user = User.first(:order => 'id DESC')
@@ -103,12 +140,15 @@ class ApiTest::UsersTest < ActionController::IntegrationTest
       context ".json" do
         should_allow_api_authentication(:post,
           '/users.json',
-          {:user => {:login => 'foo', :firstname => 'Firstname', :lastname => 'Lastname', :mail => 'foo@example.net'}},
+          {:user => {
+             :login => 'foo', :firstname => 'Firstname', :lastname => 'Lastname',
+             :mail => 'foo@example.net'
+          }},
           {:success_code => :created})
 
         should "create a user with the attributes" do
           assert_difference('User.count') do
-            post '/users.json', @parameters, :authorization => credentials('admin')
+            post '/users.json', @parameters, credentials('admin')
           end
 
           user = User.first(:order => 'id DESC')
@@ -136,19 +176,22 @@ class ApiTest::UsersTest < ActionController::IntegrationTest
       context ".xml" do
         should "return errors" do
           assert_no_difference('User.count') do
-            post '/users.xml', @parameters, :authorization => credentials('admin')
+            post '/users.xml', @parameters, credentials('admin')
           end
 
           assert_response :unprocessable_entity
           assert_equal 'application/xml', @response.content_type
-          assert_tag 'errors', :child => {:tag => 'error', :content => "First name can't be blank"}
+          assert_tag 'errors', :child => {
+                                 :tag => 'error',
+                                 :content => "First name can't be blank"
+                               }
         end
       end
 
       context ".json" do
         should "return errors" do
           assert_no_difference('User.count') do
-            post '/users.json', @parameters, :authorization => credentials('admin')
+            post '/users.json', @parameters, credentials('admin')
           end
 
           assert_response :unprocessable_entity
@@ -165,18 +208,26 @@ class ApiTest::UsersTest < ActionController::IntegrationTest
   context "PUT /users/2" do
     context "with valid parameters" do
       setup do
-        @parameters = {:user => {:login => 'jsmith', :firstname => 'John', :lastname => 'Renamed', :mail => 'jsmith@somenet.foo'}}
+        @parameters = {
+          :user => {
+            :login => 'jsmith', :firstname => 'John', :lastname => 'Renamed',
+            :mail => 'jsmith@somenet.foo'
+          }
+        }
       end
 
       context ".xml" do
         should_allow_api_authentication(:put,
           '/users/2.xml',
-          {:user => {:login => 'jsmith', :firstname => 'John', :lastname => 'Renamed', :mail => 'jsmith@somenet.foo'}},
+          {:user => {
+              :login => 'jsmith', :firstname => 'John', :lastname => 'Renamed',
+              :mail => 'jsmith@somenet.foo'
+          }},
           {:success_code => :ok})
 
         should "update user with the attributes" do
           assert_no_difference('User.count') do
-            put '/users/2.xml', @parameters, :authorization => credentials('admin')
+            put '/users/2.xml', @parameters, credentials('admin')
           end
 
           user = User.find(2)
@@ -187,18 +238,22 @@ class ApiTest::UsersTest < ActionController::IntegrationTest
           assert !user.admin?
 
           assert_response :ok
+          assert_equal '', @response.body
         end
       end
 
       context ".json" do
         should_allow_api_authentication(:put,
           '/users/2.json',
-          {:user => {:login => 'jsmith', :firstname => 'John', :lastname => 'Renamed', :mail => 'jsmith@somenet.foo'}},
+          {:user => {
+              :login => 'jsmith', :firstname => 'John', :lastname => 'Renamed',
+              :mail => 'jsmith@somenet.foo'
+          }},
           {:success_code => :ok})
 
         should "update user with the attributes" do
           assert_no_difference('User.count') do
-            put '/users/2.json', @parameters, :authorization => credentials('admin')
+            put '/users/2.json', @parameters, credentials('admin')
           end
 
           user = User.find(2)
@@ -209,31 +264,40 @@ class ApiTest::UsersTest < ActionController::IntegrationTest
           assert !user.admin?
 
           assert_response :ok
+          assert_equal '', @response.body
         end
       end
     end
 
     context "with invalid parameters" do
       setup do
-        @parameters = {:user => {:login => 'jsmith', :firstname => '', :lastname => 'Lastname', :mail => 'foo'}}
+        @parameters = {
+          :user => {
+            :login => 'jsmith', :firstname => '', :lastname => 'Lastname',
+            :mail => 'foo'
+          }
+        }
       end
 
       context ".xml" do
         should "return errors" do
           assert_no_difference('User.count') do
-            put '/users/2.xml', @parameters, :authorization => credentials('admin')
+            put '/users/2.xml', @parameters, credentials('admin')
           end
 
           assert_response :unprocessable_entity
           assert_equal 'application/xml', @response.content_type
-          assert_tag 'errors', :child => {:tag => 'error', :content => "First name can't be blank"}
+          assert_tag 'errors', :child => {
+                                 :tag => 'error',
+                                 :content => "First name can't be blank"
+                                }
         end
       end
 
       context ".json" do
         should "return errors" do
           assert_no_difference('User.count') do
-            put '/users/2.json', @parameters, :authorization => credentials('admin')
+            put '/users/2.json', @parameters, credentials('admin')
           end
 
           assert_response :unprocessable_entity
@@ -256,10 +320,11 @@ class ApiTest::UsersTest < ActionController::IntegrationTest
 
       should "delete user" do
         assert_difference('User.count', -1) do
-          delete '/users/2.xml', {}, :authorization => credentials('admin')
+          delete '/users/2.xml', {}, credentials('admin')
         end
 
         assert_response :ok
+        assert_equal '', @response.body
       end
     end
 
@@ -271,15 +336,12 @@ class ApiTest::UsersTest < ActionController::IntegrationTest
 
       should "delete user" do
         assert_difference('User.count', -1) do
-          delete '/users/2.json', {}, :authorization => credentials('admin')
+          delete '/users/2.json', {}, credentials('admin')
         end
 
         assert_response :ok
+        assert_equal '', @response.body
       end
     end
-  end
-
-  def credentials(user, password=nil)
-    ActionController::HttpAuthentication::Basic.encode_credentials(user, password || user)
   end
 end

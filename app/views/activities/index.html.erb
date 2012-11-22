@@ -1,4 +1,4 @@
-<h2><%= @author.nil? ? l(:label_activity) : l(:label_user_activity, link_to_user(@author)) %></h2>
+<h2><%= @author.nil? ? l(:label_activity) : l(:label_user_activity, link_to_user(@author)).html_safe %></h2>
 <p class="subtitle"><%= l(:label_date_from_to, :start => format_date(@date_to - @days), :end => format_date(@date_to-1)) %></p>
 
 <div id="activity">
@@ -40,7 +40,7 @@
 <% end %>
 
 <% content_for :sidebar do %>
-<% form_tag({}, :method => :get) do %>
+<%= form_tag({}, :method => :get) do %>
 <h3><%= l(:label_activity) %></h3>
 <p><% @activity.event_types.each do |t| %>
 <%= check_box_tag "show_#{t}", 1, @activity.scope.include?(t) %>

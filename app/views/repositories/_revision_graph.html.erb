@@ -1,13 +1,18 @@
-<%= javascript_include_tag "raphael.js" %>
-<script type="text/javascript" charset="utf-8">
-  var chunk = {commits:<%= commits.values.to_json %>}
-</script>
-<%= javascript_include_tag "revision_graph.js" %>
+<%= javascript_tag do %>
+function revisionGraphHandler(){
+  drawRevisionGraph(
+    document.getElementById('holder'),
+    <%= commits.to_json.html_safe %>,
+    <%= space %>
+  );
+}
+$(document).ready(revisionGraphHandler);
+$(window).resize(revisionGraphHandler);
+<% end %>
 
-<script type="text/javascript">
-  window.onload = function(){
-    branchGraph(document.getElementById("holder"));
-  }
-</script>
+<div id="holder" class="revision-graph"></div>
 
-<div id="holder" class="graph"></div>
+<% content_for :header_tags do %>
+  <%= javascript_include_tag 'raphael' %>
+  <%= javascript_include_tag 'revision_graph' %>
+<% end %>

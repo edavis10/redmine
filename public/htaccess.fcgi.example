@@ -5,21 +5,18 @@
 <IfModule mod_fcgid.c>
 	AddHandler fcgid-script .fcgi
 </IfModule>
-<IfModule mod_cgi.c>
-	AddHandler cgi-script .cgi
-</IfModule>
 Options +FollowSymLinks +ExecCGI
 
 # If you don't want Rails to look in certain directories,
 # use the following rewrite rules so that Apache won't rewrite certain requests
-# 
+#
 # Example:
 #   RewriteCond %{REQUEST_URI} ^/notrails.*
 #   RewriteRule .* - [L]
 
 # Redirect all requests not available on the filesystem to Rails
 # By default the cgi dispatcher is used which is very slow
-# 
+#
 # For better performance replace the dispatcher with the fastcgi one
 #
 # Example:
@@ -42,13 +39,10 @@ RewriteCond %{REQUEST_FILENAME} !-f
 <IfModule mod_fcgid.c>
 	RewriteRule ^(.*)$ dispatch.fcgi [QSA,L]
 </IfModule>
-<IfModule mod_cgi.c>
-	RewriteRule ^(.*)$ dispatch.cgi [QSA,L]
-</IfModule>
 
 # In case Rails experiences terminal errors
 # Instead of displaying this message you can supply a file here which will be rendered instead
-# 
+#
 # Example:
 #   ErrorDocument 500 /500.html
 

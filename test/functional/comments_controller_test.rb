@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@ class CommentsControllerTest < ActionController::TestCase
     post :create, :id => 1, :comment => { :comments => 'This is a test comment' }
     assert_redirected_to '/news/1'
 
-    comment = News.find(1).comments.find(:first, :order => 'created_on DESC')
+    comment = News.find(1).comments.last
     assert_not_nil comment
     assert_equal 'This is a test comment', comment.comments
     assert_equal User.find(2), comment.author
@@ -41,6 +41,15 @@ class CommentsControllerTest < ActionController::TestCase
       post :create, :id => 1, :comment => { :comments => '' }
       assert_response :redirect
       assert_redirected_to '/news/1'
+    end
+  end
+
+  def test_create_should_be_denied_if_news_is_not_commentable
+    News.any_instance.stubs(:commentable?).returns(false)
+    @request.session[:user_id] = 2
+    assert_no_difference 'Comment.count' do
+      post :create, :id => 1, :comment => { :comments => 'This is a test comment' }
+      assert_response 403
     end
   end
 

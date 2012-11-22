@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -57,7 +57,8 @@ class IssueRelation < ActiveRecord::Base
         (issue_to.nil? || user.allowed_to?(:manage_issue_relations, issue_to.project)))
   end
 
-  def after_initialize
+  def initialize(attributes=nil, *args)
+    super
     if new_record?
       if relation_type.blank?
         self.relation_type = IssueRelation::TYPE_RELATES

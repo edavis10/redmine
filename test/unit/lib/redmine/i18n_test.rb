@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,7 +22,11 @@ class Redmine::I18nTest < ActiveSupport::TestCase
   include ActionView::Helpers::NumberHelper
 
   def setup
-    @hook_module = Redmine::Hook
+    User.current.language = nil
+  end
+
+  def teardown
+    set_language_if_valid 'en'
   end
 
   def test_date_format_default
@@ -37,6 +41,18 @@ class Redmine::I18nTest < ActiveSupport::TestCase
     today = Date.today
     Setting.date_format = '%d %m %Y'
     assert_equal today.strftime('%d %m %Y'), format_date(today)
+  end
+
+  def test_date_format_default_with_user_locale
+    set_language_if_valid 'es'
+    today = now = Time.parse('2011-02-20 14:00:00')
+    Setting.date_format = '%d %B %Y'
+    User.current.language = 'fr'
+    s1 = "20 f\xc3\xa9vrier 2011"
+    s1.force_encoding("UTF-8") if s1.respond_to?(:force_encoding)
+    assert_equal s1, format_date(today)
+    User.current.language = nil
+    assert_equal '20 Febrero 2011', format_date(today)
   end
 
   def test_date_and_time_for_each_language
@@ -57,6 +73,15 @@ class Redmine::I18nTest < ActiveSupport::TestCase
 
       assert l('date.month_names').is_a?(Array)
       assert_equal 13, l('date.month_names').size
+    end
+  end
+
+  def test_time_for_each_zone
+    ActiveSupport::TimeZone.all.each do |zone|
+      User.current.stubs(:time_zone).returns(zone.name)
+      assert_nothing_raised "#{zone} failure" do
+        format_time(Time.now)
+      end
     end
   end
 
@@ -90,6 +115,22 @@ class Redmine::I18nTest < ActiveSupport::TestCase
     end
   end
 
+  def test_time_format_default_with_user_locale
+    set_language_if_valid 'en'
+    User.current.language = 'fr'
+    now = Time.parse('2011-02-20 15:45:22')
+    with_settings :time_format => '' do
+      with_settings :date_format => '' do
+        assert_equal '20/02/2011 15:45', format_time(now)
+        assert_equal '15:45', format_time(now, false)
+      end
+      with_settings :date_format => '%Y-%m-%d' do
+        assert_equal '2011-02-20 15:45', format_time(now)
+        assert_equal '15:45', format_time(now, false)
+      end
+    end
+  end
+
   def test_time_format
     set_language_if_valid 'en'
     now = Time.now
@@ -112,14 +153,54 @@ class Redmine::I18nTest < ActiveSupport::TestCase
     valid_languages.each do |lang|
       set_language_if_valid lang
       assert_nothing_raised "#{lang} failure" do
-        number_to_human_size(1024*1024*4)
+        size = number_to_human_size(257024)
+        assert_match /251/, size
       end
     end
+  end
+
+  def test_day_name
+    set_language_if_valid 'fr'
+    assert_equal 'dimanche', day_name(0)
+    assert_equal 'jeudi', day_name(4)
+  end
+
+  def test_day_letter
+    set_language_if_valid 'fr'
+    assert_equal 'd', day_letter(0)
+    assert_equal 'j', day_letter(4)
+  end
+
+  def test_number_to_currency_for_each_language
+    valid_languages.each do |lang|
+      set_language_if_valid lang
+      assert_nothing_raised "#{lang} failure" do
+        number_to_currency(-1000.2)
+      end
+    end
+  end
+
+  def test_number_to_currency_default
+    set_language_if_valid 'bs'
+    assert_equal "KM -1000,20", number_to_currency(-1000.2)
+    set_language_if_valid 'de'
+    euro_sign = "\xe2\x82\xac"
+    euro_sign.force_encoding('UTF-8') if euro_sign.respond_to?(:force_encoding)
+    assert_equal "-1000,20 #{euro_sign}", number_to_currency(-1000.2)
   end
 
   def test_valid_languages
     assert valid_languages.is_a?(Array)
     assert valid_languages.first.is_a?(Symbol)
+  end
+
+  def test_locales_validness
+    lang_files_count = Dir["#{Rails.root}/config/locales/*.yml"].size
+    assert_equal lang_files_count, valid_languages.size
+    valid_languages.each do |lang|
+      assert set_language_if_valid(lang)
+    end
+    set_language_if_valid('en')
   end
 
   def test_valid_language

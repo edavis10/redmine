@@ -1,3 +1,4 @@
+# Bulgarian translation by Nikolay Solakov and Ivan Cenov
 bg:
   # Text direction: Left-to-Right (ltr) or Right-to-Left (rtl)
   direction: ltr
@@ -49,6 +50,9 @@ bg:
       about_x_hours:
         one:   "около 1 час"
         other: "около %{count} часа"
+      x_hours:
+        one:   "1 hour"
+        other: "%{count} hours"
       x_days:
         one:   "1 ден"
         other: "%{count} дена"
@@ -76,14 +80,14 @@ bg:
 
     human:
       format:
-        precision: 1
         delimiter: ""
+        precision: 3
       storage_units:
         format: "%n %u"
         units:
           byte:
-            one: Byte
-            other: Bytes
+            one: байт
+            other: байта
           kb: "KB"
           mb: "MB"
           gb: "GB"
@@ -162,15 +166,19 @@ bg:
   notice_feeds_access_key_reseted: Вашия ключ за RSS достъп беше променен.
   notice_api_access_key_reseted: Вашият API ключ за достъп беше изчистен.
   notice_failed_to_save_issues: "Неуспешен запис на %{count} задачи от %{total} избрани: %{ids}."
+  notice_failed_to_save_time_entries: "Невъзможност за запис на %{count} записа за използвано време от %{total} избрани: %{ids}."
   notice_failed_to_save_members: "Невъзможност за запис на член(ове): %{errors}."
   notice_no_issue_selected: "Няма избрани задачи."
   notice_account_pending: "Профилът Ви е създаден и очаква одобрение от администратор."
   notice_default_data_loaded: Примерната информация е заредена успешно.
   notice_unable_delete_version: Невъзможност за изтриване на версия
-  notice_unable_delete_time_entry: Невъзможност за изтриване на запис на time log.
+  notice_unable_delete_time_entry: Невъзможност за изтриване на запис за използвано време.
   notice_issue_done_ratios_updated: Обновен процент на завършените задачи.
   notice_gantt_chart_truncated: Мрежовият график е съкратен, понеже броят на обектите, които могат да бъдат показани е твърде голям (%{max})
   notice_issue_successful_create: Задача %{id} е създадена.
+  notice_issue_update_conflict: Задачата е била променена от друг потребител, докато вие сте я редактирали.
+  notice_account_deleted: Вашият профил беше премахнат без възможност за възстановяване.
+  notice_user_successful_create: Потребител %{id} е създаден.
 
   error_can_t_load_default_data: "Грешка при зареждане на примерната информация: %{value}"
   error_scm_not_found: Несъществуващ обект в хранилището.
@@ -191,6 +199,7 @@ bg:
   error_unable_delete_issue_status: Невъзможност за изтриване на състояние на задача
   error_unable_to_connect: Невъзможност за свързване с (%{value})
   error_attachment_too_big: Този файл не може да бъде качен, понеже надхвърля максималната възможна големина (%{max_size})
+  error_session_expired: Вашата сесия е изтекла. Моля влезете в Redmine отново.
   warning_attachments_not_saved: "%{count} файла не бяха записани."
 
   mail_subject_lost_password: "Вашата парола (%{value})"
@@ -317,6 +326,12 @@ bg:
   field_root_directory: Коренна директория (папка)
   field_cvsroot: CVSROOT
   field_cvs_module: Модул
+  field_repository_is_default: Главно хранилище
+  field_multiple: Избор на повече от една стойност
+  field_auth_source_ldap_filter: LDAP филтър
+  field_core_fields: Стандартни полета
+  field_timeout: Таймаут (в секунди)
+  field_board_parent: Родителски форум
 
   setting_app_title: Заглавие
   setting_app_subtitle: Описание
@@ -343,7 +358,7 @@ bg:
   setting_time_format: Формат на часа
   setting_cross_project_issue_relations: Релации на задачи между проекти
   setting_issue_list_default_columns: Показвани колони по подразбиране
-  setting_repositories_encodings: Attachments and repositories encodings
+  setting_repositories_encodings: Кодова таблица на прикачените файлове и хранилищата
   setting_emails_header: Emails header
   setting_emails_footer: Подтекст за e-mail
   setting_protocol: Протокол
@@ -370,17 +385,24 @@ bg:
   setting_issue_done_ratio_issue_status: Използване на състоянието на задачите
   setting_start_of_week: Първи ден на седмицата
   setting_rest_api_enabled: Разрешаване на REST web сървис
-  setting_cache_formatted_text: Cache formatted text
+  setting_cache_formatted_text: Кеширане на форматираните текстове
   setting_default_notification_option: Подразбиращ се начин за известяване
   setting_commit_logtime_enabled: Разрешаване на отчитането на работното време
   setting_commit_logtime_activity_id: Дейност при отчитане на работното време
   setting_gantt_items_limit: Максимален брой обекти, които да се показват в мрежов график
   setting_issue_group_assignment: Разрешено назначаването на задачи на групи
   setting_default_issue_start_date_to_creation_date: Начална дата на новите задачи по подразбиране да бъде днешната дата
+  setting_commit_cross_project_ref: Отбелязване и приключване на задачи от други проекти, несвързани с конкретното хранилище
+  setting_unsubscribe: Потребителите могат да премахват профилите си
+  setting_session_lifetime: Максимален живот на сесиите
+  setting_session_timeout: Таймаут за неактивност преди прекратяване на сесиите
+  setting_thumbnails_enabled: Показване на миниатюри на прикачените изображения
+  setting_thumbnails_size: Размер на миниатюрите (в пиксели)
 
   permission_add_project: Създаване на проект
   permission_add_subprojects: Създаване на подпроекти
   permission_edit_project: Редактиране на проект
+  permission_close_project: Затваряне / отваряне на проект
   permission_select_project_modules: Избор на проектни модули
   permission_manage_members: Управление на членовете (на екип)
   permission_manage_project_activities: Управление на дейностите на проекта
@@ -435,6 +457,7 @@ bg:
   permission_delete_own_messages: Изтриване на собствени съобщения
   permission_export_wiki_pages: Експорт на wiki страници
   permission_manage_subtasks: Управление на подзадачите
+  permission_manage_related_issues: Управление на връзките между задачи и ревизии
 
   project_module_issue_tracking: Тракинг
   project_module_time_tracking: Отделяне на време
@@ -585,6 +608,10 @@ bg:
     zero:  0 затворени
     one:   1 затворена
     other: "%{count} затворени"
+  label_x_issues:
+    zero:  0 задачи
+    one:   1 задача
+    other: "%{count} задачи"
   label_total: Общо
   label_permissions: Права
   label_current_status: Текущо състояние
@@ -608,9 +635,9 @@ bg:
   label_comment: Коментар
   label_comment_plural: Коментари
   label_x_comments:
-    zero: 0 коментари
+    zero: 0 коментара
     one: 1 коментар
-    other: "%{count} коментари"
+    other: "%{count} коментара"
   label_comment_add: Добавяне на коментар
   label_comment_added: Добавен коментар
   label_comment_delete: Изтриване на коментари
@@ -645,6 +672,7 @@ bg:
   label_not_contains: не съдържа
   label_day_plural: дни
   label_repository: Хранилище
+  label_repository_new: Ново хранилище
   label_repository_plural: Хранилища
   label_browse: Разглеждане
   label_modification: "%{count} промяна"
@@ -829,6 +857,21 @@ bg:
   label_parent_revision: Ревизия родител
   label_child_revision: Ревизия наследник
   label_export_options: "%{export_format} опции за експорт"
+  label_copy_attachments: Копиране на прикачените файлове
+  label_copy_subtasks: Копиране на подзадачите
+  label_item_position: "%{position}/%{count}"
+  label_completed_versions: Завършени версии
+  label_search_for_watchers: Търсене на потребители за наблюдатели
+  label_session_expiration: Изтичане на сесиите
+  label_show_closed_projects: Разглеждане на затворени проекти
+  label_status_transitions: Преходи между състоянията
+  label_fields_permissions: Видимост на полетата
+  label_readonly: Само за четене
+  label_required: Задължително
+  label_attribute_of_project: Project's %{name}
+  label_attribute_of_author: Author's %{name}
+  label_attribute_of_assigned_to: Assignee's %{name}
+  label_attribute_of_fixed_version: Target version's %{name}
 
   button_login: Вход
   button_submit: Прикачване
@@ -878,10 +921,17 @@ bg:
   button_show: Показване
   button_edit_section: Редактиране на тази секция
   button_export: Експорт
+  button_delete_my_account: Премахване на моя профил
+  button_close: Затваряне
+  button_reopen: Отваряне
 
   status_active: активен
   status_registered: регистриран
   status_locked: заключен
+
+  project_status_active: активен
+  project_status_closed: затворен
+  project_status_archived: архивиран
 
   version_status_open: отворена
   version_status_locked: заключена
@@ -905,7 +955,7 @@ bg:
   text_tip_issue_begin_day: задача, започваща този ден
   text_tip_issue_end_day: задача, завършваща този ден
   text_tip_issue_begin_end_day: задача, започваща и завършваща този ден
-  text_project_identifier_info: 'Позволени са малки букви (a-z), цифри и тирета.<br />Невъзможна промяна след запис.'
+  text_project_identifier_info: 'Позволени са малки букви (a-z), цифри, тирета и _.<br />Промяна след създаването му не е възможна.'
   text_caracters_maximum: "До %{count} символа."
   text_caracters_minimum: "Минимум %{count} символа."
   text_length_between: "От %{min} до %{max} символа."
@@ -959,6 +1009,12 @@ bg:
   text_scm_command_version: Версия
   text_scm_config: Можете да конфигурирате SCM командите в config/configuration.yml. За да активирате промените, рестартирайте Redmine.
   text_scm_command_not_available: SCM командата не е налична или достъпна. Проверете конфигурацията в административния панел.
+  text_issue_conflict_resolution_overwrite: Прилагане на моите промени (предишните коментари ще бъдат запазени, но някои други промени може да бъдат презаписани)
+  text_issue_conflict_resolution_add_notes: Добавяне на моите коментари и отхвърляне на другите мои промени
+  text_issue_conflict_resolution_cancel: Отхвърляне на всички мои промени и презареждане на %{link}
+  text_account_destroy_confirmation: "Сигурен/на ли сте, че желаете да продължите?\nВашият профил ще бъде премахнат без възможност за възстановяване."
+  text_session_expiration_settings: "Внимание: промяната на тези установяваноя може да прекрати всички активни сесии, включително и вашата."
+  text_project_closed: Този проект е затворен и е само за четене.
 
   default_role_manager: Мениджър
   default_role_developer: Разработчик
@@ -1004,3 +1060,4 @@ bg:
   description_date_range_interval: Изберете диапазон чрез задаване на начална и крайна дати
   description_date_from: Въведете начална дата
   description_date_to: Въведете крайна дата
+  text_repository_identifier_info: 'Позволени са малки букви (a-z), цифри, тирета и _.<br />Промяна след създаването му не е възможна.'

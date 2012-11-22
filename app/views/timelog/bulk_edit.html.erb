@@ -1,12 +1,15 @@
 <h2><%= l(:label_bulk_edit_selected_time_entries) %></h2>
 
-<ul><%= @time_entries.collect {|i| content_tag('li', link_to(h("#{i.spent_on.strftime("%Y-%m-%d")} -- #{i.project}:  #{l(:label_f_hour_plural, :value => i.hours)}"), { :action => 'edit', :id => i }))} %></ul>
+<ul>
+<%= @time_entries.collect {|i| content_tag('li', 
+        link_to(h("#{i.spent_on.strftime("%Y-%m-%d")} - #{i.project}:  #{l(:label_f_hour_plural, :value => i.hours)}"),
+                { :action => 'edit', :id => i })
+     )}.join("\n").html_safe %>
+</ul>
 
-<% form_tag(:action => 'bulk_update') do %>
-<%= @time_entries.collect {|i| hidden_field_tag('ids[]', i.id)}.join %>
+<%= form_tag(:action => 'bulk_update') do %>
+<%= @time_entries.collect {|i| hidden_field_tag('ids[]', i.id)}.join.html_safe %>
 <div class="box tabular">
-  <fieldset class="attributes">
-  <legend><%= l(:label_change_properties) %></legend>
   <div>
     <p>
       <label><%= l(:field_issue) %></label>
@@ -26,7 +29,7 @@
     <% if @available_activities.any? %>
     <p>
       <label><%= l(:field_activity) %></label>
-      <%= select_tag('time_entry[activity_id]', "<option value=\"\">#{l(:label_no_change_option)}</option>" + options_from_collection_for_select(@available_activities, :id, :name)) %>
+      <%= select_tag('time_entry[activity_id]', content_tag('option', l(:label_no_change_option), :value => '') + options_from_collection_for_select(@available_activities, :id, :name)) %>
     </p>
     <% end %>
 
@@ -41,8 +44,6 @@
 
     <%= call_hook(:view_time_entries_bulk_edit_details_bottom, { :time_entries => @time_entries }) %>
   </div>
-
-  </fieldset>
 </div>
 
 <p><%= submit_tag l(:button_submit) %></p>

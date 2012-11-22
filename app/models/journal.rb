@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -37,7 +37,7 @@ class Journal < ActiveRecord::Base
                                               :conditions => "#{Journal.table_name}.journalized_type = 'Issue' AND" +
                                                              " (#{JournalDetail.table_name}.prop_key = 'status_id' OR #{Journal.table_name}.notes <> '')"}
 
-  named_scope :visible, lambda {|*args| {
+  scope :visible, lambda {|*args| {
     :include => {:issue => :project},
     :conditions => Issue.visible_condition(args.shift || User.current, *args)
   }}

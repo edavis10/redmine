@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -100,7 +100,8 @@ module Redmine
             end
           end
           return nil if $? && $?.exitstatus != 0
-          entries.compact.sort_by_name
+          entries.compact!
+          entries.sort_by_name
         end
 
         def revisions(path=nil, identifier_from=nil, identifier_to=nil, options={})

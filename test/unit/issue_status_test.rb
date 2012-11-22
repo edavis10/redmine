@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -36,8 +36,8 @@ class IssueStatusTest < ActiveSupport::TestCase
     assert_difference 'IssueStatus.count', -1 do
       assert status.destroy
     end
-    assert_nil Workflow.first(:conditions => {:old_status_id => status.id})
-    assert_nil Workflow.first(:conditions => {:new_status_id => status.id})
+    assert_nil WorkflowTransition.first(:conditions => {:old_status_id => status.id})
+    assert_nil WorkflowTransition.first(:conditions => {:new_status_id => status.id})
   end
 
   def test_destroy_status_in_use
@@ -70,12 +70,12 @@ class IssueStatusTest < ActiveSupport::TestCase
   end
 
   def test_new_statuses_allowed_to
-    Workflow.delete_all
+    WorkflowTransition.delete_all
 
-    Workflow.create!(:role_id => 1, :tracker_id => 1, :old_status_id => 1, :new_status_id => 2, :author => false, :assignee => false)
-    Workflow.create!(:role_id => 1, :tracker_id => 1, :old_status_id => 1, :new_status_id => 3, :author => true, :assignee => false)
-    Workflow.create!(:role_id => 1, :tracker_id => 1, :old_status_id => 1, :new_status_id => 4, :author => false, :assignee => true)
-    Workflow.create!(:role_id => 1, :tracker_id => 1, :old_status_id => 1, :new_status_id => 5, :author => true, :assignee => true)
+    WorkflowTransition.create!(:role_id => 1, :tracker_id => 1, :old_status_id => 1, :new_status_id => 2, :author => false, :assignee => false)
+    WorkflowTransition.create!(:role_id => 1, :tracker_id => 1, :old_status_id => 1, :new_status_id => 3, :author => true, :assignee => false)
+    WorkflowTransition.create!(:role_id => 1, :tracker_id => 1, :old_status_id => 1, :new_status_id => 4, :author => false, :assignee => true)
+    WorkflowTransition.create!(:role_id => 1, :tracker_id => 1, :old_status_id => 1, :new_status_id => 5, :author => true, :assignee => true)
     status = IssueStatus.find(1)
     role = Role.find(1)
     tracker = Tracker.find(1)
@@ -93,39 +93,32 @@ class IssueStatusTest < ActiveSupport::TestCase
     assert_equal [2, 3, 4, 5], status.find_new_statuses_allowed_to([role], tracker, true, true).map(&:id)
   end
 
-  context "#update_done_ratios" do
-    setup do
-      @issue = Issue.find(1)
-      @issue_status = IssueStatus.find(1)
-      @issue_status.update_attribute(:default_done_ratio, 50)
+  def test_update_done_ratios_with_issue_done_ratio_set_to_issue_field_should_change_nothing
+    IssueStatus.find(1).update_attribute(:default_done_ratio, 50)
+
+    with_settings :issue_done_ratio => 'issue_field' do
+      IssueStatus.update_issue_done_ratios
+      assert_equal 0, Issue.count(:conditions => {:done_ratio => 50})
     end
+  end
 
-    context "with Setting.issue_done_ratio using the issue_field" do
-      setup do
-        Setting.issue_done_ratio = 'issue_field'
-      end
+  def test_update_done_ratios_with_issue_done_ratio_set_to_issue_status_should_update_issues
+    IssueStatus.find(1).update_attribute(:default_done_ratio, 50)
 
-      should "change nothing" do
-        IssueStatus.update_issue_done_ratios
-
-        assert_equal 0, Issue.count(:conditions => {:done_ratio => 50})
-      end
+    with_settings :issue_done_ratio => 'issue_status' do
+      IssueStatus.update_issue_done_ratios
+      issues = Issue.all(:conditions => {:status_id => 1})
+      assert_equal [50], issues.map {|issue| issue.read_attribute(:done_ratio)}.uniq
     end
+  end
 
-    context "with Setting.issue_done_ratio using the issue_status" do
-      setup do
-        Setting.issue_done_ratio = 'issue_status'
-      end
+  def test_sorted_scope
+    assert_equal IssueStatus.all.sort, IssueStatus.sorted.all
+  end
 
-      should "update all of the issue's done_ratios to match their Issue Status" do
-        IssueStatus.update_issue_done_ratios
-
-        issues = Issue.find([1,3,4,5,6,7,9,10])
-        issues.each do |issue|
-          assert_equal @issue_status, issue.status
-          assert_equal 50, issue.read_attribute(:done_ratio)
-        end
-      end
-    end
+  def test_named_scope
+    status = IssueStatus.named("resolved").first
+    assert_not_nil status
+    assert_equal "Resolved", status.name
   end
 end

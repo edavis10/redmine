@@ -1,36 +1,60 @@
 Installing gems for testing
 ===========================
 
-Run `rake gems RAILS_ENV=test` to list the required gems.  Run 
-`rake gems:install RAILS_ENV=test` to install any missing gems.
+Remove your .bundle/config if you've already installed Redmine without
+the test dependencies. Then, run `bundle install`.
 
 Running Tests
 =============
 
 Run `rake --tasks test` to see available tests.
-`rake test` will run the entire testsuite.
-You can run `ruby test/unit/issue_test.rb` for an each test.
+Run `rake test` to run the entire test suite (except the tests for the
+Apache perl module Redmine.pm, see below).
+
+You can run `ruby test/unit/issue_test.rb` for running a single test case.
 
 Before running tests, you need to configure both development
 and test databases.
 
 Creating test repositories
-===================
+==========================
 
 Redmine supports a wide array of different version control systems.
 To test the support, a test repository needs to be created for each of those.
 
 Run `rake --tasks test:scm:setup` for a list of available test-repositories or
-run `rake test:scm:setup:all` to set up all of them
+run `rake test:scm:setup:all` to set up all of them. The repositories are
+unpacked into {redmine_root}/tmp/test.
+
+If the test repositories are not present, the tests that need them will be
+skipped.
 
 Creating a test ldap database
 =============================
 
 Redmine supports using LDAP for user authentications.  To test LDAP
 with Redmine, load the LDAP export from test/fixtures/ldap/test-ldap.ldif
-into a testing LDAP server.  Test that the ldap server can be accessed
+into a testing LDAP server. Make sure that the LDAP server can be accessed
 at 127.0.0.1 on port 389.
 
-Setting up the test ldap server is beyond the scope of this documentation.
+Setting up the test LDAP server is beyond the scope of this documentation.
 The OpenLDAP project provides a simple LDAP implementation that should work
 good as a test server.
+
+If the LDAP is not available, the tests that need it will be skipped.
+
+Running Redmine.pm tests
+========================
+
+(work in progress)
+
+Running the tests for the Redmine.pm perl module needs a bit more setup.
+You need an Apache server with mod_perl, mod_dav_svn and Redmine.pm configured.
+See: http://www.redmine.org/projects/redmine/wiki/Repositories_access_control_with_apache_mod_dav_svn_and_mod_perl
+
+You need an empty repository accessible at http://127.0.0.1/svn/ecookbook
+Then, you can run the tests with:
+`ruby test\extra\redmine_pm\repository_subversion_test.rb`
+
+If you svn server is not running on localhost, you can use the REDMINE_TEST_DAV_SERVER
+environment variable to specify another host.

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -59,11 +59,85 @@ class Redmine::WikiFormatting::TextileFormatterTest < ActionView::TestCase
     end
   end
 
+  def test_styles
+    # single style
+    assert_html_output({
+      'p{color:red}. text'           => '<p style="color:red;">text</p>',
+      'p{color:red;}. text'          => '<p style="color:red;">text</p>',
+      'p{color: red}. text'          => '<p style="color: red;">text</p>',
+      'p{color:#f00}. text'          => '<p style="color:#f00;">text</p>',
+      'p{color:#ff0000}. text'       => '<p style="color:#ff0000;">text</p>',
+      'p{border:10px}. text'         => '<p style="border:10px;">text</p>',
+      'p{border:10}. text'           => '<p style="border:10;">text</p>',
+      'p{border:10%}. text'          => '<p style="border:10%;">text</p>',
+      'p{border:10em}. text'         => '<p style="border:10em;">text</p>',
+      'p{border:1.5em}. text'        => '<p style="border:1.5em;">text</p>',
+      'p{border-left:1px}. text'     => '<p style="border-left:1px;">text</p>',
+      'p{border-right:1px}. text'    => '<p style="border-right:1px;">text</p>',
+      'p{border-top:1px}. text'      => '<p style="border-top:1px;">text</p>',
+      'p{border-bottom:1px}. text'   => '<p style="border-bottom:1px;">text</p>',
+      }, false)
+
+    # multiple styles
+    assert_html_output({
+      'p{color:red; border-top:1px}. text'   => '<p style="color:red;border-top:1px;">text</p>',
+      'p{color:red ; border-top:1px}. text'  => '<p style="color:red;border-top:1px;">text</p>',
+      'p{color:red;border-top:1px}. text'    => '<p style="color:red;border-top:1px;">text</p>',
+      }, false)
+
+    # styles with multiple values
+    assert_html_output({
+      'p{border:1px solid red;}. text'             => '<p style="border:1px solid red;">text</p>',
+      'p{border-top-left-radius: 10px 5px;}. text' => '<p style="border-top-left-radius: 10px 5px;">text</p>',
+      }, false)
+  end
+
+  def test_invalid_styles_should_be_filtered
+    assert_html_output({
+      'p{invalid}. text'                     => '<p>text</p>',
+      'p{invalid:red}. text'                 => '<p>text</p>',
+      'p{color:(red)}. text'                 => '<p>text</p>',
+      'p{color:red;invalid:blue}. text'      => '<p style="color:red;">text</p>',
+      'p{invalid:blue;color:red}. text'      => '<p style="color:red;">text</p>',
+      'p{color:"}. text'                     => '<p>p{color:"}. text</p>',
+      }, false)
+  end
+
   def test_inline_code
     assert_html_output(
       'this is @some code@'      => 'this is <code>some code</code>',
       '@<Location /redmine>@'    => '<code>&lt;Location /redmine&gt;</code>'
     )
+  end
+
+  def test_nested_lists
+    raw = <<-RAW
+# Item 1
+# Item 2
+** Item 2a
+** Item 2b
+# Item 3
+** Item 3a
+RAW
+
+    expected = <<-EXPECTED
+<ol>
+  <li>Item 1</li>
+  <li>Item 2
+    <ul>
+      <li>Item 2a</li>
+      <li>Item 2b</li>
+    </ul>
+  </li>
+  <li>Item 3
+    <ul>
+      <li>Item 3a</li>
+    </ul>
+  </li>
+</ol>
+EXPECTED
+
+    assert_equal expected.gsub(%r{\s+}, ''), to_html(raw).gsub(%r{\s+}, '')
   end
 
   def test_escaping
@@ -318,6 +392,31 @@ Nulla nunc nisi, egestas in ornare vel, posuere ac libero."]
     
     assert_equal [STR_WITH_PRE[0..1], "New text"].flatten.join("\n\n"),
       @formatter.new(text).update_section(3, replacement)
+  end
+
+  def test_get_section_should_support_lines_with_spaces_before_heading
+    # the lines after Content 2 and Heading 4 contain a space
+    text = <<-STR
+h1. Heading 1
+
+Content 1
+
+h1. Heading 2
+
+Content 2
+ 
+h1. Heading 3
+
+Content 3
+
+h1. Heading 4
+ 
+Content 4
+STR
+
+    [1, 2, 3, 4].each do |index|
+      assert_match /\Ah1. Heading #{index}.+Content #{index}/m, @formatter.new(text).get_section(index).first
+    end
   end
 
   private

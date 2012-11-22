@@ -1,6 +1,6 @@
 # Spanish translations for Rails
 # by Francisco Fernando García Nieto (ffgarcianieto@gmail.com)
-# Redmine spanish translation: 
+# Redmine spanish translation:
 # by J. Cayetano Delgado (Cayetano _dot_ Delgado _at_ ioko _dot_ com)
 
 es:
@@ -9,9 +9,9 @@ es:
     # These are also the defaults for 'currency', 'percentage', 'precision', and 'human'
     format:
       # Sets the separator between the units, for more precision (e.g. 1.0 / 2.0 == 0.5)
-      separator: "," 
+      separator: ","
       # Delimets thousands (e.g. 1,000,000 is a million) (always in groups of three)
-      delimiter: "." 
+      delimiter: "."
       # Number of decimals, behind the separator (1 with a precision of 2 gives: 1.00)
       precision: 3
 
@@ -19,36 +19,36 @@ es:
     currency:
       format:
         # Where is the currency sign? %u is the currency unit, %n the number (default: $5.00)
-        format: "%n %u" 
-        unit: "€" 
+        format: "%n %u"
+        unit: "€"
         # These three are to override number.format and are optional
-        separator: "," 
-        delimiter: "." 
+        separator: ","
+        delimiter: "."
         precision: 2
 
     # Used in number_to_percentage()
     percentage:
       format:
         # These three are to override number.format and are optional
-        # separator: 
-        delimiter: "" 
-        # precision: 
+        # separator:
+        delimiter: ""
+        # precision:
 
     # Used in number_to_precision()
     precision:
       format:
         # These three are to override number.format and are optional
         # separator:
-        delimiter: "" 
+        delimiter: ""
         # precision:
 
     # Used in number_to_human_size()
     human:
       format:
         # These three are to override number.format and are optional
-        # separator: 
-        delimiter: "" 
-        precision: 1
+        # separator:
+        delimiter: ""
+        precision: 3
       storage_units:
         format: "%n %u"
         units:
@@ -63,37 +63,40 @@ es:
   # Used in distance_of_time_in_words(), distance_of_time_in_words_to_now(), time_ago_in_words()
   datetime:
     distance_in_words:
-      half_a_minute: "medio minuto" 
+      half_a_minute: "medio minuto"
       less_than_x_seconds:
-        one:  "menos de 1 segundo" 
+        one:  "menos de 1 segundo"
         other: "menos de %{count} segundos"
       x_seconds:
-        one:  "1 segundo" 
-        other: "%{count} segundos" 
+        one:  "1 segundo"
+        other: "%{count} segundos"
       less_than_x_minutes:
-        one:  "menos de 1 minuto" 
-        other: "menos de %{count} minutos" 
+        one:  "menos de 1 minuto"
+        other: "menos de %{count} minutos"
       x_minutes:
-        one:  "1 minuto" 
-        other: "%{count} minutos" 
+        one:  "1 minuto"
+        other: "%{count} minutos"
       about_x_hours:
-        one:  "alrededor de 1 hora" 
-        other: "alrededor de %{count} horas" 
+        one:  "alrededor de 1 hora"
+        other: "alrededor de %{count} horas"
+      x_hours:
+        one:   "1 hour"
+        other: "%{count} hours"
       x_days:
-        one:  "1 día" 
-        other: "%{count} días" 
+        one:  "1 día"
+        other: "%{count} días"
       about_x_months:
-        one:  "alrededor de 1 mes" 
-        other: "alrededor de %{count} meses" 
+        one:  "alrededor de 1 mes"
+        other: "alrededor de %{count} meses"
       x_months:
-        one:  "1 mes" 
-        other: "%{count} meses" 
+        one:  "1 mes"
+        other: "%{count} meses"
       about_x_years:
-        one:  "alrededor de 1 año" 
-        other: "alrededor de %{count} años" 
+        one:  "alrededor de 1 año"
+        other: "alrededor de %{count} años"
       over_x_years:
-        one:  "más de 1 año" 
-        other: "más de %{count} años" 
+        one:  "más de 1 año"
+        other: "más de %{count} años"
       almost_x_years:
         one:   "casi 1 año"
         other: "casi %{count} años"
@@ -102,17 +105,17 @@ es:
     errors:
       template:
         header:
-          one:   "no se pudo guardar este %{model} porque se encontró 1 error" 
-          other:  "no se pudo guardar este %{model} porque se encontraron %{count} errores" 
+          one:   "no se pudo guardar este %{model} porque se encontró 1 error"
+          other:  "no se pudo guardar este %{model} porque se encontraron %{count} errores"
         # The variable :count is also available
-        body: "Se encontraron problemas con los siguientes campos:" 
+        body: "Se encontraron problemas con los siguientes campos:"
 
       # The values :model, :attribute and :value are always available for interpolation
       # The value :count is available when applicable. Can be used for pluralization.
       messages:
-        inclusion: "no está incluido en la lista" 
-        exclusion: "está reservado" 
-        invalid: "no es válido" 
+        inclusion: "no está incluido en la lista"
+        exclusion: "está reservado"
+        invalid: "no es válido"
         confirmation: "no coincide con la confirmación"
         accepted: "debe ser aceptado"
         empty: "no puede estar vacío"
@@ -148,9 +151,9 @@ es:
       # Use the strftime parameters for formats.
       # When no format has been given, it uses default.
       # You can provide other formats here if you like!
-      default: "%Y-%m-%d" 
-      short: "%d de %b" 
-      long: "%d de %B de %Y" 
+      default: "%Y-%m-%d"
+      short: "%d de %b"
+      long: "%d de %B de %Y"
 
     day_names: [Domingo, Lunes, Martes, Miércoles, Jueves, Viernes, Sábado]
     abbr_day_names: [Dom, Lun, Mar, Mie, Jue, Vie, Sab]
@@ -168,10 +171,10 @@ es:
     formats:
       default: "%A, %d de %B de %Y %H:%M:%S %z"
       time: "%H:%M"
-      short: "%d de %b %H:%M" 
-      long: "%d de %B de %Y %H:%M" 
-    am: "am" 
-    pm: "pm" 
+      short: "%d de %b %H:%M"
+      long: "%d de %B de %Y %H:%M"
+    am: "am"
+    pm: "pm"
 
 # Used in array.to_sentence.
   support:
@@ -179,7 +182,7 @@ es:
       sentence_connector: "y"
 
   actionview_instancetag_blank_option: Por favor seleccione
-  
+
   button_activate: Activar
   button_add: Añadir
   button_annotate: Anotar
@@ -320,7 +323,7 @@ es:
   field_start_date: Fecha de inicio
   field_start_page: Página principal
   field_status: Estado
-  field_subject: Tema
+  field_subject: Asunto
   field_subproject: Proyecto secundario
   field_summary: Resumen
   field_time_zone: Zona horaria
@@ -813,7 +816,6 @@ es:
   text_min_max_length_info: 0 para ninguna restricción
   text_no_configuration_data: "Todavía no se han configurado perfiles, ni tipos, estados y flujo de trabajo asociado a peticiones. Se recomiendo encarecidamente cargar la configuración por defecto. Una vez cargada, podrá modificarla."
   text_project_destroy_confirmation: ¿Estás seguro de querer eliminar el proyecto?
-  text_project_identifier_info: 'Letras minúsculas (a-z), números y signos de puntuación permitidos.<br />Una vez guardado, el identificador no puede modificarse.'
   text_reassign_time_entries: 'Reasignar las horas a esta petición:'
   text_regexp_info: ej. ^[A-Z0-9]+$
   text_repository_usernames_mapping: "Establezca la correspondencia entre los usuarios de Redmine y los presentes en el log del repositorio.\nLos usuarios con el mismo nombre o correo en Redmine y en el repositorio serán asociados automáticamente."
@@ -884,7 +886,7 @@ es:
   version_status_locked: bloqueado
   version_status_open: abierto
   error_can_not_reopen_issue_on_closed_version: No se puede reabrir una petición asignada a una versión cerrada
-  
+
   label_user_anonymous: Anónimo
   button_move_and_follow: Mover y seguir
   setting_default_projects_modules: Módulos activados por defecto en proyectos nuevos
@@ -1012,34 +1014,89 @@ es:
   label_git_report_last_commit: Informar del último commit para ficheros y directorios
   text_scm_config: Puede configurar las órdenes de cada scm en configuration/configuration.yml. Por favor, reinicie la aplicación después de editarlo
   text_scm_command_not_available: La orden para el Scm no está disponible. Por favor, compruebe la configuración en el panel de administración.
-  notice_issue_successful_create: Issue %{id} created.
-  label_between: between
-  setting_issue_group_assignment: Allow issue assignment to groups
-  label_diff: diff
-  text_git_repository_note: Repository is bare and local (e.g. /gitrepo, c:\gitrepo)
-  description_query_sort_criteria_direction: Sort direction
-  description_project_scope: Search scope
-  description_filter: Filter
-  description_user_mail_notification: Mail notification settings
-  description_date_from: Enter start date
-  description_message_content: Message content
-  description_available_columns: Available Columns
-  description_date_range_interval: Choose range by selecting start and end date
-  description_issue_category_reassign: Choose issue category
-  description_search: Searchfield
-  description_notes: Notes
-  description_date_range_list: Choose range from list
-  description_choose_project: Projects
-  description_date_to: Enter end date
-  description_query_sort_criteria_attribute: Sort attribute
-  description_wiki_subpages_reassign: Choose new parent page
-  description_selected_columns: Selected Columns
-  label_parent_revision: Parent
-  label_child_revision: Child
+  notice_issue_successful_create: Petición %{id} creada.
+  label_between: entre
+  setting_issue_group_assignment: Permitir asignar peticiones a grupos
+  label_diff: diferencias
+  text_git_repository_note: El repositorio es básico y local (p.e. /gitrepo, c:\gitrepo)
+  description_query_sort_criteria_direction: Dirección de ordenación
+  description_project_scope: Ámbito de búsqueda
+  description_filter: Filtro
+  description_user_mail_notification: Configuración de notificaciones por correo
+  description_date_from: Introduzca la fecha de inicio
+  description_message_content: Contenido del mensaje
+  description_available_columns: Columnas disponibles
+  description_date_range_interval: Elija el rango seleccionando la fecha de inicio y fin
+  description_issue_category_reassign: Elija la categoría de la petición
+  description_search: Campo de búsqueda
+  description_notes: Notas
+  description_date_range_list: Elija el rango en la lista
+  description_choose_project: Proyectos
+  description_date_to: Introduzca la fecha fin
+  description_query_sort_criteria_attribute: Atributo de ordenación
+  description_wiki_subpages_reassign: Elija la nueva página padre
+  description_selected_columns: Columnas seleccionadas
+  label_parent_revision: Padre
+  label_child_revision: Hijo
   setting_default_issue_start_date_to_creation_date: Use current date as start date for new issues
   button_edit_section: Edit this section
   setting_repositories_encodings: Attachments and repositories encodings
-  description_all_columns: All Columns
-  button_export: Export
-  label_export_options: "%{export_format} export options"
-  error_attachment_too_big: This file cannot be uploaded because it exceeds the maximum allowed file size (%{max_size})
+  description_all_columns: Todas las columnas
+  button_export: Exportar
+  label_export_options: "%{export_format} opciones de exportación"
+  error_attachment_too_big: Este fichero no se puede adjuntar porque excede el tamaño máximo de fichero (%{max_size})
+  notice_failed_to_save_time_entries: "Error al guarda %{count} entradas de tiempo de las %{total} seleccionadas: %{ids}."
+  label_x_issues:
+    zero:  0 petición
+    one:   1 petición
+    other: "%{count} peticiones"
+  label_repository_new: New repository
+  field_repository_is_default: Main repository
+  label_copy_attachments: Copy attachments
+  label_item_position: "%{position}/%{count}"
+  label_completed_versions: Completed versions
+  text_project_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_multiple: Multiple values
+  setting_commit_cross_project_ref: Allow issues of all the other projects to be referenced and fixed
+  text_issue_conflict_resolution_add_notes: Add my notes and discard my other changes
+  text_issue_conflict_resolution_overwrite: Apply my changes anyway (previous notes will be kept but some changes may be overwritten)
+  notice_issue_update_conflict: The issue has been updated by an other user while you were editing it.
+  text_issue_conflict_resolution_cancel: Discard all my changes and redisplay %{link}
+  permission_manage_related_issues: Manage related issues
+  field_auth_source_ldap_filter: LDAP filter
+  label_search_for_watchers: Search for watchers to add
+  notice_account_deleted: Your account has been permanently deleted.
+  setting_unsubscribe: Allow users to delete their own account
+  button_delete_my_account: Delete my account
+  text_account_destroy_confirmation: |-
+    Are you sure you want to proceed?
+    Your account will be permanently deleted, with no way to reactivate it.
+  error_session_expired: Your session has expired. Please login again.
+  text_session_expiration_settings: "Warning: changing these settings may expire the current sessions including yours."
+  setting_session_lifetime: Session maximum lifetime
+  setting_session_timeout: Session inactivity timeout
+  label_session_expiration: Session expiration
+  permission_close_project: Close / reopen the project
+  label_show_closed_projects: View closed projects
+  button_close: Close
+  button_reopen: Reopen
+  project_status_active: active
+  project_status_closed: closed
+  project_status_archived: archived
+  text_project_closed: This project is closed and read-only.
+  notice_user_successful_create: User %{id} created.
+  field_core_fields: Standard fields
+  field_timeout: Timeout (in seconds)
+  setting_thumbnails_enabled: Display attachment thumbnails
+  setting_thumbnails_size: Thumbnails size (in pixels)
+  label_status_transitions: Status transitions
+  label_fields_permissions: Fields permissions
+  label_readonly: Read-only
+  label_required: Required
+  text_repository_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_board_parent: Parent forum
+  label_attribute_of_project: Project's %{name}
+  label_attribute_of_author: Author's %{name}
+  label_attribute_of_assigned_to: Assignee's %{name}
+  label_attribute_of_fixed_version: Target version's %{name}
+  label_copy_subtasks: Copy subtasks

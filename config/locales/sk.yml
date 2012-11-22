@@ -8,10 +8,10 @@ sk:
       default: "%Y-%m-%d"
       short: "%b %d"
       long: "%B %d, %Y"
-      
+
     day_names: [Nedeľa, Pondelok, Utorok, Streda, Štvrtok, Piatok, Sobota]
     abbr_day_names: [Ne, Po, Ut, St, Št, Pi, So]
-      
+
     # Don't forget the nil at the beginning; there's no such thing as a 0th month
     month_names: [~, Január, Február, Marec, Apríl, Máj, Jún, Júl, August, September, Október, November, December]
     abbr_month_names: [~, Jan, Feb, Mar, Apr, Máj, Jún, Júl, Aug, Sep, Okt, Nov, Dec]
@@ -29,7 +29,7 @@ sk:
       long: "%B %d, %Y %H:%M"
     am: "am"
     pm: "pm"
-      
+
   datetime:
     distance_in_words:
       half_a_minute: "pol minúty"
@@ -48,6 +48,9 @@ sk:
       about_x_hours:
         one:   "okolo 1 hodiny"
         other: "okolo %{count} hodín"
+      x_hours:
+        one:   "1 hour"
+        other: "%{count} hours"
       x_days:
         one:   "1 deň"
         other: "%{count} dní"
@@ -67,28 +70,33 @@ sk:
         one:   "almost 1 year"
         other: "almost %{count} years"
 
-  number: 
-    human: 
-      format: 
-        precision: 1
+  number:
+    format:
+      separator: "."
+      delimiter: ""
+      precision: 3
+
+    human:
+      format:
+        precision: 3
         delimiter: ""
-      storage_units: 
+      storage_units:
         format: "%n %u"
-        units: 
+        units:
           kb: KB
           tb: TB
           gb: GB
-          byte: 
+          byte:
             one: Byte
             other: Bytes
           mb: MB
-        
+
 # Used in array.to_sentence.
   support:
     array:
       sentence_connector: "a"
       skip_last_comma: false
-      
+
   activerecord:
     errors:
       template:
@@ -122,9 +130,9 @@ sk:
         cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
 
   # SK translation by Stanislav Pach | stano.pach@seznam.cz
-  
+
   actionview_instancetag_blank_option: Prosím vyberte
-  
+
   general_text_No: 'Nie'
   general_text_Yes: 'Áno'
   general_text_no: 'nie'
@@ -135,7 +143,7 @@ sk:
   general_csv_encoding: UTF-8
   general_pdf_encoding: UTF-8
   general_first_day_of_week: '1'
-  
+
   notice_account_updated: Účet bol úspešne zmenený.
   notice_account_invalid_creditentials: Chybné meno alebo heslo
   notice_account_password_updated: Heslo bolo úspešne zmenené.
@@ -160,12 +168,12 @@ sk:
   notice_no_issue_selected: "Nebola zvolená žiadná úloha. Prosím, zvoľte úlohy, ktoré chcete upraviť"
   notice_account_pending: "Váš účet bol vytvorený, teraz čaká na schválenie administrátorom."
   notice_default_data_loaded: Výchozia konfigurácia úspešne nahraná.
-  
+
   error_can_t_load_default_data: "Výchozia konfigurácia nebola nahraná: %{value}"
   error_scm_not_found: "Položka a/alebo revízia neexistuje v repozitári."
   error_scm_command_failed: "Pri pokuse o prístup k repozitári došlo k chybe: %{value}"
   error_issue_not_found_in_project: 'Úloha nebola nájdená alebo nepatrí k tomuto projektu'
-  
+
   mail_subject_lost_password: "Vaše heslo (%{value})"
   mail_body_lost_password: 'Pre zmenu vašeho hesla kliknite na následujúci odkaz:'
   mail_subject_register: "Aktivácia účtu (%{value})"
@@ -174,10 +182,10 @@ sk:
   mail_body_account_information: Informácie o vašom účte
   mail_subject_account_activation_request: "Aktivácia %{value} účtu"
   mail_body_account_activation_request: "Bol zaregistrovaný nový uživateľ %{value}. Aktivácia jeho účtu závisí na vašom potvrdení."
-  
+
   gui_validation_error: 1 chyba
   gui_validation_error_plural: "%{count} chyb(y)"
-  
+
   field_name: Názov
   field_description: Popis
   field_summary: Prehľad
@@ -261,7 +269,7 @@ sk:
   field_searchable: Umožniť vyhľadávanie
   field_default_value: Východzia hodnota
   field_comments_sorting: Zobraziť komentáre
-  
+
   setting_app_title: Názov aplikácie
   setting_app_subtitle: Podtitulok aplikácie
   setting_welcome_text: Uvítací text
@@ -274,7 +282,7 @@ sk:
   setting_bcc_recipients: Príjemcovia skrytej kópie (bcc)
   setting_host_name: Hostname
   setting_text_formatting: Formátovanie textu
-  setting_wiki_compression: Kompresia histórie Wiki 
+  setting_wiki_compression: Kompresia histórie Wiki
   setting_feeds_limit: Limit zobrazených položiek (Atom feed)
   setting_default_projects_public: Nové projekty nastavovať ako verejné
   setting_autofetch_changesets: Automatický prenos zmien
@@ -286,23 +294,23 @@ sk:
   setting_time_format: Formát času
   setting_cross_project_issue_relations: Povoliť väzby úloh skrz projekty
   setting_issue_list_default_columns: Východzie stĺpce zobrazené v zozname úloh
-  setting_ itories_encodings: Kódovanie 
+  setting_ itories_encodings: Kódovanie
   setting_emails_footer: Zapätie emailov
   setting_protocol: Protokol
   setting_per_page_options: Povolené množstvo riadkov na stránke
   setting_user_format: Formát zobrazenia užívateľa
-  setting_activity_days_default: "Zobrazené dni aktivity projektu:" 
+  setting_activity_days_default: "Zobrazené dni aktivity projektu:"
   setting_display_subprojects_issues: Prednastavenie zobrazenia úloh podporojektov v hlavnom projekte
-  
+
   project_module_issue_tracking: Sledovanie úloh
   project_module_time_tracking: Sledovanie času
   project_module_news: Novinky
   project_module_documents: Dokumenty
   project_module_files: Súbory
-  project_module_wiki: Wiki 
+  project_module_wiki: Wiki
   project_module_repository: Repozitár
   project_module_boards: Diskusie
-  
+
   label_user: Užívateľ
   label_user_plural: Užívatelia
   label_user_new: Nový užívateľ
@@ -509,7 +517,7 @@ sk:
   label_search: Hľadať
   label_result_plural: Výsledky
   label_all_words: Všetky slova
-  label_wiki: Wiki 
+  label_wiki: Wiki
   label_wiki_edit: Wiki úprava
   label_wiki_edit_plural: Wiki úpravy
   label_wiki_page: Wiki stránka
@@ -606,7 +614,7 @@ sk:
   label_preferences: Nastavenia
   label_chronological_order: V chronologickom poradí
   label_reverse_chronological_order: V obrátenom chronologickom poradí
-  
+
   button_login: Prihlásiť
   button_submit: Potvrdiť
   button_save: Uložiť
@@ -644,11 +652,11 @@ sk:
   button_annotate: Komentovať
   button_update: Aktualizovať
   button_configure: Konfigurovať
-  
+
   status_active: aktívny
   status_registered: registrovaný
   status_locked: uzamknutý
-  
+
   text_select_mail_notifications: Vyberte akciu, pri ktorej bude zaslané upozornenie emailom
   text_regexp_info: napr. ^[A-Z0-9]+$
   text_min_max_length_info: 0 znamená bez limitu
@@ -658,7 +666,6 @@ sk:
   text_tip_issue_begin_day: úloha začína v tento deň
   text_tip_issue_end_day: úloha končí v tento deň
   text_tip_issue_begin_end_day: úloha začína a končí v tento deň
-  text_project_identifier_info: 'Povolené znaky sú malé písmena (a-z), čísla a pomlčka.<br />Po uložení už nieje možné identifikátor zmeniť.'
   text_caracters_maximum: "%{count} znakov maximálne."
   text_caracters_minimum: "Musí byť aspoň %{count} znaky/ov dlhé."
   text_length_between: "Dĺžka medzi %{min} až %{max} znakmi."
@@ -685,7 +692,7 @@ sk:
   text_destroy_time_entries: Odstrániť evidované hodiny.
   text_assign_time_entries_to_project: Priradiť evidované hodiny projektu
   text_reassign_time_entries: 'Preradiť evidované hodiny k tejto úlohe:'
-  
+
   default_role_manager: Manažér
   default_role_developer: Vývojár
   default_role_reporter: Reportér
@@ -707,7 +714,7 @@ sk:
   default_priority_immediate: Okamžitá
   default_activity_design: Design
   default_activity_development: Vývoj
-  
+
   enumeration_issue_priorities: Priority úloh
   enumeration_doc_categories: Kategorie dokumentov
   enumeration_activities: Aktivity (sledovanie času)
@@ -744,7 +751,7 @@ sk:
   permission_view_changesets: Zobrazenie sád zmien
   permission_view_time_entries: Zobrazenie stráveného času
   permission_manage_versions: Správa verzií
-  permission_manage_wiki: Správa Wiki 
+  permission_manage_wiki: Správa Wiki
   permission_manage_categories: Správa kategórií úloh
   permission_protect_wiki_pages: Ochrana Wiki strániek
   permission_comment_news: Komentovanie noviniek
@@ -885,7 +892,7 @@ sk:
   label_subproject_new: Nový podprojekt
   text_own_membership_delete_confirmation: |-
     Práve sa pokúšate o odstránenie niektorých alebo všetkých prístupových práv a možno nebudete mať možnost naďalej upravovať tento projekt.
-    Ste si istý(á), že chcete pokračovat? 
+    Ste si istý(á), že chcete pokračovat?
   label_close_versions: Uzavrieť ukončené verzie
   label_board_sticky: Sticky
   label_board_locked: Uzamknuté
@@ -1001,3 +1008,58 @@ sk:
   button_export: Export
   label_export_options: "%{export_format} export options"
   error_attachment_too_big: This file cannot be uploaded because it exceeds the maximum allowed file size (%{max_size})
+  notice_failed_to_save_time_entries: "Failed to save %{count} time entrie(s) on %{total} selected: %{ids}."
+  label_x_issues:
+    zero:  0 Úloha
+    one:   1 Úloha
+    other: "%{count} Úlohy"
+  label_repository_new: New repository
+  field_repository_is_default: Main repository
+  label_copy_attachments: Copy attachments
+  label_item_position: "%{position}/%{count}"
+  label_completed_versions: Completed versions
+  text_project_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_multiple: Multiple values
+  setting_commit_cross_project_ref: Allow issues of all the other projects to be referenced and fixed
+  text_issue_conflict_resolution_add_notes: Add my notes and discard my other changes
+  text_issue_conflict_resolution_overwrite: Apply my changes anyway (previous notes will be kept but some changes may be overwritten)
+  notice_issue_update_conflict: The issue has been updated by an other user while you were editing it.
+  text_issue_conflict_resolution_cancel: Discard all my changes and redisplay %{link}
+  permission_manage_related_issues: Manage related issues
+  field_auth_source_ldap_filter: LDAP filter
+  label_search_for_watchers: Search for watchers to add
+  notice_account_deleted: Your account has been permanently deleted.
+  setting_unsubscribe: Allow users to delete their own account
+  button_delete_my_account: Delete my account
+  text_account_destroy_confirmation: |-
+    Are you sure you want to proceed?
+    Your account will be permanently deleted, with no way to reactivate it.
+  error_session_expired: Your session has expired. Please login again.
+  text_session_expiration_settings: "Warning: changing these settings may expire the current sessions including yours."
+  setting_session_lifetime: Session maximum lifetime
+  setting_session_timeout: Session inactivity timeout
+  label_session_expiration: Session expiration
+  permission_close_project: Close / reopen the project
+  label_show_closed_projects: View closed projects
+  button_close: Close
+  button_reopen: Reopen
+  project_status_active: active
+  project_status_closed: closed
+  project_status_archived: archived
+  text_project_closed: This project is closed and read-only.
+  notice_user_successful_create: User %{id} created.
+  field_core_fields: Standard fields
+  field_timeout: Timeout (in seconds)
+  setting_thumbnails_enabled: Display attachment thumbnails
+  setting_thumbnails_size: Thumbnails size (in pixels)
+  label_status_transitions: Status transitions
+  label_fields_permissions: Fields permissions
+  label_readonly: Read-only
+  label_required: Required
+  text_repository_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_board_parent: Parent forum
+  label_attribute_of_project: Project's %{name}
+  label_attribute_of_author: Author's %{name}
+  label_attribute_of_assigned_to: Assignee's %{name}
+  label_attribute_of_fixed_version: Target version's %{name}
+  label_copy_subtasks: Copy subtasks

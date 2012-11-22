@@ -10,10 +10,10 @@ sr:
       default: "%d.%m.%Y."
       short: "%e %b"
       long: "%B %e, %Y"
-      
+
     day_names: [недеља, понедељак, уторак, среда, четвртак, петак, субота]
     abbr_day_names: [нед, пон, уто, сре, чет, пет, суб]
-      
+
     # Don't forget the nil at the beginning; there's no such thing as a 0th month
     month_names: [~, јануар, фебруар, март, април, мај, јун, јул, август, септембар, октобар, новембар, децембар]
     abbr_month_names: [~, јан, феб, мар, апр, мај, јун, јул, авг, сеп, окт, нов, дец]
@@ -50,6 +50,9 @@ sr:
       about_x_hours:
         one:   "приближно један сат"
         other: "приближно %{count} сати"
+      x_hours:
+        one:   "1 hour"
+        other: "%{count} hours"
       x_days:
         one:   "један дан"
         other: "%{count} дана"
@@ -77,7 +80,7 @@ sr:
     human:
       format:
         delimiter: ""
-        precision: 1
+        precision: 3
       storage_units:
         format: "%n %u"
         units:
@@ -95,7 +98,7 @@ sr:
     array:
       sentence_connector: "и"
       skip_last_comma: false
-      
+
   activerecord:
     errors:
       template:
@@ -129,7 +132,7 @@ sr:
         cant_link_an_issue_with_a_descendant: "Проблем не може бити повезан са једним од својих подзадатака"
 
   actionview_instancetag_blank_option: Молим одаберите
-  
+
   general_text_No: 'Не'
   general_text_Yes: 'Да'
   general_text_no: 'не'
@@ -140,7 +143,7 @@ sr:
   general_csv_encoding: UTF-8
   general_pdf_encoding: UTF-8
   general_first_day_of_week: '1'
-  
+
   notice_account_updated: Налог је успешно ажуриран.
   notice_account_invalid_creditentials: Неисправно корисничко име или лозинка.
   notice_account_password_updated: Лозинка је успешно ажурирана.
@@ -169,7 +172,7 @@ sr:
   notice_unable_delete_version: Верзију је немогуће избрисати.
   notice_unable_delete_time_entry: Ставку евиденције времена је немогуће избрисати.
   notice_issue_done_ratios_updated: Однос решених проблема је ажуриран.
-  
+
   error_can_t_load_default_data: "Подразумевано конфигурисање је немогуће учитати: %{value}"
   error_scm_not_found: "Ставка или исправка нису пронађене у спремишту."
   error_scm_command_failed: "Грешка се јавила приликом покушаја приступа спремишту: %{value}"
@@ -186,9 +189,9 @@ sr:
   error_workflow_copy_source: 'Молимо одаберите изворно праћење или улогу'
   error_workflow_copy_target: 'Молимо одаберите одредишно праћење и улогу'
   error_unable_delete_issue_status: 'Статус проблема је немогуће обрисати'
-  error_unable_to_connect: "Повезивање са (%{value}) је немогуће"  
+  error_unable_to_connect: "Повезивање са (%{value}) је немогуће"
   warning_attachments_not_saved: "%{count} датотека не може бити снимљена."
-  
+
   mail_subject_lost_password: "Ваша %{value} лозинка"
   mail_body_lost_password: 'За промену ваше лозинке, кликните на следећи линк:'
   mail_subject_register: "Активација вашег %{value} налога"
@@ -203,10 +206,10 @@ sr:
   mail_body_wiki_content_added: "%{author} је додао wiki страницу '%{id}'."
   mail_subject_wiki_content_updated: "Wiki страница '%{id}' је ажурирана"
   mail_body_wiki_content_updated: "%{author} је ажурирао wiki страницу '%{id}'."
-  
+
   gui_validation_error: једна грешка
   gui_validation_error_plural: "%{count} грешака"
-  
+
   field_name: Назив
   field_description: Опис
   field_summary: Резиме
@@ -299,7 +302,7 @@ sr:
   field_group_by: Груписање резултата по
   field_sharing: Дељење
   field_parent_issue: Матични задатак
-  
+
   setting_app_title: Наслов апликације
   setting_app_subtitle: Поднаслов апликације
   setting_welcome_text: Текст добродошлице
@@ -351,7 +354,7 @@ sr:
   setting_start_of_week: Први дан у седмици
   setting_rest_api_enabled: Омогући REST web услуге
   setting_cache_formatted_text: Кеширање обрађеног текста
-  
+
   permission_add_project: Креирање пројекта
   permission_add_subprojects: Креирање потпојекта
   permission_edit_project: Измена пројеката
@@ -407,7 +410,7 @@ sr:
   permission_delete_own_messages: Брисање сопствених порука
   permission_export_wiki_pages: Извоз wiki страница
   permission_manage_subtasks: Управљање подзадацима
-  
+
   project_module_issue_tracking: Праћење проблема
   project_module_time_tracking: Праћење времена
   project_module_news: Вести
@@ -416,7 +419,7 @@ sr:
   project_module_wiki: Wiki
   project_module_repository: Спремиште
   project_module_boards: Форуми
-  
+
   label_user: Корисник
   label_user_plural: Корисници
   label_user_new: Нови корисник
@@ -773,8 +776,8 @@ sr:
   label_api_access_key_created_on: "API приступни кључ је креиран пре %{value}"
   label_profile: Профил
   label_subtask_plural: Подзадатак
-  label_project_copy_notifications: Пошаљи е-поруку са обавештењем приликом копирања пројекта 
-  
+  label_project_copy_notifications: Пошаљи е-поруку са обавештењем приликом копирања пројекта
+
   button_login: Пријава
   button_submit: Пошаљи
   button_save: Сними
@@ -818,17 +821,17 @@ sr:
   button_quote: Под наводницима
   button_duplicate: Дуплирај
   button_show: Прикажи
-  
+
   status_active: активни
   status_registered: регистровани
   status_locked: закључани
-  
+
   version_status_open: отворен
   version_status_locked: закључан
   version_status_closed: затворен
 
   field_active: Активан
-  
+
   text_select_mail_notifications: Одабери акције за које ће обавештење бити послато путем е-поште.
   text_regexp_info: нпр. ^[A-Z0-9]+$
   text_min_max_length_info: 0 значи без ограничења
@@ -843,7 +846,6 @@ sr:
   text_tip_issue_begin_day: задатак почиње овог дана
   text_tip_issue_end_day: задатак се завршава овог дана
   text_tip_issue_begin_end_day: задатак почиње и завршава овог дана
-  text_project_identifier_info: 'Дозвољена су само мала слова (a-ш), бројеви и цртице.<br />Једном снимљен идентификатор више се не може променити.'
   text_caracters_maximum: "Највише %{count} знак(ова)."
   text_caracters_minimum: "Број знакова мора бити најмање %{count}."
   text_length_between: "Број знакова мора бити између %{min} и %{max}."
@@ -886,7 +888,7 @@ sr:
   text_own_membership_delete_confirmation: "Након уклањања појединих или свих ваших дозвола нећете више моћи да уређујете овај пројекат.\nЖелите ли да наставите?"
   text_zoom_in: Увећај
   text_zoom_out: Умањи
-  
+
   default_role_manager: Менаџер
   default_role_developer: Програмер
   default_role_reporter: Извештач
@@ -908,12 +910,12 @@ sr:
   default_priority_immediate: Непосредно
   default_activity_design: Дизајн
   default_activity_development: Развој
-  
+
   enumeration_issue_priorities: Приоритети проблема
   enumeration_doc_categories: Категорије документа
   enumeration_activities: Активности (праћење времена)
   enumeration_system_activity: Системска активност
-  
+
   field_time_entries: Време евиденције
   project_module_gantt: Гантов дијаграм
   project_module_calendar: Календар
@@ -1007,3 +1009,58 @@ sr:
   button_export: Export
   label_export_options: "%{export_format} export options"
   error_attachment_too_big: This file cannot be uploaded because it exceeds the maximum allowed file size (%{max_size})
+  notice_failed_to_save_time_entries: "Failed to save %{count} time entrie(s) on %{total} selected: %{ids}."
+  label_x_issues:
+    zero:  0 Проблем
+    one:   1 Проблем
+    other: "%{count} Проблеми"
+  label_repository_new: New repository
+  field_repository_is_default: Main repository
+  label_copy_attachments: Copy attachments
+  label_item_position: "%{position}/%{count}"
+  label_completed_versions: Completed versions
+  text_project_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_multiple: Multiple values
+  setting_commit_cross_project_ref: Allow issues of all the other projects to be referenced and fixed
+  text_issue_conflict_resolution_add_notes: Add my notes and discard my other changes
+  text_issue_conflict_resolution_overwrite: Apply my changes anyway (previous notes will be kept but some changes may be overwritten)
+  notice_issue_update_conflict: The issue has been updated by an other user while you were editing it.
+  text_issue_conflict_resolution_cancel: Discard all my changes and redisplay %{link}
+  permission_manage_related_issues: Manage related issues
+  field_auth_source_ldap_filter: LDAP filter
+  label_search_for_watchers: Search for watchers to add
+  notice_account_deleted: Your account has been permanently deleted.
+  setting_unsubscribe: Allow users to delete their own account
+  button_delete_my_account: Delete my account
+  text_account_destroy_confirmation: |-
+    Are you sure you want to proceed?
+    Your account will be permanently deleted, with no way to reactivate it.
+  error_session_expired: Your session has expired. Please login again.
+  text_session_expiration_settings: "Warning: changing these settings may expire the current sessions including yours."
+  setting_session_lifetime: Session maximum lifetime
+  setting_session_timeout: Session inactivity timeout
+  label_session_expiration: Session expiration
+  permission_close_project: Close / reopen the project
+  label_show_closed_projects: View closed projects
+  button_close: Close
+  button_reopen: Reopen
+  project_status_active: active
+  project_status_closed: closed
+  project_status_archived: archived
+  text_project_closed: This project is closed and read-only.
+  notice_user_successful_create: User %{id} created.
+  field_core_fields: Standard fields
+  field_timeout: Timeout (in seconds)
+  setting_thumbnails_enabled: Display attachment thumbnails
+  setting_thumbnails_size: Thumbnails size (in pixels)
+  label_status_transitions: Status transitions
+  label_fields_permissions: Fields permissions
+  label_readonly: Read-only
+  label_required: Required
+  text_repository_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_board_parent: Parent forum
+  label_attribute_of_project: Project's %{name}
+  label_attribute_of_author: Author's %{name}
+  label_attribute_of_assigned_to: Assignee's %{name}
+  label_attribute_of_fixed_version: Target version's %{name}
+  label_copy_subtasks: Copy subtasks

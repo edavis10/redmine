@@ -12,10 +12,10 @@ eu:
       default: "%Y/%m/%d"
       short: "%b %d"
       long: "%Y %B %d"
-      
+
     day_names: [Igandea, Astelehena, Asteartea, Asteazkena, Osteguna, Ostirala, Larunbata]
     abbr_day_names: [Ig., Al., Ar., Az., Og., Or., La.]
-      
+
     # Don't forget the nil at the beginning; there's no such thing as a 0th month
     month_names: [~, Urtarrila, Otsaila, Martxoa, Apirila, Maiatza, Ekaina, Uztaila, Abuztua, Iraila, Urria, Azaroa, Abendua]
     abbr_month_names: [~, Urt, Ots, Mar, Api, Mai, Eka, Uzt, Abu, Ira, Urr, Aza, Abe]
@@ -33,7 +33,7 @@ eu:
       long: "%Y %B %d %H:%M"
     am: "am"
     pm: "pm"
-      
+
   datetime:
     distance_in_words:
       half_a_minute: "minutu erdi"
@@ -52,6 +52,9 @@ eu:
       about_x_hours:
         one:   "ordu 1 inguru"
         other: "%{count} ordu inguru"
+      x_hours:
+        one:   "1 hour"
+        other: "%{count} hours"
       x_days:
         one:   "egun 1"
         other: "%{count} egun"
@@ -79,7 +82,7 @@ eu:
     human:
       format:
         delimiter: ""
-        precision: 1
+        precision: 3
       storage_units:
         format: "%n %u"
         units:
@@ -91,13 +94,12 @@ eu:
           gb: "GB"
           tb: "TB"
 
-        
 # Used in array.to_sentence.
   support:
     array:
       sentence_connector: "eta"
       skip_last_comma: false
-      
+
   activerecord:
     errors:
       template:
@@ -131,7 +133,7 @@ eu:
         cant_link_an_issue_with_a_descendant: "Zeregin bat ezin da bere azpiataza batekin estekatu."
 
   actionview_instancetag_blank_option: Hautatu mesedez
-  
+
   general_text_No: 'Ez'
   general_text_Yes: 'Bai'
   general_text_no: 'ez'
@@ -142,7 +144,7 @@ eu:
   general_csv_encoding: UTF-8
   general_pdf_encoding: UTF-8
   general_first_day_of_week: '1'
-  
+
   notice_account_updated: Kontua ongi eguneratu da.
   notice_account_invalid_creditentials: Erabiltzaile edo pasahitz ezegokia
   notice_account_password_updated: Pasahitza ongi eguneratu da.
@@ -169,7 +171,7 @@ eu:
   notice_default_data_loaded: Lehenetsitako konfigurazioa ongi kargatu da.
   notice_unable_delete_version: Ezin da bertsioa ezabatu.
   notice_issue_done_ratios_updated: Burututako zereginen erlazioa eguneratu da.
-  
+
   error_can_t_load_default_data: "Ezin izan da lehenetsitako konfigurazioa kargatu: %{value}"
   error_scm_not_found: "Sarrera edo berrikuspena ez da biltegian topatu."
   error_scm_command_failed: "Errorea gertatu da biltegia atzitzean: %{value}"
@@ -182,9 +184,9 @@ eu:
   error_issue_done_ratios_not_updated: "Burututako zereginen erlazioa ez da eguneratu."
   error_workflow_copy_source: 'Mesedez hautatu iturburuko aztarnari edo rola'
   error_workflow_copy_target: 'Mesedez hautatu helburuko aztarnari(ak) edo rola(k)'
-  
+
   warning_attachments_not_saved: "%{count} fitxategi ezin izan d(ir)a gorde."
-  
+
   mail_subject_lost_password: "Zure %{value} pasahitza"
   mail_body_lost_password: 'Zure pasahitza aldatzeko hurrengo estekan klikatu:'
   mail_subject_register: "Zure %{value} kontuaren gaitzea"
@@ -199,10 +201,10 @@ eu:
   mail_body_wiki_content_added: "%{author}-(e)k '%{id}' wiki orria gehitu du."
   mail_subject_wiki_content_updated: "'%{id}' wiki orria eguneratu da"
   mail_body_wiki_content_updated: "%{author}-(e)k '%{id}' wiki orria eguneratu du."
-  
+
   gui_validation_error: akats 1
   gui_validation_error_plural: "%{count} akats"
-  
+
   field_name: Izena
   field_description: Deskribapena
   field_summary: Laburpena
@@ -345,7 +347,7 @@ eu:
   setting_issue_done_ratio_issue_status: Zeregin egoera erabili
   setting_start_of_week: "Egutegiak noiz hasi:"
   setting_rest_api_enabled: Gaitu REST web zerbitzua
-  
+
   permission_add_project: Proiektua sortu
   permission_add_subprojects: Azpiproiektuak sortu
   permission_edit_project: Proiektua editatu
@@ -398,7 +400,7 @@ eu:
   permission_edit_own_messages: Nork bere mezuak aldatu
   permission_delete_messages: Mezuak ezabatu
   permission_delete_own_messages: Nork bere mezuak ezabatu
-  
+
   project_module_issue_tracking: Zereginen jarraipena
   project_module_time_tracking: Denbora jarraipena
   project_module_news: Berriak
@@ -407,7 +409,7 @@ eu:
   project_module_wiki: Wiki
   project_module_repository: Biltegia
   project_module_boards: Foroak
-  
+
   label_user: Erabiltzailea
   label_user_plural: Erabiltzaileak
   label_user_new: Erabiltzaile berria
@@ -603,7 +605,7 @@ eu:
   label_modification: "aldaketa %{count}"
   label_modification_plural: "%{count} aldaketa"
   label_branch: Adarra
-  label_tag: Etiketa 
+  label_tag: Etiketa
   label_revision: Berrikuspena
   label_revision_plural: Berrikuspenak
   label_revision_id: "%{value} berrikuspen"
@@ -759,7 +761,7 @@ eu:
   label_api_access_key: API atzipen giltza
   label_missing_api_access_key: API atzipen giltza falta da
   label_api_access_key_created_on: "API atzipen giltza sortuta orain dela %{value}"
-  
+
   button_login: Saioa hasi
   button_submit: Bidali
   button_save: Gorde
@@ -803,17 +805,17 @@ eu:
   button_quote: Aipatu
   button_duplicate: Bikoiztu
   button_show: Ikusi
-  
+
   status_active: gaituta
   status_registered: izena emanda
   status_locked: blokeatuta
-  
+
   version_status_open: irekita
   version_status_locked: blokeatuta
   version_status_closed: itxita
 
   field_active: Gaituta
-  
+
   text_select_mail_notifications: Jakinarazpenak zein ekintzetarako bidaliko diren hautatu.
   text_regexp_info: adib. ^[A-Z0-9]+$
   text_min_max_length_info: 0k mugarik gabe esan nahi du
@@ -828,7 +830,6 @@ eu:
   text_tip_issue_begin_day: gaur hasten diren zereginak
   text_tip_issue_end_day: gaur bukatzen diren zereginak
   text_tip_issue_begin_end_day: gaur hasi eta bukatzen diren zereginak
-  text_project_identifier_info: 'Letra xeheak (a-z), zenbakiak eta marrak erabil daitezke bakarrik.<br />Gorde eta gero identifikadorea ezin da aldatu.'
   text_caracters_maximum: "%{count} karaktere gehienez."
   text_caracters_minimum: "Gutxienez %{count} karaktereetako luzerakoa izan behar du."
   text_length_between: "Luzera %{min} eta %{max} karaktereen artekoa."
@@ -869,7 +870,7 @@ eu:
   text_wiki_page_destroy_children: "Orri semeak eta beraien ondorengo guztiak ezabatu"
   text_wiki_page_reassign_children: "Orri semeak orri guraso honetara esleitu"
   text_own_membership_delete_confirmation: "Zure baimen batzuk (edo guztiak) kentzera zoaz eta baliteke horren ondoren proiektu hau ezin editatzea.\n Ziur zaude jarraitu nahi duzula?"
-  
+
   default_role_manager: Kudeatzailea
   default_role_developer: Garatzailea
   default_role_reporter: Berriemailea
@@ -891,7 +892,7 @@ eu:
   default_priority_immediate: Berehalakoa
   default_activity_design: Diseinua
   default_activity_development: Garapena
-  
+
   enumeration_issue_priorities: Zeregin lehentasunak
   enumeration_doc_categories: Dokumentu kategoriak
   enumeration_activities: Jarduerak (denbora kontrola))
@@ -1010,3 +1011,58 @@ eu:
   button_export: Export
   label_export_options: "%{export_format} export options"
   error_attachment_too_big: This file cannot be uploaded because it exceeds the maximum allowed file size (%{max_size})
+  notice_failed_to_save_time_entries: "Failed to save %{count} time entrie(s) on %{total} selected: %{ids}."
+  label_x_issues:
+    zero:  0 zeregina
+    one:   1 zeregina
+    other: "%{count} zereginak"
+  label_repository_new: New repository
+  field_repository_is_default: Main repository
+  label_copy_attachments: Copy attachments
+  label_item_position: "%{position}/%{count}"
+  label_completed_versions: Completed versions
+  text_project_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_multiple: Multiple values
+  setting_commit_cross_project_ref: Allow issues of all the other projects to be referenced and fixed
+  text_issue_conflict_resolution_add_notes: Add my notes and discard my other changes
+  text_issue_conflict_resolution_overwrite: Apply my changes anyway (previous notes will be kept but some changes may be overwritten)
+  notice_issue_update_conflict: The issue has been updated by an other user while you were editing it.
+  text_issue_conflict_resolution_cancel: Discard all my changes and redisplay %{link}
+  permission_manage_related_issues: Manage related issues
+  field_auth_source_ldap_filter: LDAP filter
+  label_search_for_watchers: Search for watchers to add
+  notice_account_deleted: Your account has been permanently deleted.
+  setting_unsubscribe: Allow users to delete their own account
+  button_delete_my_account: Delete my account
+  text_account_destroy_confirmation: |-
+    Are you sure you want to proceed?
+    Your account will be permanently deleted, with no way to reactivate it.
+  error_session_expired: Your session has expired. Please login again.
+  text_session_expiration_settings: "Warning: changing these settings may expire the current sessions including yours."
+  setting_session_lifetime: Session maximum lifetime
+  setting_session_timeout: Session inactivity timeout
+  label_session_expiration: Session expiration
+  permission_close_project: Close / reopen the project
+  label_show_closed_projects: View closed projects
+  button_close: Close
+  button_reopen: Reopen
+  project_status_active: active
+  project_status_closed: closed
+  project_status_archived: archived
+  text_project_closed: This project is closed and read-only.
+  notice_user_successful_create: User %{id} created.
+  field_core_fields: Standard fields
+  field_timeout: Timeout (in seconds)
+  setting_thumbnails_enabled: Display attachment thumbnails
+  setting_thumbnails_size: Thumbnails size (in pixels)
+  label_status_transitions: Status transitions
+  label_fields_permissions: Fields permissions
+  label_readonly: Read-only
+  label_required: Required
+  text_repository_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_board_parent: Parent forum
+  label_attribute_of_project: Project's %{name}
+  label_attribute_of_author: Author's %{name}
+  label_attribute_of_assigned_to: Assignee's %{name}
+  label_attribute_of_fixed_version: Target version's %{name}
+  label_copy_subtasks: Copy subtasks

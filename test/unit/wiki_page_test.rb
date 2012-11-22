@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -85,16 +85,18 @@ class WikiPageTest < ActiveSupport::TestCase
     # A page that doesn't exist
     page.parent_title = 'Unknown title'
     assert !page.save
-    assert_equal I18n.translate('activerecord.errors.messages.invalid'), page.errors.on(:parent_title)
+    assert_include I18n.translate('activerecord.errors.messages.invalid'),
+                   page.errors[:parent_title]
     # A child page
     page.parent_title = 'Page_with_an_inline_image'
     assert !page.save
-    assert_equal I18n.translate('activerecord.errors.messages.circular_dependency'), page.errors.on(:parent_title)
+    assert_include I18n.translate('activerecord.errors.messages.circular_dependency'),
+                   page.errors[:parent_title]
     # The page itself
     page.parent_title = 'CookBook_documentation'
     assert !page.save
-    assert_equal I18n.translate('activerecord.errors.messages.circular_dependency'), page.errors.on(:parent_title)
-
+    assert_include I18n.translate('activerecord.errors.messages.circular_dependency'),
+                   page.errors[:parent_title]
     page.parent_title = 'Another_page'
     assert page.save
   end
@@ -123,9 +125,10 @@ class WikiPageTest < ActiveSupport::TestCase
   end
 
   def test_updated_on_eager_load
-    page = WikiPage.with_updated_on.first
+    page = WikiPage.with_updated_on.first(:order => 'id')
     assert page.is_a?(WikiPage)
     assert_not_nil page.read_attribute(:updated_on)
+    assert_equal Time.gm(2007, 3, 6, 23, 10, 51), page.content.updated_on
     assert_equal page.content.updated_on, page.updated_on
   end
 end

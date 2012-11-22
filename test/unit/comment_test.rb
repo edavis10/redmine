@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -33,18 +33,19 @@ class CommentTest < ActiveSupport::TestCase
   end
 
   def test_create_should_send_notification
-    Setting.notified_events << 'news_comment_added'
     Watcher.create!(:watchable => @news, :user => @jsmith)
 
-    assert_difference 'ActionMailer::Base.deliveries.size' do
-      Comment.create!(:commented => @news, :author => @jsmith, :comments => "my comment")
+    with_settings :notified_events => %w(news_comment_added) do
+      assert_difference 'ActionMailer::Base.deliveries.size' do
+        Comment.create!(:commented => @news, :author => @jsmith, :comments => "my comment")
+      end
     end
   end
 
   def test_validate
     comment = Comment.new(:commented => @news)
     assert !comment.save
-    assert_equal 2, comment.errors.length
+    assert_equal 2, comment.errors.count
   end
 
   def test_destroy

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,9 +17,15 @@
 
 require File.expand_path('../../../../test_helper', __FILE__)
 
-class Redmine::Hook::ManagerTest < ActiveSupport::TestCase
-
-  fixtures :issues
+class Redmine::Hook::ManagerTest < ActionView::TestCase
+  fixtures :projects, :users, :members, :member_roles, :roles,
+           :groups_users,
+           :trackers, :projects_trackers,
+           :enabled_modules,
+           :versions,
+           :issue_statuses, :issue_categories, :issue_relations, :workflows,
+           :enumerations,
+           :issues
 
   # Some hooks that are manually registered in these tests
   class TestHook < Redmine::Hook::ViewListener; end
@@ -89,7 +95,7 @@ class Redmine::Hook::ManagerTest < ActiveSupport::TestCase
 
   def test_call_hook_with_context
     @hook_module.add_listener(TestHook3)
-    assert_equal ['Context keys: bar, controller, foo, project, request.'],
+    assert_equal ['Context keys: bar, controller, foo, hook_caller, project, request.'],
                  hook_helper.call_hook(:view_layouts_base_html_head, :foo => 1, :bar => 'a')
   end
 
@@ -148,17 +154,17 @@ class Redmine::Hook::ManagerTest < ActiveSupport::TestCase
     issue = Issue.find(1)
 
     ActionMailer::Base.deliveries.clear
-    Mailer.deliver_issue_add(issue)
+    Mailer.issue_add(issue).deliver
     mail = ActionMailer::Base.deliveries.last
 
     @hook_module.add_listener(TestLinkToHook)
     hook_helper.call_hook(:view_layouts_base_html_head)
 
     ActionMailer::Base.deliveries.clear
-    Mailer.deliver_issue_add(issue)
+    Mailer.issue_add(issue).deliver
     mail2 = ActionMailer::Base.deliveries.last
 
-    assert_equal mail.body, mail2.body
+    assert_equal mail_body(mail), mail_body(mail2)
   end
 
   def hook_helper

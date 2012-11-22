@@ -1,7 +1,7 @@
 # encoding: utf-8
 #
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -56,7 +56,7 @@ class WikiTest < ActiveSupport::TestCase
 
   def test_find_page_with_backslashes
     wiki = Wiki.find(1)
-    page = WikiPage.generate!(:wiki => wiki, :title => '2009\\02\\09')
+    page = WikiPage.create!(:wiki => wiki, :title => '2009\\02\\09')
     assert_equal page, wiki.find_page('2009\\02\\09')
   end
 
@@ -78,8 +78,10 @@ class WikiTest < ActiveSupport::TestCase
   end
 
   def test_titleize
+    ja_test = "\xe3\x83\x86\xe3\x82\xb9\xe3\x83\x88"
+    ja_test.force_encoding('UTF-8') if ja_test.respond_to?(:force_encoding)
     assert_equal 'Page_title_with_CAPITALES', Wiki.titleize('page title with CAPITALES')
-    assert_equal 'テスト', Wiki.titleize('テスト')
+    assert_equal ja_test, Wiki.titleize(ja_test)
   end
 
   context "#sidebar" do

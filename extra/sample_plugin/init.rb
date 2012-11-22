@@ -1,7 +1,4 @@
-# Redmine sample plugin
-require 'redmine'
-
-RAILS_DEFAULT_LOGGER.info 'Starting Example plugin for RedMine'
+Rails.logger.info 'Starting Example plugin for RedMine'
 
 Redmine::Plugin.register :sample_plugin do
   name 'Example plugin'
@@ -24,7 +21,7 @@ Redmine::Plugin.register :sample_plugin do
 
   # A new item is added to the project menu
   menu :project_menu, :sample_plugin, { :controller => 'example', :action => 'say_hello' }, :caption => 'Sample'
-  
+
   # Meetings are added to the activity view
   activity_provider :meetings
 end

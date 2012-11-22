@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,6 +20,8 @@ require File.expand_path('../../test_helper', __FILE__)
 class RepositoryBazaarTest < ActiveSupport::TestCase
   fixtures :projects
 
+  include Redmine::I18n
+
   REPOSITORY_PATH = Rails.root.join('tmp/test/bazaar_repository/trunk').to_s
   REPOSITORY_PATH.gsub!(/\/+/, '/')
   NUM_REV = 4
@@ -32,6 +34,32 @@ class RepositoryBazaarTest < ActiveSupport::TestCase
     assert @repository
   end
 
+  def test_blank_path_to_repository_error_message
+    set_language_if_valid 'en'
+    repo = Repository::Bazaar.new(
+                          :project      => @project,
+                          :identifier   => 'test',
+                          :log_encoding => 'UTF-8'
+                        )
+    assert !repo.save
+    assert_include "Path to repository can't be blank",
+                   repo.errors.full_messages
+  end
+
+  def test_blank_path_to_repository_error_message_fr
+    set_language_if_valid 'fr'
+    str = "Chemin du d\xc3\xa9p\xc3\xb4t doit \xc3\xaatre renseign\xc3\xa9(e)"
+    str.force_encoding('UTF-8') if str.respond_to?(:force_encoding)
+    repo = Repository::Bazaar.new(
+                          :project      => @project,
+                          :url          => "",
+                          :identifier   => 'test',
+                          :log_encoding => 'UTF-8'
+                        )
+    assert !repo.save
+    assert_include str, repo.errors.full_messages
+  end
+
   if File.directory?(REPOSITORY_PATH)
     def test_fetch_changesets_from_scratch
       assert_equal 0, @repository.changesets.count
@@ -39,7 +67,7 @@ class RepositoryBazaarTest < ActiveSupport::TestCase
       @project.reload
 
       assert_equal NUM_REV, @repository.changesets.count
-      assert_equal 9, @repository.changes.count
+      assert_equal 9, @repository.filechanges.count
       assert_equal 'Initial import', @repository.changesets.find_by_revision('1').comments
     end
 
@@ -60,6 +88,7 @@ class RepositoryBazaarTest < ActiveSupport::TestCase
 
     def test_entries
       entries = @repository.entries
+      assert_kind_of Redmine::Scm::Adapters::Entries, entries
       assert_equal 2, entries.size
 
       assert_equal 'dir', entries[0].kind

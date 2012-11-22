@@ -1,4 +1,4 @@
-# Redmine catalan translation: 
+# Redmine catalan translation:
 # by Joan Duran
 
 ca:
@@ -12,10 +12,10 @@ ca:
       default: "%d-%m-%Y"
       short: "%e de %b"
       long: "%a, %e de %b de %Y"
-      
+
     day_names: [Diumenge, Dilluns, Dimarts, Dimecres, Dijous, Divendres, Dissabte]
     abbr_day_names: [dg, dl, dt, dc, dj, dv, ds]
-      
+
     # Don't forget the nil at the beginning; there's no such thing as a 0th month
     month_names: [~, Gener, Febrer, Març, Abril, Maig, Juny, Juliol, Agost, Setembre, Octubre, Novembre, Desembre]
     abbr_month_names: [~, Gen, Feb, Mar, Abr, Mai, Jun, Jul, Ago, Set, Oct, Nov, Des]
@@ -33,7 +33,7 @@ ca:
       long: "%a, %e de %b de %Y, %H:%M"
     am: "am"
     pm: "pm"
-      
+
   datetime:
     distance_in_words:
       half_a_minute: "mig minut"
@@ -52,6 +52,9 @@ ca:
       about_x_hours:
         one:   "aproximadament 1 hora"
         other: "aproximadament %{count} hores"
+      x_hours:
+        one:   "1 hour"
+        other: "%{count} hours"
       x_days:
         one:   "1 dia"
         other: "%{count} dies"
@@ -80,7 +83,7 @@ ca:
     human:
       format:
         delimiter: ""
-        precision: 1
+        precision: 3
       storage_units:
         format: "%n %u"
         units:
@@ -92,13 +95,12 @@ ca:
           gb: "GB"
           tb: "TB"
 
-        
 # Used in array.to_sentence.
   support:
     array:
       sentence_connector: "i"
       skip_last_comma: false
-      
+
   activerecord:
     errors:
       template:
@@ -132,7 +134,7 @@ ca:
         cant_link_an_issue_with_a_descendant: "Un assumpte no es pot enllaçar a una de les seves subtasques"
 
   actionview_instancetag_blank_option: Seleccioneu
-  
+
   general_text_No: 'No'
   general_text_Yes: 'Si'
   general_text_no: 'no'
@@ -143,7 +145,7 @@ ca:
   general_csv_encoding: ISO-8859-15
   general_pdf_encoding: UTF-8
   general_first_day_of_week: '1'
-  
+
   notice_account_updated: "El compte s'ha actualitzat correctament."
   notice_account_invalid_creditentials: Usuari o contrasenya invàlid
   notice_account_password_updated: "La contrasenya s'ha modificat correctament."
@@ -172,7 +174,7 @@ ca:
   notice_unable_delete_version: "No s'ha pogut suprimir la versió."
   notice_unable_delete_time_entry: "No s'ha pogut suprimir l'entrada del registre de temps."
   notice_issue_done_ratios_updated: "S'ha actualitzat el tant per cent dels assumptes."
-  
+
   error_can_t_load_default_data: "No s'ha pogut carregar la configuració predeterminada: %{value} "
   error_scm_not_found: "No s'ha trobat l'entrada o la revisió en el dipòsit."
   error_scm_command_failed: "S'ha produït un error en intentar accedir al dipòsit: %{value}"
@@ -191,7 +193,7 @@ ca:
   error_unable_delete_issue_status: "No s'ha pogut suprimir l'estat de l'assumpte"
   error_unable_to_connect: "No s'ha pogut connectar (%{value})"
   warning_attachments_not_saved: "No s'han pogut desar %{count} fitxers."
-  
+
   mail_subject_lost_password: "Contrasenya de %{value}"
   mail_body_lost_password: "Per a canviar la contrasenya, feu clic en l'enllaç següent:"
   mail_subject_register: "Activació del compte de %{value}"
@@ -206,17 +208,17 @@ ca:
   mail_body_wiki_content_added: "En %{author} ha afegit la pàgina wiki «%{id}»."
   mail_subject_wiki_content_updated: "S'ha actualitzat la pàgina wiki «%{id}»"
   mail_body_wiki_content_updated: "En %{author} ha actualitzat la pàgina wiki «%{id}»."
-  
+
   gui_validation_error: 1 error
   gui_validation_error_plural: "%{count} errors"
-  
+
   field_name: Nom
   field_description: Descripció
   field_summary: Resum
   field_is_required: Necessari
   field_firstname: Nom
   field_lastname: Cognom
-  field_mail: Correu electrònic 
+  field_mail: Correu electrònic
   field_filename: Fitxer
   field_filesize: Mida
   field_downloads: Baixades
@@ -303,7 +305,7 @@ ca:
   field_group_by: "Agrupa els resultats per"
   field_sharing: Compartició
   field_parent_issue: "Tasca pare"
-  
+
   setting_app_title: "Títol de l'aplicació"
   setting_app_subtitle: "Subtítol de l'aplicació"
   setting_welcome_text: Text de benvinguda
@@ -355,7 +357,7 @@ ca:
   setting_start_of_week: "Inicia les setmanes en"
   setting_rest_api_enabled: "Habilita el servei web REST"
   setting_cache_formatted_text: Cache formatted text
-  
+
   permission_add_project: "Crea projectes"
   permission_add_subprojects: "Crea subprojectes"
   permission_edit_project: Edita el projecte
@@ -411,7 +413,7 @@ ca:
   permission_delete_own_messages: Suprimeix els missatges propis
   permission_export_wiki_pages: "Exporta les pàgines wiki"
   permission_manage_subtasks: "Gestiona subtasques"
-  
+
   project_module_issue_tracking: "Seguidor d'assumptes"
   project_module_time_tracking: Seguidor de temps
   project_module_news: Noticies
@@ -422,7 +424,7 @@ ca:
   project_module_boards: Taulers
   project_module_calendar: Calendari
   project_module_gantt: Gantt
-  
+
   label_user: Usuari
   label_user_plural: Usuaris
   label_user_new: Usuari nou
@@ -607,7 +609,7 @@ ca:
   label_this_year: aquest any
   label_date_range: Abast de les dates
   label_less_than_ago: fa menys de
-  label_more_than_ago: fa més de 
+  label_more_than_ago: fa més de
   label_ago: fa
   label_contains: conté
   label_not_contains: no conté
@@ -780,7 +782,7 @@ ca:
   label_profile: Perfil
   label_subtask_plural: Subtasques
   label_project_copy_notifications: "Envia notificacions de correu electrònic durant la còpia del projecte"
-  
+
   button_login: Entra
   button_submit: Tramet
   button_save: Desa
@@ -824,17 +826,17 @@ ca:
   button_quote: Cita
   button_duplicate: Duplica
   button_show: Mostra
-  
+
   status_active: actiu
   status_registered: informat
   status_locked: bloquejat
-  
+
   version_status_open: oberta
   version_status_locked: bloquejada
   version_status_closed: tancada
 
   field_active: Actiu
-  
+
   text_select_mail_notifications: "Seleccioneu les accions per les quals s'hauria d'enviar una notificació per correu electrònic."
   text_regexp_info: ex. ^[A-Z0-9]+$
   text_min_max_length_info: 0 significa sense restricció
@@ -849,7 +851,6 @@ ca:
   text_tip_issue_begin_day: "tasca que s'inicia aquest dia"
   text_tip_issue_end_day: tasca que finalitza aquest dia
   text_tip_issue_begin_end_day: "tasca que s'inicia i finalitza aquest dia"
-  text_project_identifier_info: "Es permeten lletres en minúscules (a-z), números i guions.<br />Un cop desat, l'identificador no es pot modificar."
   text_caracters_maximum: "%{count} caràcters com a màxim."
   text_caracters_minimum: "Com a mínim ha de tenir %{count} caràcters."
   text_length_between: "Longitud entre %{min} i %{max} caràcters."
@@ -892,7 +893,7 @@ ca:
   text_own_membership_delete_confirmation: "Esteu a punt de suprimir algun o tots els vostres permisos i potser no podreu editar més aquest projecte.\nSegur que voleu continuar?"
   text_zoom_in: Redueix
   text_zoom_out: Amplia
-  
+
   default_role_manager: Gestor
   default_role_developer: Desenvolupador
   default_role_reporter: Informador
@@ -914,7 +915,7 @@ ca:
   default_priority_immediate: Immediata
   default_activity_design: Disseny
   default_activity_development: Desenvolupament
-  
+
   enumeration_issue_priorities: Prioritat dels assumptes
   enumeration_doc_categories: Categories del document
   enumeration_activities: Activitats (seguidor de temps)
@@ -1009,3 +1010,58 @@ ca:
   button_export: Export
   label_export_options: "%{export_format} export options"
   error_attachment_too_big: This file cannot be uploaded because it exceeds the maximum allowed file size (%{max_size})
+  notice_failed_to_save_time_entries: "Failed to save %{count} time entrie(s) on %{total} selected: %{ids}."
+  label_x_issues:
+    zero:  0 assumpte
+    one:   1 assumpte
+    other: "%{count} assumptes"
+  label_repository_new: New repository
+  field_repository_is_default: Main repository
+  label_copy_attachments: Copy attachments
+  label_item_position: "%{position}/%{count}"
+  label_completed_versions: Completed versions
+  text_project_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_multiple: Multiple values
+  setting_commit_cross_project_ref: Allow issues of all the other projects to be referenced and fixed
+  text_issue_conflict_resolution_add_notes: Add my notes and discard my other changes
+  text_issue_conflict_resolution_overwrite: Apply my changes anyway (previous notes will be kept but some changes may be overwritten)
+  notice_issue_update_conflict: The issue has been updated by an other user while you were editing it.
+  text_issue_conflict_resolution_cancel: Discard all my changes and redisplay %{link}
+  permission_manage_related_issues: Manage related issues
+  field_auth_source_ldap_filter: LDAP filter
+  label_search_for_watchers: Search for watchers to add
+  notice_account_deleted: Your account has been permanently deleted.
+  setting_unsubscribe: Allow users to delete their own account
+  button_delete_my_account: Delete my account
+  text_account_destroy_confirmation: |-
+    Are you sure you want to proceed?
+    Your account will be permanently deleted, with no way to reactivate it.
+  error_session_expired: Your session has expired. Please login again.
+  text_session_expiration_settings: "Warning: changing these settings may expire the current sessions including yours."
+  setting_session_lifetime: Session maximum lifetime
+  setting_session_timeout: Session inactivity timeout
+  label_session_expiration: Session expiration
+  permission_close_project: Close / reopen the project
+  label_show_closed_projects: View closed projects
+  button_close: Close
+  button_reopen: Reopen
+  project_status_active: active
+  project_status_closed: closed
+  project_status_archived: archived
+  text_project_closed: This project is closed and read-only.
+  notice_user_successful_create: User %{id} created.
+  field_core_fields: Standard fields
+  field_timeout: Timeout (in seconds)
+  setting_thumbnails_enabled: Display attachment thumbnails
+  setting_thumbnails_size: Thumbnails size (in pixels)
+  label_status_transitions: Status transitions
+  label_fields_permissions: Fields permissions
+  label_readonly: Read-only
+  label_required: Required
+  text_repository_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_board_parent: Parent forum
+  label_attribute_of_project: Project's %{name}
+  label_attribute_of_author: Author's %{name}
+  label_attribute_of_assigned_to: Assignee's %{name}
+  label_attribute_of_fixed_version: Target version's %{name}
+  label_copy_subtasks: Copy subtasks

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,12 +21,12 @@ class Repository::Bazaar < Repository
   attr_protected :root_url
   validates_presence_of :url, :log_encoding
 
-  def self.human_attribute_name(attribute_key_name)
-    attr_name = attribute_key_name
+  def self.human_attribute_name(attribute_key_name, *args)
+    attr_name = attribute_key_name.to_s
     if attr_name == "url"
       attr_name = "path_to_repository"
     end
-    super(attr_name)
+    super(attr_name, *args)
   end
 
   def self.scm_adapter_class
@@ -63,6 +63,8 @@ class Repository::Bazaar < Repository
         end
       end
     end
+    load_entries_changesets(entries)
+    entries
   end
 
   def fetch_changesets

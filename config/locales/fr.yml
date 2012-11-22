@@ -53,6 +53,9 @@ fr:
       about_x_hours:
         one:   "environ une heure"
         other: "environ %{count} heures"
+      x_hours:
+        one:   "une heure"
+        other: "%{count} heures"
       x_days:
         one:   "un jour"
         other: "%{count} jours"
@@ -91,7 +94,7 @@ fr:
         format: '%n %u'
     human:
       format:
-        precision: 2
+        precision: 3
       storage_units:
         format: "%n %u"
         units:
@@ -178,6 +181,7 @@ fr:
   notice_email_error: "Erreur lors de l'envoi de l'email (%{value})"
   notice_feeds_access_key_reseted: "Votre clé d'accès aux flux RSS a été réinitialisée."
   notice_failed_to_save_issues: "%{count} demande(s) sur les %{total} sélectionnées n'ont pas pu être mise(s) à jour : %{ids}."
+  notice_failed_to_save_time_entries: "%{count} temps passé(s) sur les %{total} sélectionnés n'ont pas pu être mis à jour: %{ids}."
   notice_no_issue_selected: "Aucune demande sélectionnée ! Cochez les demandes que vous voulez mettre à jour."
   notice_account_pending: "Votre compte a été créé et attend l'approbation de l'administrateur."
   notice_default_data_loaded: Paramétrage par défaut chargé avec succès.
@@ -185,7 +189,10 @@ fr:
   notice_issue_done_ratios_updated: L'avancement des demandes a été mis à jour.
   notice_api_access_key_reseted: Votre clé d'accès API a été réinitialisée.
   notice_gantt_chart_truncated: "Le diagramme a été tronqué car il excède le nombre maximal d'éléments pouvant être affichés (%{max})"
-  notice_issue_successful_create: "La demande %{id} a été créée."
+  notice_issue_successful_create: "Demande %{id} créée."
+  notice_issue_update_conflict: "La demande a été mise à jour par un autre utilisateur pendant que vous la modifiez."
+  notice_account_deleted: "Votre compte a été définitivement supprimé."
+  notice_user_successful_create: "Utilisateur %{id} créé."
 
   error_can_t_load_default_data: "Une erreur s'est produite lors du chargement du paramétrage : %{value}"
   error_scm_not_found: "L'entrée et/ou la révision demandée n'existe pas dans le dépôt."
@@ -198,6 +205,7 @@ fr:
   error_workflow_copy_target: 'Veuillez sélectionner les trackers et rôles cibles'
   error_issue_done_ratios_not_updated: L'avancement des demandes n'a pas pu être mis à jour.
   error_attachment_too_big: Ce fichier ne peut pas être attaché car il excède la taille maximale autorisée (%{max_size})
+  error_session_expired: "Votre session a expiré. Veuillez vous reconnecter."
 
   warning_attachments_not_saved: "%{count} fichier(s) n'ont pas pu être sauvegardés."
 
@@ -316,6 +324,12 @@ fr:
   field_issues_visibility: Visibilité des demandes
   field_is_private: Privée
   field_commit_logs_encoding: Encodage des messages de commit
+  field_repository_is_default: Dépôt principal
+  field_multiple: Valeurs multiples
+  field_auth_source_ldap_filter: Filtre LDAP
+  field_core_fields: Champs standards
+  field_timeout: "Timeout (en secondes)"
+  field_board_parent: Forum parent
 
   setting_app_title: Titre de l'application
   setting_app_subtitle: Sous-titre de l'application
@@ -373,10 +387,17 @@ fr:
   setting_gantt_items_limit: Nombre maximum d'éléments affichés sur le gantt
   setting_issue_group_assignment: Permettre l'assignement des demandes aux groupes
   setting_default_issue_start_date_to_creation_date: Donner à la date de début d'une nouvelle demande la valeur de la date du jour
+  setting_commit_cross_project_ref: Permettre le référencement et la résolution des demandes de tous les autres projets
+  setting_unsubscribe: Permettre aux utilisateurs de supprimer leur propre compte
+  setting_session_lifetime: Durée de vie maximale des sessions
+  setting_session_timeout: Durée maximale d'inactivité
+  setting_thumbnails_enabled: Afficher les vignettes des images
+  setting_thumbnails_size: Taille des vignettes (en pixels)
 
   permission_add_project: Créer un projet
   permission_add_subprojects: Créer des sous-projets
   permission_edit_project: Modifier le projet
+  permission_close_project: Fermer / réouvrir le projet
   permission_select_project_modules: Choisir les modules
   permission_manage_members: Gérer les membres
   permission_manage_versions: Gérer les versions
@@ -431,6 +452,7 @@ fr:
   permission_export_wiki_pages: Exporter les pages
   permission_manage_project_activities: Gérer les activités
   permission_manage_subtasks: Gérer les sous-tâches
+  permission_manage_related_issues: Gérer les demandes associées
 
   project_module_issue_tracking: Suivi des demandes
   project_module_time_tracking: Suivi du temps passé
@@ -567,17 +589,21 @@ fr:
   label_closed_issues: fermé
   label_closed_issues_plural: fermés
   label_x_open_issues_abbr_on_total:
-    zero:  0 ouvert sur %{total}
-    one:   1 ouvert sur %{total}
-    other: "%{count} ouverts sur %{total}"
+    zero:  0 ouverte sur %{total}
+    one:   1 ouverte sur %{total}
+    other: "%{count} ouvertes sur %{total}"
   label_x_open_issues_abbr:
-    zero:  0 ouvert
-    one:   1 ouvert
-    other: "%{count} ouverts"
+    zero:  0 ouverte
+    one:   1 ouverte
+    other: "%{count} ouvertes"
   label_x_closed_issues_abbr:
-    zero:  0 fermé
-    one:   1 fermé
-    other: "%{count} fermés"
+    zero:  0 fermée
+    one:   1 fermée
+    other: "%{count} fermées"
+  label_x_issues:
+    zero:  0 demande
+    one:   1 demande
+    other: "%{count} demandes"
   label_total: Total
   label_permissions: Permissions
   label_current_status: Statut actuel
@@ -635,6 +661,7 @@ fr:
   label_not_contains: ne contient pas
   label_day_plural: jours
   label_repository: Dépôt
+  label_repository_new: Nouveau dépôt
   label_repository_plural: Dépôts
   label_browse: Parcourir
   label_modification: "%{count} modification"
@@ -793,7 +820,7 @@ fr:
   label_missing_api_access_key: Clé d'accès API manquante
   label_missing_feeds_access_key: Clé d'accès RSS manquante
   label_close_versions: Fermer les versions terminées
-  label_revision_id: Revision %{value}
+  label_revision_id: Révision %{value}
   label_profile: Profil
   label_subtask_plural: Sous-tâches
   label_project_copy_notifications: Envoyer les notifications durant la copie du projet
@@ -805,6 +832,20 @@ fr:
   label_issues_visibility_public: Toutes les demandes non privées
   label_issues_visibility_own: Demandes créées par ou assignées à l'utilisateur
   label_export_options: Options d'exportation %{export_format}
+  label_copy_attachments: Copier les fichiers
+  label_copy_subtasks: Copier les sous-tâches
+  label_item_position: "%{position} sur %{count}"
+  label_completed_versions: Versions passées
+  label_session_expiration: Expiration des sessions
+  label_show_closed_projects: Voir les projets fermés
+  label_status_transitions: Changements de statut
+  label_fields_permissions: Permissions sur les champs
+  label_readonly: Lecture
+  label_required: Obligatoire
+  label_attribute_of_project: "%{name} du projet"
+  label_attribute_of_author: "%{name} de l'auteur"
+  label_attribute_of_assigned_to: "%{name} de l'assigné"
+  label_attribute_of_fixed_version: "%{name} de la version cible"
 
   button_login: Connexion
   button_submit: Soumettre
@@ -853,10 +894,17 @@ fr:
   button_show: Afficher
   button_edit_section: Modifier cette section
   button_export: Exporter
+  button_delete_my_account: Supprimer mon compte
+  button_close: Fermer
+  button_reopen: Réouvrir
 
   status_active: actif
   status_registered: enregistré
   status_locked: verrouillé
+
+  project_status_active: actif
+  project_status_closed: fermé
+  project_status_archived: archivé
 
   version_status_open: ouvert
   version_status_locked: verrouillé
@@ -872,7 +920,7 @@ fr:
   text_tip_issue_begin_day: tâche commençant ce jour
   text_tip_issue_end_day: tâche finissant ce jour
   text_tip_issue_begin_end_day: tâche commençant et finissant ce jour
-  text_project_identifier_info: 'Seuls les lettres minuscules (a-z), chiffres et tirets sont autorisés.<br />Un fois sauvegardé, l''identifiant ne pourra plus être modifié.'
+  text_project_identifier_info: 'Seuls les lettres minuscules (a-z), chiffres, tirets et underscore sont autorisés.<br />Un fois sauvegardé, l''identifiant ne pourra plus être modifié.'
   text_caracters_maximum: "%{count} caractères maximum."
   text_caracters_minimum: "%{count} caractères minimum."
   text_length_between: "Longueur comprise entre %{min} et %{max} caractères."
@@ -916,6 +964,12 @@ fr:
   text_wiki_page_reassign_children: "Réaffecter les sous-pages à cette page"
   text_own_membership_delete_confirmation: "Vous allez supprimer tout ou partie de vos permissions sur ce projet et ne serez peut-être plus autorisé à modifier ce projet.\nEtes-vous sûr de vouloir continuer ?"
   text_warn_on_leaving_unsaved: "Cette page contient du texte non sauvegardé qui sera perdu si vous quittez la page."
+  text_issue_conflict_resolution_overwrite: "Appliquer quand même ma mise à jour (les notes précédentes seront conservées mais des changements pourront être écrasés)"
+  text_issue_conflict_resolution_add_notes: "Ajouter mes notes et ignorer mes autres changements"
+  text_issue_conflict_resolution_cancel: "Annuler ma mise à jour et réafficher %{link}"
+  text_account_destroy_confirmation: "Êtes-vous sûr de vouloir continuer ?\nVotre compte sera définitivement supprimé, sans aucune possibilité de le réactiver."
+  text_session_expiration_settings: "Attention : le changement de ces paramètres peut entrainer l'expiration des sessions utilisateurs en cours, y compris la vôtre."
+  text_project_closed: Ce projet est fermé et accessible en lecture seule.
 
   default_role_manager: "Manager "
   default_role_developer: "Développeur "
@@ -983,7 +1037,7 @@ fr:
   field_member_of_group: Groupe de l'assigné
   field_assigned_to_role: Rôle de l'assigné
   setting_emails_header: En-tête des emails
-  label_bulk_edit_selected_time_entries: Modifier les temps passés sélectionnées
+  label_bulk_edit_selected_time_entries: Modifier les temps passés sélectionnés
   text_time_entries_destroy_confirmation: "Etes-vous sûr de vouloir supprimer les temps passés sélectionnés ?"
   field_scm_path_encoding: Encodage des chemins
   text_scm_path_encoding_note: "Défaut : UTF-8"
@@ -1021,3 +1075,5 @@ fr:
   label_child_revision: Enfant
   error_scm_annotate_big_text_file: Cette entrée ne peut pas être annotée car elle excède la taille maximale.
   setting_repositories_encodings: Encodages des fichiers et des dépôts
+  label_search_for_watchers: Rechercher des observateurs
+  text_repository_identifier_info: 'Seuls les lettres minuscules (a-z), chiffres, tirets et underscore sont autorisés.<br />Un fois sauvegardé, l''identifiant ne pourra plus être modifié.'

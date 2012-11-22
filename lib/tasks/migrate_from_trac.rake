@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -85,11 +85,11 @@ namespace :redmine do
       end
 
       class TracComponent < ActiveRecord::Base
-        set_table_name :component
+        self.table_name = :component
       end
 
       class TracMilestone < ActiveRecord::Base
-        set_table_name :milestone
+        self.table_name = :milestone
         # If this attribute is set a milestone has a defined target timepoint
         def due
           if read_attribute(:due) && read_attribute(:due) > 0
@@ -114,11 +114,11 @@ namespace :redmine do
       end
 
       class TracTicketCustom < ActiveRecord::Base
-        set_table_name :ticket_custom
+        self.table_name = :ticket_custom
       end
 
       class TracAttachment < ActiveRecord::Base
-        set_table_name :attachment
+        self.table_name = :attachment
         set_inheritance_column :none
 
         def time; Time.at(read_attribute(:time)) end
@@ -159,16 +159,16 @@ namespace :redmine do
       end
 
       class TracTicket < ActiveRecord::Base
-        set_table_name :ticket
+        self.table_name = :ticket
         set_inheritance_column :none
 
         # ticket changes: only migrate status changes and comments
-        has_many :changes, :class_name => "TracTicketChange", :foreign_key => :ticket
-        has_many :attachments, :class_name => "TracAttachment",
-                               :finder_sql => "SELECT DISTINCT attachment.* FROM #{TracMigrate::TracAttachment.table_name}" +
-                                              " WHERE #{TracMigrate::TracAttachment.table_name}.type = 'ticket'" +
-                                              ' AND #{TracMigrate::TracAttachment.table_name}.id = \'#{TracMigrate::TracAttachment.connection.quote_string(id.to_s)}\''
+        has_many :ticket_changes, :class_name => "TracTicketChange", :foreign_key => :ticket
         has_many :customs, :class_name => "TracTicketCustom", :foreign_key => :ticket
+
+        def attachments
+          TracMigrate::TracAttachment.all(:conditions => ["type = 'ticket' AND id = ?", self.id.to_s])
+        end
 
         def ticket_type
           read_attribute(:type)
@@ -187,7 +187,12 @@ namespace :redmine do
       end
 
       class TracTicketChange < ActiveRecord::Base
-        set_table_name :ticket_change
+        self.table_name = :ticket_change
+
+        def self.columns
+          # Hides Trac field 'field' to prevent clash with AR field_changed? method (Rails 3.0)
+          super.select {|column| column.name.to_s != 'field'}
+        end
 
         def time; Time.at(read_attribute(:time)) end
       end
@@ -201,28 +206,27 @@ namespace :redmine do
                            CamelCase TitleIndex)
 
       class TracWikiPage < ActiveRecord::Base
-        set_table_name :wiki
+        self.table_name = :wiki
         set_primary_key :name
-
-        has_many :attachments, :class_name => "TracAttachment",
-                               :finder_sql => "SELECT DISTINCT attachment.* FROM #{TracMigrate::TracAttachment.table_name}" +
-                                      " WHERE #{TracMigrate::TracAttachment.table_name}.type = 'wiki'" +
-                                      ' AND #{TracMigrate::TracAttachment.table_name}.id = \'#{TracMigrate::TracAttachment.connection.quote_string(id.to_s)}\''
 
         def self.columns
           # Hides readonly Trac field to prevent clash with AR readonly? method (Rails 2.0)
           super.select {|column| column.name.to_s != 'readonly'}
         end
 
+        def attachments
+          TracMigrate::TracAttachment.all(:conditions => ["type = 'wiki' AND id = ?", self.id.to_s])
+        end
+
         def time; Time.at(read_attribute(:time)) end
       end
 
       class TracPermission < ActiveRecord::Base
-        set_table_name :permission
+        self.table_name = :permission
       end
 
       class TracSessionAttribute < ActiveRecord::Base
-        set_table_name :session_attribute
+        self.table_name = :session_attribute
       end
 
       def self.find_or_create_user(username, project_member = false)
@@ -231,7 +235,7 @@ namespace :redmine do
         u = User.find_by_login(username)
         if !u
           # Create a new user if not found
-          mail = username[0,limit_for(User, 'mail')]
+          mail = username[0, User::MAIL_LENGTH_LIMIT]
           if mail_attr = TracSessionAttribute.find_by_sid_and_name(username, 'email')
             mail = mail_attr.value
           end
@@ -249,7 +253,7 @@ namespace :redmine do
                        :firstname => fn[0, limit_for(User, 'firstname')],
                        :lastname => ln[0, limit_for(User, 'lastname')]
 
-          u.login = username[0,limit_for(User, 'login')].gsub(/[^a-z0-9_\-@\.]/i, '-')
+          u.login = username[0, User::LOGIN_LENGTH_LIMIT].gsub(/[^a-z0-9_\-@\.]/i, '-')
           u.password = 'trac'
           u.admin = true if TracPermission.find_by_username_and_action(username, 'admin')
           # finally, a default user is used if the new user is not valid
@@ -483,7 +487,7 @@ namespace :redmine do
             end
 
           # Comments and status/resolution changes
-          ticket.changes.group_by(&:time).each do |time, changeset|
+          ticket.ticket_changes.group_by(&:time).each do |time, changeset|
               status_change = changeset.select {|change| change.field == 'status'}.first
               resolution_change = changeset.select {|change| change.field == 'resolution'}.first
               comment_change = changeset.select {|change| change.field == 'comment'}.first
@@ -621,9 +625,9 @@ namespace :redmine do
 
       def self.set_trac_adapter(adapter)
         return false if adapter.blank?
-        raise "Unknown adapter: #{adapter}!" unless %w(sqlite sqlite3 mysql postgresql).include?(adapter)
+        raise "Unknown adapter: #{adapter}!" unless %w(sqlite3 mysql postgresql).include?(adapter)
         # If adapter is sqlite or sqlite3, make sure that trac.db exists
-        raise "#{trac_db_path} doesn't exist!" if %w(sqlite sqlite3).include?(adapter) && !File.exist?(trac_db_path)
+        raise "#{trac_db_path} doesn't exist!" if %w(sqlite3).include?(adapter) && !File.exist?(trac_db_path)
         @@trac_adapter = adapter
       rescue Exception => e
         puts e
@@ -686,8 +690,8 @@ namespace :redmine do
       end
 
       def self.connection_params
-        if %w(sqlite sqlite3).include?(trac_adapter)
-          {:adapter => trac_adapter,
+        if trac_adapter == 'sqlite3'
+          {:adapter => 'sqlite3',
            :database => trac_db_path}
         else
           {:adapter => trac_adapter,
@@ -746,8 +750,8 @@ namespace :redmine do
     DEFAULT_PORTS = {'mysql' => 3306, 'postgresql' => 5432}
 
     prompt('Trac directory') {|directory| TracMigrate.set_trac_directory directory.strip}
-    prompt('Trac database adapter (sqlite, sqlite3, mysql, postgresql)', :default => 'sqlite') {|adapter| TracMigrate.set_trac_adapter adapter}
-    unless %w(sqlite sqlite3).include?(TracMigrate.trac_adapter)
+    prompt('Trac database adapter (sqlite3, mysql2, postgresql)', :default => 'sqlite3') {|adapter| TracMigrate.set_trac_adapter adapter}
+    unless %w(sqlite3).include?(TracMigrate.trac_adapter)
       prompt('Trac database host', :default => 'localhost') {|host| TracMigrate.set_trac_db_host host}
       prompt('Trac database port', :default => DEFAULT_PORTS[TracMigrate.trac_adapter]) {|port| TracMigrate.set_trac_db_port port}
       prompt('Trac database name') {|name| TracMigrate.set_trac_db_name name}

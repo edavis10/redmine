@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -31,5 +31,17 @@ class DocumentCategoryTest < ActiveSupport::TestCase
 
   def test_option_name
     assert_equal :enumeration_doc_categories, DocumentCategory.new.option_name
+  end
+
+  def test_default
+    assert_nil DocumentCategory.find(:first, :conditions => { :is_default => true })
+    e = Enumeration.find_by_name('Technical documentation')
+    e.update_attributes(:is_default => true)
+    assert_equal 3, DocumentCategory.default.id
+  end
+
+  def test_force_default
+    assert_nil DocumentCategory.find(:first, :conditions => { :is_default => true })
+    assert_equal 1, DocumentCategory.default.id
   end
 end

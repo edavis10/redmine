@@ -87,7 +87,7 @@
         # 下列三個選項設定, 若有設定值將會取代 number.format 成為預設值
         # separator:
         delimiter: ""
-        precision: 1
+        precision: 3
         # 儲存單位輸出格式.
         # %u 是儲存單位, %n 是數值 (預設值: 2 MB)
       storage_units:
@@ -120,6 +120,9 @@
       about_x_hours:
         one: "約 1 小時"
         other: "約 %{count} 小時"
+      x_hours:
+        one:   "1 hour"
+        other: "%{count} hours"
       x_days:
         one: "1 天"
         other: "%{count} 天"
@@ -238,12 +241,13 @@
   notice_file_not_found: 您想要存取的頁面已經不存在或被搬移至其他位置。
   notice_locking_conflict: 資料已被其他使用者更新。
   notice_not_authorized: 你未被授權存取此頁面。
-  notice_not_authorized_archived_project: 您欲存取的專案已經被歸檔封存。
+  notice_not_authorized_archived_project: 您欲存取的專案已經被封存。
   notice_email_sent: "郵件已經成功寄送至以下收件者： %{value}"
   notice_email_error: "寄送郵件的過程中發生錯誤 (%{value})"
   notice_feeds_access_key_reseted: 您的 RSS 存取金鑰已被重新設定。
   notice_api_access_key_reseted: 您的 API 存取金鑰已被重新設定。
-  notice_failed_to_save_issues: " %{count} 個問題儲存失敗（總共選取 %{total} 個問題）： %{ids} 。"
+  notice_failed_to_save_issues: "無法儲存 %{count} 問題到下列所選取的 %{total} 個項目中： %{ids}。"
+  notice_failed_to_save_time_entries: "無法儲存 %{count} 個工時到下列所選取的 %{total} 個項目中： %{ids}。"
   notice_failed_to_save_members: "成員儲存失敗: %{errors}."
   notice_no_issue_selected: "未選擇任何問題！請勾選您想要編輯的問題。"
   notice_account_pending: "您的帳號已經建立，正在等待管理員的審核。"
@@ -253,6 +257,9 @@
   notice_issue_done_ratios_updated: 問題完成百分比已更新。
   notice_gantt_chart_truncated: "由於項目數量超過可顯示數量的最大值 (%{max})，故此甘特圖尾部已被截斷"
   notice_issue_successful_create: "問題 %{id} 已建立。"
+  notice_issue_update_conflict: "當您正在編輯這個問題的時候，它已經被其他人搶先一步更新過。"
+  notice_account_deleted: "您的帳戶已被永久刪除。"
+  notice_user_successful_create: "已建立用戶 %{id}。"
 
   error_can_t_load_default_data: "無法載入預設組態： %{value}"
   error_scm_not_found: "在儲存機制中找不到這個項目或修訂版。"
@@ -266,13 +273,14 @@
   error_can_not_delete_tracker: "此追蹤標籤已包含問題，無法被刪除。"
   error_can_not_remove_role: "此角色已被使用，無法將其刪除。"
   error_can_not_reopen_issue_on_closed_version: '指派給「已結束」版本的問題，無法再將其狀態變更為「進行中」'
-  error_can_not_archive_project: 此專案無法被歸檔
+  error_can_not_archive_project: 此專案無法被封存
   error_issue_done_ratios_not_updated: "問題完成百分比未更新。"
   error_workflow_copy_source: '請選擇一個來源問題追蹤標籤或角色'
   error_workflow_copy_target: '請選擇一個（或多個）目的問題追蹤標籤或角色'
   error_unable_delete_issue_status: '無法刪除問題狀態'
   error_unable_to_connect: "無法連線至（%{value}）"
   error_attachment_too_big: "這個檔案無法被上傳，因為它已經超過最大的檔案大小 (%{max_size})"
+  error_session_expired: "您的工作階段已經過期。請重新登入。"
   warning_attachments_not_saved: "%{count} 個附加檔案無法被儲存。"
 
   mail_subject_lost_password: 您的 Redmine 網站密碼
@@ -385,7 +393,7 @@
   field_content: 內容
   field_group_by: 結果分組方式
   field_sharing: 共用
-  field_parent_issue: 父任務
+  field_parent_issue: 父問題
   field_member_of_group: "被指派者的群組"
   field_assigned_to_role: "被指派者的角色"
   field_text: 內容文字
@@ -399,6 +407,12 @@
   field_root_directory: 根資料夾
   field_cvsroot: CVSROOT
   field_cvs_module: 模組
+  field_repository_is_default: 主要儲存機制
+  field_multiple: 多重值
+  field_auth_source_ldap_filter: LDAP 篩選器
+  field_core_fields: 標準欄位
+  field_timeout: "逾時 (單位: 秒)"
+  field_board_parent: 父論壇
 
   setting_app_title: 標題
   setting_app_subtitle: 副標題
@@ -459,10 +473,17 @@
   setting_gantt_items_limit: 甘特圖中項目顯示數量的最大值
   setting_issue_group_assignment: 允許問題被指派至群組
   setting_default_issue_start_date_to_creation_date: 設定新問題的起始日期為今天的日期
+  setting_commit_cross_project_ref: 允許關聯並修正其他專案的問題
+  setting_unsubscribe: 允許用戶取消註冊（刪除帳戶）
+  setting_session_lifetime: 工作階段存留時間最大值
+  setting_session_timeout: 工作階段無活動逾時時間
+  setting_thumbnails_enabled: 顯示附加檔案的縮圖
+  setting_thumbnails_size: "縮圖大小 (單位: 像素 pixels)"
 
   permission_add_project: 建立專案
   permission_add_subprojects: 建立子專案
   permission_edit_project: 編輯專案
+  permission_close_project: 關閉 / 重新開啟專案
   permission_select_project_modules: 選擇專案模組
   permission_manage_members: 管理成員
   permission_manage_project_activities: 管理專案活動
@@ -517,6 +538,7 @@
   permission_delete_own_messages: 刪除自己的訊息
   permission_export_wiki_pages: 匯出 wiki 頁面
   permission_manage_subtasks: 管理子任務
+  permission_manage_related_issues: 管理相關問題
 
   project_module_issue_tracking: 問題追蹤
   project_module_time_tracking: 工時追蹤
@@ -667,6 +689,10 @@
     zero:  0 已結束
     one:   1 已結束
     other: "%{count} 已結束"
+  label_x_issues:
+    zero:  0 個問題
+    one:   1 個問題
+    other: "%{count} 個問題"
   label_total: 總計
   label_permissions: 權限
   label_current_status: 目前狀態
@@ -727,6 +753,7 @@
   label_not_contains: 不包含
   label_day_plural: 天
   label_repository: 儲存機制
+  label_repository_new: 建立新儲存機制
   label_repository_plural: 儲存機制清單
   label_browse: 瀏覽
   label_modification: "%{count} 變更"
@@ -910,7 +937,22 @@
   label_git_report_last_commit: 報告最後認可的文件和目錄
   label_parent_revision: 父項
   label_child_revision: 子項
-  label_export_options: %{export_format} 匯出選項
+  label_export_options: "%{export_format} 匯出選項"
+  label_copy_attachments: 複製附件
+  label_copy_subtasks: 複製子任務
+  label_item_position: "%{position} / %{count}"
+  label_completed_versions: 已完成版本
+  label_search_for_watchers: 搜尋可供加入的監看者
+  label_session_expiration: 工作階段逾期
+  label_show_closed_projects: 檢視已關閉的專案
+  label_status_transitions: 狀態轉換
+  label_fields_permissions: 欄位權限
+  label_readonly: 唯讀
+  label_required: 必填
+  label_attribute_of_project: "專案是 %{name}"
+  label_attribute_of_author: "作者是 %{name}"
+  label_attribute_of_assigned_to: "被指派者是 %{name}"
+  label_attribute_of_fixed_version: "版本是 %{name}"
 
   button_login: 登入
   button_submit: 送出
@@ -945,8 +987,8 @@
   button_watch: 觀察
   button_unwatch: 取消觀察
   button_reply: 回應
-  button_archive: 歸檔
-  button_unarchive: 取消歸檔
+  button_archive: 封存
+  button_unarchive: 取消封存
   button_reset: 回復
   button_rename: 重新命名
   button_change_password: 變更密碼
@@ -960,10 +1002,17 @@
   button_show: 顯示
   button_edit_section: 編輯此區塊
   button_export: 匯出
+  button_delete_my_account: 刪除我的帳戶
+  button_close: 關閉
+  button_reopen: 重新開啟
 
   status_active: 活動中
   status_registered: 註冊完成
   status_locked: 鎖定中
+
+  project_status_active: 使用中
+  project_status_closed: 已關閉
+  project_status_archived: 已封存
 
   version_status_open: 進行中
   version_status_locked: 已鎖定
@@ -987,7 +1036,7 @@
   text_tip_issue_begin_day: 今天起始的問題
   text_tip_issue_end_day: 今天截止的的問題
   text_tip_issue_begin_end_day: 今天起始與截止的問題
-  text_project_identifier_info: '只允許小寫英文字母（a-z）、阿拉伯數字與連字符號（-）。<br />儲存後，代碼不可再被更改。'
+  text_project_identifier_info: '僅允許使用小寫英文字母 (a-z), 阿拉伯數字, 虛線與底線。<br />一旦儲存之後, 代碼便無法再次被更改。'
   text_caracters_maximum: "最多 %{count} 個字元."
   text_caracters_minimum: "長度必須大於 %{count} 個字元."
   text_length_between: "長度必須介於 %{min} 至 %{max} 個字元之間."
@@ -1041,6 +1090,14 @@
   text_scm_command_version: 版本
   text_scm_config: 您可以在 config/configuration.yml 中設定 SCM 命令。請在編輯該檔案之後重新啟動 Redmine 應用程式。
   text_scm_command_not_available: SCM 命令無法使用。請檢查管理面板中的設定。
+  text_issue_conflict_resolution_overwrite: "直接套用我的變更 (先前的筆記將會被保留，但是某些變更可能會被複寫)"
+  text_issue_conflict_resolution_add_notes: "新增我的筆記並捨棄我其他的變更"
+  text_issue_conflict_resolution_cancel: "捨棄我全部的變更並重新顯示 %{link}"
+  text_account_destroy_confirmation: |-
+    您確定要繼續這個動作嗎？
+    您的帳戶將會被永久刪除，且無法被重新啟用。
+  text_session_expiration_settings: "警告：變更這些設定將會導致包含您在內的所有工作階段過期。"
+  text_project_closed: 此專案已被關閉，僅供唯讀使用。
 
   default_role_manager: 管理人員
   default_role_developer: 開發人員
@@ -1086,3 +1143,4 @@
   description_date_range_interval: 選擇起始與結束日期以設定範圍區間
   description_date_from: 輸入起始日期
   description_date_to: 輸入結束日期
+  text_repository_identifier_info: '僅允許使用小寫英文字母 (a-z), 阿拉伯數字, 虛線與底線。<br />一旦儲存之後, 代碼便無法再次被更改。'

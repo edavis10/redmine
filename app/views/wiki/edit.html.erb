@@ -1,8 +1,10 @@
 <%= wiki_page_breadcrumb(@page) %>
 
-<h2><%=h @page.pretty_title %></h2>
+<h2><%= h @page.pretty_title %></h2>
 
-<% form_for :content, @content, :url => {:action => 'update', :id => @page.title}, :html => {:method => :put, :multipart => true, :id => 'wiki_form'} do |f| %>
+<%= form_for @content, :as => :content,
+            :url => {:action => 'update', :id => @page.title},
+            :html => {:method => :put, :multipart => true, :id => 'wiki_form'} do |f| %>
 <%= f.hidden_field :version %>
 <% if @section %>
 <%= hidden_field_tag 'section', @section %>
@@ -10,25 +12,34 @@
 <% end %>
 <%= error_messages_for 'content' %>
 
-<p><%= text_area_tag 'content[text]', @text, :cols => 100, :rows => 25, :class => 'wiki-edit', :accesskey => accesskey(:edit) %></p>
-<p><label><%= l(:field_comments) %></label><br /><%= f.text_field :comments, :size => 120 %></p>
-<p><label><%=l(:label_attachment_plural)%></label><br /><%= render :partial => 'attachments/form' %></p>
+<div class="box tabular">
+<%= text_area_tag 'content[text]', @text, :cols => 100, :rows => 25,
+                  :class => 'wiki-edit', :accesskey => accesskey(:edit) %>
+
+<% if @page.safe_attribute_names.include?('parent_id') && @wiki.pages.any? %>
+  <%= fields_for @page do |fp| %>
+    <p>
+      <label><%= l(:field_parent_title) %></label>
+      <%= fp.select :parent_id,
+                    content_tag('option', '', :value => '') +
+                       wiki_page_options_for_select(@wiki.pages.all(:include => :parent) -
+                         @page.self_and_descendants, @page.parent) %>
+    </p>
+  <% end %>
+<% end %>
+
+<p><label><%= l(:field_comments) %></label><%= f.text_field :comments, :size => 120 %></p>
+<p><label><%=l(:label_attachment_plural)%></label><%= render :partial => 'attachments/form' %></p>
+</div>
 
 <p><%= submit_tag l(:button_save) %>
-   <%= link_to_remote l(:label_preview),
-                       { :url => { :controller => 'wiki', :action => 'preview', :project_id => @project, :id => @page.title },
-                         :method => :post,
-                         :update => 'preview',
-                         :with => "Form.serialize('wiki_form')",
-                         :complete => "Element.scrollTo('preview')"
-                       }, :accesskey => accesskey(:preview) %></p>
+   <%= preview_link({:controller => 'wiki', :action => 'preview', :project_id => @project, :id => @page.title }, 'wiki_form') %></p>
 <%= wikitoolbar_for 'content_text' %>
 <% end %>
 
 <div id="preview" class="wiki"></div>
 
 <% content_for :header_tags do %>
-  <%= stylesheet_link_tag 'scm' %>
   <%= robot_exclusion_tag %>
 <% end %>
 

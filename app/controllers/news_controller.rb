@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,13 +20,14 @@ class NewsController < ApplicationController
   model_object News
   before_filter :find_model_object, :except => [:new, :create, :index]
   before_filter :find_project_from_association, :except => [:new, :create, :index]
-  before_filter :find_project, :only => [:new, :create]
+  before_filter :find_project_by_project_id, :only => [:new, :create]
   before_filter :authorize, :except => [:index]
   before_filter :find_optional_project, :only => :index
   accept_rss_auth :index
   accept_api_auth :index
 
   helper :watchers
+  helper :attachments
 
   def index
     case params[:format]
@@ -67,14 +68,14 @@ class NewsController < ApplicationController
 
   def create
     @news = News.new(:project => @project, :author => User.current)
-    if request.post?
-      @news.attributes = params[:news]
-      if @news.save
-        flash[:notice] = l(:notice_successful_create)
-        redirect_to :controller => 'news', :action => 'index', :project_id => @project
-      else
-        render :action => 'new'
-      end
+    @news.safe_attributes = params[:news]
+    @news.save_attachments(params[:attachments])
+    if @news.save
+      render_attachment_warning_if_needed(@news)
+      flash[:notice] = l(:notice_successful_create)
+      redirect_to :controller => 'news', :action => 'index', :project_id => @project
+    else
+      render :action => 'new'
     end
   end
 
@@ -82,7 +83,10 @@ class NewsController < ApplicationController
   end
 
   def update
-    if request.put? and @news.update_attributes(params[:news])
+    @news.safe_attributes = params[:news]
+    @news.save_attachments(params[:attachments])
+    if @news.save
+      render_attachment_warning_if_needed(@news)
       flash[:notice] = l(:notice_successful_update)
       redirect_to :action => 'show', :id => @news
     else
@@ -95,12 +99,7 @@ class NewsController < ApplicationController
     redirect_to :action => 'index', :project_id => @project
   end
 
-private
-  def find_project
-    @project = Project.find(params[:project_id])
-  rescue ActiveRecord::RecordNotFound
-    render_404
-  end
+  private
 
   def find_optional_project
     return true unless params[:project_id]

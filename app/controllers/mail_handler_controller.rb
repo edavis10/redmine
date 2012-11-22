@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,10 +17,6 @@
 
 class MailHandlerController < ActionController::Base
   before_filter :check_credential
-
-  verify :method => :post,
-         :only => :index,
-         :render => { :nothing => true, :status => 405 }
 
   # Submits an incoming email to MailHandler
   def index

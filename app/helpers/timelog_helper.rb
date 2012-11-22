@@ -1,5 +1,7 @@
+# encoding: utf-8
+#
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -116,7 +118,7 @@ module TimelogHelper
                   entry.hours.to_s.gsub('.', decimal_separator),
                   entry.comments
                   ]
-        fields += custom_fields.collect {|f| show_value(entry.custom_value_for(f)) }
+        fields += custom_fields.collect {|f| show_value(entry.custom_field_values.detect {|v| v.custom_field_id == f.id}) }
 
         csv << fields.collect {|c| Redmine::CodesetUtil.from_utf8(
                                      c.to_s,
@@ -126,10 +128,10 @@ module TimelogHelper
     export
   end
 
-  def format_criteria_value(criteria, value)
+  def format_criteria_value(criteria_options, value)
     if value.blank?
-      l(:label_none)
-    elsif k = @available_criterias[criteria][:klass]
+      "[#{l(:label_none)}]"
+    elsif k = criteria_options[:klass]
       obj = k.find_by_id(value.to_i)
       if obj.is_a?(Issue)
         obj.visible? ? "#{obj.tracker} ##{obj.id}: #{obj.subject}" : "##{obj.id}"
@@ -137,28 +139,28 @@ module TimelogHelper
         obj
       end
     else
-      format_value(value, @available_criterias[criteria][:format])
+      format_value(value, criteria_options[:format])
     end
   end
 
-  def report_to_csv(criterias, periods, hours)
+  def report_to_csv(report)
     decimal_separator = l(:general_csv_decimal_separator)
     export = FCSV.generate(:col_sep => l(:general_csv_separator)) do |csv|
       # Column headers
-      headers = criterias.collect {|criteria| l(@available_criterias[criteria][:label]) }
-      headers += periods
+      headers = report.criteria.collect {|criteria| l(report.available_criteria[criteria][:label]) }
+      headers += report.periods
       headers << l(:label_total)
       csv << headers.collect {|c| Redmine::CodesetUtil.from_utf8(
                                     c.to_s,
                                     l(:general_csv_encoding) ) }
       # Content
-      report_criteria_to_csv(csv, criterias, periods, hours)
+      report_criteria_to_csv(csv, report.available_criteria, report.columns, report.criteria, report.periods, report.hours)
       # Total row
       str_total = Redmine::CodesetUtil.from_utf8(l(:label_total), l(:general_csv_encoding))
-      row = [ str_total ] + [''] * (criterias.size - 1)
+      row = [ str_total ] + [''] * (report.criteria.size - 1)
       total = 0
-      periods.each do |period|
-        sum = sum_hours(select_hours(hours, @columns, period.to_s))
+      report.periods.each do |period|
+        sum = sum_hours(select_hours(report.hours, report.columns, period.to_s))
         total += sum
         row << (sum > 0 ? ("%.2f" % sum).gsub('.',decimal_separator) : '')
       end
@@ -168,26 +170,26 @@ module TimelogHelper
     export
   end
 
-  def report_criteria_to_csv(csv, criterias, periods, hours, level=0)
+  def report_criteria_to_csv(csv, available_criteria, columns, criteria, periods, hours, level=0)
     decimal_separator = l(:general_csv_decimal_separator)
-    hours.collect {|h| h[criterias[level]].to_s}.uniq.each do |value|
-      hours_for_value = select_hours(hours, criterias[level], value)
+    hours.collect {|h| h[criteria[level]].to_s}.uniq.each do |value|
+      hours_for_value = select_hours(hours, criteria[level], value)
       next if hours_for_value.empty?
       row = [''] * level
       row << Redmine::CodesetUtil.from_utf8(
-                        format_criteria_value(criterias[level], value).to_s,
+                        format_criteria_value(available_criteria[criteria[level]], value).to_s,
                         l(:general_csv_encoding) )
-      row += [''] * (criterias.length - level - 1)
+      row += [''] * (criteria.length - level - 1)
       total = 0
       periods.each do |period|
-        sum = sum_hours(select_hours(hours_for_value, @columns, period.to_s))
+        sum = sum_hours(select_hours(hours_for_value, columns, period.to_s))
         total += sum
         row << (sum > 0 ? ("%.2f" % sum).gsub('.',decimal_separator) : '')
       end
       row << ("%.2f" % total).gsub('.',decimal_separator)
       csv << row
-      if criterias.length > level + 1
-        report_criteria_to_csv(csv, criterias, periods, hours_for_value, level + 1)
+      if criteria.length > level + 1
+        report_criteria_to_csv(csv, available_criteria, columns, criteria, periods, hours_for_value, level + 1)
       end
     end
   end

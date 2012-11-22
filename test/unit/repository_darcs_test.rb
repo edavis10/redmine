@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,6 +20,8 @@ require File.expand_path('../../test_helper', __FILE__)
 class RepositoryDarcsTest < ActiveSupport::TestCase
   fixtures :projects
 
+  include Redmine::I18n
+
   REPOSITORY_PATH = Rails.root.join('tmp/test/darcs_repository').to_s
   NUM_REV = 6
 
@@ -33,6 +35,32 @@ class RepositoryDarcsTest < ActiveSupport::TestCase
     assert @repository
   end
 
+  def test_blank_path_to_repository_error_message
+    set_language_if_valid 'en'
+    repo = Repository::Darcs.new(
+                          :project      => @project,
+                          :identifier   => 'test',
+                          :log_encoding => 'UTF-8'
+                        )
+    assert !repo.save
+    assert_include "Path to repository can't be blank",
+                   repo.errors.full_messages
+  end
+
+  def test_blank_path_to_repository_error_message_fr
+    set_language_if_valid 'fr'
+    str = "Chemin du d\xc3\xa9p\xc3\xb4t doit \xc3\xaatre renseign\xc3\xa9(e)"
+    str.force_encoding('UTF-8') if str.respond_to?(:force_encoding)
+    repo = Repository::Darcs.new(
+                          :project      => @project,
+                          :url          => "",
+                          :identifier   => 'test',
+                          :log_encoding => 'UTF-8'
+                        )
+    assert !repo.save
+    assert_include str, repo.errors.full_messages
+  end
+
   if File.directory?(REPOSITORY_PATH)
     def test_fetch_changesets_from_scratch
       assert_equal 0, @repository.changesets.count
@@ -40,7 +68,7 @@ class RepositoryDarcsTest < ActiveSupport::TestCase
       @project.reload
 
       assert_equal NUM_REV, @repository.changesets.count
-      assert_equal 13, @repository.changes.count
+      assert_equal 13, @repository.filechanges.count
       assert_equal "Initial commit.", @repository.changesets.find_by_revision('1').comments
     end
 
@@ -58,6 +86,11 @@ class RepositoryDarcsTest < ActiveSupport::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
+    end
+
+    def test_entries
+      entries = @repository.entries
+      assert_kind_of Redmine::Scm::Adapters::Entries, entries
     end
 
     def test_entries_invalid_revision

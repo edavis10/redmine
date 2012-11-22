@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -91,7 +91,7 @@ class PdfTest < ActiveSupport::TestCase
   end
 
   def test_attach
-    Attachment.storage_path = "#{Rails.root}/test/fixtures/files"
+    set_fixtures_attachments_directory
 
     str2 = "\x83e\x83X\x83g"
     str2.force_encoding("ASCII-8BIT") if str2.respond_to?(:force_encoding)
@@ -107,8 +107,10 @@ class PdfTest < ActiveSupport::TestCase
     assert a2.visible?
 
     aa1 = Redmine::Export::PDF::RDMPdfEncoding::attach(Attachment.all, "Testfile.PNG", "UTF-8")
+    assert_not_nil aa1
     assert_equal 17, aa1.id
     aa2 = Redmine::Export::PDF::RDMPdfEncoding::attach(Attachment.all, "test#{str2}.png", encoding)
+    assert_not_nil aa2
     assert_equal 19, aa2.id
 
     User.current = nil

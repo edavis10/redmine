@@ -1,5 +1,7 @@
+# encoding: utf-8
+#
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,10 +19,18 @@
 
 module VersionsHelper
 
-  STATUS_BY_CRITERIAS = %w(category tracker status priority author assigned_to)
+  def version_anchor(version)
+    if @project == version.project
+      anchor version.name
+    else
+      anchor "#{version.project.try(:identifier)}-#{version.name}"
+    end
+  end
+
+  STATUS_BY_CRITERIAS = %w(tracker status priority author assigned_to category)
 
   def render_issue_status_by(version, criteria)
-    criteria = 'category' unless STATUS_BY_CRITERIAS.include?(criteria)
+    criteria = 'tracker' unless STATUS_BY_CRITERIAS.include?(criteria)
 
     h = Hash.new {|k,v| k[v] = [0, 0]}
     begin

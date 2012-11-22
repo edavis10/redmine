@@ -2,6 +2,8 @@
 require File.expand_path('../../test_helper', __FILE__)
 
 class TimeEntryReportsControllerTest < ActionController::TestCase
+  tests TimelogController
+
   fixtures :projects, :enabled_modules, :roles, :members, :member_roles,
            :issues, :time_entries, :users, :trackers, :enumerations,
            :issue_statuses, :custom_fields, :custom_values
@@ -38,72 +40,81 @@ class TimeEntryReportsControllerTest < ActionController::TestCase
   end
 
   def test_report_all_projects_one_criteria
-    get :report, :columns => 'week', :from => "2007-04-01", :to => "2007-04-30", :criterias => ['project']
+    get :report, :columns => 'week', :from => "2007-04-01", :to => "2007-04-30", :criteria => ['project']
     assert_response :success
     assert_template 'report'
-    assert_not_nil assigns(:total_hours)
-    assert_equal "8.65", "%.2f" % assigns(:total_hours)
+    assert_not_nil assigns(:report)
+    assert_equal "8.65", "%.2f" % assigns(:report).total_hours
   end
 
   def test_report_all_time
-    get :report, :project_id => 1, :criterias => ['project', 'issue']
+    get :report, :project_id => 1, :criteria => ['project', 'issue']
     assert_response :success
     assert_template 'report'
-    assert_not_nil assigns(:total_hours)
-    assert_equal "162.90", "%.2f" % assigns(:total_hours)
+    assert_not_nil assigns(:report)
+    assert_equal "162.90", "%.2f" % assigns(:report).total_hours
   end
 
   def test_report_all_time_by_day
-    get :report, :project_id => 1, :criterias => ['project', 'issue'], :columns => 'day'
+    get :report, :project_id => 1, :criteria => ['project', 'issue'], :columns => 'day'
     assert_response :success
     assert_template 'report'
-    assert_not_nil assigns(:total_hours)
-    assert_equal "162.90", "%.2f" % assigns(:total_hours)
+    assert_not_nil assigns(:report)
+    assert_equal "162.90", "%.2f" % assigns(:report).total_hours
     assert_tag :tag => 'th', :content => '2007-03-12'
   end
 
   def test_report_one_criteria
-    get :report, :project_id => 1, :columns => 'week', :from => "2007-04-01", :to => "2007-04-30", :criterias => ['project']
+    get :report, :project_id => 1, :columns => 'week', :from => "2007-04-01", :to => "2007-04-30", :criteria => ['project']
     assert_response :success
     assert_template 'report'
-    assert_not_nil assigns(:total_hours)
-    assert_equal "8.65", "%.2f" % assigns(:total_hours)
+    assert_not_nil assigns(:report)
+    assert_equal "8.65", "%.2f" % assigns(:report).total_hours
   end
 
-  def test_report_two_criterias
-    get :report, :project_id => 1, :columns => 'month', :from => "2007-01-01", :to => "2007-12-31", :criterias => ["member", "activity"]
+  def test_report_two_criteria
+    get :report, :project_id => 1, :columns => 'month', :from => "2007-01-01", :to => "2007-12-31", :criteria => ["member", "activity"]
     assert_response :success
     assert_template 'report'
-    assert_not_nil assigns(:total_hours)
-    assert_equal "162.90", "%.2f" % assigns(:total_hours)
+    assert_not_nil assigns(:report)
+    assert_equal "162.90", "%.2f" % assigns(:report).total_hours
+  end
+
+  def test_report_custom_field_criteria_with_multiple_values
+    field = TimeEntryCustomField.create!(:name => 'multi', :field_format => 'list', :possible_values => ['value1', 'value2'])
+    entry = TimeEntry.create!(:project => Project.find(1), :hours => 1, :activity_id => 10, :user => User.find(2), :spent_on => Date.today)
+    CustomValue.create!(:customized => entry, :custom_field => field, :value => 'value1')
+    CustomValue.create!(:customized => entry, :custom_field => field, :value => 'value2')
+
+    get :report, :project_id => 1, :columns => 'day', :criteria => ["cf_#{field.id}"]
+    assert_response :success
   end
 
   def test_report_one_day
-    get :report, :project_id => 1, :columns => 'day', :from => "2007-03-23", :to => "2007-03-23", :criterias => ["member", "activity"]
+    get :report, :project_id => 1, :columns => 'day', :from => "2007-03-23", :to => "2007-03-23", :criteria => ["member", "activity"]
     assert_response :success
     assert_template 'report'
-    assert_not_nil assigns(:total_hours)
-    assert_equal "4.25", "%.2f" % assigns(:total_hours)
+    assert_not_nil assigns(:report)
+    assert_equal "4.25", "%.2f" % assigns(:report).total_hours
   end
 
   def test_report_at_issue_level
-    get :report, :project_id => 1, :issue_id => 1, :columns => 'month', :from => "2007-01-01", :to => "2007-12-31", :criterias => ["member", "activity"]
+    get :report, :project_id => 1, :issue_id => 1, :columns => 'month', :from => "2007-01-01", :to => "2007-12-31", :criteria => ["member", "activity"]
     assert_response :success
     assert_template 'report'
-    assert_not_nil assigns(:total_hours)
-    assert_equal "154.25", "%.2f" % assigns(:total_hours)
+    assert_not_nil assigns(:report)
+    assert_equal "154.25", "%.2f" % assigns(:report).total_hours
     assert_tag :form,
       :attributes => {:action => "/projects/ecookbook/issues/1/time_entries/report", :id => 'query_form'}
   end
 
   def test_report_custom_field_criteria
-    get :report, :project_id => 1, :criterias => ['project', 'cf_1', 'cf_7']
+    get :report, :project_id => 1, :criteria => ['project', 'cf_1', 'cf_7']
     assert_response :success
     assert_template 'report'
-    assert_not_nil assigns(:total_hours)
-    assert_not_nil assigns(:criterias)
-    assert_equal 3, assigns(:criterias).size
-    assert_equal "162.90", "%.2f" % assigns(:total_hours)
+    assert_not_nil assigns(:report)
+    assert_equal 3, assigns(:report).criteria.size
+    assert_equal "162.90", "%.2f" % assigns(:report).total_hours
     # Custom field column
     assert_tag :tag => 'th', :content => 'Database'
     # Custom field row
@@ -116,18 +127,26 @@ class TimeEntryReportsControllerTest < ActionController::TestCase
   end
 
   def test_report_one_criteria_no_result
-    get :report, :project_id => 1, :columns => 'week', :from => "1998-04-01", :to => "1998-04-30", :criterias => ['project']
+    get :report, :project_id => 1, :columns => 'week', :from => "1998-04-01", :to => "1998-04-30", :criteria => ['project']
     assert_response :success
     assert_template 'report'
-    assert_not_nil assigns(:total_hours)
-    assert_equal "0.00", "%.2f" % assigns(:total_hours)
+    assert_not_nil assigns(:report)
+    assert_equal "0.00", "%.2f" % assigns(:report).total_hours
+  end
+
+  def test_report_status_criterion
+    get :report, :project_id => 1, :criteria => ['status']
+    assert_response :success
+    assert_template 'report'
+    assert_tag :tag => 'th', :content => 'Status'
+    assert_tag :tag => 'td', :content => 'New'
   end
 
   def test_report_all_projects_csv_export
     get :report, :columns => 'month', :from => "2007-01-01", :to => "2007-06-30",
-        :criterias => ["project", "member", "activity"], :format => "csv"
+        :criteria => ["project", "member", "activity"], :format => "csv"
     assert_response :success
-    assert_equal 'text/csv', @response.content_type
+    assert_equal 'text/csv; header=present', @response.content_type
     lines = @response.body.chomp.split("\n")
     # Headers
     assert_equal 'Project,Member,Activity,2007-1,2007-2,2007-3,2007-4,2007-5,2007-6,Total',
@@ -139,9 +158,9 @@ class TimeEntryReportsControllerTest < ActionController::TestCase
   def test_report_csv_export
     get :report, :project_id => 1, :columns => 'month',
         :from => "2007-01-01", :to => "2007-06-30",
-        :criterias => ["project", "member", "activity"], :format => "csv"
+        :criteria => ["project", "member", "activity"], :format => "csv"
     assert_response :success
-    assert_equal 'text/csv', @response.content_type
+    assert_equal 'text/csv; header=present', @response.content_type
     lines = @response.body.chomp.split("\n")
     # Headers
     assert_equal 'Project,Member,Activity,2007-1,2007-2,2007-3,2007-4,2007-5,2007-6,Total',
@@ -177,9 +196,9 @@ class TimeEntryReportsControllerTest < ActionController::TestCase
 
     get :report, :project_id => 1, :columns => 'day',
         :from => "2011-11-11", :to => "2011-11-11",
-        :criterias => ["member"], :format => "csv"
+        :criteria => ["member"], :format => "csv"
     assert_response :success
-    assert_equal 'text/csv', @response.content_type
+    assert_equal 'text/csv; header=present', @response.content_type
     lines = @response.body.chomp.split("\n")    
     # Headers
     s1 = "\xa6\xa8\xad\xfb,2011-11-11,\xc1`\xadp"
@@ -228,9 +247,9 @@ class TimeEntryReportsControllerTest < ActionController::TestCase
 
     get :report, :project_id => 1, :columns => 'day',
         :from => "2011-11-11", :to => "2011-11-11",
-        :criterias => ["member"], :format => "csv"
+        :criteria => ["member"], :format => "csv"
     assert_response :success
-    assert_equal 'text/csv', @response.content_type
+    assert_equal 'text/csv; header=present', @response.content_type
     lines = @response.body.chomp.split("\n")    
     # Headers
     s1 = "\xa6\xa8\xad\xfb,2011-11-11,\xc1`\xadp"
@@ -269,9 +288,9 @@ class TimeEntryReportsControllerTest < ActionController::TestCase
 
       get :report, :project_id => 1, :columns => 'day',
           :from => "2011-11-11", :to => "2011-11-11",
-          :criterias => ["member"], :format => "csv"
+          :criteria => ["member"], :format => "csv"
       assert_response :success
-      assert_equal 'text/csv', @response.content_type
+      assert_equal 'text/csv; header=present', @response.content_type
       lines = @response.body.chomp.split("\n")    
       # Headers
       s1 = "Membre;2011-11-11;Total"

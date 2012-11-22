@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2008  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,9 +20,6 @@ require File.expand_path('../../test_helper', __FILE__)
 class EnumerationTest < ActiveSupport::TestCase
   fixtures :enumerations, :issues, :custom_fields, :custom_values
 
-  def setup
-  end
-
   def test_objects_count
     # low priority
     assert_equal 6, Enumeration.find(4).objects_count
@@ -41,7 +38,18 @@ class EnumerationTest < ActiveSupport::TestCase
     e = Enumeration.default
     assert e.is_a?(Enumeration)
     assert e.is_default?
+    assert e.active?
     assert_equal 'Default Enumeration', e.name
+  end
+
+  def test_default_non_active
+    e = Enumeration.find(12)
+    assert e.is_a?(Enumeration)
+    assert e.is_default?
+    assert e.active?
+    e.update_attributes(:active => false)
+    assert e.is_default?
+    assert !e.active?
   end
 
   def test_create
@@ -107,5 +115,16 @@ class EnumerationTest < ActiveSupport::TestCase
     # Setup as an override
     enumeration.parent = Enumeration.find(5)
     assert enumeration.is_override?
+  end
+
+  def test_get_subclasses
+    classes = Enumeration.get_subclasses
+    assert_include IssuePriority, classes
+    assert_include DocumentCategory, classes
+    assert_include TimeEntryActivity, classes
+
+    classes.each do |klass|
+      assert_equal Enumeration, klass.superclass
+    end
   end
 end

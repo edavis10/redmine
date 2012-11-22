@@ -1,13 +1,13 @@
-<% remote_form_for :wiki, @wiki,
+<%= labelled_form_for @wiki,
+                   :as => :wiki,
                    :url => { :controller => 'wikis', :action => 'edit', :id => @project },
-                   :builder => TabularFormBuilder,
-                   :lang => current_language do |f| %>
+                   :remote => true, :method => 'post' do |f| %>
 
 <%= error_messages_for 'wiki' %>
 
 <div class="box tabular">
-<p><%= f.text_field :start_page, :size => 60, :required => true %><br />
-<em><%= l(:text_unallowed_characters) %>: , . / ? ; : |</em></p>
+<p><%= f.text_field :start_page, :size => 60, :required => true %>
+<em class="info"><%= l(:text_unallowed_characters) %>: , . / ? ; : |</em></p>
 </div>
 
 <div class="contextual">

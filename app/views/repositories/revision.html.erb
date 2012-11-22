@@ -1,21 +1,22 @@
 <div class="contextual">
   &#171;
   <% unless @changeset.previous.nil? -%>
-    <%= link_to_revision(@changeset.previous, @project, :text => l(:label_previous)) %>
+    <%= link_to_revision(@changeset.previous, @repository, :text => l(:label_previous)) %>
   <% else -%>
     <%= l(:label_previous) %>
   <% end -%>
 |
   <% unless @changeset.next.nil? -%>
-    <%= link_to_revision(@changeset.next, @project, :text => l(:label_next)) %>
+    <%= link_to_revision(@changeset.next, @repository, :text => l(:label_next)) %>
   <% else -%>
     <%= l(:label_next) %>
   <% end -%>
   &#187;&nbsp;
 
-  <% form_tag({:controller => 'repositories',
+  <%= form_tag({:controller => 'repositories',
                :action     => 'revision',
                :id         => @project,
+               :repository_id => @repository.identifier_param,
                :rev        => nil},
                :method     => :get) do %>
     <%= text_field_tag 'rev', @rev, :size => 8 %>
@@ -23,35 +24,38 @@
   <% end %>
 </div>
 
-<h2><%= l(:label_revision) %> <%= format_revision(@changeset) %></h2>
+<h2><%= avatar(@changeset.user, :size => "24") %><%= l(:label_revision) %> <%= format_revision(@changeset) %></h2>
 
+<% if @changeset.scmid.present? || @changeset.parents.present? || @changeset.children.present? %>
 <table class="revision-info">
-  <% if @changeset.scmid %>
+  <% if @changeset.scmid.present? %>
     <tr>
       <td>ID</td><td><%= h(@changeset.scmid) %></td>
     </tr>
   <% end %>
-  <% unless @changeset.parents.blank? %>
+  <% if @changeset.parents.present? %>
     <tr>
       <td><%= l(:label_parent_revision) %></td>
       <td>
         <%= @changeset.parents.collect{
-              |p| link_to_revision(p, @project, :text => format_revision(p))
-            }.join(", ") %>
+              |p| link_to_revision(p, @repository, :text => format_revision(p))
+            }.join(", ").html_safe %>
       </td>
     </tr>
   <% end %>
-  <% unless @changeset.children.blank? %>
+  <% if @changeset.children.present? %>
     <tr>
       <td><%= l(:label_child_revision) %></td>
       <td>
        <%= @changeset.children.collect{
-              |p| link_to_revision(p, @project, :text => format_revision(p))
-             }.join(", ") %>
+              |p| link_to_revision(p, @repository, :text => format_revision(p))
+             }.join(", ").html_safe %>
       </td>
     </tr>
   <% end %>
 </table>
+<% end %>
+
 <p>
 <span class="author">
 <%= authoring(@changeset.committed_on, @changeset.author) %>
@@ -60,13 +64,8 @@
 
 <%= textilizable @changeset.comments %>
 
-<% if @changeset.issues.visible.any? %>
-<h3><%= l(:label_related_issues) %></h3>
-<ul>
-<% @changeset.issues.visible.each do |issue| %>
-  <li><%= link_to_issue issue %></li>
-<% end %>
-</ul>
+<% if @changeset.issues.visible.any? || User.current.allowed_to?(:manage_related_issues, @repository.project) %>
+  <%= render :partial => 'related_issues' %>
 <% end %>
 
 <% if User.current.allowed_to?(:browse_repository, @project) %>
@@ -82,8 +81,9 @@
 <p><%= link_to(l(:label_view_diff),
                :action => 'diff',
                :id     => @project,
+               :repository_id => @repository.identifier_param,
                :path   => "",
-               :rev    => @changeset.identifier) if @changeset.changes.any? %></p>
+               :rev    => @changeset.identifier) if @changeset.filechanges.any? %></p>
 
 <div class="changeset-changes">
 <%= render_changeset_changes %>

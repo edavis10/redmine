@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -19,92 +19,6 @@ require File.expand_path('../../test_helper', __FILE__)
 
 class CustomValueTest < ActiveSupport::TestCase
   fixtures :custom_fields, :custom_values, :users
-
-  def test_string_field_validation_with_blank_value
-    f = CustomField.new(:field_format => 'string')
-    v = CustomValue.new(:custom_field => f)
-
-    v.value = nil
-    assert v.valid?
-    v.value = ''
-    assert v.valid?
-
-    f.is_required = true
-    v.value = nil
-    assert !v.valid?
-    v.value = ''
-    assert !v.valid?
-  end
-
-  def test_string_field_validation_with_min_and_max_lengths
-    f = CustomField.new(:field_format => 'string', :min_length => 2, :max_length => 5)
-    v = CustomValue.new(:custom_field => f, :value => '')
-    assert v.valid?
-    v.value = 'a'
-    assert !v.valid?
-    v.value = 'a' * 2
-    assert v.valid?
-    v.value = 'a' * 6
-    assert !v.valid?
-  end
-
-  def test_string_field_validation_with_regexp
-    f = CustomField.new(:field_format => 'string', :regexp => '^[A-Z0-9]*$')
-    v = CustomValue.new(:custom_field => f, :value => '')
-    assert v.valid?
-    v.value = 'abc'
-    assert !v.valid?
-    v.value = 'ABC'
-    assert v.valid?
-  end
-
-  def test_date_field_validation
-    f = CustomField.new(:field_format => 'date')
-    v = CustomValue.new(:custom_field => f, :value => '')
-    assert v.valid?
-    v.value = 'abc'
-    assert !v.valid?
-    v.value = '1975-07-33'
-    assert !v.valid?
-    v.value = '1975-07-14'
-    assert v.valid?
-  end
-
-  def test_list_field_validation
-    f = CustomField.new(:field_format => 'list', :possible_values => ['value1', 'value2'])
-    v = CustomValue.new(:custom_field => f, :value => '')
-    assert v.valid?
-    v.value = 'abc'
-    assert !v.valid?
-    v.value = 'value2'
-    assert v.valid?
-  end
-
-  def test_int_field_validation
-    f = CustomField.new(:field_format => 'int')
-    v = CustomValue.new(:custom_field => f, :value => '')
-    assert v.valid?
-    v.value = 'abc'
-    assert !v.valid?
-    v.value = '123'
-    assert v.valid?
-    v.value = '+123'
-    assert v.valid?
-    v.value = '-123'
-    assert v.valid?
-  end
-
-  def test_float_field_validation
-    v = CustomValue.new(:customized => User.find(:first), :custom_field => UserCustomField.find_by_name('Money'))
-    v.value = '11.2'
-    assert v.save
-    v.value = ''
-    assert v.save
-    v.value = '-6.250'
-    assert v.save
-    v.value = '6a'
-    assert !v.save
-  end
 
   def test_default_value
     field = CustomField.find_by_default_value('Default string')

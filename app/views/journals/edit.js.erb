@@ -1,0 +1,2 @@
+$("#journal-<%= @journal.id %>-notes").hide();
+$("#journal-<%= @journal.id %>-notes").after('<%= escape_javascript(render :partial => 'notes_form') %>');

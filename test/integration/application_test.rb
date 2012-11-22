@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -33,19 +33,19 @@ class ApplicationTest < ActionController::IntegrationTest
     Setting.default_language = 'en'
 
     # a french user
-    get 'projects', { }, 'Accept-Language' => 'fr,fr-fr;q=0.8,en-us;q=0.5,en;q=0.3'
+    get 'projects', { }, 'HTTP_ACCEPT_LANGUAGE' => 'fr,fr-fr;q=0.8,en-us;q=0.5,en;q=0.3'
     assert_response :success
     assert_tag :tag => 'h2', :content => 'Projets'
     assert_equal :fr, current_language
 
     # then an italien user
-    get 'projects', { }, 'Accept-Language' => 'it;q=0.8,en-us;q=0.5,en;q=0.3'
+    get 'projects', { }, 'HTTP_ACCEPT_LANGUAGE' => 'it;q=0.8,en-us;q=0.5,en;q=0.3'
     assert_response :success
     assert_tag :tag => 'h2', :content => 'Progetti'
     assert_equal :it, current_language
 
     # not a supported language: default language should be used
-    get 'projects', { }, 'Accept-Language' => 'zz'
+    get 'projects', { }, 'HTTP_ACCEPT_LANGUAGE' => 'zz'
     assert_response :success
     assert_tag :tag => 'h2', :content => 'Projects'
   end
@@ -59,5 +59,10 @@ class ApplicationTest < ActionController::IntegrationTest
     get "issues/4.atom?key=#{rss_key}"
     assert_response 200
     assert_nil session[:user_id]
+  end
+
+  def test_missing_template_should_respond_with_404
+    get '/login.png'
+    assert_response 404
   end
 end

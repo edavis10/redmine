@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -58,7 +58,7 @@ class ApiTest::VersionsTest < ActionController::IntegrationTest
     context "POST" do
       should "create the version" do
         assert_difference 'Version.count' do
-          post '/projects/1/versions.xml', {:version => {:name => 'API test'}}, :authorization => credentials('jsmith')
+          post '/projects/1/versions.xml', {:version => {:name => 'API test'}}, credentials('jsmith')
         end
 
         version = Version.first(:order => 'id DESC')
@@ -69,10 +69,24 @@ class ApiTest::VersionsTest < ActionController::IntegrationTest
         assert_tag 'version', :child => {:tag => 'id', :content => version.id.to_s}
       end
 
+      should "create the version with due date" do
+        assert_difference 'Version.count' do
+          post '/projects/1/versions.xml', {:version => {:name => 'API test', :due_date => '2012-01-24'}}, credentials('jsmith')
+        end
+
+        version = Version.first(:order => 'id DESC')
+        assert_equal 'API test', version.name
+        assert_equal Date.parse('2012-01-24'), version.due_date
+
+        assert_response :created
+        assert_equal 'application/xml', @response.content_type
+        assert_tag 'version', :child => {:tag => 'id', :content => version.id.to_s}
+      end
+
       context "with failure" do
         should "return the errors" do
           assert_no_difference('Version.count') do
-            post '/projects/1/versions.xml', {:version => {:name => ''}}, :authorization => credentials('jsmith')
+            post '/projects/1/versions.xml', {:version => {:name => ''}}, credentials('jsmith')
           end
 
           assert_response :unprocessable_entity
@@ -89,23 +103,20 @@ class ApiTest::VersionsTest < ActionController::IntegrationTest
 
         assert_response :success
         assert_equal 'application/xml', @response.content_type
-        assert_tag 'version',
-          :child => {
-            :tag => 'id',
-            :content => '2',
-            :sibling => {
-              :tag => 'name',
-              :content => '1.0'
-            }
-          }
+        assert_select 'version' do
+          assert_select 'id', :text => '2'
+          assert_select 'name', :text => '1.0'
+          assert_select 'sharing', :text => 'none'
+        end
       end
     end
 
     context "PUT" do
       should "update the version" do
-        put '/versions/2.xml', {:version => {:name => 'API update'}}, :authorization => credentials('jsmith')
+        put '/versions/2.xml', {:version => {:name => 'API update'}}, credentials('jsmith')
 
         assert_response :ok
+        assert_equal '', @response.body
         assert_equal 'API update', Version.find(2).name
       end
     end
@@ -113,16 +124,13 @@ class ApiTest::VersionsTest < ActionController::IntegrationTest
     context "DELETE" do
       should "destroy the version" do
         assert_difference 'Version.count', -1 do
-          delete '/versions/3.xml', {}, :authorization => credentials('jsmith')
+          delete '/versions/3.xml', {}, credentials('jsmith')
         end
 
         assert_response :ok
+        assert_equal '', @response.body
         assert_nil Version.find_by_id(3)
       end
     end
-  end
-
-  def credentials(user, password=nil)
-    ActionController::HttpAuthentication::Basic.encode_credentials(user, password || user)
   end
 end

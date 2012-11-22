@@ -1,22 +1,16 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta charset="utf-8" />
 <title><%=h html_title %></title>
 <meta name="description" content="<%= Redmine::Info.app_name %>" />
 <meta name="keywords" content="issue,bug,tracker" />
 <%= csrf_meta_tag %>
 <%= favicon %>
-<%= stylesheet_link_tag 'application', :media => 'all' %>
+<%= stylesheet_link_tag 'jquery/jquery-ui-1.8.21', 'application', :media => 'all' %>
 <%= stylesheet_link_tag 'rtl', :media => 'all' if l(:direction) == 'rtl' %>
 <%= javascript_heads %>
 <%= heads_for_theme %>
-<!--[if IE 6]>
-    <style type="text/css">
-      * html body{ width: expression( document.documentElement.clientWidth < 900 ? '900px' : '100%' ); }
-      body {behavior: url(<%= stylesheet_path "csshover.htc" %>);}
-    </style>
-<![endif]-->
 <%= call_hook :view_layouts_base_html_head %>
 <!-- page specific tags -->
 <%= yield :header_tags -%>
@@ -28,17 +22,14 @@
     <div id="account">
         <%= render_menu :account_menu -%>
     </div>
-    <%= content_tag(
-           'div',
-           "#{l(:label_logged_as)} #{link_to_user(User.current, :format => :username)}".html_safe,
-           :id => 'loggedas') if User.current.logged? %>
+    <%= content_tag('div', "#{l(:label_logged_as)} #{link_to_user(User.current, :format => :username)}".html_safe, :id => 'loggedas') if User.current.logged? %>
     <%= render_menu :top_menu if User.current.logged? || !Setting.login_required? -%>
 </div>
 
 <div id="header">
     <% if User.current.logged? || !Setting.login_required? %>
     <div id="quick-search">
-        <% form_tag({:controller => 'search', :action => 'index', :id => @project}, :method => :get ) do %>
+        <%= form_tag({:controller => 'search', :action => 'index', :id => @project}, :method => :get ) do %>
         <%= hidden_field_tag(controller.default_search_scope, 1, :id => nil) if controller.default_search_scope %>
         <label for='q'>
           <%= link_to l(:label_search), {:controller => 'search', :action => 'index', :id => @project}, :accesskey => accesskey(:search) %>:
@@ -58,10 +49,10 @@
     <% end %>
 </div>
 
-<%= tag('div', {:id => 'main', :class => (has_content?(:sidebar) ? '' : 'nosidebar')}, true) %>
+<div id="main" class="<%= sidebar_content? ? '' : 'nosidebar' %>">
     <div id="sidebar">
         <%= yield :sidebar %>
-        <%= call_hook :view_layouts_base_sidebar %>
+        <%= view_layouts_base_sidebar_hook_response %>
     </div>
 
     <div id="content">
@@ -73,10 +64,11 @@
 </div>
 
 <div id="ajax-indicator" style="display:none;"><span><%= l(:label_loading) %></span></div>
+<div id="ajax-modal" style="display:none;"></div>
 
 <div id="footer">
   <div class="bgl"><div class="bgr">
-    Powered by <%= link_to Redmine::Info.app_name, Redmine::Info.url %> &copy; 2006-2011 Jean-Philippe Lang
+    Powered by <%= link_to Redmine::Info.app_name, Redmine::Info.url %> &copy; 2006-2012 Jean-Philippe Lang
   </div></div>
 </div>
 </div>

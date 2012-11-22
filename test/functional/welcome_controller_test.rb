@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -77,7 +77,7 @@ class WelcomeControllerTest < ActionController::TestCase
     get :index
     assert_tag 'script',
       :attributes => {:type => "text/javascript"},
-      :content => %r{new WarnLeavingUnsaved}
+      :content => %r{warnLeavingUnsaved}
   end
 
   def test_warn_on_leaving_unsaved_turn_off
@@ -89,6 +89,77 @@ class WelcomeControllerTest < ActionController::TestCase
     get :index
     assert_no_tag 'script',
       :attributes => {:type => "text/javascript"},
-      :content => %r{new WarnLeavingUnsaved}
+      :content => %r{warnLeavingUnsaved}
+  end
+
+  def test_call_hook_mixed_in
+    assert @controller.respond_to?(:call_hook)
+  end
+
+  def test_project_jump_box_should_escape_names_once
+    Project.find(1).update_attribute :name, 'Foo & Bar'
+    @request.session[:user_id] = 2
+
+    get :index
+    assert_select "#header select" do
+      assert_select "option", :text => 'Foo &amp; Bar'
+    end
+  end
+
+  context "test_api_offset_and_limit" do
+    context "without params" do
+      should "return 0, 25" do
+        assert_equal [0, 25], @controller.api_offset_and_limit({})
+      end
+    end
+
+    context "with limit" do
+      should "return 0, limit" do
+        assert_equal [0, 30], @controller.api_offset_and_limit({:limit => 30})
+      end
+
+      should "not exceed 100" do
+        assert_equal [0, 100], @controller.api_offset_and_limit({:limit => 120})
+      end
+
+      should "not be negative" do
+        assert_equal [0, 25], @controller.api_offset_and_limit({:limit => -10})
+      end
+    end
+
+    context "with offset" do
+      should "return offset, 25" do
+        assert_equal [10, 25], @controller.api_offset_and_limit({:offset => 10})
+      end
+
+      should "not be negative" do
+        assert_equal [0, 25], @controller.api_offset_and_limit({:offset => -10})
+      end
+
+      context "and limit" do
+        should "return offset, limit" do
+          assert_equal [10, 50], @controller.api_offset_and_limit({:offset => 10, :limit => 50})
+        end
+      end
+    end
+
+    context "with page" do
+      should "return offset, 25" do
+        assert_equal [0, 25], @controller.api_offset_and_limit({:page => 1})
+        assert_equal [50, 25], @controller.api_offset_and_limit({:page => 3})
+      end
+
+      should "not be negative" do
+        assert_equal [0, 25], @controller.api_offset_and_limit({:page => 0})
+        assert_equal [0, 25], @controller.api_offset_and_limit({:page => -2})
+      end
+
+      context "and limit" do
+        should "return offset, limit" do
+          assert_equal [0, 100], @controller.api_offset_and_limit({:page => 1, :limit => 100})
+          assert_equal [200, 100], @controller.api_offset_and_limit({:page => 3, :limit => 100})
+        end
+      end
+    end
   end
 end

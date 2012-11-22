@@ -7,7 +7,6 @@ class CalendarsControllerTest < ActionController::TestCase
            :roles,
            :member_roles,
            :members,
-           :auth_sources,
            :enabled_modules
 
   def test_calendar
@@ -26,7 +25,7 @@ class CalendarsControllerTest < ActionController::TestCase
 
   context "GET :show" do
     should "run custom queries" do
-      @query = Query.generate_default!(:is_public => true)
+      @query = Query.create!(:name => 'Calendar', :is_public => true)
 
       get :show, :query_id => @query.id
       assert_response :success

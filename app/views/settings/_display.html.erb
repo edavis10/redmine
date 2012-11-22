@@ -1,4 +1,4 @@
-<% form_tag({:action => 'edit', :tab => 'display'}) do %>
+<%= form_tag({:action => 'edit', :tab => 'display'}) do %>
 
 <div class="box tabular settings">
 <p><%= setting_select :ui_theme, Redmine::Themes.themes.collect {|t| [t.name, t.id]}, :blank => :label_default, :label => :label_theme %></p>
@@ -6,16 +6,20 @@
 <p><%= setting_select :default_language, lang_options_for_select(false) %></p>
 
 <p><%= setting_select :start_of_week, [[day_name(1),'1'], [day_name(6),'6'], [day_name(7),'7']], :blank => :label_language_based %></p>
+<% locale = User.current.language.blank? ? ::I18n.locale : User.current.language %>
+<p><%= setting_select :date_format, Setting::DATE_FORMATS.collect {|f| [::I18n.l(Date.today, :locale => locale, :format => f), f]}, :blank => :label_language_based %></p>
 
-<p><%= setting_select :date_format, Setting::DATE_FORMATS.collect {|f| [Date.today.strftime(f), f]}, :blank => :label_language_based %></p>
-
-<p><%= setting_select :time_format, Setting::TIME_FORMATS.collect {|f| [Time.now.strftime(f), f]}, :blank => :label_language_based %></p>
+<p><%= setting_select :time_format, Setting::TIME_FORMATS.collect {|f| [::I18n.l(Time.now, :locale => locale, :format => f), f]}, :blank => :label_language_based %></p>
 
 <p><%= setting_select :user_format, @options[:user_format] %></p>
 
 <p><%= setting_check_box :gravatar_enabled %></p>
 
 <p><%= setting_select :gravatar_default, [["Wavatars", 'wavatar'], ["Identicons", 'identicon'], ["Monster ids", 'monsterid'], ["Retro", 'retro'], ["Mystery man", 'mm']], :blank => :label_none %></p>
+
+<p><%= setting_check_box :thumbnails_enabled %></p>
+
+<p><%= setting_text_field :thumbnails_size, :size => 6 %></p>
 </div>
 
 <%= submit_tag l(:button_save) %>

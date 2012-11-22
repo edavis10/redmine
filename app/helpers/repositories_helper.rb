@@ -1,5 +1,7 @@
+# encoding: utf-8
+#
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -44,17 +46,17 @@ module RepositoriesHelper
   end
 
   def render_changeset_changes
-    changes = @changeset.changes.find(:all, :limit => 1000, :order => 'path').collect do |change|
+    changes = @changeset.filechanges.find(:all, :limit => 1000, :order => 'path').collect do |change|
       case change.action
       when 'A'
         # Detects moved/copied files
         if !change.from_path.blank?
           change.action =
-             @changeset.changes.detect {|c| c.action == 'D' && c.path == change.from_path} ? 'R' : 'C'
+             @changeset.filechanges.detect {|c| c.action == 'D' && c.path == change.from_path} ? 'R' : 'C'
         end
         change
       when 'D'
-        @changeset.changes.detect {|c| c.from_path == change.path} ? nil : change
+        @changeset.filechanges.detect {|c| c.from_path == change.path} ? nil : change
       else
         change
       end
@@ -90,22 +92,26 @@ module RepositoriesHelper
         text = link_to(h(text), :controller => 'repositories',
                              :action => 'show',
                              :id => @project,
+                             :repository_id => @repository.identifier_param,
                              :path => path_param,
                              :rev => @changeset.identifier)
-        output << "<li class='#{style}'>#{text}</li>"
+        output << "<li class='#{style}'>#{text}"
         output << render_changes_tree(s)
+        output << "</li>"
       elsif c = tree[file][:c]
         style << " change-#{c.action}"
         path_param = to_path_param(@repository.relative_path(c.path))
         text = link_to(h(text), :controller => 'repositories',
                              :action => 'entry',
                              :id => @project,
+                             :repository_id => @repository.identifier_param,
                              :path => path_param,
                              :rev => @changeset.identifier) unless c.action == 'D'
         text << " - #{h(c.revision)}" unless c.revision.blank?
         text << ' ('.html_safe + link_to(l(:label_diff), :controller => 'repositories',
                                        :action => 'diff',
                                        :id => @project,
+                                       :repository_id => @repository.identifier_param,
                                        :path => path_param,
                                        :rev => @changeset.identifier) + ') '.html_safe if c.action == 'M'
         text << ' '.html_safe + content_tag('span', h(c.from_path), :class => 'copied-from') unless c.from_path.blank?
@@ -135,15 +141,7 @@ module RepositoriesHelper
     select_tag('repository_scm',
                options_for_select(scm_options, repository.class.name.demodulize),
                :disabled => (repository && !repository.new_record?),
-               :onchange => remote_function(
-                  :url => {
-                      :controller => 'repositories',
-                      :action     => 'edit',
-                      :id         => @project
-                   },
-               :method => :get,
-               :with   => "Form.serialize(this.form)")
-             )
+               :data => {:remote => true, :method => 'get'})
   end
 
   def with_leading_slash(path)
@@ -156,7 +154,7 @@ module RepositoriesHelper
 
   def subversion_field_tags(form, repository)
       content_tag('p', form.text_field(:url, :size => 60, :required => true,
-                       :disabled => (repository && !repository.root_url.blank?)) +
+                       :disabled => !repository.safe_attribute?('url')) +
                        '<br />'.html_safe +
                        '(file:///, http://, https://, svn://, svn+[tunnelscheme]://)') +
       content_tag('p', form.text_field(:login, :size => 30)) +
@@ -171,7 +169,7 @@ module RepositoriesHelper
     content_tag('p', form.text_field(
                      :url, :label => l(:field_path_to_repository),
                      :size => 60, :required => true,
-                     :disabled => (repository && !repository.new_record?))) +
+                     :disabled => !repository.safe_attribute?('url'))) +
     content_tag('p', form.select(
                      :log_encoding, [nil] + Setting::ENCODINGS,
                      :label => l(:field_commit_logs_encoding), :required => true))
@@ -181,7 +179,7 @@ module RepositoriesHelper
     content_tag('p', form.text_field(
                        :url, :label => l(:field_path_to_repository),
                        :size => 60, :required => true,
-                       :disabled => (repository && !repository.root_url.blank?)
+                       :disabled => !repository.safe_attribute?('url')
                          ) +
                      '<br />'.html_safe + l(:text_mercurial_repository_note)) +
     content_tag('p', form.select(
@@ -195,7 +193,7 @@ module RepositoriesHelper
     content_tag('p', form.text_field(
                        :url, :label => l(:field_path_to_repository),
                        :size => 60, :required => true,
-                       :disabled => (repository && !repository.root_url.blank?)
+                       :disabled => !repository.safe_attribute?('url')
                          ) +
                       '<br />'.html_safe +
                       l(:text_git_repository_note)) +
@@ -215,12 +213,12 @@ module RepositoriesHelper
                      :root_url,
                      :label => l(:field_cvsroot),
                      :size => 60, :required => true,
-                     :disabled => !repository.new_record?)) +
+                     :disabled => !repository.safe_attribute?('root_url'))) +
     content_tag('p', form.text_field(
                      :url,
                      :label => l(:field_cvs_module),
                      :size => 30, :required => true,
-                     :disabled => !repository.new_record?)) +
+                     :disabled => !repository.safe_attribute?('url'))) +
     content_tag('p', form.select(
                      :log_encoding, [nil] + Setting::ENCODINGS,
                      :label => l(:field_commit_logs_encoding), :required => true)) +
@@ -235,7 +233,7 @@ module RepositoriesHelper
     content_tag('p', form.text_field(
                      :url, :label => l(:field_path_to_repository),
                      :size => 60, :required => true,
-                     :disabled => (repository && !repository.new_record?))) +
+                     :disabled => !repository.safe_attribute?('url'))) +
     content_tag('p', form.select(
                      :log_encoding, [nil] + Setting::ENCODINGS,
                      :label => l(:field_commit_logs_encoding), :required => true))
@@ -245,7 +243,7 @@ module RepositoriesHelper
     content_tag('p', form.text_field(
                      :url, :label => l(:field_root_directory),
                      :size => 60, :required => true,
-                     :disabled => (repository && !repository.root_url.blank?))) +
+                     :disabled => !repository.safe_attribute?('url'))) +
     content_tag('p', form.select(
                         :path_encoding, [nil] + Setting::ENCODINGS,
                         :label => l(:field_scm_path_encoding)
@@ -253,59 +251,63 @@ module RepositoriesHelper
                      '<br />'.html_safe + l(:text_scm_path_encoding_note))
   end
 
-  def index_commits(commits, heads, href_proc = nil)
+  def index_commits(commits, heads)
     return nil if commits.nil? or commits.first.parents.nil?
-    map  = {}
-    commit_hashes = []
+
     refs_map = {}
-    href_proc ||= Proc.new {|x|x}
-    heads.each{|r| refs_map[r.scmid] ||= []; refs_map[r.scmid] << r}
-    commits.reverse.each_with_index do |c, i|
-      h = {}
-      h[:parents] = c.parents.collect do |p|
-        [p.scmid, 0, 0]
+    heads.each do |head|
+      refs_map[head.scmid] ||= []
+      refs_map[head.scmid] << head
+    end
+
+    commits_by_scmid = {}
+    commits.reverse.each_with_index do |commit, commit_index|
+
+      commits_by_scmid[commit.scmid] = {
+        :parent_scmids => commit.parents.collect { |parent| parent.scmid },
+        :rdmid => commit_index,
+        :refs  => refs_map.include?(commit.scmid) ? refs_map[commit.scmid].join(" ") : nil,
+        :scmid => commit.scmid,
+        :href  => block_given? ? yield(commit.scmid) : commit.scmid
+      }
+    end
+
+    heads.sort! { |head1, head2| head1.to_s <=> head2.to_s }
+
+    space = nil  
+    heads.each do |head|
+      if commits_by_scmid.include? head.scmid
+        space = index_head((space || -1) + 1, head, commits_by_scmid)
       end
-      h[:rdmid] = i
-      h[:space] = 0
-      h[:refs]  = refs_map[c.scmid].join(" ") if refs_map.include? c.scmid
-      h[:scmid] = c.scmid
-      h[:href]  = href_proc.call(c.scmid)
-      commit_hashes << h
-      map[c.scmid] = h
     end
-    heads.sort! do |a,b|
-      a.to_s <=> b.to_s
-    end
-    j = 0
-    heads.each do |h|
-      if map.include? h.scmid then
-        j = mark_chain(j += 1, map[h.scmid], map)
-      end
-    end
+
     # when no head matched anything use first commit
-    if j == 0 then
-       mark_chain(j += 1, map.values.first, map)
-    end
-    map
+    space ||= index_head(0, commits.first, commits_by_scmid)
+
+    return commits_by_scmid, space
   end
 
-  def mark_chain(mark, commit, map)
-    stack = [[mark, commit]]
-    markmax = mark
+  def index_head(space, commit, commits_by_scmid)
+
+    stack = [[space, commits_by_scmid[commit.scmid]]]
+    max_space = space
+
     until stack.empty?
-      current = stack.pop
-      m, commit = current
-      commit[:space] = m  if commit[:space] == 0
-      m1 = m - 1
-      commit[:parents].each_with_index do |p, i|
-        psha = p[0]
-        if map.include? psha  and  map[psha][:space] == 0 then
-          stack << [m1 += 1, map[psha]] if i == 0
-          stack = [[m1 += 1, map[psha]]] + stack if i > 0
+      space, commit = stack.pop
+      commit[:space] = space if commit[:space].nil?
+
+      space -= 1
+      commit[:parent_scmids].each_with_index do |parent_scmid, parent_index|
+
+        parent_commit = commits_by_scmid[parent_scmid]
+
+        if parent_commit and parent_commit[:space].nil?
+
+          stack.unshift [space += 1, parent_commit]
         end
       end
-      markmax = m1 if markmax < m1
+      max_space = space if max_space < space
     end
-    markmax
+    max_space
   end
 end

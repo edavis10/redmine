@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -50,7 +50,6 @@ class QueriesController < ApplicationController
     build_query_from_params
   end
 
-  verify :method => :post, :only => :create, :render => {:nothing => true, :status => :method_not_allowed }
   def create
     @query = Query.new(params[:query])
     @query.user = User.current
@@ -70,7 +69,6 @@ class QueriesController < ApplicationController
   def edit
   end
 
-  verify :method => :put, :only => :update, :render => {:nothing => true, :status => :method_not_allowed }
   def update
     @query.attributes = params[:query]
     @query.project = nil if params[:query_is_for_all]
@@ -86,7 +84,6 @@ class QueriesController < ApplicationController
     end
   end
 
-  verify :method => :delete, :only => :destroy, :render => {:nothing => true, :status => :method_not_allowed }
   def destroy
     @query.destroy
     redirect_to :controller => 'issues', :action => 'index', :project_id => @project, :set_filter => 1

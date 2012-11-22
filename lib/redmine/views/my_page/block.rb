@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@ module Redmine
     module MyPage
       module Block
         def self.additional_blocks
-          @@additional_blocks ||= Dir.glob("#{Rails.root}/vendor/plugins/*/app/views/my/blocks/_*.{rhtml,erb}").inject({}) do |h,file|
+          @@additional_blocks ||= Dir.glob("#{Redmine::Plugin.directory}/*/app/views/my/blocks/_*.{rhtml,erb}").inject({}) do |h,file|
             name = File.basename(file).split('.').first.gsub(/^_/, '')
             h[name] = name.to_sym
             h

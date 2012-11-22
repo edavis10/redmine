@@ -1,12 +1,11 @@
-<form id="status_by_form">
+<%= form_tag({}, :id => "status_by_form") do -%>
 <fieldset>
 <legend>
 <%= l(:label_issues_by,
        select_tag('status_by',
                    status_by_options_for_select(criteria),
                    :id => 'status_by_select',
-                   :onchange => remote_function(:url => status_by_version_path(version),
-                                                :with => "Form.serialize('status_by_form')"))) %>
+                   :data => {:remote => true, :method => 'post', :url => status_by_version_path(version)})).html_safe %>
 </legend>
 <% if counts.empty? %>
     <p><em><%= l(:label_no_data) %></em></p>
@@ -32,4 +31,4 @@
     </table>
 <% end %>
 </fieldset>
-</form>
+<% end %>

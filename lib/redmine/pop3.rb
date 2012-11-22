@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -35,7 +35,7 @@ module Redmine
             logger.debug "#{pop_session.mails.size} email(s) to process..." if logger && logger.debug?
             pop_session.each_mail do |msg|
               message = msg.pop
-              message_id = (message =~ /^Message-ID: (.*)/ ? $1 : '').strip
+              message_id = (message =~ /^Message-I[dD]: (.*)/ ? $1 : '').strip
               if MailHandler.receive(message, options)
                 msg.delete
                 logger.debug "--> Message #{message_id} processed and deleted from the server" if logger && logger.debug?
@@ -55,7 +55,7 @@ module Redmine
       private
 
       def logger
-        RAILS_DEFAULT_LOGGER
+        ::Rails.logger
       end
     end
   end

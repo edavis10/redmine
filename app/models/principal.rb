@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,21 +16,52 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class Principal < ActiveRecord::Base
-  set_table_name "#{table_name_prefix}users#{table_name_suffix}"
+  self.table_name = "#{table_name_prefix}users#{table_name_suffix}"
 
   has_many :members, :foreign_key => 'user_id', :dependent => :destroy
-  has_many :memberships, :class_name => 'Member', :foreign_key => 'user_id', :include => [ :project, :roles ], :conditions => "#{Project.table_name}.status=#{Project::STATUS_ACTIVE}", :order => "#{Project.table_name}.name"
+  has_many :memberships, :class_name => 'Member', :foreign_key => 'user_id', :include => [ :project, :roles ], :conditions => "#{Project.table_name}.status<>#{Project::STATUS_ARCHIVED}", :order => "#{Project.table_name}.name"
   has_many :projects, :through => :memberships
   has_many :issue_categories, :foreign_key => 'assigned_to_id', :dependent => :nullify
 
   # Groups and active users
-  named_scope :active, :conditions => "#{Principal.table_name}.type='Group' OR (#{Principal.table_name}.type='User' AND #{Principal.table_name}.status = 1)"
+  scope :active, :conditions => "#{Principal.table_name}.status = 1"
 
-  named_scope :like, lambda {|q|
-    s = "%#{q.to_s.strip.downcase}%"
-    {:conditions => ["LOWER(login) LIKE :s OR LOWER(firstname) LIKE :s OR LOWER(lastname) LIKE :s OR LOWER(mail) LIKE :s", {:s => s}],
-     :order => 'type, login, lastname, firstname, mail'
-    }
+  scope :like, lambda {|q|
+    if q.blank?
+      {}
+    else
+      q = q.to_s
+      pattern = "%#{q}%"
+      sql = "LOWER(login) LIKE LOWER(:p) OR LOWER(firstname) LIKE LOWER(:p) OR LOWER(lastname) LIKE LOWER(:p) OR LOWER(mail) LIKE LOWER(:p)"
+      params = {:p => pattern}
+      if q =~ /^(.+)\s+(.+)$/
+        a, b = "#{$1}%", "#{$2}%"
+        sql << " OR (LOWER(firstname) LIKE LOWER(:a) AND LOWER(lastname) LIKE LOWER(:b)) OR (LOWER(firstname) LIKE LOWER(:b) AND LOWER(lastname) LIKE LOWER(:a))"
+        params.merge!(:a => a, :b => b)
+      end
+      {:conditions => [sql, params]}
+    end
+  }
+
+  # Principals that are members of a collection of projects
+  scope :member_of, lambda {|projects|
+    projects = [projects] unless projects.is_a?(Array)
+    if projects.empty?
+      {:conditions => "1=0"}
+    else
+      ids = projects.map(&:id)
+      {:conditions => ["#{Principal.table_name}.status = 1 AND #{Principal.table_name}.id IN (SELECT DISTINCT user_id FROM #{Member.table_name} WHERE project_id IN (?))", ids]}
+    end
+  }
+  # Principals that are not members of projects
+  scope :not_member_of, lambda {|projects|
+    projects = [projects] unless projects.is_a?(Array)
+    if projects.empty?
+      {:conditions => "1=0"}
+    else
+      ids = projects.map(&:id)
+      {:conditions => ["#{Principal.table_name}.id NOT IN (SELECT DISTINCT user_id FROM #{Member.table_name} WHERE project_id IN (?))", ids]}
+    end
   }
 
   before_create :set_default_empty_values
@@ -40,7 +71,9 @@ class Principal < ActiveRecord::Base
   end
 
   def <=>(principal)
-    if self.class.name == principal.class.name
+    if principal.nil?
+      -1
+    elsif self.class.name == principal.class.name
       self.to_s.downcase <=> principal.to_s.downcase
     else
       # groups after users

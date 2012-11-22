@@ -14,10 +14,10 @@
     <a href="#" class="submenu"><%= l(:field_activity) %></a>
     <ul>
     <% @activities.each do |u| -%>
-        <li><%= context_menu_link h(u.name), {:controller => 'timelog', :action => 'bulk_edit', :ids => @time_entries.collect(&:id), :time_entry => {'activity_id' => u}, :back_url => @back}, :method => :post,
+        <li><%= context_menu_link h(u.name), {:controller => 'timelog', :action => 'bulk_update', :ids => @time_entries.collect(&:id), :time_entry => {'activity_id' => u}, :back_url => @back}, :method => :post,
                                   :selected => (@time_entry && u == @time_entry.activity), :disabled => !@can[:edit] %></li>
     <% end -%>
-        <li><%= context_menu_link l(:label_none), {:controller => 'timelog', :action => 'bulk_edit', :ids => @time_entries.collect(&:id), :time_entry => {'activity_id' => 'none'}, :back_url => @back}, :method => :post,
+        <li><%= context_menu_link l(:label_none), {:controller => 'timelog', :action => 'bulk_update', :ids => @time_entries.collect(&:id), :time_entry => {'activity_id' => 'none'}, :back_url => @back}, :method => :post,
                                   :selected => (@time_entry && @time_entry.activity.nil?), :disabled => !@can[:edit] %></li>
     </ul>
   </li>
@@ -28,6 +28,6 @@
   <li>
     <%= context_menu_link l(:button_delete),
       {:controller => 'timelog', :action => 'destroy', :ids => @time_entries.collect(&:id), :back_url => @back},
-      :method => :delete, :confirm => l(:text_time_entries_destroy_confirmation), :class => 'icon-del', :disabled => !@can[:delete] %>
+      :method => :delete, :data => {:confirm => l(:text_time_entries_destroy_confirmation)}, :class => 'icon-del', :disabled => !@can[:delete] %>
   </li>
 </ul>

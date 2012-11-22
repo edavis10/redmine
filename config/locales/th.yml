@@ -8,10 +8,10 @@ th:
       default: "%Y-%m-%d"
       short: "%b %d"
       long: "%B %d, %Y"
-      
+
     day_names: [Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday]
     abbr_day_names: [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
-      
+
     # Don't forget the nil at the beginning; there's no such thing as a 0th month
     month_names: [~, January, February, March, April, May, June, July, August, September, October, November, December]
     abbr_month_names: [~, Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]
@@ -29,7 +29,7 @@ th:
       long: "%B %d, %Y %H:%M"
     am: "am"
     pm: "pm"
-      
+
   datetime:
     distance_in_words:
       half_a_minute: "half a minute"
@@ -48,6 +48,9 @@ th:
       about_x_hours:
         one:   "about 1 hour"
         other: "about %{count} hours"
+      x_hours:
+        one:   "1 hour"
+        other: "%{count} hours"
       x_days:
         one:   "1 day"
         other: "%{count} days"
@@ -72,27 +75,27 @@ th:
       separator: "."
       delimiter: ""
       precision: 3
-    human: 
-      format: 
-        precision: 1
+    human:
+      format:
+        precision: 3
         delimiter: ""
-      storage_units: 
+      storage_units:
         format: "%n %u"
-        units: 
+        units:
           kb: KB
           tb: TB
           gb: GB
-          byte: 
+          byte:
             one: Byte
             other: Bytes
           mb: MB
-        
+
 # Used in array.to_sentence.
   support:
     array:
       sentence_connector: "and"
       skip_last_comma: false
-      
+
   activerecord:
     errors:
       template:
@@ -126,7 +129,7 @@ th:
         cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
 
   actionview_instancetag_blank_option: กรุณาเลือก
-  
+
   general_text_No: 'ไม่'
   general_text_Yes: 'ใช่'
   general_text_no: 'ไม่'
@@ -137,7 +140,7 @@ th:
   general_csv_encoding: Windows-874
   general_pdf_encoding: cp874
   general_first_day_of_week: '1'
-  
+
   notice_account_updated: บัญชีได้ถูกปรับปรุงแล้ว.
   notice_account_invalid_creditentials: ชื้ผู้ใช้หรือรหัสผ่านไม่ถูกต้อง
   notice_account_password_updated: รหัสได้ถูกปรับปรุงแล้ว.
@@ -161,13 +164,13 @@ th:
   notice_no_issue_selected: "ไม่มีปัญหาที่ถูกเลือก! กรุณาเลือกปัญหาที่คุณต้องการแก้ไข."
   notice_account_pending: "บัญชีของคุณสร้างเสร็จแล้ว ขณะนี้รอการอนุมัติจากผู้บริหารจัดการ."
   notice_default_data_loaded: ค่าเริ่มต้นโหลดเสร็จแล้ว.
-  
+
   error_can_t_load_default_data: "ค่าเริ่มต้นโหลดไม่สำเร็จ: %{value}"
   error_scm_not_found: "ไม่พบรุ่นที่ต้องการในแหล่งเก็บต้นฉบับ."
   error_scm_command_failed: "เกิดความผิดพลาดในการเข้าถึงแหล่งเก็บต้นฉบับ: %{value}"
   error_scm_annotate: "entry ไม่มีอยู่จริง หรือไม่สามารถเขียนหมายเหตุประกอบ."
   error_issue_not_found_in_project: 'ไม่พบปัญหานี้ หรือปัญหาไม่ได้อยู่ในโครงการนี้'
-  
+
   mail_subject_lost_password: "รหัสผ่าน %{value} ของคุณ"
   mail_body_lost_password: 'คลิ๊กที่ลิงค์ต่อไปนี้เพื่อเปลี่ยนรหัสผ่าน:'
   mail_subject_register: "เปิดบัญชี %{value} ของคุณ"
@@ -176,10 +179,10 @@ th:
   mail_body_account_information: ข้อมูลบัญชีของคุณ
   mail_subject_account_activation_request: "กรุณาเปิดบัญชี %{value}"
   mail_body_account_activation_request: "ผู้ใช้ใหม่ (%{value}) ได้ลงทะเบียน. บัญชีของเขากำลังรออนุมัติ:"
-  
+
   gui_validation_error: 1 ข้อผิดพลาด
   gui_validation_error_plural: "%{count} ข้อผิดพลาด"
-  
+
   field_name: ชื่อ
   field_description: รายละเอียด
   field_summary: สรุปย่อ
@@ -263,7 +266,7 @@ th:
   field_searchable: ค้นหาได้
   field_default_value: ค่าเริ่มต้น
   field_comments_sorting: แสดงความเห็น
-  
+
   setting_app_title: ชื่อโปรแกรม
   setting_app_subtitle: ชื่อโปรแกรมรอง
   setting_welcome_text: ข้อความต้อนรับ
@@ -294,7 +297,7 @@ th:
   setting_user_format: รูปแบบการแสดงชื่อผู้ใช้
   setting_activity_days_default: จำนวนวันที่แสดงในกิจกรรมของโครงการ
   setting_display_subprojects_issues: แสดงปัญหาของโครงการย่อยในโครงการหลัก
-  
+
   project_module_issue_tracking: การติดตามปัญหา
   project_module_time_tracking: การใช้เวลา
   project_module_news: ข่าว
@@ -303,7 +306,7 @@ th:
   project_module_wiki: Wiki
   project_module_repository: ที่เก็บต้นฉบับ
   project_module_boards: กระดานข้อความ
-  
+
   label_user: ผู้ใช้
   label_user_plural: ผู้ใช้
   label_user_new: ผู้ใช้ใหม่
@@ -610,7 +613,7 @@ th:
   label_chronological_order: เรียงจากเก่าไปใหม่
   label_reverse_chronological_order: เรียงจากใหม่ไปเก่า
   label_planning: การวางแผน
-  
+
   button_login: เข้าระบบ
   button_submit: จัดส่งข้อมูล
   button_save: จัดเก็บ
@@ -648,11 +651,11 @@ th:
   button_annotate: หมายเหตุประกอบ
   button_update: ปรับปรุง
   button_configure: ปรับแต่ง
-  
+
   status_active: เปิดใช้งานแล้ว
   status_registered: รอการอนุมัติ
   status_locked: ล็อค
-  
+
   text_select_mail_notifications: เลือกการกระทำที่ต้องการให้ส่งอีเมล์แจ้ง.
   text_regexp_info: ตัวอย่าง ^[A-Z0-9]+$
   text_min_max_length_info: 0 หมายถึงไม่จำกัด
@@ -663,7 +666,6 @@ th:
   text_tip_issue_begin_day: งานที่เริ่มวันนี้
   text_tip_issue_end_day: งานที่จบวันนี้
   text_tip_issue_begin_end_day: งานที่เริ่มและจบวันนี้
-  text_project_identifier_info: 'ภาษาอังกฤษตัวเล็ก(a-z), ตัวเลข(0-9) และขีด (-) เท่านั้น.<br />เมื่อจัดเก็บแล้ว, ชื่อเฉพาะไม่สามารถเปลี่ยนแปลงได้'
   text_caracters_maximum: "สูงสุด %{count} ตัวอักษร."
   text_caracters_minimum: "ต้องยาวอย่างน้อย %{count} ตัวอักษร."
   text_length_between: "ความยาวระหว่าง %{min} ถึง %{max} ตัวอักษร."
@@ -690,7 +692,7 @@ th:
   text_destroy_time_entries: ลบเวลาที่รายงานไว้
   text_assign_time_entries_to_project: ระบุเวลาที่ใช้ในโครงการนี้
   text_reassign_time_entries: 'ระบุเวลาที่ใช้ในโครงการนี่อีกครั้ง:'
-  
+
   default_role_manager: ผู้จัดการ
   default_role_developer: ผู้พัฒนา
   default_role_reporter: ผู้รายงาน
@@ -712,7 +714,7 @@ th:
   default_priority_immediate: ด่วนมาก
   default_activity_design: ออกแบบ
   default_activity_development: พัฒนา
-  
+
   enumeration_issue_priorities: ความสำคัญของปัญหา
   enumeration_doc_categories: ประเภทเอกสาร
   enumeration_activities: กิจกรรม (ใช้ในการติดตามเวลา)
@@ -1003,3 +1005,58 @@ th:
   button_export: Export
   label_export_options: "%{export_format} export options"
   error_attachment_too_big: This file cannot be uploaded because it exceeds the maximum allowed file size (%{max_size})
+  notice_failed_to_save_time_entries: "Failed to save %{count} time entrie(s) on %{total} selected: %{ids}."
+  label_x_issues:
+    zero:  0 ปัญหา
+    one:   1 ปัญหา
+    other: "%{count} ปัญหา"
+  label_repository_new: New repository
+  field_repository_is_default: Main repository
+  label_copy_attachments: Copy attachments
+  label_item_position: "%{position}/%{count}"
+  label_completed_versions: Completed versions
+  text_project_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_multiple: Multiple values
+  setting_commit_cross_project_ref: Allow issues of all the other projects to be referenced and fixed
+  text_issue_conflict_resolution_add_notes: Add my notes and discard my other changes
+  text_issue_conflict_resolution_overwrite: Apply my changes anyway (previous notes will be kept but some changes may be overwritten)
+  notice_issue_update_conflict: The issue has been updated by an other user while you were editing it.
+  text_issue_conflict_resolution_cancel: Discard all my changes and redisplay %{link}
+  permission_manage_related_issues: Manage related issues
+  field_auth_source_ldap_filter: LDAP filter
+  label_search_for_watchers: Search for watchers to add
+  notice_account_deleted: Your account has been permanently deleted.
+  setting_unsubscribe: Allow users to delete their own account
+  button_delete_my_account: Delete my account
+  text_account_destroy_confirmation: |-
+    Are you sure you want to proceed?
+    Your account will be permanently deleted, with no way to reactivate it.
+  error_session_expired: Your session has expired. Please login again.
+  text_session_expiration_settings: "Warning: changing these settings may expire the current sessions including yours."
+  setting_session_lifetime: Session maximum lifetime
+  setting_session_timeout: Session inactivity timeout
+  label_session_expiration: Session expiration
+  permission_close_project: Close / reopen the project
+  label_show_closed_projects: View closed projects
+  button_close: Close
+  button_reopen: Reopen
+  project_status_active: active
+  project_status_closed: closed
+  project_status_archived: archived
+  text_project_closed: This project is closed and read-only.
+  notice_user_successful_create: User %{id} created.
+  field_core_fields: Standard fields
+  field_timeout: Timeout (in seconds)
+  setting_thumbnails_enabled: Display attachment thumbnails
+  setting_thumbnails_size: Thumbnails size (in pixels)
+  label_status_transitions: Status transitions
+  label_fields_permissions: Fields permissions
+  label_readonly: Read-only
+  label_required: Required
+  text_repository_identifier_info: Only lower case letters (a-z), numbers, dashes and underscores are allowed.<br />Once saved, the identifier cannot be changed.
+  field_board_parent: Parent forum
+  label_attribute_of_project: Project's %{name}
+  label_attribute_of_author: Author's %{name}
+  label_attribute_of_assigned_to: Assignee's %{name}
+  label_attribute_of_fixed_version: Target version's %{name}
+  label_copy_subtasks: Copy subtasks

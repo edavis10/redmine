@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,6 +18,10 @@
 require File.expand_path('../../test_helper', __FILE__)
 
 class SettingTest < ActiveSupport::TestCase
+
+  def teardown
+    Setting.clear_cache
+  end
 
   def test_read_default
     assert_equal "Redmine", Setting.app_title
@@ -54,5 +58,33 @@ class SettingTest < ActiveSupport::TestCase
     
     Setting.clear_cache
     assert_equal "New title", Setting.app_title
+  end
+
+  def test_per_page_options_array_should_be_an_empty_array_when_setting_is_blank
+    with_settings :per_page_options => nil do
+      assert_equal [], Setting.per_page_options_array
+    end
+
+    with_settings :per_page_options => '' do
+      assert_equal [], Setting.per_page_options_array
+    end
+  end
+
+  def test_per_page_options_array_should_be_an_array_of_integers
+    with_settings :per_page_options => '10, 25, 50' do
+      assert_equal [10, 25, 50], Setting.per_page_options_array
+    end
+  end
+
+  def test_per_page_options_array_should_omit_non_numerial_values
+    with_settings :per_page_options => 'a, 25, 50' do
+      assert_equal [25, 50], Setting.per_page_options_array
+    end
+  end
+
+  def test_per_page_options_array_should_be_sorted
+    with_settings :per_page_options => '25, 10, 50' do
+      assert_equal [10, 25, 50], Setting.per_page_options_array
+    end
   end
 end

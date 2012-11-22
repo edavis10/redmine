@@ -6,7 +6,8 @@ repositories_001:
   root_url: file:///<%= Rails.root %>/tmp/test/subversion_repository
   password: ""
   login: ""
-  type: Subversion
+  type: Repository::Subversion
+  is_default: true
 repositories_002: 
   project_id: 2
   url: svn://localhost/test
@@ -14,4 +15,5 @@ repositories_002:
   root_url: svn://localhost
   password: ""
   login: ""
-  type: Subversion
+  type: Repository::Subversion
+  is_default: true

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -64,6 +64,15 @@ class IssuesTest < ActionController::IntegrationTest
     assert_equal 1, issue.status.id
   end
 
+  def test_update_issue_form
+    log_user('jsmith', 'jsmith')
+    post 'projects/ecookbook/issues/new', :issue => { :tracker_id => "2"}
+    assert_response :success
+    assert_tag 'select',
+      :attributes => {:name => 'issue[tracker_id]'},
+      :child => {:tag => 'option', :attributes => {:value => '2', :selected => 'selected'}}
+  end
+
   # add then remove 2 attachments to an issue
   def test_issue_attachments
     log_user('jsmith', 'jsmith')
@@ -89,7 +98,7 @@ class IssuesTest < ActionController::IntegrationTest
     assert_equal 0, Issue.find(1).attachments.length
   end
 
-  def test_other_formats_links_on_get_index
+  def test_other_formats_links_on_index
     get '/projects/ecookbook/issues'
 
     %w(Atom PDF CSV).each do |format|
@@ -99,8 +108,8 @@ class IssuesTest < ActionController::IntegrationTest
     end
   end
 
-  def test_other_formats_links_on_post_index_without_project_id_in_url
-    post '/issues', :project_id => 'ecookbook'
+  def test_other_formats_links_on_index_without_project_id_in_url
+    get '/issues', :project_id => 'ecookbook'
 
     %w(Atom PDF CSV).each do |format|
       assert_tag :a, :content => format,
@@ -109,7 +118,7 @@ class IssuesTest < ActionController::IntegrationTest
     end
   end
 
-  def test_pagination_links_on_get_index
+  def test_pagination_links_on_index
     Setting.per_page_options = '2'
     get '/projects/ecookbook/issues'
 
@@ -118,9 +127,9 @@ class IssuesTest < ActionController::IntegrationTest
 
   end
 
-  def test_pagination_links_on_post_index_without_project_id_in_url
+  def test_pagination_links_on_index_without_project_id_in_url
     Setting.per_page_options = '2'
-    post '/issues', :project_id => 'ecookbook'
+    get '/issues', :project_id => 'ecookbook'
 
     assert_tag :a, :content => '2',
                    :attributes => { :href => '/projects/ecookbook/issues?page=2' }
@@ -196,5 +205,24 @@ class IssuesTest < ActionController::IntegrationTest
           :content => new_tester.name
         }
       }
+  end
+
+  def test_update_using_invalid_http_verbs
+    subject = 'Updated by an invalid http verb'
+
+    get '/issues/update/1', {:issue => {:subject => subject}}, credentials('jsmith')
+    assert_response 404
+    assert_not_equal subject, Issue.find(1).subject
+
+    post '/issues/1', {:issue => {:subject => subject}}, credentials('jsmith')
+    assert_response 404
+    assert_not_equal subject, Issue.find(1).subject
+  end
+
+  def test_get_watch_should_be_invalid
+    assert_no_difference 'Watcher.count' do
+      get '/watchers/watch?object_type=issue&object_id=1', {}, credentials('jsmith')
+      assert_response 404
+    end
   end
 end

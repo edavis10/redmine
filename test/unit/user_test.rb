@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -35,8 +35,8 @@ class UserTest < ActiveSupport::TestCase
   end
 
   test 'object_daddy creation' do
-    User.generate_with_protected!(:firstname => 'Testing connection')
-    User.generate_with_protected!(:firstname => 'Testing connection')
+    User.generate!(:firstname => 'Testing connection')
+    User.generate!(:firstname => 'Testing connection')
     assert_equal 2, User.count(:all, :conditions => {:firstname => 'Testing connection'})
   end
 
@@ -54,7 +54,17 @@ class UserTest < ActiveSupport::TestCase
     u = User.new
     u.mail = ''
     assert !u.valid?
-    assert_equal I18n.translate('activerecord.errors.messages.blank'), u.errors.on(:mail)
+    assert_include I18n.translate('activerecord.errors.messages.blank'), u.errors[:mail]
+  end
+
+  def test_login_length_validation
+    user = User.new(:firstname => "new", :lastname => "user", :mail => "newuser@somenet.foo")
+    user.login = "x" * (User::LOGIN_LENGTH_LIMIT+1)
+    assert !user.valid?
+
+    user.login = "x" * (User::LOGIN_LENGTH_LIMIT)
+    assert user.valid?
+    assert user.save
   end
 
   def test_create
@@ -78,11 +88,11 @@ class UserTest < ActiveSupport::TestCase
 
   context "User#before_create" do
     should "set the mail_notification to the default Setting" do
-      @user1 = User.generate_with_protected!
+      @user1 = User.generate!
       assert_equal 'only_my_events', @user1.mail_notification
 
       with_settings :default_notification_option => 'all' do
-        @user2 = User.generate_with_protected!
+        @user2 = User.generate!
         assert_equal 'all', @user2.mail_notification
       end
     end
@@ -99,7 +109,7 @@ class UserTest < ActiveSupport::TestCase
       u.login = 'NewUser'
       u.password, u.password_confirmation = "password", "password"
       assert !u.save
-      assert_equal I18n.translate('activerecord.errors.messages.taken'), u.errors.on(:login)
+      assert_include I18n.translate('activerecord.errors.messages.taken'), u.errors[:login]
     end
   end
 
@@ -113,7 +123,7 @@ class UserTest < ActiveSupport::TestCase
     u.login = 'newuser2'
     u.password, u.password_confirmation = "password", "password"
     assert !u.save
-    assert_equal I18n.translate('activerecord.errors.messages.taken'), u.errors.on(:mail)
+    assert_include I18n.translate('activerecord.errors.messages.taken'), u.errors[:mail]
   end
 
   def test_update
@@ -122,6 +132,20 @@ class UserTest < ActiveSupport::TestCase
     assert @admin.save, @admin.errors.full_messages.join("; ")
     @admin.reload
     assert_equal "john", @admin.login
+  end
+
+  def test_update_should_not_fail_for_legacy_user_with_different_case_logins
+    u1 = User.new(:firstname => "new", :lastname => "user", :mail => "newuser1@somenet.foo")
+    u1.login = 'newuser1'
+    assert u1.save
+
+    u2 = User.new(:firstname => "new", :lastname => "user", :mail => "newuser2@somenet.foo")
+    u2.login = 'newuser1'
+    assert u2.save(:validate => false)
+
+    user = User.find(u2.id)
+    user.firstname = "firstname"
+    assert user.save, "Save failed"
   end
 
   def test_destroy_should_delete_members_and_roles
@@ -315,7 +339,8 @@ class UserTest < ActiveSupport::TestCase
     changeset = Changeset.create!(
       :repository => Repository::Subversion.create!(
         :project_id => 1,
-        :url => 'file:///var/svn'
+        :url => 'file:///tmp',
+        :identifier => 'tmp'
       ),
       :revision => '12',
       :committed_on => Time.now,
@@ -355,9 +380,9 @@ class UserTest < ActiveSupport::TestCase
     end
 
     should "select the exact matching user first" do
-      case_sensitive_user = User.generate_with_protected!(
-                                   :login => 'changed', :password => 'admin',
-                                   :password_confirmation => 'admin')
+      case_sensitive_user = User.generate! do |user|
+        user.password = "admin"
+      end
       # bypass validations to make it appear like existing data
       case_sensitive_user.update_attribute(:login, 'ADMIN')
 
@@ -392,12 +417,45 @@ class UserTest < ActiveSupport::TestCase
 
   def test_name_format
     assert_equal 'Smith, John', @jsmith.name(:lastname_coma_firstname)
-    Setting.user_format = :firstname_lastname
-    assert_equal 'John Smith', @jsmith.reload.name
-    Setting.user_format = :username
-    assert_equal 'jsmith', @jsmith.reload.name
+    with_settings :user_format => :firstname_lastname do
+      assert_equal 'John Smith', @jsmith.reload.name
+    end
+    with_settings :user_format => :username do
+      assert_equal 'jsmith', @jsmith.reload.name
+    end
   end
-  
+
+  def test_today_should_return_the_day_according_to_user_time_zone
+    preference = User.find(1).pref
+    date = Date.new(2012, 05, 15)
+    time = Time.gm(2012, 05, 15, 23, 30).utc # 2012-05-15 23:30 UTC
+    Date.stubs(:today).returns(date)
+    Time.stubs(:now).returns(time)
+
+    preference.update_attribute :time_zone, 'Baku' # UTC+4
+    assert_equal '2012-05-16', User.find(1).today.to_s
+
+    preference.update_attribute :time_zone, 'La Paz' # UTC-4
+    assert_equal '2012-05-15', User.find(1).today.to_s
+
+    preference.update_attribute :time_zone, ''
+    assert_equal '2012-05-15', User.find(1).today.to_s
+  end
+
+  def test_time_to_date_should_return_the_date_according_to_user_time_zone
+    preference = User.find(1).pref
+    time = Time.gm(2012, 05, 15, 23, 30).utc # 2012-05-15 23:30 UTC
+
+    preference.update_attribute :time_zone, 'Baku' # UTC+4
+    assert_equal '2012-05-16', User.find(1).time_to_date(time).to_s
+
+    preference.update_attribute :time_zone, 'La Paz' # UTC-4
+    assert_equal '2012-05-15', User.find(1).time_to_date(time).to_s
+
+    preference.update_attribute :time_zone, ''
+    assert_equal '2012-05-15', User.find(1).time_to_date(time).to_s
+  end
+
   def test_fields_for_order_statement_should_return_fields_according_user_format_setting
     with_settings :user_format => 'lastname_coma_firstname' do
       assert_equal ['users.lastname', 'users.firstname', 'users.id'], User.fields_for_order_statement
@@ -466,9 +524,35 @@ class UserTest < ActiveSupport::TestCase
         end
       end
 
+      context "binding with user's account" do
+        setup do
+          @auth_source = AuthSourceLdap.find(1)
+          @auth_source.account = "uid=$login,ou=Person,dc=redmine,dc=org"
+          @auth_source.account_password = ''
+          @auth_source.save!
+
+          @ldap_user = User.new(:mail => 'example1@redmine.org', :firstname => 'LDAP', :lastname => 'user', :auth_source_id => 1)
+          @ldap_user.login = 'example1'
+          @ldap_user.save!
+        end
+
+        context "with a successful authentication" do
+          should "return the user" do
+            assert_equal @ldap_user, User.try_to_login('example1', '123456')
+          end
+        end
+
+        context "with an unsuccessful authentication" do
+          should "return nil" do
+            assert_nil User.try_to_login('example1', '11111')
+          end
+        end
+      end
+
       context "on the fly registration" do
         setup do
           @auth_source = AuthSourceLdap.find(1)
+          @auth_source.update_attribute :onthefly_register, true
         end
 
         context "with a successful authentication" do
@@ -487,6 +571,30 @@ class UserTest < ActiveSupport::TestCase
             assert_no_difference('User.count') do
               user = User.try_to_login('edavis', '123456')
               assert user.admin?
+            end
+          end
+        end
+
+        context "binding with user's account" do
+          setup do
+            @auth_source = AuthSourceLdap.find(1)
+            @auth_source.account = "uid=$login,ou=Person,dc=redmine,dc=org"
+            @auth_source.account_password = ''
+            @auth_source.save!
+          end
+  
+          context "with a successful authentication" do
+            should "create a new user account if it doesn't exist" do
+              assert_difference('User.count') do
+                user = User.try_to_login('example1', '123456')
+                assert_kind_of User, user
+              end
+            end
+          end
+  
+          context "with an unsuccessful authentication" do
+            should "return nil" do
+              assert_nil User.try_to_login('example1', '11111')
             end
           end
         end
@@ -515,8 +623,6 @@ class UserTest < ActiveSupport::TestCase
     assert_equal 1, anon2.errors.count
   end
 
-  should_have_one :rss_token
-
   def test_rss_key
     assert_nil @jsmith.rss_token
     key = @jsmith.rss_key
@@ -526,12 +632,25 @@ class UserTest < ActiveSupport::TestCase
     assert_equal key, @jsmith.rss_key
   end
 
+  def test_rss_key_should_not_be_generated_twice
+    assert_difference 'Token.count', 1 do
+      key1 = @jsmith.rss_key
+      key2 = @jsmith.rss_key
+      assert_equal key1, key2
+    end
+  end
 
-  should_have_one :api_token
+  def test_api_key_should_not_be_generated_twice
+    assert_difference 'Token.count', 1 do
+      key1 = @jsmith.api_key
+      key2 = @jsmith.api_key
+      assert_equal key1, key2
+    end
+  end
 
   context "User#api_key" do
     should "generate a new one if the user doesn't have one" do
-      user = User.generate_with_protected!(:api_token => nil)
+      user = User.generate!(:api_token => nil)
       assert_nil user.api_token
 
       key = user.api_key
@@ -541,8 +660,8 @@ class UserTest < ActiveSupport::TestCase
     end
 
     should "return the existing api token value" do
-      user = User.generate_with_protected!
-      token = Token.generate!(:action => 'api')
+      user = User.generate!
+      token = Token.create!(:action => 'api')
       user.api_token = token
       assert user.save
 
@@ -556,8 +675,9 @@ class UserTest < ActiveSupport::TestCase
     end
 
     should "return nil if the key is found for an inactive user" do
-      user = User.generate_with_protected!(:status => User::STATUS_LOCKED)
-      token = Token.generate!(:action => 'api')
+      user = User.generate!
+      user.status = User::STATUS_LOCKED
+      token = Token.create!(:action => 'api')
       user.api_token = token
       user.save
 
@@ -565,13 +685,45 @@ class UserTest < ActiveSupport::TestCase
     end
 
     should "return the user if the key is found for an active user" do
-      user = User.generate_with_protected!(:status => User::STATUS_ACTIVE)
-      token = Token.generate!(:action => 'api')
+      user = User.generate!
+      token = Token.create!(:action => 'api')
       user.api_token = token
       user.save
 
       assert_equal user, User.find_by_api_key(token.value)
     end
+  end
+
+  def test_default_admin_account_changed_should_return_false_if_account_was_not_changed
+    user = User.find_by_login("admin")
+    user.password = "admin"
+    user.save!
+
+    assert_equal false, User.default_admin_account_changed?
+  end
+
+  def test_default_admin_account_changed_should_return_true_if_password_was_changed
+    user = User.find_by_login("admin")
+    user.password = "newpassword"
+    user.save!
+
+    assert_equal true, User.default_admin_account_changed?
+  end
+
+  def test_default_admin_account_changed_should_return_true_if_account_is_disabled
+    user = User.find_by_login("admin")
+    user.password = "admin"
+    user.status = User::STATUS_LOCKED
+    user.save!
+
+    assert_equal true, User.default_admin_account_changed?
+  end
+
+  def test_default_admin_account_changed_should_return_true_if_account_does_not_exist
+    user = User.find_by_login("admin")
+    user.destroy
+
+    assert_equal true, User.default_admin_account_changed?
   end
 
   def test_roles_for_project
@@ -590,6 +742,13 @@ class UserTest < ActiveSupport::TestCase
     assert_equal 2, user.projects_by_role.size
     assert_equal [1,5], user.projects_by_role[Role.find(1)].collect(&:id).sort
     assert_equal [2], user.projects_by_role[Role.find(2)].collect(&:id).sort
+  end
+
+  def test_accessing_projects_by_role_with_no_projects_should_return_an_empty_array
+    user = User.find(2)
+    assert_equal [], user.projects_by_role[Role.find(3)]
+    # should not update the hash
+    assert_nil user.projects_by_role.values.detect(&:blank?)
   end
 
   def test_projects_by_role_for_user_with_no_role
@@ -661,12 +820,12 @@ class UserTest < ActiveSupport::TestCase
 
   context "#change_password_allowed?" do
     should "be allowed if no auth source is set" do
-      user = User.generate_with_protected!
+      user = User.generate!
       assert user.change_password_allowed?
     end
 
     should "delegate to the auth source" do
-      user = User.generate_with_protected!
+      user = User.generate!
 
       allowed_auth_source = AuthSource.generate!
       def allowed_auth_source.allow_password_changes?; true; end
@@ -682,7 +841,36 @@ class UserTest < ActiveSupport::TestCase
       user.auth_source = denied_auth_source
       assert !user.change_password_allowed?, "User allowed to change password, though auth source does not"
     end
+  end
 
+  def test_own_account_deletable_should_be_true_with_unsubscrive_enabled
+    with_settings :unsubscribe => '1' do
+      assert_equal true, User.find(2).own_account_deletable?
+    end
+  end
+
+  def test_own_account_deletable_should_be_false_with_unsubscrive_disabled
+    with_settings :unsubscribe => '0' do
+      assert_equal false, User.find(2).own_account_deletable?
+    end
+  end
+
+  def test_own_account_deletable_should_be_false_for_a_single_admin
+    User.delete_all(["admin = ? AND id <> ?", true, 1])
+
+    with_settings :unsubscribe => '1' do
+      assert_equal false, User.find(1).own_account_deletable?
+    end
+  end
+
+  def test_own_account_deletable_should_be_true_for_an_admin_if_other_admin_exists
+    User.generate! do |user|
+      user.admin = true
+    end
+
+    with_settings :unsubscribe => '1' do
+      assert_equal true, User.find(1).own_account_deletable?
+    end
   end
 
   context "#allowed_to?" do
@@ -691,6 +879,18 @@ class UserTest < ActiveSupport::TestCase
         project = Project.find(1)
         Project.any_instance.stubs(:status).returns(Project::STATUS_ARCHIVED)
         assert ! @admin.allowed_to?(:view_issues, Project.find(1))
+      end
+
+      should "return false for write action if project is closed" do
+        project = Project.find(1)
+        Project.any_instance.stubs(:status).returns(Project::STATUS_CLOSED)
+        assert ! @admin.allowed_to?(:edit_project, Project.find(1))
+      end
+
+      should "return true for read action if project is closed" do
+        project = Project.find(1)
+        Project.any_instance.stubs(:status).returns(Project::STATUS_CLOSED)
+        assert @admin.allowed_to?(:view_project, Project.find(1))
       end
 
       should "return false if related module is disabled" do
@@ -749,8 +949,8 @@ class UserTest < ActiveSupport::TestCase
     context "Issues" do
       setup do
         @project = Project.find(1)
-        @author = User.generate_with_protected!
-        @assignee = User.generate_with_protected!
+        @author = User.generate!
+        @assignee = User.generate!
         @issue = Issue.generate_for_project!(@project, :assigned_to => @assignee, :author => @author)
       end
 
@@ -765,7 +965,7 @@ class UserTest < ActiveSupport::TestCase
       end
 
       should "be false for a user with :only_my_events and isn't an author, creator, or assignee" do
-        @user = User.generate_with_protected!(:mail_notification => 'only_my_events')
+        @user = User.generate!(:mail_notification => 'only_my_events')
         Member.create!(:user => @user, :project => @project, :role_ids => [1])
         assert ! @user.notify_about?(@issue)
       end
@@ -811,7 +1011,7 @@ class UserTest < ActiveSupport::TestCase
       end
 
       should "be false for a user with :selected and is not the author or assignee" do
-        @user = User.generate_with_protected!(:mail_notification => 'selected')
+        @user = User.generate!(:mail_notification => 'selected')
         Member.create!(:user => @user, :project => @project, :role_ids => [1])
         assert ! @user.notify_about?(@issue)
       end

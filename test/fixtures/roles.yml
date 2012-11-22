@@ -8,6 +8,7 @@ roles_001:
     --- 
     - :add_project
     - :edit_project
+    - :close_project
     - :select_project_modules
     - :manage_members
     - :manage_versions
@@ -53,6 +54,7 @@ roles_001:
     - :browse_repository
     - :manage_repository
     - :view_changesets
+    - :manage_related_issues
     - :manage_project_activities
 
   position: 1
@@ -152,7 +154,6 @@ roles_004:
     - :edit_issues
     - :manage_issue_relations
     - :add_issue_notes
-    - :move_issues
     - :save_queries
     - :view_gantt
     - :view_calendar

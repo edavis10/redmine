@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -67,6 +67,10 @@ module Redmine
         @stylesheets ||= assets("stylesheets", "css")
       end
 
+      def images
+        @images ||= assets("images")
+      end
+
       def javascripts
         @javascripts ||= assets("javascripts", "js")
       end
@@ -75,14 +79,22 @@ module Redmine
         "/themes/#{dir}/stylesheets/#{source}"
       end
 
+      def image_path(source)
+        "/themes/#{dir}/images/#{source}"
+      end
+
       def javascript_path(source)
         "/themes/#{dir}/javascripts/#{source}"
       end
 
       private
 
-      def assets(dir, ext)
-        Dir.glob("#{path}/#{dir}/*.#{ext}").collect {|f| File.basename(f).gsub(/\.#{ext}$/, '')}
+      def assets(dir, ext=nil)
+        if ext
+          Dir.glob("#{path}/#{dir}/*.#{ext}").collect {|f| File.basename(f).gsub(/\.#{ext}$/, '')}
+        else
+          Dir.glob("#{path}/#{dir}/*").collect {|f| File.basename(f)}
+        end
       end
     end
 
@@ -104,18 +116,6 @@ module ApplicationHelper
       @current_theme = Redmine::Themes.theme(Setting.ui_theme)
     end
     @current_theme
-  end
-
-  def stylesheet_path(source)
-    if current_theme && current_theme.stylesheets.include?(source)
-      super current_theme.stylesheet_path(source)
-    else
-      super
-    end
-  end
-
-  def path_to_stylesheet(source)
-    stylesheet_path source
   end
 
   # Returns the header tags for the current theme

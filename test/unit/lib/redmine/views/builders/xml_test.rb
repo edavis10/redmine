@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -46,8 +46,21 @@ class Redmine::Views::Builders::XmlTest < ActiveSupport::TestCase
     end
   end
 
+  def test_nested_arrays
+    assert_xml_output('<books type="array"><book><authors type="array"><author>B. Smith</author><author>G. Cooper</author></authors></book></books>') do |b|
+      b.array :books do |books|
+        books.book do |book|
+          book.array :authors do |authors|
+            authors.author 'B. Smith'
+            authors.author 'G. Cooper'
+          end
+        end
+      end
+    end
+  end
+
   def assert_xml_output(expected, &block)
-    builder = Redmine::Views::Builders::Xml.new
+    builder = Redmine::Views::Builders::Xml.new(ActionDispatch::TestRequest.new, ActionDispatch::TestResponse.new)
     block.call(builder)
     assert_equal('<?xml version="1.0" encoding="UTF-8"?>' + expected, builder.output)
   end

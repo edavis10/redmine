@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -31,6 +31,10 @@ class SysControllerTest < ActionController::TestCase
     @response   = ActionController::TestResponse.new
     Setting.sys_api_enabled = '1'
     Setting.enabled_scm = %w(Subversion Git)
+  end
+
+  def teardown
+    Setting.clear_cache
   end
 
   def test_projects_with_repository_enabled
@@ -67,15 +71,37 @@ class SysControllerTest < ActionController::TestCase
     assert_no_tag 'extra_info'
   end
 
+  def test_create_already_existing
+    post :create_project_repository, :id => 1,
+      :vendor => 'Subversion',
+      :repository => { :url => 'file:///create/project/repository/subproject2'}
+
+    assert_response :conflict
+  end
+
+  def test_create_with_failure
+    post :create_project_repository, :id => 4,
+      :vendor => 'Subversion',
+      :repository => { :url => 'invalid url'}
+
+    assert_response :unprocessable_entity
+  end
+
   def test_fetch_changesets
-    Repository::Subversion.any_instance.expects(:fetch_changesets).returns(true)
+    Repository::Subversion.any_instance.expects(:fetch_changesets).twice.returns(true)
     get :fetch_changesets
     assert_response :success
   end
 
-  def test_fetch_changesets_one_project
-    Repository::Subversion.any_instance.expects(:fetch_changesets).returns(true)
+  def test_fetch_changesets_one_project_by_identifier
+    Repository::Subversion.any_instance.expects(:fetch_changesets).once.returns(true)
     get :fetch_changesets, :id => 'ecookbook'
+    assert_response :success
+  end
+
+  def test_fetch_changesets_one_project_by_id
+    Repository::Subversion.any_instance.expects(:fetch_changesets).once.returns(true)
+    get :fetch_changesets, :id => '1'
     assert_response :success
   end
 

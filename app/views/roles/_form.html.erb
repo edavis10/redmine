@@ -1,6 +1,7 @@
 <%= error_messages_for 'role' %>
 
-<div class="box">
+<% unless @role.anonymous? %>
+<div class="box tabular">
 <% unless @role.builtin? %>
 <p><%= f.text_field :name, :required => true %></p>
 <p><%= f.check_box :assignable %></p>
@@ -8,13 +9,14 @@
 <p><%= f.select :issues_visibility, Role::ISSUES_VISIBILITY_OPTIONS.collect {|v| [l(v.last), v.first]} %></p>
 <% if @role.new_record? && @roles.any? %>
 <p><label for="copy_workflow_from"><%= l(:label_copy_workflow_from) %></label>
-<%= select_tag(:copy_workflow_from, content_tag("option") + options_from_collection_for_select(@roles, :id, :name)) %></p>
+<%= select_tag(:copy_workflow_from, content_tag("option") + options_from_collection_for_select(@roles, :id, :name, params[:copy_workflow_from] || @copy_from.try(:id))) %></p>
 <% end %>
 </div>
+<% end %>
 
 <h3><%= l(:label_permissions) %></h3>
-<div class="box" id="permissions">
-<% perms_by_module = @permissions.group_by {|p| p.project_module.to_s} %>
+<div class="box tabular" id="permissions">
+<% perms_by_module = @role.setable_permissions.group_by {|p| p.project_module.to_s} %>
 <% perms_by_module.keys.sort.each do |mod| %>
     <fieldset><legend><%= mod.blank? ? l(:label_project) : l_or_humanize(mod, :prefix => 'project_module_') %></legend>
     <% perms_by_module[mod].each do |permission| %>

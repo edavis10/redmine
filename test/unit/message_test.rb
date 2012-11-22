@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -131,6 +131,21 @@ class MessageTest < ActiveSupport::TestCase
     # Checks counters
     assert_equal topics_count, board.topics_count
     assert_equal messages_count - 1, board.messages_count
+  end
+
+  def test_destroying_last_reply_should_update_topic_last_reply_id
+    topic = Message.find(4)
+    assert_equal 6, topic.last_reply_id
+
+    assert_difference 'Message.count', -1 do
+      Message.find(6).destroy
+    end
+    assert_equal 5, topic.reload.last_reply_id
+
+    assert_difference 'Message.count', -1 do
+      Message.find(5).destroy
+    end
+    assert_nil topic.reload.last_reply_id
   end
 
   def test_editable_by

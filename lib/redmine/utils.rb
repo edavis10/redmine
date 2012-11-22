@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,7 +22,7 @@ module Redmine
       def relative_url_root
         ActionController::Base.respond_to?('relative_url_root') ?
           ActionController::Base.relative_url_root.to_s :
-          ActionController::AbstractRequest.relative_url_root.to_s
+          ActionController::Base.config.relative_url_root.to_s
       end
 
       # Sets the relative root url of the application
@@ -30,7 +30,24 @@ module Redmine
         if ActionController::Base.respond_to?('relative_url_root=')
           ActionController::Base.relative_url_root=arg
         else
-          ActionController::AbstractRequest.relative_url_root=arg
+          ActionController::Base.config.relative_url_root = arg
+        end
+      end
+
+      # Generates a n bytes random hex string
+      # Example:
+      #   random_hex(4) # => "89b8c729"
+      def random_hex(n)
+        SecureRandom.hex(n)
+      end
+    end
+
+    module Shell
+      def shell_quote(str)
+        if Redmine::Platform.mswin?
+          '"' + str.gsub(/"/, '\\"') + '"'
+        else
+          "'" + str.gsub(/'/, "'\"'\"'") + "'"
         end
       end
     end

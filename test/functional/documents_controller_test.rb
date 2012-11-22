@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,18 +16,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 require File.expand_path('../../test_helper', __FILE__)
-require 'documents_controller'
-
-# Re-raise errors caught by the controller.
-class DocumentsController; def rescue_action(e) raise e end; end
 
 class DocumentsControllerTest < ActionController::TestCase
-  fixtures :projects, :users, :roles, :members, :member_roles, :enabled_modules, :documents, :enumerations
+  fixtures :projects, :users, :roles, :members, :member_roles,
+           :enabled_modules, :documents, :enumerations,
+           :groups_users, :attachments
 
   def setup
-    @controller = DocumentsController.new
-    @request    = ActionController::TestRequest.new
-    @response   = ActionController::TestResponse.new
     User.current = nil
   end
 
@@ -51,6 +46,24 @@ class DocumentsControllerTest < ActionController::TestCase
                            :parent => {:tag => 'select', :attributes => {:id => 'document_category_id'} }
   end
 
+  def test_index_grouped_by_date
+    get :index, :project_id => 'ecookbook', :sort_by => 'date'
+    assert_response :success
+    assert_tag 'h3', :content => '2007-02-12'
+  end
+
+  def test_index_grouped_by_title
+    get :index, :project_id => 'ecookbook', :sort_by => 'title'
+    assert_response :success
+    assert_tag 'h3', :content => 'T'
+  end
+
+  def test_index_grouped_by_author
+    get :index, :project_id => 'ecookbook', :sort_by => 'author'
+    assert_response :success
+    assert_tag 'h3', :content => 'John Smith'
+  end
+
   def test_index_with_long_description
     # adds a long description to the first document
     doc = documents(:documents_001)
@@ -69,18 +82,31 @@ LOREM
     assert_select '.wiki p', :text => Regexp.new(Regexp.escape("EndOfLineHere..."))
   end
 
-  def test_new_with_one_attachment
+  def test_show
+    get :show, :id => 1
+    assert_response :success
+    assert_template 'show'
+  end
+
+  def test_new
+    @request.session[:user_id] = 2
+    get :new, :project_id => 1
+    assert_response :success
+    assert_template 'new'
+  end
+
+  def test_create_with_one_attachment
     ActionMailer::Base.deliveries.clear
-    Setting.notified_events << 'document_added'
     @request.session[:user_id] = 2
     set_tmp_attachments_directory
 
-    post :new, :project_id => 'ecookbook',
+    with_settings :notified_events => %w(document_added) do
+      post :create, :project_id => 'ecookbook',
                :document => { :title => 'DocumentsControllerTest#test_post_new',
                               :description => 'This is a new document',
                               :category_id => 2},
                :attachments => {'1' => {'file' => uploaded_test_file('testfile.txt', 'text/plain')}}
-
+    end
     assert_redirected_to '/projects/ecookbook/documents'
 
     document = Document.find_by_title('DocumentsControllerTest#test_post_new')
@@ -91,10 +117,70 @@ LOREM
     assert_equal 1, ActionMailer::Base.deliveries.size
   end
 
+  def test_create_with_failure
+    @request.session[:user_id] = 2
+    assert_no_difference 'Document.count' do
+      post :create, :project_id => 'ecookbook', :document => { :title => ''}
+    end
+    assert_response :success
+    assert_template 'new'
+  end
+
+  def test_create_non_default_category
+    @request.session[:user_id] = 2
+    category2 = Enumeration.find_by_name('User documentation')
+    category2.update_attributes(:is_default => true)
+    category1 = Enumeration.find_by_name('Uncategorized')
+    post :create,
+         :project_id => 'ecookbook',
+         :document => { :title => 'no default',
+                        :description => 'This is a new document',
+                        :category_id => category1.id }
+    assert_redirected_to '/projects/ecookbook/documents'
+    doc = Document.find_by_title('no default')
+    assert_not_nil doc
+    assert_equal category1.id, doc.category_id
+    assert_equal category1, doc.category
+  end
+
+  def test_edit
+    @request.session[:user_id] = 2
+    get :edit, :id => 1
+    assert_response :success
+    assert_template 'edit'
+  end
+
+  def test_update
+    @request.session[:user_id] = 2
+    put :update, :id => 1, :document => {:title => 'test_update'}
+    assert_redirected_to '/documents/1'
+    document = Document.find(1)
+    assert_equal 'test_update', document.title
+  end
+
+  def test_update_with_failure
+    @request.session[:user_id] = 2
+    put :update, :id => 1, :document => {:title => ''}
+    assert_response :success
+    assert_template 'edit'
+  end
+
   def test_destroy
     @request.session[:user_id] = 2
-    post :destroy, :id => 1
+    assert_difference 'Document.count', -1 do
+      delete :destroy, :id => 1
+    end
     assert_redirected_to '/projects/ecookbook/documents'
     assert_nil Document.find_by_id(1)
+  end
+
+  def test_add_attachment
+    @request.session[:user_id] = 2
+    assert_difference 'Attachment.count' do
+      post :add_attachment, :id => 1,
+        :attachments => {'1' => {'file' => uploaded_test_file('testfile.txt', 'text/plain')}}
+    end
+    attachment = Attachment.first(:order => 'id DESC')
+    assert_equal Document.find(1), attachment.container
   end
 end

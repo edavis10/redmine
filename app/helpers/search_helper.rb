@@ -1,5 +1,7 @@
+# encoding: utf-8
+#
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -35,7 +37,7 @@ module SearchHelper
         result << content_tag('span', h(words), :class => "highlight token-#{t}")
       end
     end
-    result
+    result.html_safe
   end
 
   def type_label(t)
@@ -61,6 +63,8 @@ module SearchHelper
       links << link_to(h(text), :q => params[:q], :titles_only => params[:titles_only],
                        :all_words => params[:all_words], :scope => params[:scope], t => 1)
     end
-    ('<ul>' + links.map {|link| content_tag('li', link)}.join(' ') + '</ul>') unless links.empty?
+    ('<ul>'.html_safe +
+        links.map {|link| content_tag('li', link)}.join(' ').html_safe + 
+        '</ul>'.html_safe) unless links.empty?
   end
 end

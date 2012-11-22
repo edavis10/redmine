@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2011  Jean-Philippe Lang
+# Copyright (C) 2006-2012  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,8 +21,12 @@ module Redmine
   module Views
     module Builders
       class Structure < BlankSlate
-        def initialize
+        attr_accessor :request, :response
+
+        def initialize(request, response)
           @struct = [{}]
+          self.request = request
+          self.response = response
         end
 
         def array(tag, options={}, &block)
@@ -43,7 +47,11 @@ module Redmine
               end
             else
               if @struct.last.is_a?(Array)
-                @struct.last << (args.last || {}).merge(:value => args.first)
+                if args.size == 1 && !block_given?
+                  @struct.last << args.first
+                else
+                  @struct.last << (args.last || {}).merge(:value => args.first)
+                end
               else
                 @struct.last[sym] = args.first
               end
