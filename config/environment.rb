@@ -11,4 +11,4 @@ if Dir.glob(File.join(vendor_plugins_dir, "*")).any?
 end
 
 # Initialize the rails application
-RedmineApp::Application.initialize!
+RedmineApp::Application.initialize
