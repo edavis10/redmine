@@ -26,6 +26,7 @@ module Redmine
         apop = (pop_options[:apop].to_s == '1')
         delete_unprocessed = (pop_options[:delete_unprocessed].to_s == '1')
 
+        Net::POP3.enable_ssl(OpenSSL::SSL::VERIFY_NONE) if !pop_options[:ssl].nil?
         pop = Net::POP3.APOP(apop).new(host,port)
         logger.debug "Connecting to #{host}..." if logger && logger.debug?
         pop.start(pop_options[:username], pop_options[:password]) do |pop_session|

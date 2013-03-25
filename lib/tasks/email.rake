@@ -141,6 +141,7 @@ Available POP3 options:
   port=PORT                POP3 server port (default: 110)
   username=USERNAME        POP3 account
   password=PASSWORD        POP3 password
+  ssl=SSL                  Use SSL? (default: false)
   apop=1                   use APOP authentication (default: false)
   delete_unprocessed=1     delete messages that could not be processed
                            successfully from the server (default
@@ -152,6 +153,7 @@ END_DESC
     task :receive_pop3 => :environment do
       pop_options  = {:host => ENV['host'],
                       :port => ENV['port'],
+                      :ssl => ENV['ssl'],
                       :apop => ENV['apop'],
                       :username => ENV['username'],
                       :password => ENV['password'],
