@@ -72,8 +72,7 @@ module TimelogHelper
   end
 
   def options_for_period_select(value)
-    options_for_select([[l(:label_all_time), 'all'],
-                        [l(:label_today), 'today'],
+    options_for_select([[l(:label_today), 'today'],
                         [l(:label_yesterday), 'yesterday'],
                         [l(:label_this_week), 'current_week'],
                         [l(:label_last_week), 'last_week'],
@@ -83,6 +82,7 @@ module TimelogHelper
                         [l(:label_last_month), 'last_month'],
                         [l(:label_last_n_days, 30), '30_days'],
                         [l(:label_this_year), 'current_year']],
+                        [l(:label_all_time), 'all']
                         value)
   end
 
