@@ -1,0 +1,24 @@
+production:
+    environment_variables:
+            SECRET_TOKEN: AUTO_GENERATE_30
+    rails:
+        server:
+            unique_name: frontend
+        configuration:
+            ignore_missing_schema: true
+staging:
+    environment_variables:
+            SECRET_TOKEN: AUTO_GENERATE_30
+    rails:
+        server:
+            unique_name: frontend
+        configuration:
+            ignore_missing_schema: true
+development:
+    environment_variables:
+            SECRET_TOKEN: AUTO_GENERATE_30
+    rails:
+        server:
+            unique_name: frontend
+        configuration:
+            ignore_missing_schema: true
