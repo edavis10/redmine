@@ -127,7 +127,22 @@ module Redmine #:nodoc:
     end
 
     def self.load
-      Dir.glob(File.join(self.directory, '*')).sort.each do |directory|
+      # get the plugin directories and pull prioritized directories
+      # based on the config.plugins setting to front
+      plugin_directories = Dir.glob(File.join(self.directory, '*')).sort
+      if !RedmineApp::Application.config.plugins.nil?
+        RedmineApp::Application.config.plugins.each do |plugin_name|
+          if plugin_name != :all
+            plugin_directory = self.directory+"/"+plugin_name.to_s
+            if plugin_directories.include?(plugin_directory)
+              plugin_directories.delete(plugin_directory)
+              plugin_directories.unshift(plugin_directory)
+            end
+          end
+        end
+      end
+      #Dir.glob(File.join(self.directory, '*')).sort.each do |directory|
+      plugin_directories.each do |directory|
         if File.directory?(directory)
           lib = File.join(directory, "lib")
           if File.directory?(lib)
