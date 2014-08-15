@@ -129,30 +129,43 @@ module Redmine #:nodoc:
     def self.load
       # get the plugin directories and pull prioritized directories
       # based on the config.plugins setting to front
-      plugin_directories = Dir.glob(File.join(self.directory, '*')).sort
+      plugin_directories = Dir.glob(File.join(self.directory, '*')).select {|f| File.directory? f}.map { |f| File.basename f}.sort
       if !RedmineApp::Application.config.plugins.nil?
-        RedmineApp::Application.config.plugins.each do |plugin_name|
-          if plugin_name != :all
-            plugin_directory = self.directory+"/"+plugin_name.to_s
-            if plugin_directories.include?(plugin_directory)
-              plugin_directories.delete(plugin_directory)
-              plugin_directories.unshift(plugin_directory)
+        first_plugins = []
+        last_plugins = []
+        working_first = true
+        RedmineApp::Application.config.plugins.each do |plugin|
+          if plugin != :all
+            if plugin_directories.include? plugin.to_s
+                if working_first
+                  first_plugins.push plugin.to_s
+                else
+                  last_plugins.push plugin.to_s
+                end
+                plugin_directories.delete plugin.to_s
             end
+          else
+            working_first = false
           end
         end
+        plugin_directories = first_plugins + plugin_directories + last_plugins
       end
-      #Dir.glob(File.join(self.directory, '*')).sort.each do |directory|
-      plugin_directories.each do |directory|
-        if File.directory?(directory)
-          lib = File.join(directory, "lib")
-          if File.directory?(lib)
-            $:.unshift lib
-            ActiveSupport::Dependencies.autoload_paths += [lib]
-          end
-          initializer = File.join(directory, "init.rb")
-          if File.file?(initializer)
-            require initializer
-          end
+      if !RedmineApp::Application.config.disabled_plugins.nil?
+        RedmineApp::Application.config.disabled_plugins.each do |plugin|
+          plugin_directories.delete plugin.to_s
+        end
+      end
+
+      plugin_directories.map {|d| File.join(self.directory,d)}.each do |directory|
+        Rails.logger.info("Plugin "+directory)
+        lib = File.join(directory, "lib")
+        if File.directory?(lib)
+          $:.unshift lib
+          ActiveSupport::Dependencies.autoload_paths += [lib]
+        end
+        initializer = File.join(directory, "init.rb")
+        if File.file?(initializer)
+          require initializer
         end
       end
     end

@@ -104,3 +104,6 @@ Dir.glob File.expand_path("../plugins/*/Gemfile", __FILE__) do |file|
   #TODO: switch to "eval_gemfile file" when bundler >= 1.2.0 will be required (rails 4)
   instance_eval File.read(file), file
 end
+
+gem 'rails3-jquery-autocomplete'
+gem 'thin'
