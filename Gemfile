@@ -9,6 +9,10 @@ gem "request_store", "1.0.5"
 gem "mime-types"
 gem "rbpdf", "~> 1.18.1"
 
+gem "pg", ">= 0.11.0"
+gem "activerecord-jdbcpostgresql-adapter"
+
+
 # Optional gem for LDAP authentication
 group :ldap do
   gem "net-ldap", "~> 0.3.1"
