@@ -24,6 +24,10 @@ group :openid do
   gem "rack-openid"
 end
 
+group :production do
+  gem 'rails_12factor'
+end
+
 platforms :mri, :mingw do
   # Optional gem for exporting the gantt to a PNG file, not supported with jruby
   group :rmagick do
