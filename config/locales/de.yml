@@ -145,7 +145,7 @@ de:
         not_same_project: "gehört nicht zum selben Projekt"
         circular_dependency: "Diese Beziehung würde eine zyklische Abhängigkeit erzeugen"
         cant_link_an_issue_with_a_descendant: "Ein Ticket kann nicht mit einer Ihrer Unteraufgaben verlinkt werden"
-        earlier_than_minimum_start_date: "cannot be earlier than %{date} because of preceding issues"
+        earlier_than_minimum_start_date: "kann wegen eines Vorgängertickets nicht vor %{date} liegen"
 
   actionview_instancetag_blank_option: Bitte auswählen
 
@@ -851,9 +851,9 @@ de:
   mail_subject_wiki_content_added: "Wiki-Seite '%{id}' hinzugefügt"
   mail_subject_wiki_content_updated: "Wiki-Seite '%{id}' erfolgreich aktualisiert"
   mail_subject_security_notification: "Sicherheitshinweis"
-  mail_body_security_notification_change: "%{field} wurde geÃ¤ndert."
-  mail_body_security_notification_change_to: "%{field} wurde geÃ¤ndert zu %{value}."
-  mail_body_security_notification_add: "%{field} %{value} wurde hinzugefÃ¼gt."
+  mail_body_security_notification_change: "%{field} wurde geändert."
+  mail_body_security_notification_change_to: "%{field} wurde geändert zu %{value}."
+  mail_body_security_notification_add: "%{field} %{value} wurde hinzugefügt."
   mail_body_security_notification_remove: "%{field} %{value} wurde entfernt."
   mail_body_security_notification_notify_enabled: "E-Mail-Adresse %{value} erhält nun Benachrichtigungen."
   mail_body_security_notification_notify_disabled: "E-Mail-Adresse %{value} erhält keine Benachrichtigungen mehr."
@@ -1204,9 +1204,10 @@ de:
   label_relations: Beziehungen
   button_filter: Filter
   mail_body_password_updated: Ihr Passwort wurde geändert.
-  error_no_tracker_allowed_for_new_issue_in_project: The project doesn't have any trackers
-    for which you can create an issue
-  label_tracker_all: All trackers
+  error_no_tracker_allowed_for_new_issue_in_project: Für dieses Projekt wurden keine Tracker aktiviert.
+  label_tracker_all: Alle Tracker
   label_new_project_issue_tab_enabled: Tab "Neues Ticket" anzeigen
-  setting_new_item_menu_tab: Project menu tab for creating new objects
-  label_new_object_tab_enabled: Display the "+" drop-down
+  setting_new_item_menu_tab: Menü zum Anlegen neuer Objekte
+  label_new_object_tab_enabled: Dropdown-Menü "+" anzeigen
+  error_no_projects_with_tracker_allowed_for_new_issue: There are no projects with trackers
+    for which you can create an issue

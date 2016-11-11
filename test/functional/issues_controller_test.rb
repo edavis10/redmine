@@ -488,6 +488,9 @@ class IssuesControllerTest < ActionController::TestCase
 
       assert_select 'input[name=?][value=?]', 'sort', 'status'
     end
+
+    get :index, :project_id => 1, :set_filter => "1", :f => []
+    assert_select '#csv-export-form input[name=?][value=?]', 'f[]', ''
   end
 
   def test_index_csv
@@ -505,6 +508,14 @@ class IssuesControllerTest < ActionController::TestCase
     assert_response :success
     assert_not_nil assigns(:issues)
     assert_equal 'text/csv; header=present', @response.content_type
+  end
+
+  def test_index_csv_without_any_filters
+    @request.session[:user_id] = 1
+    Issue.create!(:project_id => 1, :tracker_id => 1, :status_id => 5, :subject => 'Closed issue', :author_id => 1)
+    get :index, :set_filter => 1, :f => [], :format => 'csv'
+    assert_response :success
+    assert_equal Issue.count, assigns(:issues).count
   end
 
   def test_index_csv_with_description
@@ -1744,6 +1755,25 @@ class IssuesControllerTest < ActionController::TestCase
     assert_response 404
   end
 
+  def test_show_on_active_project_should_display_edit_links
+    @request.session[:user_id] = 1
+
+    get :show, :id => 1
+    assert_response :success
+    assert_select 'a', :text => 'Edit'
+    assert_select 'a', :text => 'Delete'
+  end
+
+  def test_show_on_closed_project_should_not_display_edit_links
+    Issue.find(1).project.close
+    @request.session[:user_id] = 1
+
+    get :show, :id => 1
+    assert_response :success
+    assert_select 'a', :text => 'Edit', :count => 0
+    assert_select 'a', :text => 'Delete', :count => 0
+  end
+
   def test_get_new
     @request.session[:user_id] = 2
     get :new, :project_id => 1, :tracker_id => 1
@@ -1887,6 +1917,24 @@ class IssuesControllerTest < ActionController::TestCase
 
     get :new, :project_id => 1
     assert_response 403
+  end
+
+  def test_new_without_projects_should_respond_with_403
+    Project.delete_all
+    @request.session[:user_id] = 2
+
+    get :new
+    assert_response 403
+    assert_select_error /no projects/
+  end
+
+  def test_new_without_enabled_trackers_on_projects_should_respond_with_403
+    Project.all.each {|p| p.trackers.clear }
+    @request.session[:user_id] = 2
+
+    get :new
+    assert_response 403
+    assert_select_error /no projects/
   end
 
   def test_new_should_preselect_default_version

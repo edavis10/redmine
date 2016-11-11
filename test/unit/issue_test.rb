@@ -319,6 +319,28 @@ class IssueTest < ActiveSupport::TestCase
     assert_equal false, Issue.where(:project_id => 1).first.visible?(user)
   end
 
+  def test_visible_scope_with_custom_non_member_role_having_restricted_permission
+    role = Role.generate!(:permissions => [:view_project])
+    assert Role.non_member.has_permission?(:view_issues)
+    user = User.generate!
+    Member.create!(:principal => Group.non_member, :project_id => 1, :roles => [role])
+
+    issues = Issue.visible(user).to_a
+    assert issues.any?
+    assert_nil issues.detect {|issue| issue.project_id == 1}
+  end
+
+  def test_visible_scope_with_custom_non_member_role_having_extended_permission
+    role = Role.generate!(:permissions => [:view_project, :view_issues])
+    Role.non_member.remove_permission!(:view_issues)
+    user = User.generate!
+    Member.create!(:principal => Group.non_member, :project_id => 1, :roles => [role])
+
+    issues = Issue.visible(user).to_a
+    assert issues.any?
+    assert_not_nil issues.detect {|issue| issue.project_id == 1}
+  end
+
   def test_visible_scope_for_member_with_groups_should_return_assigned_issues
     user = User.find(8)
     assert user.groups.any?
@@ -495,6 +517,22 @@ class IssueTest < ActiveSupport::TestCase
     issue = Issue.generate!
     Issue.where(:id => issue.id).update_all :assigned_to_id => group.id
     assert_equal [issue], Issue.assigned_to(user).to_a
+  end
+
+  def test_issue_should_be_readonly_on_closed_project
+    issue = Issue.find(1)
+    user = User.find(1)
+
+    assert_equal true, issue.visible?(user)
+    assert_equal true, issue.editable?(user)
+    assert_equal true, issue.deletable?(user)
+
+    issue.project.close
+    issue.reload
+
+    assert_equal true, issue.visible?(user)
+    assert_equal false, issue.editable?(user)
+    assert_equal false, issue.deletable?(user)
   end
 
   def test_errors_full_messages_should_include_custom_fields_errors
@@ -738,7 +776,7 @@ class IssueTest < ActiveSupport::TestCase
     user = User.find(2)
     group = Group.generate!
     group.users << user
- 
+
     issue = Issue.generate!(:author_id => 1, :assigned_to => group)
     assert_include 4, issue.new_statuses_allowed_to(user).map(&:id)
   end
@@ -1308,6 +1346,16 @@ class IssueTest < ActiveSupport::TestCase
       assert copy.save
       assert copy.save
     end
+  end
+
+  def test_copy_should_clear_closed_on
+    copied_open = Issue.find(8).copy(:status_id => 1)
+    assert copied_open.save
+    assert_nil copied_open.closed_on
+
+    copied_closed = Issue.find(8).copy
+    assert copied_closed.save
+    assert_not_nil copied_closed.closed_on
   end
 
   def test_should_not_call_after_project_change_on_creation
@@ -2290,6 +2338,19 @@ class IssueTest < ActiveSupport::TestCase
     with_settings :issue_group_assignment => '1' do
       assert_nil issue.assignable_users.detect {|u| u.is_a?(GroupBuiltin)}
     end
+  end
+
+  def test_assignable_users_should_not_include_users_that_cannot_view_the_tracker
+    user = User.find(3)
+    role = Role.find(2)
+    role.set_permission_trackers :view_issues, [1, 3]
+    role.save!
+
+    issue1 = Issue.new(:project_id => 1, :tracker_id => 1)
+    issue2 = Issue.new(:project_id => 1, :tracker_id => 2)
+
+    assert_include user, issue1.assignable_users
+    assert_not_include user, issue2.assignable_users
   end
 
   def test_create_should_send_email_notification
