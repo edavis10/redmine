@@ -1,0 +1,3 @@
+[submodule "plugins/rm_typo3_forge"]
+	path = plugins/rm_typo3_forge
+	url = https://github.com/TYPO3-infrastructure/rm_typo3_forge.git
