@@ -1,3 +1,6 @@
 [submodule "plugins/rm_typo3_forge"]
 	path = plugins/rm_typo3_forge
 	url = https://github.com/TYPO3-infrastructure/rm_typo3_forge.git
+[submodule "public/themes/rm_typo3_forge_theme"]
+	path = public/themes/rm_typo3_forge_theme
+	url = https://github.com/TYPO3-infrastructure/rm_typo3_forge_theme.git
