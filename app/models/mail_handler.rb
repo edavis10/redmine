@@ -62,7 +62,7 @@ class MailHandler < ActionMailer::Base
   # Use when receiving emails with rake tasks
   def self.extract_options_from_env(env)
     options = {:issue => {}}
-    %w(project status tracker category priority fixed_version).each do |option|
+    %w(project status tracker category priority assigned_to fixed_version).each do |option|
       options[:issue][option.to_sym] = env[option] if env[option]
     end
     %w(allow_override unknown_user no_permission_check no_account_notice default_group project_from_subaddress).each do |option|
@@ -199,7 +199,14 @@ class MailHandler < ActionMailer::Base
     end
 
     issue = Issue.new(:author => user, :project => project)
-    issue.safe_attributes = issue_attributes_from_keywords(issue)
+    attributes = issue_attributes_from_keywords(issue)
+    if handler_options[:no_permission_check]
+      issue.tracker_id = attributes['tracker_id']
+      if project
+        issue.tracker_id ||= project.trackers.first.try(:id)
+      end
+    end
+    issue.safe_attributes = attributes
     issue.safe_attributes = {'custom_field_values' => custom_field_values_from_keywords(issue)}
     issue.subject = cleaned_up_subject
     if issue.subject.blank?
@@ -419,10 +426,6 @@ class MailHandler < ActionMailer::Base
       'estimated_hours' => get_keyword(:estimated_hours),
       'done_ratio' => get_keyword(:done_ratio, :format => '(\d|10)?0')
     }.delete_if {|k, v| v.blank? }
-
-    if issue.new_record? && attrs['tracker_id'].nil?
-      attrs['tracker_id'] = issue.project.trackers.first.try(:id)
-    end
 
     attrs
   end

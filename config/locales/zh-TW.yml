@@ -267,8 +267,8 @@
   notice_account_deleted: "您的帳戶已被永久刪除。"
   notice_user_successful_create: "已建立用戶 %{id}。"
   notice_new_password_must_be_different: 新舊密碼必須相異
-  notice_import_finished: "已成功匯入所有的項目共 %{count} 個。"
-  notice_import_finished_with_errors: "無法匯入 %{count} 個項目 (全部共 %{total} 個)。"
+  notice_import_finished: "已成功匯入所有的項目共 %{count} 個"
+  notice_import_finished_with_errors: "無法匯入 %{count} 個項目 (全部共 %{total} 個)"
 
   error_can_t_load_default_data: "無法載入預設組態： %{value}"
   error_scm_not_found: "在儲存機制中找不到這個項目或修訂版。"
@@ -297,6 +297,7 @@
   error_can_not_read_import_file: "讀取匯入檔案時發生錯誤"
   error_attachment_extension_not_allowed: "附件之附檔名不允許使用 %{extension}"
   error_ldap_bind_credentials: "無效的 LDAP 帳號/密碼"
+  error_no_tracker_allowed_for_new_issue_in_project: "此專案沒有您可用來建立新議題的追蹤標籤"
 
   mail_subject_lost_password: 您的 Redmine 網站密碼
   mail_body_lost_password: '欲變更您的 Redmine 網站密碼, 請點選以下鏈結:'
@@ -527,7 +528,7 @@
   setting_search_results_per_page: 每一頁的搜尋結果數目
   setting_attachment_extensions_allowed: 允許使用的附檔名
   setting_attachment_extensions_denied: 禁止使用的副檔名
-  setting_new_project_issue_tab_enabled: 顯示「建立新議題」標籤頁面
+  setting_new_item_menu_tab: 建立新物件的專案功能分頁
 
   permission_add_project: 建立專案
   permission_add_subprojects: 建立子專案
@@ -645,6 +646,7 @@
   label_member_plural: 成員
   label_tracker: 追蹤標籤
   label_tracker_plural: 追蹤標籤清單
+  label_tracker_all: 所有的追蹤標籤
   label_tracker_new: 建立新的追蹤標籤
   label_workflow: 流程
   label_issue_status: 議題狀態
@@ -1077,6 +1079,8 @@
   label_field_format_enumeration: 鍵/值 清單
   label_default_values_for_new_users: 新用戶使用之預設值
   label_relations: 關聯
+  label_new_project_issue_tab_enabled: 顯示「建立新議題」標籤頁面
+  label_new_object_tab_enabled: 顯示 "+" 下拉功能表
 
   button_login: 登入
   button_submit: 送出

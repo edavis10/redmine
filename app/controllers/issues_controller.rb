@@ -211,6 +211,10 @@ class IssuesController < ApplicationController
       unless User.current.allowed_to?(:copy_issues, @projects)
         raise ::Unauthorized
       end
+    else
+      unless @issues.all?(&:attributes_editable?)
+        raise ::Unauthorized
+      end
     end
 
     @allowed_projects = Issue.allowed_target_projects
@@ -230,7 +234,7 @@ class IssuesController < ApplicationController
     end
     @custom_fields = @issues.map{|i|i.editable_custom_fields}.reduce(:&)
     @assignables = target_projects.map(&:assignable_users).reduce(:&)
-    @trackers = target_projects.map(&:trackers).reduce(:&)
+    @trackers = target_projects.map {|p| Issue.allowed_target_trackers(p) }.reduce(:&)
     @versions = target_projects.map {|p| p.shared_versions.open}.reduce(:&)
     @categories = target_projects.map {|p| p.issue_categories}.reduce(:&)
     if @copy
@@ -248,7 +252,7 @@ class IssuesController < ApplicationController
     @issues.sort!
     @copy = params[:copy].present?
 
-    attributes = parse_params_for_bulk_issue_attributes(params)
+    attributes = parse_params_for_bulk_update(params[:issue])
     copy_subtasks = (params[:copy_subtasks] == '1')
     copy_attachments = (params[:copy_attachments] == '1')
 
@@ -261,6 +265,10 @@ class IssuesController < ApplicationController
         target_projects = Project.where(:id => attributes['project_id']).to_a
       end
       unless User.current.allowed_to?(:add_issues, target_projects)
+        raise ::Unauthorized
+      end
+    else
+      unless @issues.all?(&:attributes_editable?)
         raise ::Unauthorized
       end
     end
@@ -316,6 +324,7 @@ class IssuesController < ApplicationController
   end
 
   def destroy
+    raise Unauthorized unless @issues.all?(&:deletable?)
     @hours = TimeEntry.where(:issue_id => @issues.map(&:id)).sum(:hours).to_f
     if @hours > 0
       case params[:todo]
@@ -353,7 +362,7 @@ class IssuesController < ApplicationController
   # Overrides Redmine::MenuManager::MenuController::ClassMethods for
   # when the "New issue" tab is enabled
   def current_menu_item
-    if Setting.new_project_issue_tab_enabled? && [:new, :create].include?(action_name.to_sym) 
+    if Setting.new_item_menu_tab == '1' && [:new, :create].include?(action_name.to_sym) 
       :new_issue
     else
       super
@@ -465,9 +474,15 @@ class IssuesController < ApplicationController
     @issue.safe_attributes = attrs
 
     if @issue.project
-      @issue.tracker ||= @issue.project.trackers.first
+      @issue.tracker ||= @issue.allowed_target_trackers.first
       if @issue.tracker.nil?
-        render_error l(:error_no_tracker_in_project)
+        if @issue.project.trackers.any?
+          # None of the project trackers is allowed to the user
+          render_error :message => l(:error_no_tracker_allowed_for_new_issue_in_project), :status => 403
+        else
+          # Project has no trackers
+          render_error l(:error_no_tracker_in_project)
+        end
         return false
       end
       if @issue.status.nil?
@@ -478,22 +493,6 @@ class IssuesController < ApplicationController
 
     @priorities = IssuePriority.active
     @allowed_statuses = @issue.new_statuses_allowed_to(User.current)
-  end
-
-  def parse_params_for_bulk_issue_attributes(params)
-    attributes = (params[:issue] || {}).reject {|k,v| v.blank?}
-    attributes.keys.each {|k| attributes[k] = '' if attributes[k] == 'none'}
-    if custom = attributes[:custom_field_values]
-      custom.reject! {|k,v| v.blank?}
-      custom.keys.each do |k|
-        if custom[k].is_a?(Array)
-          custom[k] << '' if custom[k].delete('__none__')
-        else
-          custom[k] = '' if custom[k] == '__none__'
-        end
-      end
-    end
-    attributes
   end
 
   # Saves @issue and a time_entry from the parameters

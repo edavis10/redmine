@@ -421,16 +421,24 @@ class Project < ActiveRecord::Base
     save
   end
 
-  # Returns an array of the trackers used by the project and its active sub projects
-  def rolled_up_trackers
-    @rolled_up_trackers ||=
-      Tracker.
-        joins(projects: :enabled_modules).
-        where("#{Project.table_name}.lft >= ? AND #{Project.table_name}.rgt <= ? AND #{Project.table_name}.status <> ?", lft, rgt, STATUS_ARCHIVED).
-        where("#{EnabledModule.table_name}.name = ?", 'issue_tracking').
-        uniq.
-        sorted.
-        to_a
+  # Returns a scope of the trackers used by the project and its active sub projects
+  def rolled_up_trackers(include_subprojects=true)
+    if include_subprojects
+      @rolled_up_trackers ||= rolled_up_trackers_base_scope.
+          where("#{Project.table_name}.lft >= ? AND #{Project.table_name}.rgt <= ?", lft, rgt)
+    else
+      rolled_up_trackers_base_scope.
+        where(:projects => {:id => id})
+    end
+  end
+
+  def rolled_up_trackers_base_scope
+    Tracker.
+      joins(projects: :enabled_modules).
+      where("#{Project.table_name}.status <> ?", STATUS_ARCHIVED).
+      where(:enabled_modules => {:name => 'issue_tracking'}).
+      uniq.
+      sorted
   end
 
   # Closes open and locked project versions that are completed
@@ -524,7 +532,7 @@ class Project < ActiveRecord::Base
   # Returns the users that should be notified on project events
   def notified_users
     # TODO: User part should be extracted to User#notify_about?
-    members.select {|m| m.principal.present? && (m.mail_notification? || m.principal.mail_notification == 'all')}.collect {|m| m.principal}
+    members.preload(:principal).select {|m| m.principal.present? && (m.mail_notification? || m.principal.mail_notification == 'all')}.collect {|m| m.principal}
   end
 
   # Returns a scope of all custom fields enabled for project issues

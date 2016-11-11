@@ -1034,7 +1034,7 @@ ja:
   text_issue_conflict_resolution_overwrite: 自分の編集内容の保存を強行 (他のユーザーの更新内容は注記を除き上書きされます)
   notice_issue_update_conflict: このチケットを編集中に他のユーザーが更新しました。
   text_issue_conflict_resolution_cancel: 自分の編集内容を破棄し %{link} を再表示
-  permission_manage_related_issues: 関連するチケットの管理
+  permission_manage_related_issues: リビジョンとチケットの関連の管理
   field_auth_source_ldap_filter: LDAPフィルタ
   label_search_for_watchers: ウォッチャーを検索して追加
   notice_account_deleted: アカウントが削除されました。
@@ -1163,8 +1163,8 @@ ja:
   label_member_management_selected_roles_only: 次のロールのみ
   label_password_required: この操作を続行するにはパスワードを入力してください
   label_total_spent_time: 合計作業時間
-  notice_import_finished: '%{count}件の項目をすべてインポートしました。'
-  notice_import_finished_with_errors: ! '全%{total}件中%{count}件の項目がインポートできませんでした。'
+  notice_import_finished: "%{count}件の項目をすべてインポートしました"
+  notice_import_finished_with_errors: "全%{total}件中%{count}件の項目がインポートできませんでした"
   error_invalid_file_encoding: このファイルのエンコーディングは正しい%{encoding}ではありません
   error_invalid_csv_file_or_settings: このファイルはCSVファイルではないか、以下の設定と一致していません
   error_can_not_read_import_file: インポート元のファイルを読み込み中にエラーが発生しました
@@ -1212,4 +1212,8 @@ ja:
   button_filter: フィルタ
   mail_body_password_updated: パスワードが変更されました。
   label_no_preview: このファイルはプレビューできません
-  setting_new_project_issue_tab_enabled: '"新しいチケット" タブを表示'
+  error_no_tracker_allowed_for_new_issue_in_project: このプロジェクトにはチケットの追加が許可されているトラッカーがありません
+  label_tracker_all: すべてのトラッカー
+  label_new_project_issue_tab_enabled: '"新しいチケット" タブを表示'
+  setting_new_item_menu_tab: 新規オブジェクト作成タブ
+  label_new_object_tab_enabled: '"+" ドロップダウンを表示'

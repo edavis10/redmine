@@ -20,6 +20,10 @@ require File.expand_path('../../../../../test_helper', __FILE__)
 class Redmine::FieldFormatTest < ActionView::TestCase
   include ApplicationHelper
 
+  def setup
+    set_language_if_valid 'en'
+  end
+
   def test_string_field_with_text_formatting_disabled_should_not_format_text
     field = IssueCustomField.new(:field_format => 'string')
     custom_value = CustomValue.new(:custom_field => field, :customized => Issue.new, :value => "*foo*")
@@ -52,11 +56,30 @@ class Redmine::FieldFormatTest < ActionView::TestCase
     assert_include "<strong>foo</strong>", field.format.formatted_custom_value(self, custom_value, true)
   end
 
+  def test_should_validate_url_pattern_with_safe_scheme
+    field = IssueCustomField.new(:field_format => 'string', :name => 'URL', :url_pattern => 'http://foo/%value%')
+    assert_save field
+  end
+
+  def test_should_not_validate_url_pattern_with_unsafe_scheme
+    field = IssueCustomField.new(:field_format => 'string', :name => 'URL', :url_pattern => 'foo://foo/%value%')
+    assert !field.save
+    assert_include "URL is invalid", field.errors.full_messages
+  end
+
   def test_text_field_with_url_pattern_should_format_as_link
     field = IssueCustomField.new(:field_format => 'string', :url_pattern => 'http://foo/%value%')
     custom_value = CustomValue.new(:custom_field => field, :customized => Issue.new, :value => "bar")
 
     assert_equal "bar", field.format.formatted_custom_value(self, custom_value, false)
     assert_equal '<a href="http://foo/bar">bar</a>', field.format.formatted_custom_value(self, custom_value, true)
+  end
+
+  def test_text_field_with_url_pattern_and_value_containing_a_space_should_format_as_link
+    field = IssueCustomField.new(:field_format => 'string', :url_pattern => 'http://foo/%value%')
+    custom_value = CustomValue.new(:custom_field => field, :customized => Issue.new, :value => "foo bar")
+
+    assert_equal "foo bar", field.format.formatted_custom_value(self, custom_value, false)
+    assert_equal '<a href="http://foo/foo%20bar">foo bar</a>', field.format.formatted_custom_value(self, custom_value, true)
   end
 end

@@ -51,7 +51,24 @@ pre, code {font-family: Consolas, Menlo, "Liberation Mono", Courier, monospace;}
   padding: 4px 10px 4px 10px;
 }
 #main-menu li a:hover {background:#759FCF; color:#fff;}
+#main-menu li:hover ul.menu-children, #main-menu li ul.menu-children.visible {display: block;}
 #main-menu li a.selected, #main-menu li a.selected:hover {background:#fff; color:#555;}
+#main-menu li a.new-object { background-color:#759FCF; }
+
+#main-menu .menu-children {
+  display: none;
+  position:absolute;
+  width: inherit;
+  z-index:1;
+  background-color:#fff;
+  border-right: 1px solid #759FCF;
+  border-bottom: 1px solid #759FCF;
+  border-left: 1px solid #759FCF;
+}
+#main-menu .menu-children li {float:left; clear:both; width:100%;}
+#main-menu .menu-children li a {color: #555; background-color:#fff; font-weight:normal;}
+#main-menu .menu-children li a:hover {color: #fff; background-color: #759FCF;}
+
 #main-menu .tabs-buttons {
   right: 6px;
   background-color: transparent;
@@ -86,7 +103,6 @@ pre, code {font-family: Consolas, Menlo, "Liberation Mono", Courier, monospace;}
 #sidebar .contextual { margin-right: 1em; }
 #sidebar ul, ul.flat {margin: 0;  padding: 0;}
 #sidebar ul li, ul.flat li {list-style-type:none;margin: 0px 2px 0px 0px; padding: 0px 0px 0px 0px;}
-#sidebar div.wiki h3 {font-size:13px; margin-top:0; color:#555;}
 #sidebar div.wiki ul {margin:inherit; padding-left:40px;}
 #sidebar div.wiki ul li {list-style-type:inherit;}
 
@@ -152,6 +168,7 @@ table.list td.buttons img, div.buttons img {vertical-align:middle;}
 table.list td.reorder {width:15%; white-space:nowrap; text-align:center; }
 table.list table.progress td {padding-right:0px;}
 table.list caption { text-align: left; padding: 0.5em 0.5em 0.5em 0; }
+#role-permissions-trackers table.list th {white-space:normal;}
 
 .table-list-cell {display: table-cell; vertical-align: top; padding:2px; }
 
@@ -411,7 +428,6 @@ div#issue-changesets div.changeset { padding: 4px;}
 div#issue-changesets div.changeset { border-bottom: 1px solid #ddd; }
 div#issue-changesets p { margin-top: 0; margin-bottom: 1em;}
 
-.journal ul.details img {margin:0 0 -3px 4px;}
 div.journal {overflow:auto;}
 div.journal.private-notes {border-left:2px solid #d22; padding-left:4px; margin-left:-6px;}
 div.journal ul.details {color:#959595; margin-bottom: 1.5em;}
@@ -669,7 +685,7 @@ div.attachments p { margin:4px 0 2px 0; }
 div.attachments img { vertical-align: middle; }
 div.attachments span.author { font-size: 0.9em; color: #888; }
 
-div.thumbnails {margin-top:0.6em;}
+div.thumbnails {margin:0.6em;}
 div.thumbnails div {background:#fff;border:2px solid #ddd;display:inline-block;margin-right:2px;}
 div.thumbnails img {margin: 3px; vertical-align: middle;}
 #history div.thumbnails {margin-left: 2em;}
@@ -1209,24 +1225,13 @@ tr.ui-sortable-helper { border:1px solid #e4e4e4; }
 .contextual>.icon:not(:first-child), .buttons>.icon:not(:first-child) { margin-left: 5px; }
 
 img.gravatar {
-  padding: 2px;
-  border: solid 1px #d5d5d5;
-  background: #fff;
   vertical-align: middle;
+  border-radius: 20%;
 }
 
 div.issue img.gravatar {
   float: left;
   margin: 0 6px 0 0;
-  padding: 5px;
-}
-
-div.issue .attributes img.gravatar {
-  height: 14px;
-  width: 14px;
-  padding: 2px;
-  float: left;
-  margin: 0 0.5em 0 0;
 }
 
 h2 img.gravatar {margin: -2px 4px -4px 0;}
@@ -1273,13 +1278,13 @@ color: #555; text-shadow: 1px 1px 0 #fff;
 .syntaxhl .char { color:#D20 }
 .syntaxhl .char .content { color:#D20 }
 .syntaxhl .char .delimiter { color:#710 }
-.syntaxhl .class { color:#258; font-weight:bold }
+.syntaxhl .class { color:#B06; font-weight:bold }
 .syntaxhl .class-variable { color:#369 }
 .syntaxhl .color { color:#0A0 }
-.syntaxhl .comment { color:#385 }
-.syntaxhl .comment .char { color:#385 }
-.syntaxhl .comment .delimiter { color:#385 }
-.syntaxhl .constant { color:#258; font-weight:bold }
+.syntaxhl .comment { color:#777 }
+.syntaxhl .comment .char { color:#444 }
+.syntaxhl .comment .delimiter { color:#444 }
+.syntaxhl .constant { color:#036; font-weight:bold }
 .syntaxhl .decorator { color:#B0B }
 .syntaxhl .definition { color:#099; font-weight:bold }
 .syntaxhl .delimiter { color:black }
@@ -1291,23 +1296,24 @@ color: #555; text-shadow: 1px 1px 0 #fff;
 .syntaxhl .error { color:#F00; background-color:#FAA }
 .syntaxhl .escape  { color:#666 }
 .syntaxhl .exception { color:#C00; font-weight:bold }
-.syntaxhl .float { color:#06D }
+.syntaxhl .float { color:#60E }
 .syntaxhl .function { color:#06B; font-weight:bold }
-.syntaxhl .function .delimiter { color:#024; font-weight:bold }
+.syntaxhl .function .delimiter { color:#059 }
+.syntaxhl .function .content { color:#037 }
 .syntaxhl .global-variable { color:#d70 }
 .syntaxhl .hex { color:#02b }
-.syntaxhl .id { color:#33D; font-weight:bold }
+.syntaxhl .id  { color:#33D; font-weight:bold }
 .syntaxhl .include { color:#B44; font-weight:bold }
 .syntaxhl .inline { background-color: hsla(0,0%,0%,0.07); color: black }
 .syntaxhl .inline-delimiter { font-weight: bold; color: #666 }
 .syntaxhl .instance-variable { color:#33B }
-.syntaxhl .integer  { color:#06D }
+.syntaxhl .integer  { color:#00D }
 .syntaxhl .imaginary { color:#f00 }
 .syntaxhl .important { color:#D00 }
 .syntaxhl .key { color: #606 }
 .syntaxhl .key .char { color: #60f }
 .syntaxhl .key .delimiter { color: #404 }
-.syntaxhl .keyword { color:#939; font-weight:bold }
+.syntaxhl .keyword { color:#080; font-weight:bold }
 .syntaxhl .label { color:#970; font-weight:bold }
 .syntaxhl .local-variable { color:#950 }
 .syntaxhl .map .content { color:#808 }
@@ -1329,13 +1335,14 @@ color: #555; text-shadow: 1px 1px 0 #fff;
 .syntaxhl .shell { background-color:hsla(120,100%,50%,0.06); }
 .syntaxhl .shell .content { color:#2B2 }
 .syntaxhl .shell .delimiter { color:#161 }
-.syntaxhl .string .char { color: #46a }
-.syntaxhl .string .content { color: #46a }
-.syntaxhl .string .delimiter { color: #46a }
-.syntaxhl .string .modifier { color: #46a }
-.syntaxhl .symbol { color:#d33 }
-.syntaxhl .symbol .content { color:#d33 }
-.syntaxhl .symbol .delimiter { color:#d33 }
+.syntaxhl .string { background-color:hsla(0,100%,50%,0.05); }
+.syntaxhl .string .char { color: #b0b }
+.syntaxhl .string .content { color: #D20 }
+.syntaxhl .string .delimiter { color: #710 }
+.syntaxhl .string .modifier { color: #E40 }
+.syntaxhl .symbol { color:#A60 }
+.syntaxhl .symbol .content { color:#A60 }
+.syntaxhl .symbol .delimiter { color:#740 }
 .syntaxhl .tag { color:#070; font-weight:bold }
 .syntaxhl .type { color:#339; font-weight:bold }
 .syntaxhl .value { color: #088 }

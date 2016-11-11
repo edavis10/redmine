@@ -183,8 +183,8 @@ en:
   notice_account_deleted: "Your account has been permanently deleted."
   notice_user_successful_create: "User %{id} created."
   notice_new_password_must_be_different: The new password must be different from the current password
-  notice_import_finished: "All %{count} items have been imported."
-  notice_import_finished_with_errors: "%{count} out of %{total} items could not be imported."
+  notice_import_finished: "%{count} items have been imported"
+  notice_import_finished_with_errors: "%{count} out of %{total} items could not be imported"
 
   error_can_t_load_default_data: "Default configuration could not be loaded: %{value}"
   error_scm_not_found: "The entry or revision was not found in the repository."
@@ -213,6 +213,7 @@ en:
   error_can_not_read_import_file: "An error occurred while reading the file to import"
   error_attachment_extension_not_allowed: "Attachment extension %{extension} is not allowed"
   error_ldap_bind_credentials: "Invalid LDAP Account/Password"
+  error_no_tracker_allowed_for_new_issue_in_project: "The project doesn't have any trackers for which you can create an issue"
 
   mail_subject_lost_password: "Your %{value} password"
   mail_body_lost_password: 'To change your password, click on the following link:'
@@ -443,7 +444,7 @@ en:
   setting_search_results_per_page: Search results per page
   setting_attachment_extensions_allowed: Allowed extensions
   setting_attachment_extensions_denied: Disallowed extensions
-  setting_new_project_issue_tab_enabled: Display the "New issue" tab
+  setting_new_item_menu_tab: Project menu tab for creating new objects
 
   permission_add_project: Create project
   permission_add_subprojects: Create subprojects
@@ -561,6 +562,7 @@ en:
   label_member_plural: Members
   label_tracker: Tracker
   label_tracker_plural: Trackers
+  label_tracker_all: All trackers
   label_tracker_new: New tracker
   label_workflow: Workflow
   label_issue_status: Issue status
@@ -993,6 +995,8 @@ en:
   label_field_format_enumeration: Key/value list
   label_default_values_for_new_users: Default values for new users
   label_relations: Relations
+  label_new_project_issue_tab_enabled: Display the "New issue" tab
+  label_new_object_tab_enabled: Display the "+" drop-down
 
   button_login: Login
   button_submit: Submit
