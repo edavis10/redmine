@@ -4,3 +4,6 @@
 [submodule "public/themes/rm_typo3_forge_theme"]
 	path = public/themes/rm_typo3_forge_theme
 	url = https://github.com/TYPO3-infrastructure/rm_typo3_forge_theme.git
+[submodule "plugins/redmine_silencer"]
+	path = plugins/redmine_silencer
+	url = https://github.com/paginagmbh/redmine_silencer.git
