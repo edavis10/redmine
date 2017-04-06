@@ -205,6 +205,18 @@ class ProjectTest < ActiveSupport::TestCase
     assert @ecookbook_sub1.unarchive
   end
 
+  def test_unarchive_a_child_of_a_closed_project_should_set_status_to_closed
+    Project.find(1).close
+    child = Project.find(3)
+    assert_equal Project::STATUS_CLOSED, child.status
+
+    child.archive
+    assert_equal Project::STATUS_ARCHIVED, child.status
+
+    child.unarchive
+    assert_equal Project::STATUS_CLOSED, child.status
+  end
+
   def test_destroy
     # 2 active members
     assert_equal 2, @ecookbook.members.size
@@ -353,8 +365,8 @@ class ProjectTest < ActiveSupport::TestCase
     issue_with_hierarchy_fixed_version.reload
 
     assert_equal 4, issue_with_local_fixed_version.fixed_version_id, "Fixed version was not keep on an issue local to the moved project"
-    assert_equal nil, issue_with_hierarchy_fixed_version.fixed_version_id, "Fixed version is still set after moving the Project out of the hierarchy where the version is defined in"
-    assert_equal nil, parent_issue.fixed_version_id, "Fixed version is still set after moving the Version out of the hierarchy for the issue."
+    assert_nil issue_with_hierarchy_fixed_version.fixed_version_id, "Fixed version is still set after moving the Project out of the hierarchy where the version is defined in"
+    assert_nil parent_issue.fixed_version_id, "Fixed version is still set after moving the Version out of the hierarchy for the issue."
   end
 
   def test_parent

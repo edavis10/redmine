@@ -3267,11 +3267,31 @@ class IssuesControllerTest < ActionController::TestCase
     assert_not_nil assigns(:issue)
     assert_equal Issue.find(1), assigns(:issue)
 
+    assert_select 'select[name=?]', 'issue[project_id]'
     # Be sure we don't display inactive IssuePriorities
     assert ! IssuePriority.find(15).active?
     assert_select 'select[name=?]', 'issue[priority_id]' do
       assert_select 'option[value="15"]', 0
     end
+  end
+
+  def test_edit_should_hide_project_if_user_is_not_allowed_to_change_project
+    WorkflowPermission.create!(:role_id => 1, :tracker_id => 1, :old_status_id => 1, :field_name => 'project_id', :rule => 'readonly')
+
+    @request.session[:user_id] = 2
+    get :edit, :id => 1
+    assert_response :success
+    assert_select 'select[name=?]', 'issue[project_id]', 0
+  end
+
+  def test_edit_should_not_hide_project_when_user_changes_the_project_even_if_project_is_readonly_on_target_project
+    WorkflowPermission.create!(:role_id => 1, :tracker_id => 1, :old_status_id => 1, :field_name => 'project_id', :rule => 'readonly')
+    issue = Issue.generate!(:project_id => 2)
+
+    @request.session[:user_id] = 2
+    get :edit, :id => issue.id, :issue => {:project_id => 1}
+    assert_response :success
+    assert_select 'select[name=?]', 'issue[project_id]'
   end
 
   def test_get_edit_should_display_the_time_entry_form_with_log_time_permission
@@ -4515,7 +4535,11 @@ class IssuesControllerTest < ActionController::TestCase
       assert_equal orig.project_id, copy.project_id
       assert_equal orig.tracker_id, copy.tracker_id
       assert_equal orig.status_id, copy.status_id
-      assert_equal orig.assigned_to_id, copy.assigned_to_id
+      if orig.assigned_to_id
+        assert_equal orig.assigned_to_id, copy.assigned_to_id
+      else
+        assert_nil copy.assigned_to_id
+      end
       assert_equal orig.priority_id, copy.priority_id
     end
   end
@@ -4663,7 +4687,7 @@ class IssuesControllerTest < ActionController::TestCase
     assert_response :success
   end
 
-  def test_destroy_issue_with_no_time_entries
+  def test_destroy_issue_with_no_time_entries_should_delete_the_issues
     assert_nil TimeEntry.find_by_issue_id(2)
     @request.session[:user_id] = 2
 
@@ -4674,7 +4698,7 @@ class IssuesControllerTest < ActionController::TestCase
     assert_nil Issue.find_by_id(2)
   end
 
-  def test_destroy_issues_with_time_entries
+  def test_destroy_issues_with_time_entries_should_show_the_reassign_form
     @request.session[:user_id] = 2
 
     assert_no_difference 'Issue.count' do
@@ -4688,6 +4712,20 @@ class IssuesControllerTest < ActionController::TestCase
     assert_select 'form' do
       assert_select 'input[name=_method][value=delete]'
     end
+  end
+
+  def test_destroy_issues_with_time_entries_should_show_hours_on_issues_and_descendants
+    parent = Issue.generate_with_child!
+    TimeEntry.generate!(:issue => parent)
+    TimeEntry.generate!(:issue => parent.children.first)
+    leaf = Issue.generate!
+    TimeEntry.generate!(:issue => leaf)
+    @request.session[:user_id] = 2
+
+    delete :destroy, :ids => [parent.id, leaf.id]
+    assert_response :success
+
+    assert_select 'p', :text => /3\.00 hours were reported/
   end
 
   def test_destroy_issues_and_destroy_time_entries
@@ -4731,6 +4769,24 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal 2, TimeEntry.find(2).issue_id
   end
 
+  def test_destroy_issues_with_time_entries_should_reassign_time_entries_of_issues_and_descendants
+    parent = Issue.generate_with_child!
+    TimeEntry.generate!(:issue => parent)
+    TimeEntry.generate!(:issue => parent.children.first)
+    leaf = Issue.generate!
+    TimeEntry.generate!(:issue => leaf)
+    target = Issue.generate!
+    @request.session[:user_id] = 2
+
+    assert_difference 'Issue.count', -3 do
+      assert_no_difference 'TimeEntry.count' do
+        delete :destroy, :ids => [parent.id, leaf.id], :todo => 'reassign', :reassign_to_id => target.id
+        assert_response 302
+      end
+    end
+    assert_equal 3, target.time_entries.count
+  end
+
   def test_destroy_issues_and_reassign_time_entries_to_an_invalid_issue_should_fail
     @request.session[:user_id] = 2
 
@@ -4742,6 +4798,18 @@ class IssuesControllerTest < ActionController::TestCase
     end
     assert_response :success
     assert_template 'destroy'
+  end
+
+  def test_destroy_issues_and_reassign_time_entries_to_an_issue_to_delete_should_fail
+    @request.session[:user_id] = 2
+
+    assert_no_difference 'Issue.count' do
+      assert_no_difference 'TimeEntry.count' do
+        delete :destroy, :ids => [1, 3], :todo => 'reassign', :reassign_to_id => 3
+      end
+    end
+    assert_response :success
+    assert_select '#flash_error', :text => I18n.t(:error_cannot_reassign_time_entries_to_an_issue_about_to_be_deleted)
   end
 
   def test_destroy_issues_from_different_projects

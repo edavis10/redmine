@@ -59,7 +59,7 @@ pre, code {font-family: Consolas, Menlo, "Liberation Mono", Courier, monospace;}
   display: none;
   position:absolute;
   width: inherit;
-  z-index:1;
+  z-index:45;
   background-color:#fff;
   border-right: 1px solid #759FCF;
   border-bottom: 1px solid #759FCF;
@@ -313,7 +313,7 @@ table.query-columns td.buttons {
 }
 table.query-columns td.buttons input[type=button] {width:35px;}
 .query-totals {text-align:right; margin-top:-2.3em;}
-.query-totals>span {margin-left:0.6em;}
+.query-totals>span:not(:first-child) {margin-left:0.6em;}
 .query-totals .value {font-weight:bold;}
 
 td.center {text-align:center;}
