@@ -323,6 +323,15 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
     assert_equal 1, json['issue']['children'].select {|child| child.key?('children')}.size
   end
 
+  test "GET /issues/:id.json with no spent time should return floats" do
+    issue = Issue.generate!
+    get "/issues/#{issue.id}.json"
+
+    json = ActiveSupport::JSON.decode(response.body)
+    assert_kind_of Float, json['issue']['spent_hours']
+    assert_kind_of Float, json['issue']['total_spent_hours']
+  end
+
   def test_show_should_include_issue_attributes
     get '/issues/1.xml'
     assert_select 'issue>is_private', :text => 'false'
@@ -392,6 +401,23 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
     end
   end
 
+  test "GET /issues/:id.xml should contains visible spent_hours only" do
+    user = User.find_by_login('jsmith')
+    Role.find(1).update(:time_entries_visibility => 'own')
+    parent = Issue.find(3)
+    child = Issue.generate!(:parent_issue_id => parent.id)
+    TimeEntry.generate!(:user => user, :hours => 5.5, :issue_id => parent.id)
+    TimeEntry.generate!(:user => user, :hours => 2, :issue_id => child.id)
+    TimeEntry.generate!(:user => User.find(1), :hours => 100, :issue_id => child.id)
+    get '/issues/3.xml', {} , credentials(user.login)
+
+    assert_equal 'application/xml', response.content_type
+    assert_select 'issue' do
+      assert_select 'spent_hours',           '5.5'
+      assert_select 'total_spent_hours',     '7.5'
+    end
+  end
+
   test "GET /issues/:id.json should contains total_estimated_hours and total_spent_hours" do
     parent = Issue.find(3)
     parent.update_columns :estimated_hours => 2.0
@@ -423,6 +449,22 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
     assert_equal (parent.estimated_hours.to_f + 3.0), json['issue']['total_estimated_hours']
     assert_nil json['issue']['spent_hours']
     assert_nil json['issue']['total_spent_hours']
+  end
+
+  test "GET /issues/:id.json should contains visible spent_hours only" do
+    user = User.find_by_login('jsmith')
+    Role.find(1).update(:time_entries_visibility => 'own')
+    parent = Issue.find(3)
+    child = Issue.generate!(:parent_issue_id => parent.id)
+    TimeEntry.generate!(:user => user, :hours => 5.5, :issue_id => parent.id)
+    TimeEntry.generate!(:user => user, :hours => 2, :issue_id => child.id)
+    TimeEntry.generate!(:user => User.find(1), :hours => 100, :issue_id => child.id)
+    get '/issues/3.json', {} , credentials(user.login)
+
+    assert_equal 'application/json', response.content_type
+    json = ActiveSupport::JSON.decode(response.body)
+    assert_equal 5.5, json['issue']['spent_hours']
+    assert_equal 7.5, json['issue']['total_spent_hours']
   end
 
   test "POST /issues.xml should create an issue with the attributes" do
