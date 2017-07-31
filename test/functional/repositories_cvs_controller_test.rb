@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,10 +17,10 @@
 
 require File.expand_path('../../test_helper', __FILE__)
 
-class RepositoriesCvsControllerTest < ActionController::TestCase
+class RepositoriesCvsControllerTest < Redmine::RepositoryControllerTest
   tests RepositoriesController
 
-  fixtures :projects, :users, :roles, :members, :member_roles,
+  fixtures :projects, :users, :email_addresses, :roles, :members, :member_roles,
            :repositories, :enabled_modules
 
   REPOSITORY_PATH = Rails.root.join('tmp/test/cvs_repository').to_s
@@ -31,6 +31,7 @@ class RepositoriesCvsControllerTest < ActionController::TestCase
   NUM_REV = 7
 
   def setup
+    super
     Setting.default_language = 'en'
     User.current = nil
 
@@ -46,11 +47,15 @@ class RepositoriesCvsControllerTest < ActionController::TestCase
     def test_get_new
       @request.session[:user_id] = 1
       @project.repository.destroy
-      get :new, :project_id => 'subproject1', :repository_scm => 'Cvs'
+      get :new, :params => {
+          :project_id => 'subproject1',
+          :repository_scm => 'Cvs'
+        }
       assert_response :success
-      assert_template 'new'
-      assert_kind_of Repository::Cvs, assigns(:repository)
-      assert assigns(:repository).new_record?
+
+      assert_select 'select[name=?]', 'repository_scm' do
+        assert_select 'option[value=?][selected=selected]', 'Cvs'
+      end
     end
 
     def test_browse_root
@@ -58,20 +63,20 @@ class RepositoriesCvsControllerTest < ActionController::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      get :show, :id => PRJ_ID
+      get :show, :params => {
+          :id => PRJ_ID
+        }
       assert_response :success
-      assert_template 'show'
-      assert_not_nil assigns(:entries)
-      assert_equal 3, assigns(:entries).size
 
-      entry = assigns(:entries).detect {|e| e.name == 'images'}
-      assert_equal 'dir', entry.kind
+      assert_select 'table.entries tbody' do
+        assert_select 'tr', 3
+        assert_select 'tr.dir td.filename a', :text => 'images'
+        assert_select 'tr.file td.filename a', :text => 'README'
+      end
 
-      entry = assigns(:entries).detect {|e| e.name == 'README'}
-      assert_equal 'file', entry.kind
-
-      assert_not_nil assigns(:changesets)
-      assert assigns(:changesets).size > 0
+      assert_select 'table.changesets tbody' do
+        assert_select 'tr'
+      end
     end
 
     def test_browse_directory
@@ -79,15 +84,18 @@ class RepositoriesCvsControllerTest < ActionController::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      get :show, :id => PRJ_ID, :path => repository_path_hash(['images'])[:param]
+      get :show, :params => {
+          :id => PRJ_ID,
+          :path => repository_path_hash(['images'])[:param]
+        }
       assert_response :success
-      assert_template 'show'
-      assert_not_nil assigns(:entries)
-      assert_equal ['add.png', 'delete.png', 'edit.png'], assigns(:entries).collect(&:name)
-      entry = assigns(:entries).detect {|e| e.name == 'edit.png'}
-      assert_not_nil entry
-      assert_equal 'file', entry.kind
-      assert_equal 'images/edit.png', entry.path
+
+      assert_select 'table.entries tbody' do
+        assert_select 'tr', 3
+        assert_select 'tr.file td.filename a', :text => 'add.png'
+        assert_select 'tr.file td.filename a', :text => 'delete.png'
+        assert_select 'tr.file td.filename a', :text => 'edit.png'
+      end
     end
 
     def test_browse_at_given_revision
@@ -95,12 +103,18 @@ class RepositoriesCvsControllerTest < ActionController::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      get :show, :id => PRJ_ID, :path => repository_path_hash(['images'])[:param],
+      get :show, :params => {
+          :id => PRJ_ID,
+          :path => repository_path_hash(['images'])[:param],
           :rev => 1
+        }
       assert_response :success
-      assert_template 'show'
-      assert_not_nil assigns(:entries)
-      assert_equal ['delete.png', 'edit.png'], assigns(:entries).collect(&:name)
+
+      assert_select 'table.entries tbody' do
+        assert_select 'tr', 2
+        assert_select 'tr.file td.filename a', :text => 'delete.png'
+        assert_select 'tr.file td.filename a', :text => 'edit.png'
+      end
     end
 
     def test_entry
@@ -108,13 +122,13 @@ class RepositoriesCvsControllerTest < ActionController::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      get :entry, :id => PRJ_ID,
+      get :entry, :params => {
+          :id => PRJ_ID,
           :path => repository_path_hash(['sources', 'watchers_controller.rb'])[:param]
+        }
       assert_response :success
-      assert_template 'entry'
-      assert_no_tag :tag => 'td',
-                    :attributes => { :class => /line-code/},
-                    :content => /before_filter/
+
+      assert_select 'td.line-code', :text => /before_filter/, :count => 0
     end
 
     def test_entry_at_given_revision
@@ -123,15 +137,15 @@ class RepositoriesCvsControllerTest < ActionController::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      get :entry, :id => PRJ_ID,
+      get :entry, :params => {
+          :id => PRJ_ID,
           :path => repository_path_hash(['sources', 'watchers_controller.rb'])[:param],
           :rev => 2
+        }
       assert_response :success
-      assert_template 'entry'
+
       # this line was removed in r3
-      assert_tag :tag => 'td',
-                 :attributes => { :class => /line-code/},
-                 :content => /before_filter/
+      assert_select 'td.line-code', :text => /before_filter/
     end
 
     def test_entry_not_found
@@ -139,11 +153,11 @@ class RepositoriesCvsControllerTest < ActionController::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      get :entry, :id => PRJ_ID,
+      get :entry, :params => {
+          :id => PRJ_ID,
           :path => repository_path_hash(['sources', 'zzz.c'])[:param]
-      assert_tag :tag => 'p',
-                 :attributes => { :id => /errorExplanation/ },
-                 :content => /The entry or revision was not found in the repository/
+        }
+      assert_select 'p#errorExplanation', :text => /The entry or revision was not found in the repository/
     end
 
     def test_entry_download
@@ -151,9 +165,11 @@ class RepositoriesCvsControllerTest < ActionController::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      get :entry, :id => PRJ_ID,
+      get :entry, :params => {
+          :id => PRJ_ID,
           :path => repository_path_hash(['sources', 'watchers_controller.rb'])[:param],
           :format => 'raw'
+        }
       assert_response :success
     end
 
@@ -162,12 +178,12 @@ class RepositoriesCvsControllerTest < ActionController::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      get :entry, :id => PRJ_ID,
+      get :entry, :params => {
+          :id => PRJ_ID,
           :path => repository_path_hash(['sources'])[:param]
+        }
       assert_response :success
-      assert_template 'show'
-      assert_not_nil assigns(:entry)
-      assert_equal 'sources', assigns(:entry).name
+      assert_select 'table.entries tbody'
     end
 
     def test_diff
@@ -176,13 +192,15 @@ class RepositoriesCvsControllerTest < ActionController::TestCase
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
       ['inline', 'sbs'].each do |dt|
-        get :diff, :id => PRJ_ID, :rev => 3, :type => dt
+        get :diff, :params => {
+            :id => PRJ_ID,
+            :rev => 3,
+            :type => dt
+          }
         assert_response :success
-        assert_template 'diff'
-        assert_tag :tag => 'td', :attributes => { :class => 'line-code diff_out' },
-                                 :content => /before_filter :require_login/
-        assert_tag :tag => 'td', :attributes => { :class => 'line-code diff_in' },
-                                 :content => /with one change/
+
+        assert_select 'td.line-code.diff_out', :text => /before_filter :require_login/
+        assert_select 'td.line-code.diff_in', :text => /with one change/
       end
     end
 
@@ -192,19 +210,18 @@ class RepositoriesCvsControllerTest < ActionController::TestCase
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
       ['inline', 'sbs'].each do |dt|
-        get :diff, :id => PRJ_ID, :rev => 1, :type => dt
+        get :diff, :params => {
+            :id => PRJ_ID,
+            :rev => 1,
+            :type => dt
+          }
         assert_response :success
-        assert_template 'diff'
-        assert_tag :tag => 'td', :attributes => { :class => 'line-code diff_in' },
-                                 :content => /watched.remove_watcher/
-        assert_tag :tag => 'th', :attributes => { :class => 'filename' },
-                                 :content => /test\/README/
-        assert_tag :tag => 'th', :attributes => { :class => 'filename' },
-                                 :content => /test\/images\/delete.png/
-        assert_tag :tag => 'th', :attributes => { :class => 'filename' },
-                                 :content => /test\/images\/edit.png/
-        assert_tag :tag => 'th', :attributes => { :class => 'filename' },
-                                 :content => /test\/sources\/watchers_controller.rb/
+
+        assert_select 'td.line-code.diff_in', :text => /watched.remove_watcher/
+        assert_select 'th.filename', :text => /test\/README/
+        assert_select 'th.filename', :text => /test\/images\/delete.png/
+        assert_select 'th.filename', :text => /test\/images\/edit.png/
+        assert_select 'th.filename', :text => /test\/sources\/watchers_controller.rb/
       end
     end
 
@@ -213,10 +230,11 @@ class RepositoriesCvsControllerTest < ActionController::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      get :annotate, :id => PRJ_ID,
+      get :annotate, :params => {
+          :id => PRJ_ID,
           :path => repository_path_hash(['sources', 'watchers_controller.rb'])[:param]
+        }
       assert_response :success
-      assert_template 'annotate'
 
       # 1.1 line
       assert_select 'tr' do
@@ -240,7 +258,9 @@ class RepositoriesCvsControllerTest < ActionController::TestCase
       assert_equal NUM_REV, @repository.changesets.count
 
       assert_difference 'Repository.count', -1 do
-        delete :destroy, :id => @repository.id
+        delete :destroy, :params => {
+            :id => @repository.id
+          }
       end
       assert_response 302
       @project.reload
@@ -261,7 +281,9 @@ class RepositoriesCvsControllerTest < ActionController::TestCase
       assert_equal 0, @repository.changesets.count
 
       assert_difference 'Repository.count', -1 do
-        delete :destroy, :id => @repository.id
+        delete :destroy, :params => {
+            :id => @repository.id
+          }
       end
       assert_response 302
       @project.reload

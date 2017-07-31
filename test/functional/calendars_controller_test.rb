@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,41 +17,61 @@
 
 require File.expand_path('../../test_helper', __FILE__)
 
-class CalendarsControllerTest < ActionController::TestCase
+class CalendarsControllerTest < Redmine::ControllerTest
   fixtures :projects,
            :trackers,
            :projects_trackers,
            :roles,
            :member_roles,
            :members,
-           :enabled_modules
+           :enabled_modules,
+           :issues,
+           :issue_statuses,
+           :issue_relations,
+           :issue_categories,
+           :enumerations
 
   def test_show
-    get :show, :project_id => 1
+    get :show, :params => {
+        :project_id => 1
+      }
     assert_response :success
-    assert_template :partial => '_calendar'
-    assert_not_nil assigns(:calendar)
+
+    # query form
+    assert_select 'form#query_form' do
+      assert_select 'div#query_form_with_buttons.hide-when-print' do
+        assert_select 'div#query_form_content' do
+          assert_select 'fieldset#filters.collapsible'
+        end
+        assert_select 'p.contextual'
+        assert_select 'p.buttons'
+      end
+    end
   end
 
   def test_show_should_run_custom_queries
-    @query = IssueQuery.create!(:name => 'Calendar', :visibility => IssueQuery::VISIBILITY_PUBLIC)
+    @query = IssueQuery.create!(:name => 'Calendar Query', :visibility => IssueQuery::VISIBILITY_PUBLIC)
 
-    get :show, :query_id => @query.id
+    get :show, :params => {
+        :query_id => @query.id
+      }
     assert_response :success
+    assert_select 'h2', :text => 'Calendar Query'
   end
 
   def test_cross_project_calendar
     get :show
     assert_response :success
-    assert_template :partial => '_calendar'
-    assert_not_nil assigns(:calendar)
   end
 
   def test_week_number_calculation
-    Setting.start_of_week = 7
-
-    get :show, :month => '1', :year => '2010'
-    assert_response :success
+    with_settings :start_of_week => 7 do
+      get :show, :params => {
+          :month => '1',
+          :year => '2010'
+        }
+      assert_response :success
+    end
 
     assert_select 'tr' do
       assert_select 'td.week-number', :text => '53'
@@ -65,9 +85,13 @@ class CalendarsControllerTest < ActionController::TestCase
       assert_select 'td.even', :text => '9'
     end
 
-    Setting.start_of_week = 1
-    get :show, :month => '1', :year => '2010'
-    assert_response :success
+    with_settings :start_of_week => 1 do
+      get :show, :params => {
+          :month => '1',
+          :year => '2010'
+        }
+      assert_response :success
+    end
 
     assert_select 'tr' do
       assert_select 'td.week-number', :text => '53'

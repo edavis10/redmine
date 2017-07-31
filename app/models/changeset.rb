@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -35,20 +35,21 @@ class Changeset < ActiveRecord::Base
                 :url => Proc.new {|o| {:controller => 'repositories', :action => 'revision', :id => o.repository.project, :repository_id => o.repository.identifier_param, :rev => o.identifier}}
 
   acts_as_searchable :columns => 'comments',
-                     :include => {:repository => :project},
+                     :preload => {:repository => :project},
                      :project_key => "#{Repository.table_name}.project_id",
-                     :date_column => 'committed_on'
+                     :date_column => :committed_on
 
   acts_as_activity_provider :timestamp => "#{table_name}.committed_on",
                             :author_key => :user_id,
-                            :find_options => {:include => [:user, {:repository => :project}]}
+                            :scope => preload(:user, {:repository => :project})
 
   validates_presence_of :repository_id, :revision, :committed_on, :commit_date
   validates_uniqueness_of :revision, :scope => :repository_id
   validates_uniqueness_of :scmid, :scope => :repository_id, :allow_nil => true
 
   scope :visible, lambda {|*args|
-    includes(:repository => :project).where(Project.allowed_to_condition(args.shift || User.current, :view_changesets, *args))
+    joins(:repository => :project).
+    where(Project.allowed_to_condition(args.shift || User.current, :view_changesets, *args))
   }
 
   after_create :scan_for_issues
@@ -198,7 +199,7 @@ class Changeset < ActiveRecord::Base
   # Finds an issue that can be referenced by the commit message
   def find_referenced_issue_by_id(id)
     return nil if id.blank?
-    issue = Issue.includes(:project).where(:id => id.to_i).first
+    issue = Issue.find_by_id(id.to_i)
     if Setting.commit_cross_project_ref?
       # all issues can be referenced/fixed
     elsif issue
@@ -225,7 +226,7 @@ class Changeset < ActiveRecord::Base
     # the issue may have been updated by the closure of another one (eg. duplicate)
     issue.reload
     # don't change the status is the issue is closed
-    return if issue.status && issue.status.is_closed?
+    return if issue.closed?
 
     journal = issue.init_journal(user || User.anonymous,
                                  ll(Setting.default_language,
@@ -240,8 +241,13 @@ class Changeset < ActiveRecord::Base
     end
     Redmine::Hook.call_hook(:model_changeset_scan_commit_for_issue_ids_pre_issue_update,
                             { :changeset => self, :issue => issue, :action => action })
-    unless issue.save
-      logger.warn("Issue ##{issue.id} could not be saved by changeset #{id}: #{issue.errors.full_messages}") if logger
+
+    if issue.changes.any?
+      unless issue.save
+        logger.warn("Issue ##{issue.id} could not be saved by changeset #{id}: #{issue.errors.full_messages}") if logger
+      end
+    else
+      issue.clear_journal
     end
     issue
   end

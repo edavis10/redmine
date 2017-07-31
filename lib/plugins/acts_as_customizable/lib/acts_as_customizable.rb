@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -27,9 +27,9 @@ module Redmine
           return if self.included_modules.include?(Redmine::Acts::Customizable::InstanceMethods)
           cattr_accessor :customizable_options
           self.customizable_options = options
-          has_many :custom_values, :as => :customized,
-                                   :include => :custom_field,
-                                   :order => "#{CustomField.table_name}.position",
+          has_many :custom_values, lambda {includes(:custom_field).order("#{CustomField.table_name}.position")},
+                                   :as => :customized,
+                                   :inverse_of => :customized,
                                    :dependent => :delete_all,
                                    :validate => false
 
@@ -42,11 +42,10 @@ module Redmine
       module InstanceMethods
         def self.included(base)
           base.extend ClassMethods
-          base.send :alias_method_chain, :reload, :custom_fields
         end
 
         def available_custom_fields
-          CustomField.where("type = '#{self.class.name}CustomField'").sorted.all
+          CustomField.where("type = '#{self.class.name}CustomField'").sorted.to_a
         end
 
         # Sets the values of the object's custom fields
@@ -70,16 +69,7 @@ module Redmine
           custom_field_values.each do |custom_field_value|
             key = custom_field_value.custom_field_id.to_s
             if values.has_key?(key)
-              value = values[key]
-              if value.is_a?(Array)
-                value = value.reject(&:blank?).map(&:to_s).uniq
-                if value.empty?
-                  value << ''
-                end
-              else
-                value = value.to_s
-              end
-              custom_field_value.value = value
+              custom_field_value.value = values[key]
             end
           end
           @custom_field_values_changed = true
@@ -93,13 +83,13 @@ module Redmine
             if field.multiple?
               values = custom_values.select { |v| v.custom_field == field }
               if values.empty?
-                values << custom_values.build(:customized => self, :custom_field => field, :value => nil)
+                values << custom_values.build(:customized => self, :custom_field => field)
               end
-              x.value = values.map(&:value)
+              x.instance_variable_set("@value", values.map(&:value))
             else
               cv = custom_values.detect { |v| v.custom_field == field }
-              cv ||= custom_values.build(:customized => self, :custom_field => field, :value => nil)
-              x.value = cv.value
+              cv ||= custom_values.build(:customized => self, :custom_field => field)
+              x.instance_variable_set("@value", cv.value)
             end
             x.value_was = x.value.dup if x.value
             x
@@ -152,15 +142,23 @@ module Redmine
           true
         end
 
+        def reassign_custom_field_values
+          if @custom_field_values
+            values = @custom_field_values.inject({}) {|h,v| h[v.custom_field_id] = v.value; h}
+            @custom_field_values = nil
+            self.custom_field_values = values
+          end
+        end
+
         def reset_custom_values!
           @custom_field_values = nil
           @custom_field_values_changed = true
         end
 
-        def reload_with_custom_fields(*args)
+        def reload(*args)
           @custom_field_values = nil
           @custom_field_values_changed = false
-          reload_without_custom_fields(*args)
+          super
         end
 
         module ClassMethods

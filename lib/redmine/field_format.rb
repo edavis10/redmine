@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+require 'uri'
 
 module Redmine
   module FieldFormat
@@ -45,9 +47,17 @@ module Redmine
       formats.map {|format| [::I18n.t(format.label), format.name] }.sort_by(&:first)
     end
 
+    # Returns an array of formats that can be used for a custom field class
+    def self.formats_for_custom_field_class(klass=nil)
+      all.values.select do |format|
+        format.class.customized_class_names.nil? || format.class.customized_class_names.include?(klass.name)
+      end
+    end
+
     class Base
       include Singleton
       include Redmine::I18n
+      include Redmine::Helpers::URL
       include ERB::Util
 
       class_attribute :format_name
@@ -57,9 +67,21 @@ module Redmine
       class_attribute :multiple_supported
       self.multiple_supported = false
 
+      # Set this to true if the format supports filtering on custom values
+      class_attribute :is_filter_supported
+      self.is_filter_supported = true
+
       # Set this to true if the format supports textual search on custom values
       class_attribute :searchable_supported
       self.searchable_supported = false
+
+      # Set this to true if field values can be summed up
+      class_attribute :totalable_supported
+      self.totalable_supported = false
+
+      # Set this to false if field cannot be bulk edited
+      class_attribute :bulk_edit_supported
+      self.bulk_edit_supported = true
 
       # Restricts the classes that the custom field can be added to
       # Set to nil for no restrictions
@@ -69,6 +91,12 @@ module Redmine
       # Name of the partial for editing the custom field
       class_attribute :form_partial
       self.form_partial = nil
+
+      class_attribute :change_as_diff
+      self.change_as_diff = false
+
+      class_attribute :change_no_details
+      self.change_no_details = false
 
       def self.add(name)
         self.format_name = name
@@ -80,7 +108,7 @@ module Redmine
         CustomField.store_accessor :format_store, *args
       end
 
-      field_attributes :url_pattern
+      field_attributes :url_pattern, :full_width_layout
 
       def name
         self.class.format_name
@@ -88,6 +116,19 @@ module Redmine
 
       def label
         "label_#{name}"
+      end
+
+      def set_custom_field_value(custom_field, custom_field_value, value)
+        if value.is_a?(Array)
+          value = value.map(&:to_s).reject{|v| v==''}.uniq
+          if value.empty?
+            value << ''
+          end
+        else
+          value = value.to_s
+        end
+
+        value
       end
 
       def cast_custom_value(custom_value)
@@ -123,14 +164,62 @@ module Redmine
         []
       end
 
+      def value_from_keyword(custom_field, keyword, object)
+        possible_values_options = possible_values_options(custom_field, object)
+        if possible_values_options.present?
+          parse_keyword(custom_field, keyword) do |k|
+            if v = possible_values_options.detect {|text, id| k.casecmp(text) == 0}
+              if v.is_a?(Array)
+                v.last
+              else
+                v
+              end
+            end
+          end
+        else
+          keyword
+        end
+      end
+
+      def parse_keyword(custom_field, keyword, &block)
+        separator = Regexp.escape ","
+        keyword = keyword.to_s
+
+        if custom_field.multiple?
+          values = []
+          while keyword.length > 0
+            k = keyword.dup
+            loop do
+              if value = yield(k.strip)
+                values << value
+                break
+              elsif k.slice!(/#{separator}([^#{separator}]*)\Z/).nil?
+                break
+              end
+            end
+            keyword.slice!(/\A#{Regexp.escape k}#{separator}?/)
+          end
+          values
+        else
+          yield keyword.strip
+        end
+      end
+      protected :parse_keyword
+
       # Returns the validation errors for custom_field
       # Should return an empty array if custom_field is valid
       def validate_custom_field(custom_field)
-        []
+        errors = []
+        pattern = custom_field.url_pattern
+        if pattern.present? && !uri_with_safe_scheme?(url_pattern_without_tokens(pattern))
+          errors << [:url_pattern, :invalid]
+        end
+        errors
       end
 
       # Returns the validation error messages for custom_value
       # Should return an empty array if custom_value is valid
+      # custom_value is a CustomFieldValue.
       def validate_custom_value(custom_value)
         values = Array.wrap(custom_value.value).reject {|value| value.to_s == ''}
         errors = values.map do |value|
@@ -141,6 +230,10 @@ module Redmine
 
       def validate_single_value(custom_field, value, customized=nil)
         []
+      end
+
+      # CustomValue after_save callback
+      def after_save_custom_value(custom_field, custom_value)
       end
 
       def formatted_custom_value(view, custom_value, html=false)
@@ -155,7 +248,7 @@ module Redmine
             url = url_from_pattern(custom_field, single_value, customized)
             [text, url]
           end
-          links = texts_and_urls.sort_by(&:first).map {|text, url| view.link_to text, url}
+          links = texts_and_urls.sort_by(&:first).map {|text, url| view.link_to_if uri_with_safe_scheme?(url), text, url}
           links.join(', ').html_safe
         else
           casted
@@ -171,21 +264,28 @@ module Redmine
       # %m1%, %m2%... => capture groups matches of the custom field regexp if defined
       def url_from_pattern(custom_field, value, customized)
         url = custom_field.url_pattern.to_s.dup
-        url.gsub!('%value%') {value.to_s}
-        url.gsub!('%id%') {customized.id.to_s}
-        url.gsub!('%project_id%') {(customized.respond_to?(:project) ? customized.project.try(:id) : nil).to_s}
-        url.gsub!('%project_identifier%') {(customized.respond_to?(:project) ? customized.project.try(:identifier) : nil).to_s}
+        url.gsub!('%value%') {URI.encode value.to_s}
+        url.gsub!('%id%') {URI.encode customized.id.to_s}
+        url.gsub!('%project_id%') {URI.encode (customized.respond_to?(:project) ? customized.project.try(:id) : nil).to_s}
+        url.gsub!('%project_identifier%') {URI.encode (customized.respond_to?(:project) ? customized.project.try(:identifier) : nil).to_s}
         if custom_field.regexp.present?
           url.gsub!(%r{%m(\d+)%}) do
             m = $1.to_i
             if matches ||= value.to_s.match(Regexp.new(custom_field.regexp))
-              matches[m].to_s
+              URI.encode matches[m].to_s
             end
           end
         end
         url
       end
       protected :url_from_pattern
+
+      # Returns the URL pattern with substitution tokens removed,
+      # for validation purpose
+      def url_pattern_without_tokens(url_pattern)
+        url_pattern.to_s.gsub(/%(value|id|project_id|project_identifier|m\d+)%/, '')
+      end
+      protected :url_pattern_without_tokens
 
       def edit_tag(view, tag_id, tag_name, custom_value, options={})
         view.text_field_tag(tag_name, custom_value.value, options.merge(:id => tag_id))
@@ -293,13 +393,18 @@ module Redmine
       add 'text'
       self.searchable_supported = true
       self.form_partial = 'custom_fields/formats/text'
+      self.change_as_diff = true
 
       def formatted_value(view, custom_field, value, customized=nil, html=false)
         if html
-          if custom_field.text_formatting == 'full'
-            view.textilizable(value, :object => customized)
+          if value.present?
+            if custom_field.text_formatting == 'full'
+              view.textilizable(value, :object => customized)
+            else
+              view.simple_format(html_escape(value))
+            end
           else
-            view.simple_format(html_escape(value))
+            ''
           end
         else
           value.to_s
@@ -307,11 +412,11 @@ module Redmine
       end
 
       def edit_tag(view, tag_id, tag_name, custom_value, options={})
-        view.text_area_tag(tag_name, custom_value.value, options.merge(:id => tag_id, :rows => 3))
+        view.text_area_tag(tag_name, custom_value.value, options.merge(:id => tag_id, :rows => 8))
       end
 
       def bulk_edit_tag(view, tag_id, tag_name, custom_field, objects, value, options={})
-        view.text_area_tag(tag_name, value, options.merge(:id => tag_id, :rows => 3)) +
+        view.text_area_tag(tag_name, value, options.merge(:id => tag_id, :rows => 8)) +
           '<br />'.html_safe +
           bulk_clear_tag(view, tag_id, tag_name, custom_field, value)
       end
@@ -327,7 +432,7 @@ module Redmine
       self.form_partial = 'custom_fields/formats/link'
 
       def formatted_value(view, custom_field, value, customized=nil, html=false)
-        if html
+        if html && value.present?
           if custom_field.url_pattern.present?
             url = url_from_pattern(custom_field, value, customized)
           else
@@ -337,7 +442,7 @@ module Redmine
               url = "http://" + url
             end
           end
-          view.link_to value.to_s, url
+          view.link_to value.to_s.truncate(40), url
         else
           value.to_s
         end
@@ -346,12 +451,25 @@ module Redmine
 
     class Numeric < Unbounded
       self.form_partial = 'custom_fields/formats/numeric'
+      self.totalable_supported = true
 
       def order_statement(custom_field)
         # Make the database cast values into numeric
         # Postgresql will raise an error if a value can not be casted!
         # CustomValue validations should ensure that it doesn't occur
         "CAST(CASE #{join_alias custom_field}.value WHEN '' THEN '0' ELSE #{join_alias custom_field}.value END AS decimal(30,3))"
+      end
+
+      # Returns totals for the given scope
+      def total_for_scope(custom_field, scope)
+        scope.joins(:custom_values).
+          where(:custom_values => {:custom_field_id => custom_field.id}).
+          where.not(:custom_values => {:value => ''}).
+          sum("CAST(#{CustomValue.table_name}.value AS decimal(30,3))")
+      end
+
+      def cast_total_value(custom_field, value)
+        cast_single_value(custom_field, value)
       end
     end
 
@@ -368,7 +486,7 @@ module Redmine
 
       def validate_single_value(custom_field, value, customized=nil)
         errs = super
-        errs << ::I18n.t('activerecord.errors.messages.not_a_number') unless value =~ /^[+-]?\d+$/
+        errs << ::I18n.t('activerecord.errors.messages.not_a_number') unless value.to_s =~ /^[+-]?\d+$/
         errs
       end
 
@@ -386,6 +504,10 @@ module Redmine
 
       def cast_single_value(custom_field, value, customized=nil)
         value.to_f
+      end
+
+      def cast_total_value(custom_field, value)
+        value.to_f.round(2)
       end
 
       def validate_single_value(custom_field, value, customized=nil)
@@ -416,12 +538,12 @@ module Redmine
       end
 
       def edit_tag(view, tag_id, tag_name, custom_value, options={})
-        view.text_field_tag(tag_name, custom_value.value, options.merge(:id => tag_id, :size => 10)) +
+        view.date_field_tag(tag_name, custom_value.value, options.merge(:id => tag_id, :size => 10)) +
           view.calendar_for(tag_id)
       end
 
       def bulk_edit_tag(view, tag_id, tag_name, custom_field, objects, value, options={})
-        view.text_field_tag(tag_name, value, options.merge(:id => tag_id, :size => 10)) +
+        view.date_field_tag(tag_name, value, options.merge(:id => tag_id, :size => 10)) +
           view.calendar_for(tag_id) +
           bulk_clear_tag(view, tag_id, tag_name, custom_field, value)
       end
@@ -456,10 +578,15 @@ module Redmine
       end
 
       def query_filter_options(custom_field, query)
-        {:type => :list_optional, :values => possible_values_options(custom_field, query.project)}
+        {:type => :list_optional, :values => lambda { query_filter_values(custom_field, query) }}
       end
 
       protected
+
+      # Returns the values that are available in the field filter
+      def query_filter_values(custom_field, query)
+        possible_values_options(custom_field, query.project)
+      end
 
       # Renders the edit tag as a select tag
       def select_edit_tag(view, tag_id, tag_name, custom_value, options={})
@@ -493,13 +620,11 @@ module Redmine
         opts.each do |label, value|
           value ||= label
           checked = (custom_value.value.is_a?(Array) && custom_value.value.include?(value)) || custom_value.value.to_s == value
-          tag = view.send(tag_method, tag_name, value, checked, :id => tag_id)
-          # set the id on the first tag only
-          tag_id = nil
+          tag = view.send(tag_method, tag_name, value, checked, :id => nil)
           s << view.content_tag('label', tag + ' ' + label) 
         end
         if custom_value.custom_field.multiple?
-          s << view.hidden_field_tag(tag_name, '')
+          s << view.hidden_field_tag(tag_name, '', :id => nil)
         end
         css = "#{options[:class]} check_box_group"
         view.content_tag('span', s, options.merge(:class => css))
@@ -510,7 +635,7 @@ module Redmine
       add 'list'
       self.searchable_supported = true
       self.form_partial = 'custom_fields/formats/list'
- 
+
       def possible_custom_value_options(custom_value)
         options = possible_values_options(custom_value.custom_field)
         missing = [custom_value.value].flatten.reject(&:blank?) - options
@@ -588,7 +713,7 @@ module Redmine
     end
 
     class RecordList < List
-      self.customized_class_names = %w(Issue TimeEntry Version Project)
+      self.customized_class_names = %w(Issue TimeEntry Version Document Project)
 
       def cast_single_value(custom_field, value, customized=nil)
         target_class.find_by_id(value.to_i) if value.present?
@@ -607,8 +732,6 @@ module Redmine
         missing = [custom_value.value_was].flatten.reject(&:blank?) - options.map(&:last)
         if missing.any?
           options += target_class.where(:id => missing.map(&:to_i)).map {|o| [o.to_s, o.id.to_s]}
-          #TODO: use #sort_by! when ruby1.8 support is dropped
-          options = options.sort_by(&:first)
         end
         options
       end
@@ -646,15 +769,46 @@ module Redmine
       protected :value_join_alias
     end
 
+    class EnumerationFormat < RecordList
+      add 'enumeration'
+      self.form_partial = 'custom_fields/formats/enumeration'
+ 
+      def label
+        "label_field_format_enumeration"
+      end
+
+      def target_class
+        @target_class ||= CustomFieldEnumeration
+      end
+
+      def possible_values_options(custom_field, object=nil)
+        possible_values_records(custom_field, object).map {|u| [u.name, u.id.to_s]}
+      end
+
+      def possible_values_records(custom_field, object=nil)
+        custom_field.enumerations.active
+      end
+
+      def value_from_keyword(custom_field, keyword, object)
+        parse_keyword(custom_field, keyword) do |k|
+          custom_field.enumerations.where("LOWER(name) LIKE LOWER(?)", k).first.try(:id)
+        end
+      end
+    end
+
     class UserFormat < RecordList
       add 'user'
       self.form_partial = 'custom_fields/formats/user'
       field_attributes :user_role
 
       def possible_values_options(custom_field, object=nil)
+        possible_values_records(custom_field, object).map {|u| [u.name, u.id.to_s]}
+      end
+
+      def possible_values_records(custom_field, object=nil)
         if object.is_a?(Array)
           projects = object.map {|o| o.respond_to?(:project) ? o.project : nil}.compact.uniq
-          projects.map {|project| possible_values_options(custom_field, project)}.reduce(:&) || []
+          projects.map {|project| possible_values_records(custom_field, project)}.reduce(:&) || []
         elsif object.respond_to?(:project) && object.project
           scope = object.project.users
           if custom_field.user_role.is_a?(Array)
@@ -663,9 +817,16 @@ module Redmine
               scope = scope.where("#{Member.table_name}.id IN (SELECT DISTINCT member_id FROM #{MemberRole.table_name} WHERE role_id IN (?))", role_ids)
             end
           end
-          scope.sorted.collect {|u| [u.to_s, u.id.to_s]}
+          scope.sorted
         else
           []
+        end
+      end
+
+      def value_from_keyword(custom_field, keyword, object)
+        users = possible_values_records(custom_field, object).to_a
+        parse_keyword(custom_field, keyword) do |k|
+          Principal.detect_by_keyword(users, k).try(:id)
         end
       end
 
@@ -675,6 +836,10 @@ module Redmine
           custom_field.user_role.map!(&:to_s).reject!(&:blank?)
         end
       end
+
+      def query_filter_values(custom_field, query)
+        query.author_values
+      end
     end
 
     class VersionFormat < RecordList
@@ -683,21 +848,7 @@ module Redmine
       field_attributes :version_status
 
       def possible_values_options(custom_field, object=nil)
-        if object.is_a?(Array)
-          projects = object.map {|o| o.respond_to?(:project) ? o.project : nil}.compact.uniq
-          projects.map {|project| possible_values_options(custom_field, project)}.reduce(:&) || []
-        elsif object.respond_to?(:project) && object.project
-          scope = object.project.shared_versions
-          if custom_field.version_status.is_a?(Array)
-            statuses = custom_field.version_status.map(&:to_s).reject(&:blank?)
-            if statuses.any?
-              scope = scope.where(:status => statuses.map(&:to_s))
-            end
-          end
-          scope.sort.collect {|u| [u.to_s, u.id.to_s]}
-        else
-          []
-        end
+        possible_values_records(custom_field, object).sort.collect{|v| [v.to_s, v.id.to_s] }
       end
 
       def before_custom_field_save(custom_field)
@@ -705,6 +856,154 @@ module Redmine
         if custom_field.version_status.is_a?(Array)
           custom_field.version_status.map!(&:to_s).reject!(&:blank?)
         end
+      end
+
+      protected
+
+      def query_filter_values(custom_field, query)
+        versions = possible_values_records(custom_field, query.project, true)
+        Version.sort_by_status(versions).collect{|s| ["#{s.project.name} - #{s.name}", s.id.to_s, l("version_status_#{s.status}")] }
+      end
+
+      def possible_values_records(custom_field, object=nil, all_statuses=false)
+        if object.is_a?(Array)
+          projects = object.map {|o| o.respond_to?(:project) ? o.project : nil}.compact.uniq
+          projects.map {|project| possible_values_records(custom_field, project)}.reduce(:&) || []
+        elsif object.respond_to?(:project) && object.project
+          scope = object.project.shared_versions
+          filtered_versions_options(custom_field, scope, all_statuses)
+        elsif object.nil?
+          scope = ::Version.visible.where(:sharing => 'system')
+          filtered_versions_options(custom_field, scope, all_statuses)
+        else
+          []
+        end
+      end
+
+      def filtered_versions_options(custom_field, scope, all_statuses=false)
+        if !all_statuses && custom_field.version_status.is_a?(Array)
+          statuses = custom_field.version_status.map(&:to_s).reject(&:blank?)
+          if statuses.any?
+            scope = scope.where(:status => statuses.map(&:to_s))
+          end
+        end
+        scope
+      end
+    end
+
+    class AttachmentFormat < Base
+      add 'attachment'
+      self.form_partial = 'custom_fields/formats/attachment'
+      self.is_filter_supported = false
+      self.change_no_details = true
+      self.bulk_edit_supported = false
+      field_attributes :extensions_allowed
+
+      def set_custom_field_value(custom_field, custom_field_value, value)
+        attachment_present = false
+
+        if value.is_a?(Hash)
+          attachment_present = true
+          value = value.except(:blank)
+
+          if value.values.any? && value.values.all? {|v| v.is_a?(Hash)}
+            value = value.values.first
+          end
+
+          if value.key?(:id)
+            value = set_custom_field_value_by_id(custom_field, custom_field_value, value[:id])
+          elsif value[:token].present?
+            if attachment = Attachment.find_by_token(value[:token])
+              value = attachment.id.to_s
+            else
+              value = ''
+            end
+          elsif value.key?(:file)
+            attachment = Attachment.new(:file => value[:file], :author => User.current)
+            if attachment.save
+              value = attachment.id.to_s
+            else
+              value = ''
+            end
+          else
+            attachment_present = false
+            value = ''
+          end
+        elsif value.is_a?(String)
+          value = set_custom_field_value_by_id(custom_field, custom_field_value, value)
+        end
+        custom_field_value.instance_variable_set "@attachment_present", attachment_present
+
+        value
+      end
+
+      def set_custom_field_value_by_id(custom_field, custom_field_value, id)
+        attachment = Attachment.find_by_id(id)
+        if attachment && attachment.container.is_a?(CustomValue) && attachment.container.customized == custom_field_value.customized
+          id.to_s
+        else
+          ''
+        end
+      end
+      private :set_custom_field_value_by_id
+
+      def cast_single_value(custom_field, value, customized=nil)
+        Attachment.find_by_id(value.to_i) if value.present? && value.respond_to?(:to_i)
+      end
+
+      def validate_custom_value(custom_value)
+        errors = []
+
+        if custom_value.value.blank?
+          if custom_value.instance_variable_get("@attachment_present")
+            errors << ::I18n.t('activerecord.errors.messages.invalid')
+          end
+        else
+          if custom_value.value.present?
+            attachment = Attachment.where(:id => custom_value.value.to_s).first
+            extensions = custom_value.custom_field.extensions_allowed
+            if attachment && extensions.present? && !attachment.extension_in?(extensions)
+              errors << "#{::I18n.t('activerecord.errors.messages.invalid')} (#{l(:setting_attachment_extensions_allowed)}: #{extensions})"
+            end
+          end
+        end
+
+        errors.uniq
+      end
+
+      def after_save_custom_value(custom_field, custom_value)
+        if custom_value.saved_change_to_value?
+          if custom_value.value.present?
+            attachment = Attachment.where(:id => custom_value.value.to_s).first
+            if attachment
+              attachment.container = custom_value
+              attachment.save!
+            end
+          end
+          if custom_value.value_before_last_save.present?
+            attachment = Attachment.where(:id => custom_value.value_before_last_save.to_s).first
+            if attachment
+              attachment.destroy
+            end
+          end
+        end
+      end
+
+      def edit_tag(view, tag_id, tag_name, custom_value, options={})
+        attachment = nil
+        if custom_value.value.present?
+          attachment = Attachment.find_by_id(custom_value.value)
+        end
+
+        view.hidden_field_tag("#{tag_name}[blank]", "") +
+          view.render(:partial => 'attachments/form',
+            :locals => {
+              :attachment_param => tag_name,
+              :multiple => false,
+              :description => false,
+              :saved_attachments => [attachment].compact,
+              :filedrop => false
+            })
       end
     end
   end

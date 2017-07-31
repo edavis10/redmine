@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+require 'fileutils'
 
 module Redmine
   module Utils
@@ -40,14 +42,44 @@ module Redmine
       def random_hex(n)
         SecureRandom.hex(n)
       end
+
+      def save_upload(upload, path)
+        directory = File.dirname(path)
+        unless File.exists?(directory)
+          FileUtils.mkdir_p directory
+        end
+        File.open(path, "wb") do |f|
+          if upload.respond_to?(:read)
+            buffer = ""
+            while (buffer = upload.read(8192))
+              f.write(buffer)
+              yield buffer if block_given?
+            end
+          else
+            f.write(upload)
+            yield upload if block_given?
+          end
+        end
+      end
     end
 
     module Shell
+
+      module_function
+
       def shell_quote(str)
         if Redmine::Platform.mswin?
           '"' + str.gsub(/"/, '\\"') + '"'
         else
           "'" + str.gsub(/'/, "'\"'\"'") + "'"
+        end
+      end
+
+      def shell_quote_command(command)
+        if Redmine::Platform.mswin? && RUBY_PLATFORM == 'java'
+          command
+        else
+          shell_quote(command)
         end
       end
     end

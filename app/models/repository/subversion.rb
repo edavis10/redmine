@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,7 +18,6 @@
 require 'redmine/scm/adapters/subversion_adapter'
 
 class Repository::Subversion < Repository
-  attr_protected :root_url
   validates_presence_of :url
   validates_format_of :url, :with => %r{\A(http|https|svn(\+[^\s:\/\\]+)?|file):\/\/.+}i
 
@@ -42,7 +41,7 @@ class Repository::Subversion < Repository
     revisions = scm.revisions(path, rev, nil, :limit => limit)
     if revisions
       identifiers = revisions.collect(&:identifier).compact
-      changesets.where(:revision => identifiers).reorder("committed_on DESC").includes(:repository, :user).all
+      changesets.where(:revision => identifiers).reorder("committed_on DESC").includes(:repository, :user).to_a
     else
       []
     end

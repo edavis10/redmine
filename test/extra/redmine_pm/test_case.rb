@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -23,7 +23,7 @@ module RedminePmTest
     
     # Cannot use transactional fixtures here: database
     # will be accessed from Redmine.pm with its own connection
-    self.use_transactional_fixtures = false
+    self.use_transactional_tests = false
   
     def test_dummy
     end

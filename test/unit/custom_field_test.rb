@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,7 +18,9 @@
 require File.expand_path('../../test_helper', __FILE__)
 
 class CustomFieldTest < ActiveSupport::TestCase
-  fixtures :custom_fields, :roles, :projects, :issues
+  fixtures :custom_fields, :roles, :projects,
+           :trackers, :issue_statuses,
+           :issues
 
   def test_create
     field = UserCustomField.new(:name => 'Money money money', :field_format => 'float')
@@ -53,7 +55,9 @@ class CustomFieldTest < ActiveSupport::TestCase
   end
 
   def test_default_value_should_not_be_validated_when_blank
-    field = CustomField.new(:name => 'Test', :field_format => 'list', :possible_values => ['a', 'b'], :is_required => true, :default_value => '')
+    field = CustomField.new(:name => 'Test', :field_format => 'list',
+                            :possible_values => ['a', 'b'], :is_required => true,
+                            :default_value => '')
     assert field.valid?
   end
 
@@ -83,10 +87,24 @@ class CustomFieldTest < ActiveSupport::TestCase
     assert_equal ["One value"], field.possible_values
   end
 
+  def test_possible_values_should_stringify_values
+    field = CustomField.new
+    field.possible_values = [1, 2]
+    assert_equal ["1", "2"], field.possible_values
+  end
+
   def test_possible_values_should_accept_a_string
     field = CustomField.new
     field.possible_values = "One value"
     assert_equal ["One value"], field.possible_values
+  end
+
+  def test_possible_values_should_return_utf8_encoded_strings
+    field = CustomField.new
+    s = "Value".force_encoding('BINARY')
+    field.possible_values = s
+    assert_equal [s], field.possible_values
+    assert_equal 'UTF-8', field.possible_values.first.encoding.name
   end
 
   def test_possible_values_should_accept_a_multiline_string
@@ -95,14 +113,12 @@ class CustomFieldTest < ActiveSupport::TestCase
     assert_equal ["One value", "And another one"], field.possible_values
   end
 
-  if "string".respond_to?(:encoding)
-    def test_possible_values_stored_as_binary_should_be_utf8_encoded
-      field = CustomField.find(11)
-      assert_kind_of Array, field.possible_values
-      assert field.possible_values.size > 0
-      field.possible_values.each do |value|
-        assert_equal "UTF-8", value.encoding.name
-      end
+  def test_possible_values_stored_as_binary_should_be_utf8_encoded
+    field = CustomField.find(11)
+    assert_kind_of Array, field.possible_values
+    assert field.possible_values.size > 0
+    field.possible_values.each do |value|
+      assert_equal "UTF-8", value.encoding.name
     end
   end
 
@@ -193,6 +209,7 @@ class CustomFieldTest < ActiveSupport::TestCase
     assert f.valid_field_value?('+123')
     assert f.valid_field_value?('-123')
     assert !f.valid_field_value?('6abc')
+    assert f.valid_field_value?(123)
   end
 
   def test_float_field_validation
@@ -205,6 +222,7 @@ class CustomFieldTest < ActiveSupport::TestCase
     assert f.valid_field_value?('-6.250')
     assert f.valid_field_value?('5')
     assert !f.valid_field_value?('6abc')
+    assert f.valid_field_value?(11.2)
   end
 
   def test_multi_field_validation
@@ -232,12 +250,18 @@ class CustomFieldTest < ActiveSupport::TestCase
   end
 
   def test_changing_multiple_to_false_should_delete_multiple_values
-    field = ProjectCustomField.create!(:name => 'field', :field_format => 'list', :multiple => 'true', :possible_values => ['field1', 'field2'])
-    other = ProjectCustomField.create!(:name => 'other', :field_format => 'list', :multiple => 'true', :possible_values => ['other1', 'other2'])
-
-    item_with_multiple_values = Project.generate!(:custom_field_values => {field.id => ['field1', 'field2'], other.id => ['other1', 'other2']})
-    item_with_single_values = Project.generate!(:custom_field_values => {field.id => ['field1'], other.id => ['other2']})
-
+    field = ProjectCustomField.create!(:name => 'field', :field_format => 'list',
+                                       :multiple => 'true',
+                                       :possible_values => ['field1', 'field2'])
+    other = ProjectCustomField.create!(:name => 'other', :field_format => 'list',
+                                       :multiple => 'true',
+                                       :possible_values => ['other1', 'other2'])
+    item_with_multiple_values = Project.generate!(:custom_field_values =>
+                                                   {field.id => ['field1', 'field2'],
+                                                    other.id => ['other1', 'other2']})
+    item_with_single_values = Project.generate!(:custom_field_values =>
+                                                   {field.id => ['field1'],
+                                                    other.id => ['other2']})
     assert_difference 'CustomValue.count', -1 do
       field.multiple = false
       field.save!
@@ -265,6 +289,7 @@ class CustomFieldTest < ActiveSupport::TestCase
   end
 
   def test_visibile_scope_with_admin_should_return_all_custom_fields
+    admin = User.generate! {|user| user.admin = true}
     CustomField.delete_all
     fields = [
       CustomField.generate!(:visible => true),
@@ -273,7 +298,7 @@ class CustomFieldTest < ActiveSupport::TestCase
       CustomField.generate!(:visible => false, :role_ids => [1, 2]),
     ]
 
-    assert_equal 4, CustomField.visible(User.find(1)).count
+    assert_equal 4, CustomField.visible(admin).count
   end
 
   def test_visibile_scope_with_non_admin_user_should_return_visible_custom_fields
@@ -304,8 +329,8 @@ class CustomFieldTest < ActiveSupport::TestCase
 
   def test_float_cast_blank_value_should_return_nil
     field = CustomField.new(:field_format => 'float')
-    assert_equal nil, field.cast_value(nil)
-    assert_equal nil, field.cast_value('')
+    assert_nil field.cast_value(nil)
+    assert_nil field.cast_value('')
   end
 
   def test_float_cast_valid_value_should_return_float

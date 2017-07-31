@@ -4,10 +4,18 @@ module ActiveRecord
   class Base
     include Redmine::I18n
     # Translate attribute names for validation errors display
-    def self.human_attribute_name(attr, *args)
-      attr = attr.to_s.sub(/_id$/, '')
+    def self.human_attribute_name(attr, options = {})
+      prepared_attr = attr.to_s.sub(/_id$/, '').sub(/^.+\./, '')
+      class_prefix = name.underscore.gsub('/', '_')
 
-      l("field_#{name.underscore.gsub('/', '_')}_#{attr}", :default => ["field_#{attr}".to_sym, attr])
+      redmine_default = [
+        :"field_#{class_prefix}_#{prepared_attr}",
+        :"field_#{prepared_attr}"
+      ]
+
+      options[:default] = redmine_default + Array(options[:default])
+
+      super
     end
   end
 
@@ -44,46 +52,11 @@ module ActionView
   class Resolver
     def find_all(name, prefix=nil, partial=false, details={}, key=nil, locals=[])
       cached(key, [name, prefix, partial], details, locals) do
-        if details[:formats] & [:xml, :json]
+        if (details[:formats] & [:xml, :json]).any?
           details = details.dup
           details[:formats] = details[:formats].dup + [:api]
         end
         find_templates(name, prefix, partial, details)
-      end
-    end
-  end
-end
-
-# Do not HTML escape text templates
-module ActionView
-  class Template
-    module Handlers
-      class ERB
-        def call(template)
-          if template.source.encoding_aware?
-            # First, convert to BINARY, so in case the encoding is
-            # wrong, we can still find an encoding tag
-            # (<%# encoding %>) inside the String using a regular
-            # expression
-            template_source = template.source.dup.force_encoding("BINARY")
-
-            erb = template_source.gsub(ENCODING_TAG, '')
-            encoding = $2
-
-            erb.force_encoding valid_encoding(template.source.dup, encoding)
-
-            # Always make sure we return a String in the default_internal
-            erb.encode!
-          else
-            erb = template.source.dup
-          end
-
-          self.class.erb_implementation.new(
-            erb,
-            :trim => (self.class.erb_trim_mode == "-"),
-            :escape => template.identifier =~ /\.text/ # only escape HTML templates
-          ).src
-        end
       end
     end
   end
@@ -94,36 +67,38 @@ ActionView::Base.field_error_proc = Proc.new{ |html_tag, instance| html_tag || '
 # HTML5: <option value=""></option> is invalid, use <option value="">&nbsp;</option> instead
 module ActionView
   module Helpers
-    class InstanceTag
-      private
-      def add_options_with_non_empty_blank_option(option_tags, options, value = nil)
-        if options[:include_blank] == true
-          options = options.dup
-          options[:include_blank] = '&nbsp;'.html_safe
+    module Tags
+      class Base
+        private
+        alias :add_options_without_non_empty_blank_option :add_options
+        def add_options(option_tags, options, value = nil)
+          if options[:include_blank] == true
+            options = options.dup
+            options[:include_blank] = '&nbsp;'.html_safe
+          end
+          add_options_without_non_empty_blank_option(option_tags, options, value)
         end
-        add_options_without_non_empty_blank_option(option_tags, options, value)
       end
-      alias_method_chain :add_options, :non_empty_blank_option
     end
 
     module FormTagHelper
-      def select_tag_with_non_empty_blank_option(name, option_tags = nil, options = {})
+      alias :select_tag_without_non_empty_blank_option :select_tag
+      def select_tag(name, option_tags = nil, options = {})
         if options.delete(:include_blank)
           options[:prompt] = '&nbsp;'.html_safe
         end
         select_tag_without_non_empty_blank_option(name, option_tags, options)
       end
-      alias_method_chain :select_tag, :non_empty_blank_option
     end
 
     module FormOptionsHelper
-      def options_for_select_with_non_empty_blank_option(container, selected = nil)
+      alias :options_for_select_without_non_empty_blank_option :options_for_select
+      def options_for_select(container, selected = nil)
         if container.is_a?(Array)
           container = container.map {|element| element.blank? ? ["&nbsp;".html_safe, ""] : element}
         end
         options_for_select_without_non_empty_blank_option(container, selected)
       end
-      alias_method_chain :options_for_select, :non_empty_blank_option
     end
   end
 end
@@ -180,6 +155,16 @@ module ActionMailer
   end
 end
 
+# #deliver is deprecated in Rails 4.2
+# Prevents massive deprecation warnings
+module ActionMailer
+  class MessageDelivery < Delegator
+    def deliver
+      deliver_now
+    end
+  end
+end
+
 module ActionController
   module MimeResponds
     class Collector
@@ -197,44 +182,58 @@ module ActionController
     # TODO: remove it in a later version
     def self.session=(*args)
       $stderr.puts "Please remove config/initializers/session_store.rb and run `rake generate_secret_token`.\n" +
-        "Setting the session secret with ActionController.session= is no longer supported in Rails 3."
+        "Setting the session secret with ActionController.session= is no longer supported."
       exit 1
     end
   end
 end
 
-if Rails::VERSION::MAJOR < 4 && RUBY_VERSION >= "2.1"
-  module ActiveSupport
-    class HashWithIndifferentAccess
-      def select(*args, &block)
-        dup.tap { |hash| hash.select!(*args, &block) }
-      end
+# Adds asset_id parameters to assets like Rails 3 to invalidate caches in browser
+module ActionView
+  module Helpers
+    module AssetUrlHelper
+      @@cache_asset_timestamps = Rails.env.production?
+      @@asset_timestamps_cache = {}
+      @@asset_timestamps_cache_guard = Mutex.new
 
-      def reject(*args, &block)
-        dup.tap { |hash| hash.reject!(*args, &block) }
-      end
-    end
-
-    class OrderedHash
-      def select(*args, &block)
-        dup.tap { |hash| hash.select!(*args, &block) }
-      end
-
-      def reject(*args, &block)
-        dup.tap { |hash| hash.reject!(*args, &block) }
-      end
-    end
-  end
-end
-
-module CollectiveIdea
-  module Acts
-    module NestedSet
-      module Model
-        def leaf_with_new_record?
-          new_record? || leaf_without_new_record?
+      def asset_path_with_asset_id(source, options = {})
+        asset_id = rails_asset_id(source, options)
+        unless asset_id.blank?
+          source += "?#{asset_id}"
         end
-        alias_method_chain :leaf?, :new_record
+        asset_path(source, options.merge(skip_pipeline: true))
+      end
+      alias :path_to_asset :asset_path_with_asset_id
+
+      def rails_asset_id(source, options = {})
+        if asset_id = ENV["RAILS_ASSET_ID"]
+          asset_id
+        else
+          if @@cache_asset_timestamps && (asset_id = @@asset_timestamps_cache[source])
+            asset_id
+          else
+            extname = compute_asset_extname(source, options)
+            path = File.join(Rails.public_path, "#{source}#{extname}")
+            exist = false
+            if File.exist? path
+              exist = true
+            else
+              path = File.join(Rails.public_path, public_compute_asset_path("#{source}#{extname}", options))
+              if File.exist? path
+                exist = true
+              end
+            end
+            asset_id = exist ? File.mtime(path).to_i.to_s : ''
+
+            if @@cache_asset_timestamps
+              @@asset_timestamps_cache_guard.synchronize do
+                @@asset_timestamps_cache[source] = asset_id
+              end
+            end
+
+            asset_id
+          end
+        end
       end
     end
   end

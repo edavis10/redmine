@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -57,9 +57,9 @@ class Repository::Cvs < Repository
     if entries
       entries.each() do |entry|
         if ( ! entry.lastrev.nil? ) && ( ! entry.lastrev.revision.nil? )
-          change = filechanges.find_by_revision_and_path(
-                     entry.lastrev.revision,
-                     scm.with_leading_slash(entry.path) )
+          change = filechanges.where(
+                       :revision => entry.lastrev.revision,
+                       :path => scm.with_leading_slash(entry.path)).first
           if change
             entry.lastrev.identifier = change.changeset.revision
             entry.lastrev.revision   = change.changeset.revision
@@ -151,7 +151,7 @@ class Repository::Cvs < Repository
           # create a new changeset....
           unless cs
             # we use a temporary revision number here (just for inserting)
-            # later on, we calculate a continous positive number
+            # later on, we calculate a continuous positive number
             tmp_time2 = tmp_time.clone.gmtime
             branch    = revision.paths[0][:branch]
             scmid     = branch + "-" + tmp_time2.strftime("%Y%m%d-%H%M%S")
@@ -163,7 +163,7 @@ class Repository::Cvs < Repository
                                   :comments     => revision.message)
             tmp_rev_num += 1
           end
-          # convert CVS-File-States to internal Action-abbrevations
+          # convert CVS-File-States to internal Action-abbreviations
           # default action is (M)odified
           action = "M"
           if revision.paths[0][:action] == "Exp" && revision.paths[0][:revision] == "1.1"
@@ -187,9 +187,17 @@ class Repository::Cvs < Repository
         where("repository_id = ? AND revision LIKE 'tmp%'", id).
         each do |changeset|
           changeset.update_attribute :revision, next_revision_number
-      end
+        end
     end # transaction
     @current_revision_number = nil
+  end
+
+  protected
+
+  # Overrides Repository#validate_repository_path to validate
+  # against root_url attribute.
+  def validate_repository_path(attribute=:root_url)
+    super(attribute)
   end
 
   private
@@ -199,7 +207,7 @@ class Repository::Cvs < Repository
     # Need to retrieve existing revision numbers to sort them as integers
     sql = "SELECT revision FROM #{Changeset.table_name} "
     sql << "WHERE repository_id = #{id} AND revision NOT LIKE 'tmp%'"
-    @current_revision_number ||= (connection.select_values(sql).collect(&:to_i).max || 0)
+    @current_revision_number ||= (self.class.connection.select_values(sql).collect(&:to_i).max || 0)
     @current_revision_number += 1
   end
 end

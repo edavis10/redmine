@@ -1,6 +1,6 @@
 <%= wiki_page_breadcrumb(@page) %>
 
-<h2><%= h @original_title %></h2>
+<h2><%= @original_title %></h2>
 
 <%= error_messages_for 'page' %>
 
@@ -9,13 +9,21 @@
                      :html => { :method => :post } do |f| %>
 <div class="box tabular">
 <p><%= f.text_field :title, :required => true, :size => 100  %></p>
+<% if @page.safe_attribute? 'is_start_page' %>
+<p><%= f.check_box :is_start_page, :label => :field_start_page, :disabled => @page.is_start_page %></p>
+<% end %>
 <p><%= f.check_box :redirect_existing_links %></p>
 <p><%= f.select :parent_id,
                 content_tag('option', '', :value => '') + 
                   wiki_page_options_for_select(
-                    @wiki.pages.includes(:parent).all - @page.self_and_descendants,
+                    @wiki.pages.includes(:parent).to_a - @page.self_and_descendants,
                     @page.parent),
                 :label => :field_parent_title %></p>
+
+<% if @page.safe_attribute? 'wiki_id' %>
+<p><%= f.select :wiki_id, wiki_page_wiki_options_for_select(@page), :label => :label_project %></p>
+<% end %>
+
 </div>
 <%= submit_tag l(:button_rename) %>
 <% end %>

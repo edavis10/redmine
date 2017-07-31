@@ -1,11 +1,13 @@
+/* Redmine - project management software
+   Copyright (C) 2006-2017  Jean-Philippe Lang */
+
 var contextMenuObserving;
-var contextMenuUrl;
 
 function contextMenuRightClick(event) {
   var target = $(event.target);
   if (target.is('a')) {return;}
-  var tr = target.parents('tr').first();
-  if (!tr.hasClass('hascontextmenu')) {return;}
+  var tr = target.closest('.hascontextmenu').first();
+  if (tr.length < 1) {return;}
   event.preventDefault();
   if (!contextMenuIsSelected(tr)) {
     contextMenuUnselectAll();
@@ -26,8 +28,8 @@ function contextMenuClick(event) {
   contextMenuHide();
   if (target.is('a') || target.is('img')) { return; }
   if (event.which == 1 || (navigator.appVersion.match(/\bMSIE\b/))) {
-    var tr = target.parents('tr').first();
-    if (tr.length && tr.hasClass('hascontextmenu')) {
+    var tr = target.closest('.hascontextmenu').first();
+    if (tr.length > 0) {
       // a row was clicked, check if the click was on checkbox
       if (target.is('input')) {
         // a checkbox may be clicked
@@ -64,6 +66,8 @@ function contextMenuClick(event) {
       // click is outside the rows
       if (target.is('a') && (target.hasClass('disabled') || target.hasClass('submenu'))) {
         event.preventDefault();
+      } else if (target.is('.toggle-selection') || target.is('.ui-dialog *') || $('#ajax-modal').is(':visible')) {
+        // nop
       } else {
         contextMenuUnselectAll();
       }
@@ -82,7 +86,8 @@ function contextMenuCreate() {
 
 function contextMenuShow(event) {
   var mouse_x = event.pageX;
-  var mouse_y = event.pageY;
+  var mouse_y = event.pageY;  
+  var mouse_y_c = event.clientY;  
   var render_x = mouse_x;
   var render_y = mouse_y;
   var dims;
@@ -92,20 +97,24 @@ function contextMenuShow(event) {
   var window_height;
   var max_width;
   var max_height;
+  var url;
 
   $('#context-menu').css('left', (render_x + 'px'));
   $('#context-menu').css('top', (render_y + 'px'));
   $('#context-menu').html('');
 
+  url = $(event.target).parents('form').first().data('cm-url');
+  if (url == null) {alert('no url'); return;}
+
   $.ajax({
-    url: contextMenuUrl,
+    url: url,
     data: $(event.target).parents('form').first().serialize(),
     success: function(data, textStatus, jqXHR) {
       $('#context-menu').html(data);
       menu_width = $('#context-menu').width();
       menu_height = $('#context-menu').height();
       max_width = mouse_x + 2*menu_width;
-      max_height = mouse_y + menu_height;
+      max_height = mouse_y_c + menu_height;
 
       var ws = window_size();
       window_width = ws.width;
@@ -118,12 +127,22 @@ function contextMenuShow(event) {
       } else {
        $('#context-menu').removeClass('reverse-x');
       }
+
       if (max_height > window_height) {
        render_y -= menu_height;
        $('#context-menu').addClass('reverse-y');
+        // adding class for submenu
+        if (mouse_y_c < 325) {
+          $('#context-menu .folder').addClass('down');
+        }
       } else {
-       $('#context-menu').removeClass('reverse-y');
+        // adding class for submenu
+        if (window_height - mouse_y_c < 345) {
+          $('#context-menu .folder').addClass('up');
+        } 
+        $('#context-menu').removeClass('reverse-y');
       }
+
       if (render_x <= 0) render_x = 1;
       if (render_y <= 0) render_y = 1;
       $('#context-menu').css('left', (render_x + 'px'));
@@ -131,7 +150,6 @@ function contextMenuShow(event) {
       $('#context-menu').show();
 
       //if (window.parseStylesheets) { window.parseStylesheets(); } // IE
-
     }
   });
 }
@@ -146,6 +164,7 @@ function contextMenuLastSelected() {
 }
 
 function contextMenuUnselectAll() {
+  $('input[type=checkbox].toggle-selection').prop('checked', false);
   $('.hascontextmenu').each(function(){
     contextMenuRemoveSelection($(this));
   });
@@ -192,8 +211,7 @@ function contextMenuClearDocumentSelection() {
   }
 }
 
-function contextMenuInit(url) {
-  contextMenuUrl = url;
+function contextMenuInit() {
   contextMenuCreate();
   contextMenuUnselectAll();
   
@@ -205,18 +223,9 @@ function contextMenuInit(url) {
 }
 
 function toggleIssuesSelection(el) {
-  var boxes = $(el).parents('form').find('input[type=checkbox]');
-  var all_checked = true;
-  boxes.each(function(){ if (!$(this).prop('checked')) { all_checked = false; } });
-  boxes.each(function(){
-    if (all_checked) {
-      $(this).removeAttr('checked');
-      $(this).parents('tr').removeClass('context-menu-selection');
-    } else if (!$(this).prop('checked')) {
-      $(this).prop('checked', true);
-      $(this).parents('tr').addClass('context-menu-selection');
-    }
-  });
+  var checked = $(this).prop('checked');
+  var boxes = $(this).parents('table').find('input[name=ids\\[\\]]');
+  boxes.prop('checked', checked).parents('.hascontextmenu').toggleClass('context-menu-selection', checked);
 }
 
 function window_size() {
@@ -234,3 +243,8 @@ function window_size() {
   }
   return {width: w, height: h};
 }
+
+$(document).ready(function(){
+  contextMenuInit();
+  $('input[type=checkbox].toggle-selection').on('change', toggleIssuesSelection);
+});

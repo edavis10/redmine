@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2008  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,25 +18,38 @@
 require File.expand_path('../../test_helper', __FILE__)
 
 class TrackerTest < ActiveSupport::TestCase
-  fixtures :trackers, :workflows, :issue_statuses, :roles, :issues
+  fixtures :trackers, :workflows, :issue_statuses, :roles, :issues, :projects, :projects_trackers
 
   def test_sorted_scope
-    assert_equal Tracker.all.sort, Tracker.sorted.all
+    assert_equal Tracker.all.sort, Tracker.sorted.to_a
   end
 
   def test_named_scope
-    assert_equal Tracker.find_by_name('Feature'), Tracker.named('feature').first
+    assert_equal Tracker.find(2), Tracker.named('feature request').first
+  end
+
+  def test_visible_scope_chained_with_project_rolled_up_trackers
+    project = Project.find(1)
+    role = Role.generate!
+    role.add_permission! :view_issues
+    role.set_permission_trackers :view_issues, [2]
+    role.save!
+    user = User.generate!
+    User.add_to_project user, project, role
+
+    assert_equal [2], project.rolled_up_trackers(false).visible(user).map(&:id)
   end
 
   def test_copy_workflows
     source = Tracker.find(1)
-    assert_equal 89, source.workflow_rules.size
+    rules_count = source.workflow_rules.count
+    assert rules_count > 0
 
-    target = Tracker.new(:name => 'Target')
+    target = Tracker.new(:name => 'Target', :default_status_id => 1)
     assert target.save
-    target.workflow_rules.copy(source)
+    target.copy_workflow_rules(source)
     target.reload
-    assert_equal 89, target.workflow_rules.size
+    assert_equal rules_count, target.workflow_rules.size
   end
 
   def test_issue_statuses
@@ -51,7 +64,7 @@ class TrackerTest < ActiveSupport::TestCase
   end
 
   def test_issue_statuses_empty
-    WorkflowTransition.delete_all("tracker_id = 1")
+    WorkflowTransition.where(:tracker_id => 1).delete_all
     assert_equal [], Tracker.find(1).issue_statuses
   end
 
@@ -97,7 +110,7 @@ class TrackerTest < ActiveSupport::TestCase
 
   def test_destroying_a_tracker_without_issues_should_not_raise_an_error
     tracker = Tracker.find(1)
-    Issue.delete_all :tracker_id => tracker.id
+    Issue.where(:tracker_id => tracker.id).delete_all
 
     assert_difference 'Tracker.count', -1 do
       assert_nothing_raised do

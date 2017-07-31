@@ -1,7 +1,7 @@
 # encoding: utf-8
 #
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -57,9 +57,9 @@ module VersionsHelper
     h = Hash.new {|k,v| k[v] = [0, 0]}
     begin
       # Total issue count
-      Issue.where(:fixed_version_id => version.id).group(criteria).count.each {|c,s| h[c][0] = s}
+      version.fixed_issues.group(criteria).count.each {|c,s| h[c][0] = s}
       # Open issues count
-      Issue.open.where(:fixed_version_id => version.id).group(criteria).count.each {|c,s| h[c][1] = s}
+      version.fixed_issues.open.group(criteria).count.each {|c,s| h[c][1] = s}
     rescue ActiveRecord::RecordNotFound
     # When grouping by an association, Rails throws this exception if there's no result (bug)
     end

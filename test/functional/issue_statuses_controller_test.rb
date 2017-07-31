@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,8 +17,8 @@
 
 require File.expand_path('../../test_helper', __FILE__)
 
-class IssueStatusesControllerTest < ActionController::TestCase
-  fixtures :issue_statuses, :issues, :users
+class IssueStatusesControllerTest < Redmine::ControllerTest
+  fixtures :issue_statuses, :issues, :users, :trackers
 
   def setup
     User.current = nil
@@ -28,7 +28,7 @@ class IssueStatusesControllerTest < ActionController::TestCase
   def test_index
     get :index
     assert_response :success
-    assert_template 'index'
+    assert_select 'table.issue_statuses'
   end
   
   def test_index_by_anonymous_should_redirect_to_login_form
@@ -46,12 +46,16 @@ class IssueStatusesControllerTest < ActionController::TestCase
   def test_new
     get :new
     assert_response :success
-    assert_template 'new'
+    assert_select 'input[name=?]', 'issue_status[name]'
   end
 
   def test_create
     assert_difference 'IssueStatus.count' do
-      post :create, :issue_status => {:name => 'New status'}
+      post :create, :params => {
+          :issue_status => {
+            :name => 'New status'
+          }
+        }
     end
     assert_redirected_to :action => 'index'
     status = IssueStatus.order('id DESC').first
@@ -59,47 +63,80 @@ class IssueStatusesControllerTest < ActionController::TestCase
   end
 
   def test_create_with_failure
-    post :create, :issue_status => {:name => ''}
+    post :create, :params => {
+        :issue_status => {
+          :name => ''
+        }
+      }
     assert_response :success
-    assert_template 'new'
-    assert_error_tag :content => /name #{ESCAPED_CANT} be blank/i
+    assert_select_error /name cannot be blank/i
   end
 
   def test_edit
-    get :edit, :id => '3'
+    get :edit, :params => {
+        :id => '3'
+      }
     assert_response :success
-    assert_template 'edit'
+    assert_select 'input[name=?][value=?]', 'issue_status[name]', 'Resolved'
   end
 
   def test_update
-    put :update, :id => '3', :issue_status => {:name => 'Renamed status'}
+    put :update, :params => {
+        :id => '3',
+        :issue_status => {
+          :name => 'Renamed status'
+        }
+      }
     assert_redirected_to :action => 'index'
     status = IssueStatus.find(3)
     assert_equal 'Renamed status', status.name
   end
 
   def test_update_with_failure
-    put :update, :id => '3', :issue_status => {:name => ''}
+    put :update, :params => {
+        :id => '3',
+        :issue_status => {
+          :name => ''
+        }
+      }
     assert_response :success
-    assert_template 'edit'
-    assert_error_tag :content => /name #{ESCAPED_CANT} be blank/i
+    assert_select_error /name cannot be blank/i
   end
 
   def test_destroy
-    Issue.delete_all("status_id = 1")
+    Issue.where(:status_id => 1).delete_all
+    Tracker.where(:default_status_id => 1).delete_all
 
     assert_difference 'IssueStatus.count', -1 do
-      delete :destroy, :id => '1'
+      delete :destroy, :params => {
+          :id => '1'
+        }
     end
     assert_redirected_to :action => 'index'
     assert_nil IssueStatus.find_by_id(1)
   end
 
-  def test_destroy_should_block_if_status_in_use
-    assert_not_nil Issue.find_by_status_id(1)
+  def test_destroy_should_block_if_status_is_used_by_issues
+    assert Issue.where(:status_id => 1).any?
+    Tracker.where(:default_status_id => 1).delete_all
 
     assert_no_difference 'IssueStatus.count' do
-      delete :destroy, :id => '1'
+      delete :destroy, :params => {
+          :id => '1'
+        }
+    end
+    assert_redirected_to :action => 'index'
+    assert_not_nil IssueStatus.find_by_id(1)
+  end
+
+  def test_destroy_should_block_if_status_is_used_as_tracker_default_status
+    Issue.where(:status_id => 1).delete_all
+    assert Tracker.where(:default_status_id => 1).any?
+
+    assert_no_difference 'IssueStatus.count' do
+      delete :destroy, :params => {
+          :id => '1'
+        }
     end
     assert_redirected_to :action => 'index'
     assert_not_nil IssueStatus.find_by_id(1)

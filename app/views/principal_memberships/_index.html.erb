@@ -1,0 +1,39 @@
+<% memberships = principal.memberships.preload(:member_roles, :roles).sorted_by_project.to_a %>
+
+<p><%= link_to l(:label_add_projects), new_principal_membership_path(principal), :remote => true, :class => "icon icon-add" %></p>
+
+<% if memberships.any? %>
+<table class="list memberships">
+  <thead><tr>
+    <th><%= l(:label_project) %></th>
+    <th><%= l(:label_role_plural) %></th>
+    <th style="width:15%"></th>
+      <%= call_table_header_hook principal %>
+  </tr></thead>
+  <tbody>
+  <% memberships.each do |membership| %>
+  <% next if membership.new_record? %>
+  <tr id="member-<%= membership.id %>" class="class">
+  <td class="project name">
+    <%= link_to_project membership.project %>
+  </td>
+  <td class="roles">
+    <span id="member-<%= membership.id %>-roles"><%=h membership.roles.sort.collect(&:to_s).join(', ') %></span>
+    <div id="member-<%= membership.id %>-form"></div>
+  </td>
+  <td class="buttons">
+      <%= link_to l(:button_edit),
+                  edit_principal_membership_path(principal, membership),
+                  :remote => true,
+                  :class => 'icon icon-edit'
+          %>
+      <%= delete_link principal_membership_path(principal, membership), :remote => true if membership.deletable? %>
+  </td>
+      <%= call_table_row_hook principal, membership %>
+  </tr>
+  <% end %>
+  </tbody>
+</table>
+<% else %>
+<p class="nodata"><%= l(:label_no_data) %></p>
+<% end %>

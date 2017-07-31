@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -29,6 +29,7 @@ class RepositoryTest < ActiveSupport::TestCase
            :changesets,
            :changes,
            :users,
+           :email_addresses,
            :members,
            :member_roles,
            :roles,
@@ -48,14 +49,13 @@ class RepositoryTest < ActiveSupport::TestCase
                         :log_encoding => ''
                       )
     assert !repo.save
-    assert_include "Commit messages encoding can't be blank",
+    assert_include "Commit messages encoding cannot be blank",
                    repo.errors.full_messages
   end
 
   def test_blank_log_encoding_error_message_fr
     set_language_if_valid 'fr'
-    str = "Encodage des messages de commit doit \xc3\xaatre renseign\xc3\xa9(e)"
-    str.force_encoding('UTF-8') if str.respond_to?(:force_encoding)
+    str = "Encodage des messages de commit doit \xc3\xaatre renseign\xc3\xa9(e)".force_encoding('UTF-8')
     repo = Repository::Bazaar.new(
                         :project      => Project.find(3),
                         :url          => "/test"
@@ -74,6 +74,36 @@ class RepositoryTest < ActiveSupport::TestCase
 
     project = Project.find(3)
     assert_equal repository, project.repository
+  end
+
+  def test_2_repositories_with_same_identifier_in_different_projects_should_be_valid
+    Repository::Subversion.create!(:project_id => 2, :identifier => 'foo', :url => 'file:///foo')
+    r = Repository::Subversion.new(:project_id => 3, :identifier => 'foo', :url => 'file:///bar')
+    assert r.save
+  end
+
+  def test_2_repositories_with_same_identifier_should_not_be_valid
+    Repository::Subversion.create!(:project_id => 3, :identifier => 'foo', :url => 'file:///foo')
+    r = Repository::Subversion.new(:project_id => 3, :identifier => 'foo', :url => 'file:///bar')
+    assert !r.save
+  end
+
+  def test_2_repositories_with_blank_identifier_should_not_be_valid
+    Repository::Subversion.create!(:project_id => 3, :identifier => '', :url => 'file:///foo')
+    r = Repository::Subversion.new(:project_id => 3, :identifier => '', :url => 'file:///bar')
+    assert !r.save
+  end
+
+  def test_2_repositories_with_blank_identifier_and_one_as_default_should_not_be_valid
+    Repository::Subversion.create!(:project_id => 3, :identifier => '', :url => 'file:///foo', :is_default => true)
+    r = Repository::Subversion.new(:project_id => 3, :identifier => '', :url => 'file:///bar')
+    assert !r.save
+  end
+
+  def test_2_repositories_with_blank_and_nil_identifier_should_not_be_valid
+    Repository::Subversion.create!(:project_id => 3, :identifier => nil, :url => 'file:///foo')
+    r = Repository::Subversion.new(:project_id => 3, :identifier => '', :url => 'file:///bar')
+    assert !r.save
   end
 
   def test_first_repository_should_be_set_as_default
@@ -175,7 +205,7 @@ class RepositoryTest < ActiveSupport::TestCase
 
   def test_destroy_should_delete_parents_associations
     changeset = Changeset.find(102)
-    changeset.parents = Changeset.where(:id => [100, 101]).all
+    changeset.parents = Changeset.where(:id => [100, 101]).to_a
     assert_difference 'Changeset.connection.select_all("select * from changeset_parents").count', -2 do
       Repository.find(10).destroy
     end
@@ -183,7 +213,7 @@ class RepositoryTest < ActiveSupport::TestCase
 
   def test_destroy_should_delete_issues_associations
     changeset = Changeset.find(102)
-    changeset.issues = Issue.where(:id => [1, 2]).all
+    changeset.issues = Issue.where(:id => [1, 2]).to_a
     assert_difference 'Changeset.connection.select_all("select * from changesets_issues").count', -2 do
       Repository.find(10).destroy
     end
@@ -191,7 +221,7 @@ class RepositoryTest < ActiveSupport::TestCase
 
   def test_should_not_create_with_disabled_scm
     # disable Subversion
-    with_settings :enabled_scm => ['Darcs', 'Git'] do
+    with_settings :enabled_scm => ['Mercurial', 'Git'] do
       repository = Repository::Subversion.new(
                       :project => Project.find(3), :url => "svn://localhost")
       assert !repository.save
@@ -213,7 +243,7 @@ class RepositoryTest < ActiveSupport::TestCase
 
     # make sure issue 1 is not already closed
     fixed_issue = Issue.find(1)
-    assert !fixed_issue.status.is_closed?
+    assert !fixed_issue.closed?
     old_status = fixed_issue.status
 
     with_settings :notified_events => %w(issue_added issue_updated) do
@@ -223,7 +253,7 @@ class RepositoryTest < ActiveSupport::TestCase
 
     # fixed issues
     fixed_issue.reload
-    assert fixed_issue.status.is_closed?
+    assert fixed_issue.closed?
     assert_equal 90, fixed_issue.done_ratio
     assert_equal [101], fixed_issue.changeset_ids
 
@@ -247,22 +277,22 @@ class RepositoryTest < ActiveSupport::TestCase
 
   def test_for_changeset_comments_strip
     repository = Repository::Mercurial.create(
-                    :project => Project.find( 4 ),
+                    :project => Project.find(4),
                     :url => '/foo/bar/baz' )
-    comment = <<-COMMENT
-    This is a loooooooooooooooooooooooooooong comment                                                   
-                                                                                                       
-                                                                                            
-    COMMENT
+    long_whitespace = "                                                "
+    expected_comment = "This is a loooooooooooooooooooooooooooong comment"
+    comment = "#{expected_comment}#{long_whitespace}\n"
+    3.times {comment << "#{long_whitespace}\n"}
     changeset = Changeset.new(
       :comments => comment, :commit_date => Time.now,
       :revision => 0, :scmid => 'f39b7922fb3c',
       :committer => 'foo <foo@example.com>',
-      :committed_on => Time.now, :repository => repository )
-    assert( changeset.save )
-    assert_not_equal( comment, changeset.comments )
-    assert_equal( 'This is a loooooooooooooooooooooooooooong comment',
-                  changeset.comments )
+      :committed_on => Time.now, :repository => repository)
+    assert(changeset.save)
+    assert_not_equal comment, changeset.comments
+    assert_equal     expected_comment, changeset.comments
+    assert_equal     expected_comment, changeset.short_comments
+    assert_equal     "", changeset.long_comments
   end
 
   def test_for_urls_strip_cvs
@@ -459,5 +489,25 @@ class RepositoryTest < ActiveSupport::TestCase
 
     expected = {"Dave Lopper"=>{:commits_count=>11, :changes_count=>3}}
     assert_equal expected, repository.stats_by_author
+  end
+
+  def test_fetch_changesets
+    # 2 repositories in fixtures
+    Repository::Subversion.any_instance.expects(:fetch_changesets).twice.returns(true)
+    Repository.fetch_changesets
+  end
+
+  def test_repository_class
+    assert_equal Repository::Subversion, Repository.repository_class('Subversion')
+    assert_equal Repository::Git, Repository.repository_class('Git')
+    assert_nil Repository.factory('Serializer')
+    assert_nil Repository.factory('Query')
+  end
+
+  def test_factory
+    assert_instance_of Repository::Subversion, Repository.factory('Subversion')
+    assert_instance_of Repository::Git, Repository.factory('Git')
+    assert_nil Repository.factory('Serializer')
+    assert_nil Repository.factory('Query')
   end
 end

@@ -33,7 +33,7 @@
   background-color: #e5e5e5;
 }
 .jstElements button span {
-    display : none;	
+    display : none;
 }
 .jstElements span {
     display : inline;
@@ -88,6 +88,9 @@
 }
 .jstb_pre {
     background-image: url(../images/jstoolbar/bt_pre.png);
+}
+.jstb_precode {
+    background-image: url(../images/jstoolbar/bt_precode.png);
 }
 .jstb_link {
     background-image: url(../images/jstoolbar/bt_link.png);

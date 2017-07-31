@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,17 +16,23 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class CustomField < ActiveRecord::Base
+  include Redmine::SafeAttributes
   include Redmine::SubclassFactory
 
+  has_many :enumerations,
+           lambda { order(:position) },
+           :class_name => 'CustomFieldEnumeration',
+           :dependent => :delete_all
   has_many :custom_values, :dependent => :delete_all
   has_and_belongs_to_many :roles, :join_table => "#{table_name_prefix}custom_fields_roles#{table_name_suffix}", :foreign_key => "custom_field_id"
-  acts_as_list :scope => 'type = \'#{self.class}\''
+  acts_as_positioned
   serialize :possible_values
   store :format_store
 
   validates_presence_of :name, :field_format
   validates_uniqueness_of :name, :scope => :type
   validates_length_of :name, :maximum => 30
+  validates_length_of :regexp, maximum: 255
   validates_inclusion_of :field_format, :in => Proc.new { Redmine::FieldFormat.available_formats }
   validate :validate_custom_field
 
@@ -36,12 +42,12 @@ class CustomField < ActiveRecord::Base
   end
   after_save :handle_multiplicity_change
   after_save do |field|
-    if field.visible_changed? && field.visible
+    if field.saved_change_to_visible? && field.visible
       field.roles.clear
     end
   end
 
-  scope :sorted, lambda { order("#{table_name}.position ASC") }
+  scope :sorted, lambda { order(:position) }
   scope :visible, lambda {|*args|
     user = args.shift || User.current
     if user.admin?
@@ -56,10 +62,34 @@ class CustomField < ActiveRecord::Base
       where(:visible => true)
     end
   }
-
   def visible_by?(project, user=User.current)
     visible? || user.admin?
   end
+
+  safe_attributes 'name',
+    'field_format',
+    'possible_values',
+    'regexp',
+    'min_length',
+    'max_length',
+    'is_required',
+    'is_for_all',
+    'is_filter',
+    'position',
+    'searchable',
+    'default_value',
+    'editable',
+    'visible',
+    'multiple',
+    'description',
+    'role_ids',
+    'url_pattern',
+    'text_formatting',
+    'edit_tag_style',
+    'user_role',
+    'version_status',
+    'extensions_allowed',
+    'full_width_layout'
 
   def format
     @format ||= Redmine::FieldFormat.find(field_format)
@@ -117,7 +147,7 @@ class CustomField < ActiveRecord::Base
     values = read_attribute(:possible_values)
     if values.is_a?(Array)
       values.each do |value|
-        value.force_encoding('UTF-8') if value.respond_to?(:force_encoding)
+        value.to_s.force_encoding('UTF-8')
       end
       values
     else
@@ -128,11 +158,15 @@ class CustomField < ActiveRecord::Base
   # Makes possible_values accept a multiline string
   def possible_values=(arg)
     if arg.is_a?(Array)
-      values = arg.compact.collect(&:strip).select {|v| !v.blank?}
+      values = arg.compact.map {|a| a.to_s.strip}.reject(&:blank?)
       write_attribute(:possible_values, values)
     else
       self.possible_values = arg.to_s.split(/[\n\r]+/)
     end
+  end
+
+  def set_custom_field_value(custom_field_value, value)
+    format.set_custom_field_value(self, custom_field_value, value)
   end
 
   def cast_value(value)
@@ -140,19 +174,20 @@ class CustomField < ActiveRecord::Base
   end
 
   def value_from_keyword(keyword, customized)
-    possible_values_options = possible_values_options(customized)
-    if possible_values_options.present?
-      keyword = keyword.to_s.downcase
-      if v = possible_values_options.detect {|text, id| text.downcase == keyword}
-        if v.is_a?(Array)
-          v.last
-        else
-          v
-        end
-      end
-    else
-      keyword
-    end
+    format.value_from_keyword(self, keyword, customized)
+  end
+
+  # Returns the options hash used to build a query filter for the field
+  def query_filter_options(query)
+    format.query_filter_options(self, query)
+  end
+
+  def totalable?
+    format.totalable_supported
+  end
+
+  def full_width_layout?
+    full_width_layout == '1'
   end
 
   # Returns a ORDER BY clause that can used to sort customized
@@ -218,7 +253,7 @@ class CustomField < ActiveRecord::Base
 
   # to move in project_custom_field
   def self.for_all
-    where(:is_for_all => true).order('position').all
+    where(:is_for_all => true).order(:position).to_a
   end
 
   def type_name
@@ -229,26 +264,29 @@ class CustomField < ActiveRecord::Base
   # or an empty array if value is a valid value for the custom field
   def validate_custom_value(custom_value)
     value = custom_value.value
-    errs = []
-    if value.is_a?(Array)
-      if !multiple?
-        errs << ::I18n.t('activerecord.errors.messages.invalid')
-      end
-      if is_required? && value.detect(&:present?).nil?
-        errs << ::I18n.t('activerecord.errors.messages.blank')
-      end
-    else
-      if is_required? && value.blank?
-        errs << ::I18n.t('activerecord.errors.messages.blank')
+    errs = format.validate_custom_value(custom_value)
+
+    unless errs.any?
+      if value.is_a?(Array)
+        if !multiple?
+          errs << ::I18n.t('activerecord.errors.messages.invalid')
+        end
+        if is_required? && value.detect(&:present?).nil?
+          errs << ::I18n.t('activerecord.errors.messages.blank')
+        end
+      else
+        if is_required? && value.blank?
+          errs << ::I18n.t('activerecord.errors.messages.blank')
+        end
       end
     end
-    errs += format.validate_custom_value(custom_value)
+
     errs
   end
 
   # Returns the error messages for the default custom field value
   def validate_field_value(value)
-    validate_custom_value(CustomValue.new(:custom_field => self, :value => value))
+    validate_custom_value(CustomFieldValue.new(:custom_field => self, :value => value))
   end
 
   # Returns true if value is a valid value for the custom field
@@ -256,8 +294,20 @@ class CustomField < ActiveRecord::Base
     validate_field_value(value).empty?
   end
 
+  def after_save_custom_value(custom_value)
+    format.after_save_custom_value(self, custom_value)
+  end
+
   def format_in?(*args)
     args.include?(field_format)
+  end
+
+  def self.human_attribute_name(attribute_key_name, *args)
+    attr_name = attribute_key_name.to_s
+    if attr_name == 'url_pattern'
+      attr_name = "url"
+    end
+    super(attr_name, *args)
   end
 
   protected
@@ -265,7 +315,7 @@ class CustomField < ActiveRecord::Base
   # Removes multiple values for the custom field after setting the multiple attribute to false
   # We kepp the value with the highest id for each customized object
   def handle_multiplicity_change
-    if !new_record? && multiple_was && !multiple
+    if !new_record? && multiple_before_last_save && !multiple
       ids = custom_values.
         where("EXISTS(SELECT 1 FROM #{CustomValue.table_name} cve WHERE cve.custom_field_id = #{CustomValue.table_name}.custom_field_id" +
           " AND cve.customized_type = #{CustomValue.table_name}.customized_type AND cve.customized_id = #{CustomValue.table_name}.customized_id" +

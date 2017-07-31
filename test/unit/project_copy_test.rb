@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -44,6 +44,11 @@ class ProjectCopyTest < ActiveSupport::TestCase
     @project = Project.new(:name => 'Copy Test', :identifier => 'copy-test')
     @project.trackers = @source_project.trackers
     @project.enabled_module_names = @source_project.enabled_modules.collect(&:name)
+  end
+
+  def test_copy_should_return_false_if_save_fails
+    project = Project.new(:name => 'Copy', :identifier => nil)
+    assert_equal false, project.copy(@source_project)
   end
 
   test "#copy should copy issues" do
@@ -134,6 +139,27 @@ class ProjectCopyTest < ActiveSupport::TestCase
     assert_equal assigned_version, copied_issue.fixed_version
   end
 
+  def test_copy_issues_should_reassign_version_custom_fields_to_copied_versions
+    User.current = User.find(1)
+    CustomField.delete_all
+    field = IssueCustomField.generate!(:field_format => 'version', :is_for_all => true, :trackers => Tracker.all)
+    source_project = Project.generate!(:trackers => Tracker.all)
+    source_version = Version.generate!(:project => source_project)
+    source_issue = Issue.generate!(:project => source_project) do |issue|
+      issue.custom_field_values = {field.id.to_s => source_version.id.to_s}
+    end
+    assert_equal source_version.id.to_s, source_issue.custom_field_value(field)
+
+    project = Project.new(:name => 'Copy Test', :identifier => 'copy-test', :trackers => Tracker.all)
+    assert project.copy(source_project)
+    assert_equal 1, project.issues.count
+    issue = project.issues.first
+    assert_equal 1, project.versions.count
+    version = project.versions.first
+
+    assert_equal version.id.to_s, issue.custom_field_value(field)
+  end
+
   test "#copy should copy issue relations" do
     Setting.cross_project_issue_relations = '1'
 
@@ -209,17 +235,28 @@ class ProjectCopyTest < ActiveSupport::TestCase
     assert_equal [1, 2], member.role_ids.sort
   end
 
-  test "#copy should copy project specific queries" do
-    assert @project.valid?
-    assert @project.queries.empty?
-    assert @project.copy(@source_project)
+  def test_copy_should_copy_project_specific_issue_queries
+    source = Project.generate!
+    target = Project.new(:name => 'Copy Test', :identifier => 'copy-test')
+    IssueQuery.generate!(:project => source, :user => User.find(2))
+    assert target.copy(source)
 
-    assert_equal @source_project.queries.size, @project.queries.size
-    @project.queries.each do |query|
-      assert query
-      assert_equal @project, query.project
-    end
-    assert_equal @source_project.queries.map(&:user_id).sort, @project.queries.map(&:user_id).sort
+    assert_equal 1, target.queries.size
+    query = target.queries.first
+    assert_kind_of IssueQuery, query
+    assert_equal 2, query.user_id
+  end
+
+  def test_copy_should_copy_project_specific_time_entry_queries
+    source = Project.generate!
+    target = Project.new(:name => 'Copy Test', :identifier => 'copy-test')
+    TimeEntryQuery.generate!(:project => source, :user => User.find(2))
+    assert target.copy(source)
+
+    assert_equal 1, target.queries.size
+    query = target.queries.first
+    assert_kind_of TimeEntryQuery, query
+    assert_equal 2, query.user_id
   end
 
   def test_copy_should_copy_queries_roles_visibility

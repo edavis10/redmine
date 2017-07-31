@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,35 +15,36 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require "digest/md5"
+require "digest"
 require "fileutils"
 
 class Attachment < ActiveRecord::Base
+  include Redmine::SafeAttributes
   belongs_to :container, :polymorphic => true
-  belongs_to :author, :class_name => "User", :foreign_key => "author_id"
+  belongs_to :author, :class_name => "User"
 
   validates_presence_of :filename, :author
   validates_length_of :filename, :maximum => 255
   validates_length_of :disk_filename, :maximum => 255
   validates_length_of :description, :maximum => 255
-  validate :validate_max_file_size
+  validate :validate_max_file_size, :validate_file_extension
 
   acts_as_event :title => :filename,
-                :url => Proc.new {|o| {:controller => 'attachments', :action => 'download', :id => o.id, :filename => o.filename}}
+                :url => Proc.new {|o| {:controller => 'attachments', :action => 'show', :id => o.id, :filename => o.filename}}
 
   acts_as_activity_provider :type => 'files',
                             :permission => :view_files,
                             :author_key => :author_id,
-                            :find_options => {:select => "#{Attachment.table_name}.*",
-                                              :joins => "LEFT JOIN #{Version.table_name} ON #{Attachment.table_name}.container_type='Version' AND #{Version.table_name}.id = #{Attachment.table_name}.container_id " +
-                                                        "LEFT JOIN #{Project.table_name} ON #{Version.table_name}.project_id = #{Project.table_name}.id OR ( #{Attachment.table_name}.container_type='Project' AND #{Attachment.table_name}.container_id = #{Project.table_name}.id )"}
+                            :scope => select("#{Attachment.table_name}.*").
+                                      joins("LEFT JOIN #{Version.table_name} ON #{Attachment.table_name}.container_type='Version' AND #{Version.table_name}.id = #{Attachment.table_name}.container_id " +
+                                            "LEFT JOIN #{Project.table_name} ON #{Version.table_name}.project_id = #{Project.table_name}.id OR ( #{Attachment.table_name}.container_type='Project' AND #{Attachment.table_name}.container_id = #{Project.table_name}.id )")
 
   acts_as_activity_provider :type => 'documents',
                             :permission => :view_documents,
                             :author_key => :author_id,
-                            :find_options => {:select => "#{Attachment.table_name}.*",
-                                              :joins => "LEFT JOIN #{Document.table_name} ON #{Attachment.table_name}.container_type='Document' AND #{Document.table_name}.id = #{Attachment.table_name}.container_id " +
-                                                        "LEFT JOIN #{Project.table_name} ON #{Document.table_name}.project_id = #{Project.table_name}.id"}
+                            :scope => select("#{Attachment.table_name}.*").
+                                      joins("LEFT JOIN #{Document.table_name} ON #{Attachment.table_name}.container_type='Document' AND #{Document.table_name}.id = #{Attachment.table_name}.container_id " +
+                                            "LEFT JOIN #{Project.table_name} ON #{Document.table_name}.project_id = #{Project.table_name}.id")
 
   cattr_accessor :storage_path
   @@storage_path = Redmine::Configuration['attachments_storage_path'] || File.join(Rails.root, "files")
@@ -51,8 +52,12 @@ class Attachment < ActiveRecord::Base
   cattr_accessor :thumbnails_storage_path
   @@thumbnails_storage_path = File.join(Rails.root, "tmp", "thumbnails")
 
-  before_save :files_to_final_location
-  after_destroy :delete_from_disk
+  before_create :files_to_final_location
+  after_rollback :delete_from_disk, :on => :create
+  after_commit :delete_from_disk, :on => :destroy
+  after_commit :reuse_existing_file_if_possible, :on => :create
+
+  safe_attributes 'filename', 'content_type', 'description'
 
   # Returns an unsaved copy of the attachment
   def copy(attributes=nil)
@@ -68,22 +73,26 @@ class Attachment < ActiveRecord::Base
     end
   end
 
+  def validate_file_extension
+    if @temp_file
+      extension = File.extname(filename)
+      unless self.class.valid_extension?(extension)
+        errors.add(:base, l(:error_attachment_extension_not_allowed, :extension => extension))
+      end
+    end
+  end
+
   def file=(incoming_file)
     unless incoming_file.nil?
       @temp_file = incoming_file
-      if @temp_file.size > 0
         if @temp_file.respond_to?(:original_filename)
           self.filename = @temp_file.original_filename
-          self.filename.force_encoding("UTF-8") if filename.respond_to?(:force_encoding)
+          self.filename.force_encoding("UTF-8")
         end
         if @temp_file.respond_to?(:content_type)
           self.content_type = @temp_file.content_type.to_s.chomp
         end
-        if content_type.blank? && filename.present?
-          self.content_type = Redmine::MimeType.of(filename)
-        end
         self.filesize = @temp_file.size
-      end
     end
   end
 
@@ -99,7 +108,7 @@ class Attachment < ActiveRecord::Base
   # Copies the temporary file to its final location
   # and computes its MD5 hash
   def files_to_final_location
-    if @temp_file && (@temp_file.size > 0)
+    if @temp_file
       self.disk_directory = target_directory
       self.disk_filename = Attachment.disk_filename(filename, disk_directory)
       logger.info("Saving attachment '#{self.diskfile}' (#{@temp_file.size} bytes)") if logger
@@ -107,22 +116,26 @@ class Attachment < ActiveRecord::Base
       unless File.directory?(path)
         FileUtils.mkdir_p(path)
       end
-      md5 = Digest::MD5.new
+      sha = Digest::SHA256.new
       File.open(diskfile, "wb") do |f|
         if @temp_file.respond_to?(:read)
           buffer = ""
           while (buffer = @temp_file.read(8192))
             f.write(buffer)
-            md5.update(buffer)
+            sha.update(buffer)
           end
         else
           f.write(@temp_file)
-          md5.update(@temp_file)
+          sha.update(@temp_file)
         end
       end
-      self.digest = md5.hexdigest
+      self.digest = sha.hexdigest
     end
     @temp_file = nil
+
+    if content_type.blank? && filename.present?
+      self.content_type = Redmine::MimeType.of(filename)
+    end
     # Don't save the content type if it's longer than the authorized length
     if self.content_type && self.content_type.length > 255
       self.content_type = nil
@@ -160,6 +173,14 @@ class Attachment < ActiveRecord::Base
   def visible?(user=User.current)
     if container_id
       container && container.attachments_visible?(user)
+    else
+      author == user
+    end
+  end
+
+  def editable?(user=User.current)
+    if container_id
+      container && container.attachments_editable?(user)
     else
       author == user
     end
@@ -217,13 +238,25 @@ class Attachment < ActiveRecord::Base
     Redmine::MimeType.is_type?('text', filename)
   end
 
+  def is_image?
+    Redmine::MimeType.is_type?('image', filename)
+  end
+
   def is_diff?
     self.filename =~ /\.(patch|diff)$/i
   end
 
+  def is_pdf?
+    Redmine::MimeType.of(filename) == "application/pdf"
+  end
+
+  def previewable?
+    is_text? || is_image?
+  end
+
   # Returns true if the file is readable
   def readable?
-    File.readable?(diskfile)
+    disk_filename.present? && File.readable?(diskfile)
   end
 
   # Returns the attachment token
@@ -253,10 +286,39 @@ class Attachment < ActiveRecord::Base
     result
   end
 
+  # Updates the filename and description of a set of attachments
+  # with the given hash of attributes. Returns true if all
+  # attachments were updated.
+  #
+  # Example:
+  #   Attachment.update_attachments(attachments, {
+  #     4 => {:filename => 'foo'},
+  #     7 => {:filename => 'bar', :description => 'file description'}
+  #   })
+  #
+  def self.update_attachments(attachments, params)
+    params = params.transform_keys {|key| key.to_i}
+
+    saved = true
+    transaction do
+      attachments.each do |attachment|
+        if p = params[attachment.id]
+          attachment.filename = p[:filename] if p.key?(:filename)
+          attachment.description = p[:description] if p.key?(:description)
+          saved &&= attachment.save
+        end
+      end
+      unless saved
+        raise ActiveRecord::Rollback
+      end
+    end
+    saved
+  end
+
   def self.latest_attach(attachments, filename)
-    attachments.sort_by(&:created_on).reverse.detect {
-      |att| att.filename.downcase == filename.downcase
-     }
+    attachments.sort_by(&:created_on).reverse.detect do |att|
+      filename.casecmp(att.filename) == 0
+    end
   end
 
   def self.prune(age=1.day)
@@ -294,7 +356,99 @@ class Attachment < ActiveRecord::Base
     end
   end
 
+  # Updates digests to SHA256 for all attachments that have a MD5 digest
+  # (ie. created before Redmine 3.4)
+  def self.update_digests_to_sha256
+    Attachment.where("length(digest) < 64").find_each do |attachment|
+      attachment.update_digest_to_sha256!
+    end
+  end
+
+  # Updates attachment digest to SHA256
+  def update_digest_to_sha256!
+    if readable?
+      sha = Digest::SHA256.new
+      File.open(diskfile, 'rb') do |f|
+        while buffer = f.read(8192)
+          sha.update(buffer)
+        end
+      end
+      update_column :digest, sha.hexdigest
+    end
+  end
+
+  # Returns true if the extension is allowed regarding allowed/denied
+  # extensions defined in application settings, otherwise false
+  def self.valid_extension?(extension)
+    denied, allowed = [:attachment_extensions_denied, :attachment_extensions_allowed].map do |setting|
+      Setting.send(setting)
+    end
+    if denied.present? && extension_in?(extension, denied)
+      return false
+    end
+    if allowed.present? && !extension_in?(extension, allowed)
+      return false
+    end
+    true
+  end
+
+  # Returns true if extension belongs to extensions list.
+  def self.extension_in?(extension, extensions)
+    extension = extension.downcase.sub(/\A\.+/, '')
+
+    unless extensions.is_a?(Array)
+      extensions = extensions.to_s.split(",").map(&:strip)
+    end
+    extensions = extensions.map {|s| s.downcase.sub(/\A\.+/, '')}.reject(&:blank?)
+    extensions.include?(extension)
+  end
+
+  # Returns true if attachment's extension belongs to extensions list.
+  def extension_in?(extensions)
+    self.class.extension_in?(File.extname(filename), extensions)
+  end
+
+  # returns either MD5 or SHA256 depending on the way self.digest was computed
+  def digest_type
+    digest.size < 64 ? "MD5" : "SHA256" if digest.present?
+  end
+
   private
+
+  def reuse_existing_file_if_possible
+    original_diskfile = nil
+
+    reused = with_lock do
+      if existing = Attachment
+                      .where(digest: self.digest, filesize: self.filesize)
+                      .where('id <> ? and disk_filename <> ?',
+                             self.id, self.disk_filename)
+                      .first
+        existing.with_lock do
+
+          original_diskfile = self.diskfile
+          existing_diskfile = existing.diskfile
+
+          if File.readable?(original_diskfile) &&
+            File.readable?(existing_diskfile) &&
+            FileUtils.identical?(original_diskfile, existing_diskfile)
+
+            self.update_columns disk_directory: existing.disk_directory,
+                                disk_filename: existing.disk_filename
+          end
+        end
+      end
+    end
+    if reused
+      File.delete(original_diskfile)
+    end
+  rescue ActiveRecord::StatementInvalid, ActiveRecord::RecordNotFound
+    # Catch and ignore lock errors. It is not critical if deduplication does
+    # not happen, therefore we do not retry.
+    # with_lock throws ActiveRecord::RecordNotFound if the record isnt there
+    # anymore, thats why this is caught and ignored as well.
+  end
+
 
   # Physically deletes the file from the file system
   def delete_from_disk!
@@ -308,7 +462,7 @@ class Attachment < ActiveRecord::Base
     just_filename = value.gsub(/\A.*(\\|\/)/m, '')
 
     # Finally, replace invalid characters with underscore
-    @filename = just_filename.gsub(/[\/\?\%\*\:\|\"\'<>\n\r]+/, '_')
+    just_filename.gsub(/[\/\?\%\*\:\|\"\'<>\n\r]+/, '_')
   end
 
   # Returns the subdirectory in which the attachment will be saved
@@ -322,7 +476,7 @@ class Attachment < ActiveRecord::Base
   def self.disk_filename(filename, directory=nil)
     timestamp = DateTime.now.strftime("%y%m%d%H%M%S")
     ascii = ''
-    if filename =~ %r{^[a-zA-Z0-9_\.\-]*$}
+    if filename =~ %r{^[a-zA-Z0-9_\.\-]*$} && filename.length <= 50
       ascii = filename
     else
       ascii = Digest::MD5.hexdigest(filename)

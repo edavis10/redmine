@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,23 +17,32 @@
 
 class GroupsController < ApplicationController
   layout 'admin'
+  self.main_menu = false
 
-  before_filter :require_admin
-  before_filter :find_group, :except => [:index, :new, :create]
+  before_action :require_admin
+  before_action :find_group, :except => [:index, :new, :create]
   accept_api_auth :index, :show, :create, :update, :destroy, :add_users, :remove_user
 
+  require_sudo_mode :add_users, :remove_user, :create, :update, :destroy, :edit_membership, :destroy_membership
+
   helper :custom_fields
+  helper :principal_memberships
 
   def index
     respond_to do |format|
       format.html {
-        @groups = Group.sorted.all
+        scope = Group.sorted
+        scope = scope.like(params[:name]) if params[:name].present?
+
+        @group_count = scope.count
+        @group_pages = Paginator.new @group_count, per_page_option, params['page']
+        @groups = scope.limit(@group_pages.per_page).offset(@group_pages.offset).to_a
         @user_count_by_group_id = user_count_by_group_id
       }
       format.api {
         scope = Group.sorted
         scope = scope.givable unless params[:builtin] == '1'
-        @groups = scope.all
+        @groups = scope.to_a
       }
     end
   end
@@ -76,7 +85,7 @@ class GroupsController < ApplicationController
     respond_to do |format|
       if @group.save
         flash[:notice] = l(:notice_successful_update)
-        format.html { redirect_to(groups_path) }
+        format.html { redirect_to_referer_or(groups_path) }
         format.api  { render_api_ok }
       else
         format.html { render :action => "edit" }
@@ -89,18 +98,27 @@ class GroupsController < ApplicationController
     @group.destroy
 
     respond_to do |format|
-      format.html { redirect_to(groups_path) }
+      format.html { redirect_to_referer_or(groups_path) }
       format.api  { render_api_ok }
     end
   end
 
+  def new_users
+  end
+
   def add_users
-    @users = User.where(:id => (params[:user_id] || params[:user_ids])).all
-    @group.users << @users if request.post?
+    @users = User.not_in_group(@group).where(:id => (params[:user_id] || params[:user_ids])).to_a
+    @group.users << @users
     respond_to do |format|
       format.html { redirect_to edit_group_path(@group, :tab => 'users') }
       format.js
-      format.api { render_api_ok }
+      format.api {
+        if @users.any?
+          render_api_ok
+        else
+          render_api_errors "#{l(:label_user)} #{l('activerecord.errors.messages.invalid')}"
+        end
+      }
     end
   end
 
@@ -115,23 +133,6 @@ class GroupsController < ApplicationController
 
   def autocomplete_for_user
     respond_to do |format|
-      format.js
-    end
-  end
-
-  def edit_membership
-    @membership = Member.edit_membership(params[:membership_id], params[:membership], @group)
-    @membership.save if request.post?
-    respond_to do |format|
-      format.html { redirect_to edit_group_path(@group, :tab => 'memberships') }
-      format.js
-    end
-  end
-
-  def destroy_membership
-    Member.find(params[:membership_id]).destroy if request.post?
-    respond_to do |format|
-      format.html { redirect_to edit_group_path(@group, :tab => 'memberships') }
       format.js
     end
   end

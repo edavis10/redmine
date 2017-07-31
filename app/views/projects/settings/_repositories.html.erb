@@ -1,3 +1,7 @@
+<% if User.current.allowed_to?(:manage_repository, @project) %>
+  <p><%= link_to l(:label_repository_new), new_project_repository_path(@project), :class => 'icon icon-add' %></p>
+<% end %>
+
 <% if @project.repositories.any? %>
 <table class="list">
   <thead>
@@ -11,14 +15,14 @@
   </thead>
   <tbody>
   <% @project.repositories.sort.each do |repository| %>
-    <tr class="<%= cycle 'odd', 'even' %>">
+    <tr>
       <td class="name">
-      <%= link_to repository.identifier, 
+      <%= link_to repository.identifier,
             {:controller => 'repositories', :action => 'show',:id => @project, :repository_id => repository.identifier_param} if repository.identifier.present? %>
       </td>
       <td><%= checked_image repository.is_default? %></td>
-      <td><%=h repository.scm_name %></td>
-      <td><%=h repository.url %></td>
+      <td><%= repository.scm_name %></td>
+      <td><%= repository.url %></td>
       <td class="buttons">
       <% if User.current.allowed_to?(:manage_repository, @project) %>
         <%= link_to(l(:label_user_plural), committers_repository_path(repository),
@@ -34,8 +38,4 @@
 </table>
 <% else %>
 <p class="nodata"><%= l(:label_no_data) %></p>
-<% end %>
-
-<% if User.current.allowed_to?(:manage_repository, @project) %>
-  <p><%= link_to l(:label_repository_new), new_project_repository_path(@project), :class => 'icon icon-add' %></p>
 <% end %>

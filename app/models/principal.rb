@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -24,17 +24,44 @@ class Principal < ActiveRecord::Base
   STATUS_REGISTERED = 2
   STATUS_LOCKED     = 3
 
+  class_attribute :valid_statuses
+
   has_many :members, :foreign_key => 'user_id', :dependent => :destroy
-  has_many :memberships, :class_name => 'Member',
-           :foreign_key => 'user_id',
-           :include => [:project, :roles],
-           :conditions => "#{Project.table_name}.status<>#{Project::STATUS_ARCHIVED}",
-           :order => "#{Project.table_name}.name"
+  has_many :memberships,
+           lambda {joins(:project).where.not(:projects => {:status => Project::STATUS_ARCHIVED})},
+           :class_name => 'Member',
+           :foreign_key => 'user_id'
   has_many :projects, :through => :memberships
   has_many :issue_categories, :foreign_key => 'assigned_to_id', :dependent => :nullify
 
+  validate :validate_status
+
   # Groups and active users
   scope :active, lambda { where(:status => STATUS_ACTIVE) }
+
+  scope :visible, lambda {|*args|
+    user = args.first || User.current
+
+    if user.admin?
+      all
+    else
+      view_all_active = false
+      if user.memberships.to_a.any?
+        view_all_active = user.memberships.any? {|m| m.roles.any? {|r| r.users_visibility == 'all'}}
+      else
+        view_all_active = user.builtin_role.users_visibility == 'all'
+      end
+
+      if view_all_active
+        active
+      else
+        # self and members of visible projects
+        active.where("#{table_name}.id = ? OR #{table_name}.id IN (SELECT user_id FROM #{Member.table_name} WHERE project_id IN (?))",
+          user.id, user.visible_project_ids
+        )
+      end
+    end
+  }
 
   scope :like, lambda {|q|
     q = q.to_s
@@ -42,7 +69,8 @@ class Principal < ActiveRecord::Base
       where({})
     else
       pattern = "%#{q}%"
-      sql = %w(login firstname lastname mail).map {|column| "LOWER(#{table_name}.#{column}) LIKE LOWER(:p)"}.join(" OR ")
+      sql = %w(login firstname lastname).map {|column| "LOWER(#{table_name}.#{column}) LIKE LOWER(:p)"}.join(" OR ")
+      sql << " OR #{table_name}.id IN (SELECT user_id FROM #{EmailAddress.table_name} WHERE LOWER(address) LIKE LOWER(:p))"
       params = {:p => pattern}
       if q =~ /^(.+)\s+(.+)$/
         a, b = "#{$1}%", "#{$2}%"
@@ -56,8 +84,8 @@ class Principal < ActiveRecord::Base
 
   # Principals that are members of a collection of projects
   scope :member_of, lambda {|projects|
-    projects = [projects] unless projects.is_a?(Array)
-    if projects.empty?
+    projects = [projects] if projects.is_a?(Project)
+    if projects.blank?
       where("1=0")
     else
       ids = projects.map(&:id)
@@ -77,16 +105,44 @@ class Principal < ActiveRecord::Base
   scope :sorted, lambda { order(*Principal.fields_for_order_statement)}
 
   before_create :set_default_empty_values
+  before_destroy :nullify_projects_default_assigned_to
+
+  def reload(*args)
+    @project_ids = nil
+    super
+  end
 
   def name(formatter = nil)
     to_s
+  end
+
+  def mail=(*args)
+    nil
+  end
+
+  def mail
+    nil
+  end
+
+  def visible?(user=User.current)
+    Principal.visible(user).where(:id => id).first == self
+  end
+
+  # Returns true if the principal is a member of project
+  def member_of?(project)
+    project.is_a?(Project) && project_ids.include?(project.id)
+  end
+
+  # Returns an array of the project ids that the principal is a member of
+  def project_ids
+    @project_ids ||= super.freeze
   end
 
   def <=>(principal)
     if principal.nil?
       -1
     elsif self.class.name == principal.class.name
-      self.to_s.downcase <=> principal.to_s.downcase
+      self.to_s.casecmp(principal.to_s)
     else
       # groups after users
       principal.class.name <=> self.class.name
@@ -102,6 +158,33 @@ class Principal < ActiveRecord::Base
     columns.uniq.map {|field| "#{table}.#{field}"}
   end
 
+  # Returns the principal that matches the keyword among principals
+  def self.detect_by_keyword(principals, keyword)
+    keyword = keyword.to_s
+    return nil if keyword.blank?
+
+    principal = nil
+    principal ||= principals.detect {|a| keyword.casecmp(a.login.to_s) == 0}
+    principal ||= principals.detect {|a| keyword.casecmp(a.mail.to_s) == 0}
+
+    if principal.nil? && keyword.match(/ /)
+      firstname, lastname = *(keyword.split) # "First Last Throwaway"
+      principal ||= principals.detect {|a|
+                                 a.is_a?(User) &&
+                                   firstname.casecmp(a.firstname.to_s) == 0 &&
+                                   lastname.casecmp(a.lastname.to_s) == 0
+                               }
+    end
+    if principal.nil?
+      principal ||= principals.detect {|a| keyword.casecmp(a.name) == 0}
+    end
+    principal
+  end
+
+  def nullify_projects_default_assigned_to
+    Project.where(default_assigned_to: self).update_all(default_assigned_to_id: nil)
+  end
+
   protected
 
   # Make sure we don't try to insert NULL values (see #4632)
@@ -110,8 +193,15 @@ class Principal < ActiveRecord::Base
     self.hashed_password ||= ''
     self.firstname ||= ''
     self.lastname ||= ''
-    self.mail ||= ''
     true
+  end
+
+  def validate_status
+    if status_changed? && self.class.valid_statuses.present?
+      unless self.class.valid_statuses.include?(status)
+        errors.add :status, :invalid
+      end
+    end
   end
 end
 

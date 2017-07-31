@@ -145,6 +145,8 @@ vi:
         circular_dependency: "quan hệ có thể gây ra lặp vô tận"
         cant_link_an_issue_with_a_descendant: "Một vấn đề không thể liên kết tới một trong số những tác vụ con của nó"
         earlier_than_minimum_start_date: "cannot be earlier than %{date} because of preceding issues"
+        not_a_regexp: "is not a valid regular expression"
+        open_issue_with_closed_parent: "An open issue cannot be attached to a closed parent task"
 
   direction: ltr
   date:
@@ -190,14 +192,16 @@ vi:
   general_text_Yes: 'Có'
   general_text_no: 'không'
   general_text_yes: 'có'
-  general_lang_name: 'Tiếng Việt'
+  general_lang_name: 'Vietnamese (Tiếng Việt)'
   general_csv_separator: ','
   general_csv_decimal_separator: '.'
   general_csv_encoding: UTF-8
+  general_pdf_fontname: DejaVuSans
+  general_pdf_monospaced_fontname: DejaVuSans
   general_first_day_of_week: '1'
 
   notice_account_updated: Cập nhật tài khoản thành công.
-  notice_account_invalid_creditentials: Tài khoản hoặc mật mã không hợp lệ
+  notice_account_invalid_credentials: Tài khoản hoặc mật mã không hợp lệ
   notice_account_password_updated: Cập nhật mật mã thành công.
   notice_account_wrong_password: Sai mật mã
   notice_account_register_done: Tài khoản được tạo thành công. Để kích hoạt vui lòng làm theo hướng dẫn trong email gửi đến bạn.
@@ -479,10 +483,6 @@ vi:
   label_open_issues_plural: mở
   label_closed_issues: đóng
   label_closed_issues_plural: đóng
-  label_x_open_issues_abbr_on_total:
-    zero:  "0 mở / %{total}"
-    one:   "1 mở / %{total}"
-    other: "%{count} mở / %{total}"
   label_x_open_issues_abbr:
     zero:  0 mở
     one:   1 mở
@@ -503,14 +503,12 @@ vi:
   label_used_by: Được dùng bởi
   label_details: Chi tiết
   label_add_note: Thêm ghi chú
-  label_per_page: Mỗi trang
   label_calendar: Lịch
   label_months_from: tháng từ
   label_gantt: Biểu đồ sự kiện
   label_internal: Nội bộ
   label_last_changes: "%{count} thay đổi cuối"
   label_change_view_all: Xem mọi thay đổi
-  label_personalize_page: Điều chỉnh trang này
   label_comment: Bình luận
   label_comment_plural: Bình luận
   label_x_comments:
@@ -611,10 +609,6 @@ vi:
   label_blocked_by: chặn bởi
   label_precedes: đi trước
   label_follows: đi sau
-  label_end_to_start: cuối tới đầu
-  label_end_to_end: cuối tới cuối
-  label_start_to_start: đầu tớ đầu
-  label_start_to_end: đầu tới cuối
   label_stay_logged_in: Lưu thông tin đăng nhập
   label_disabled: Bị vô hiệu
   label_show_completed_versions: Xem phiên bản đã hoàn thành
@@ -660,7 +654,6 @@ vi:
   label_age: Thời gian
   label_change_properties: Thay đổi thuộc tính
   label_general: Tổng quan
-  label_more: Chi tiết
   label_scm: SCM
   label_plugins: Module
   label_ldap_authentication: Chứng thực LDAP
@@ -670,7 +663,6 @@ vi:
   label_preferences: Cấu hình
   label_chronological_order: Bài cũ xếp trước
   label_reverse_chronological_order: Bài mới xếp trước
-  label_planning: Kế hoạch
   label_incoming_emails: Nhận mail
   label_generate_key: Tạo mã
   label_issue_watchers: Theo dõi
@@ -954,7 +946,6 @@ vi:
   error_can_not_remove_role: Quyền này đang được dùng và không thể xóa được.
   error_can_not_delete_tracker: Theo dõi này chứa vấn đề và không thể xóa được.
   field_principal: Chủ yếu
-  label_my_page_block: Block trang của tôi
   notice_failed_to_save_members: "Thất bại khi lưu thành viên : %{errors}."
   text_zoom_out: Thu nhỏ
   text_zoom_in: Phóng to
@@ -966,10 +957,8 @@ vi:
   button_edit_associated_wikipage: "Chỉnh sửa trang Wiki liên quan: %{page_title}"
   text_are_you_sure_with_children: Xóa vấn đề và tất cả vấn đề con?  
   field_text: Trường văn bản
-  label_user_mail_option_only_owner: Chỉ những thứ tôi sở hữu
   setting_default_notification_option: Tuỳ chọn thông báo mặc định
   label_user_mail_option_only_my_events: Chỉ những thứ tôi theo dõi hoặc liên quan
-  label_user_mail_option_only_assigned: Chỉ những thứ tôi được phân công
   label_user_mail_option_none: Không có sự kiện
   field_member_of_group: Nhóm thụ hưởng
   field_assigned_to_role: Quyền thụ hưởng
@@ -1030,16 +1019,12 @@ vi:
   description_project_scope: Phạm vi tìm kiếm
   description_filter: Lọc
   description_user_mail_notification: Thiết lập email thông báo
-  description_date_from: Nhập ngày bắt đầu
   description_message_content: Nội dung thông điệp
   description_available_columns: Các cột có sẵn
-  description_date_range_interval: Chọn khoảng thời gian giữa ngày bắt đầu và kết thúc
   description_issue_category_reassign: Chọn danh mục vấn đề
   description_search: Trường tìm kiếm
   description_notes: Các chú ý
-  description_date_range_list: Chọn khoảng từ danh sách
   description_choose_project: Các dự án
-  description_date_to: Nhập ngày kết thúc
   description_query_sort_criteria_attribute: Sắp xếp thuộc tính
   description_wiki_subpages_reassign: Chọn một trang cấp trên
   label_parent_revision: Cha
@@ -1171,3 +1156,135 @@ vi:
   label_radio_buttons: radio buttons
   label_group_anonymous: Anonymous users
   label_group_non_member: Non member users
+  label_add_projects: Add projects
+  field_default_status: Default status
+  text_subversion_repository_note: 'Examples: file:///, http://, https://, svn://, svn+[tunnelscheme]://'
+  field_users_visibility: Users visibility
+  label_users_visibility_all: All active users
+  label_users_visibility_members_of_visible_projects: Members of visible projects
+  label_edit_attachments: Edit attached files
+  setting_link_copied_issue: Link issues on copy
+  label_link_copied_issue: Link copied issue
+  label_ask: Ask
+  label_search_attachments_yes: Search attachment filenames and descriptions
+  label_search_attachments_no: Do not search attachments
+  label_search_attachments_only: Search attachments only
+  label_search_open_issues_only: Open issues only
+  field_address: Email
+  setting_max_additional_emails: Maximum number of additional email addresses
+  label_email_address_plural: Emails
+  label_email_address_add: Add email address
+  label_enable_notifications: Enable notifications
+  label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues
+  error_password_expired: Your password has expired or the administrator requires you
+    to change it.
+  field_time_entries_visibility: Time logs visibility
+  setting_password_max_age: Require password change after
+  label_parent_task_attributes: Parent tasks attributes
+  label_parent_task_attributes_derived: Calculated from subtasks
+  label_parent_task_attributes_independent: Independent of subtasks
+  label_time_entries_visibility_all: All time entries
+  label_time_entries_visibility_own: Time entries created by the user
+  label_member_management: Member management
+  label_member_management_all_roles: All roles
+  label_member_management_selected_roles_only: Only these roles
+  label_password_required: Confirm your password to continue
+  label_total_spent_time: Tổng thời gian sử dụng
+  notice_import_finished: "%{count} items have been imported"
+  notice_import_finished_with_errors: "%{count} out of %{total} items could not be imported"
+  error_invalid_file_encoding: The file is not a valid %{encoding} encoded file
+  error_invalid_csv_file_or_settings: The file is not a CSV file or does not match the
+    settings below
+  error_can_not_read_import_file: An error occurred while reading the file to import
+  permission_import_issues: Import issues
+  label_import_issues: Import issues
+  label_select_file_to_import: Select the file to import
+  label_fields_separator: Field separator
+  label_fields_wrapper: Field wrapper
+  label_encoding: Encoding
+  label_comma_char: Comma
+  label_semi_colon_char: Semicolon
+  label_quote_char: Quote
+  label_double_quote_char: Double quote
+  label_fields_mapping: Fields mapping
+  label_file_content_preview: File content preview
+  label_create_missing_values: Create missing values
+  button_import: Import
+  field_total_estimated_hours: Total estimated time
+  label_api: API
+  label_total_plural: Totals
+  label_assigned_issues: Assigned issues
+  label_field_format_enumeration: Key/value list
+  label_f_hour_short: '%{value} h'
+  field_default_version: Default version
+  error_attachment_extension_not_allowed: Attachment extension %{extension} is not allowed
+  setting_attachment_extensions_allowed: Allowed extensions
+  setting_attachment_extensions_denied: Disallowed extensions
+  label_any_open_issues: any open issues
+  label_no_open_issues: no open issues
+  label_default_values_for_new_users: Default values for new users
+  error_ldap_bind_credentials: Invalid LDAP Account/Password
+  setting_sys_api_key: Mã số API
+  setting_lost_password: Phục hồi mật mã
+  mail_subject_security_notification: Security notification
+  mail_body_security_notification_change: ! '%{field} was changed.'
+  mail_body_security_notification_change_to: ! '%{field} was changed to %{value}.'
+  mail_body_security_notification_add: ! '%{field} %{value} was added.'
+  mail_body_security_notification_remove: ! '%{field} %{value} was removed.'
+  mail_body_security_notification_notify_enabled: Email address %{value} now receives
+    notifications.
+  mail_body_security_notification_notify_disabled: Email address %{value} no longer
+    receives notifications.
+  mail_body_settings_updated: ! 'The following settings were changed:'
+  field_remote_ip: IP address
+  label_wiki_page_new: New wiki page
+  label_relations: Relations
+  button_filter: Filter
+  mail_body_password_updated: Your password has been changed.
+  label_no_preview: No preview available
+  error_no_tracker_allowed_for_new_issue_in_project: The project doesn't have any trackers
+    for which you can create an issue
+  label_tracker_all: All trackers
+  label_new_project_issue_tab_enabled: Display the "New issue" tab
+  setting_new_item_menu_tab: Project menu tab for creating new objects
+  label_new_object_tab_enabled: Display the "+" drop-down
+  error_no_projects_with_tracker_allowed_for_new_issue: There are no projects with trackers
+    for which you can create an issue
+  field_textarea_font: Font used for text areas
+  label_font_default: Default font
+  label_font_monospace: Monospaced font
+  label_font_proportional: Proportional font
+  setting_timespan_format: Time span format
+  label_table_of_contents: Table of contents
+  setting_commit_logs_formatting: Apply text formatting to commit messages
+  setting_mail_handler_enable_regex_delimiters: Enable regular expressions
+  error_move_of_child_not_possible: 'Subtask %{child} could not be moved to the new
+    project: %{errors}'
+  error_cannot_reassign_time_entries_to_an_issue_about_to_be_deleted: Spent time cannot
+    be reassigned to an issue that is about to be deleted
+  setting_timelog_required_fields: Required fields for time logs
+  label_attribute_of_object: '%{object_name}''s %{name}'
+  label_user_mail_option_only_assigned: Only for things I watch or I am assigned to
+  label_user_mail_option_only_owner: Only for things I watch or I am the owner of
+  warning_fields_cleared_on_bulk_edit: Changes will result in the automatic deletion
+    of values from one or more fields on the selected objects
+  field_updated_by: Updated by
+  field_last_updated_by: Last updated by
+  field_full_width_layout: Full width layout
+  label_last_notes: Last notes
+  field_digest: Checksum
+  field_default_assigned_to: Default assignee
+  setting_show_custom_fields_on_registration: Show custom fields on registration
+  permission_view_news: View news
+  label_no_preview_alternative_html: No preview available. %{link} the file instead.
+  label_no_preview_download: Download
+  setting_close_duplicate_issues: Close duplicate issues automatically
+  error_exceeds_maximum_hours_per_day: Cannot log more than %{max_hours} hours on the
+    same day (%{logged_hours} hours have already been logged)
+  setting_time_entry_list_defaults: Timelog list defaults
+  setting_timelog_accept_0_hours: Accept time logs with 0 hours
+  setting_timelog_max_hours_per_day: Maximum hours that can be logged per day and user
+  label_x_revisions: "%{count} revisions"

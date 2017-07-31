@@ -1,7 +1,7 @@
 # encoding: utf-8
 #
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,12 +22,32 @@ module SettingsHelper
     tabs = [{:name => 'general', :partial => 'settings/general', :label => :label_general},
             {:name => 'display', :partial => 'settings/display', :label => :label_display},
             {:name => 'authentication', :partial => 'settings/authentication', :label => :label_authentication},
+            {:name => 'api', :partial => 'settings/api', :label => :label_api},
             {:name => 'projects', :partial => 'settings/projects', :label => :label_project_plural},
             {:name => 'issues', :partial => 'settings/issues', :label => :label_issue_tracking},
+            {:name => 'timelog', :partial => 'settings/timelog', :label => :label_time_tracking},
+            {:name => 'attachments', :partial => 'settings/attachments', :label => :label_attachment_plural},
             {:name => 'notifications', :partial => 'settings/notifications', :label => :field_mail_notification},
             {:name => 'mail_handler', :partial => 'settings/mail_handler', :label => :label_incoming_emails},
             {:name => 'repositories', :partial => 'settings/repositories', :label => :label_repository_plural}
             ]
+  end
+
+  def render_settings_error(errors)
+    return if errors.blank?
+    s = ''.html_safe
+    errors.each do |name, message|
+      s << content_tag('li', content_tag('b', l("setting_#{name}")) + " " + message)
+    end
+    content_tag('div', content_tag('ul', s), :id => 'errorExplanation')
+  end
+
+  def setting_value(setting)
+    value = nil
+    if params[:settings]
+      value = params[:settings][setting]
+    end
+    value || Setting.send(setting)
   end
 
   def setting_select(setting, choices, options={})
@@ -36,12 +56,12 @@ module SettingsHelper
     end
     setting_label(setting, options).html_safe +
       select_tag("settings[#{setting}]",
-                 options_for_select(choices, Setting.send(setting).to_s),
+                 options_for_select(choices, setting_value(setting).to_s),
                  options).html_safe
   end
 
   def setting_multiselect(setting, choices, options={})
-    setting_values = Setting.send(setting)
+    setting_values = setting_value(setting)
     setting_values = [] unless setting_values.is_a?(Array)
 
     content_tag("label", l(options[:label] || "setting_#{setting}")) +
@@ -63,23 +83,28 @@ module SettingsHelper
 
   def setting_text_field(setting, options={})
     setting_label(setting, options).html_safe +
-      text_field_tag("settings[#{setting}]", Setting.send(setting), options).html_safe
+      text_field_tag("settings[#{setting}]", setting_value(setting), options).html_safe
   end
 
   def setting_text_area(setting, options={})
     setting_label(setting, options).html_safe +
-      text_area_tag("settings[#{setting}]", Setting.send(setting), options).html_safe
+      text_area_tag("settings[#{setting}]", setting_value(setting), options).html_safe
   end
 
   def setting_check_box(setting, options={})
     setting_label(setting, options).html_safe +
       hidden_field_tag("settings[#{setting}]", 0, :id => nil).html_safe +
-        check_box_tag("settings[#{setting}]", 1, Setting.send("#{setting}?"), options).html_safe
+        check_box_tag("settings[#{setting}]", 1, setting_value(setting).to_s != '0', options).html_safe
   end
 
   def setting_label(setting, options={})
     label = options.delete(:label)
-    label != false ? label_tag("settings_#{setting}", l(label || "setting_#{setting}"), options[:label_options]).html_safe : ''
+    if label == false
+      ''
+    else
+      text = label.is_a?(String) ? label : l(label || "setting_#{setting}")
+      label_tag("settings_#{setting}", text, options[:label_options])
+    end
   end
 
   # Renders a notification field for a Redmine::Notifiable option
@@ -90,7 +115,7 @@ module SettingsHelper
 
     tag = check_box_tag('settings[notified_events][]',
       notifiable.name,
-      Setting.notified_events.include?(notifiable.name),
+      setting_value('notified_events').include?(notifiable.name),
       :id => nil,
       :data => tag_data)
 
@@ -104,6 +129,35 @@ module SettingsHelper
     content_tag(:label, tag + text, options)
   end
 
+  def session_lifetime_options
+    options = [[l(:label_disabled), 0]]
+    options += [4, 8, 12].map {|hours|
+      [l('datetime.distance_in_words.x_hours', :count => hours), (hours * 60).to_s]
+    }
+    options += [1, 7, 30, 60, 365].map {|days|
+      [l('datetime.distance_in_words.x_days', :count => days), (days * 24 * 60).to_s]
+    }
+    options
+  end
+
+  def session_timeout_options
+    options = [[l(:label_disabled), 0]]
+    options += [1, 2, 4, 8, 12, 24, 48].map {|hours|
+      [l('datetime.distance_in_words.x_hours', :count => hours), (hours * 60).to_s]
+    }
+    options
+  end
+
+  def link_copied_issue_options
+    options = [
+      [:general_text_Yes, 'yes'],
+      [:general_text_No, 'no'],
+      [:label_ask, 'ask']
+    ]
+
+    options.map {|label, value| [l(label), value.to_s]}
+  end
+
   def cross_project_subtasks_options
     options = [
       [:label_disabled, ''],
@@ -114,5 +168,43 @@ module SettingsHelper
     ]
 
     options.map {|label, value| [l(label), value.to_s]}
+  end
+
+  def parent_issue_dates_options
+    options = [
+      [:label_parent_task_attributes_derived, 'derived'],
+      [:label_parent_task_attributes_independent, 'independent']
+    ]
+
+    options.map {|label, value| [l(label), value.to_s]}
+  end
+
+  def parent_issue_priority_options
+    options = [
+      [:label_parent_task_attributes_derived, 'derived'],
+      [:label_parent_task_attributes_independent, 'independent']
+    ]
+
+    options.map {|label, value| [l(label), value.to_s]}
+  end
+
+  def parent_issue_done_ratio_options
+    options = [
+      [:label_parent_task_attributes_derived, 'derived'],
+      [:label_parent_task_attributes_independent, 'independent']
+    ]
+
+    options.map {|label, value| [l(label), value.to_s]}
+  end
+
+  # Returns the options for the date_format setting
+  def date_format_setting_options(locale)
+    Setting::DATE_FORMATS.map do |f|
+      today = ::I18n.l(User.current.today, :locale => locale, :format => f)
+      format = f.gsub('%', '').gsub(/[dmY]/) do
+        {'d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy'}[$&]
+      end
+      ["#{today} (#{format})", f]
+    end
   end
 end

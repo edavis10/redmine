@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,8 +22,11 @@ module Redmine
     module Markdown
       class HTML < Redcarpet::Render::HTML
         include ActionView::Helpers::TagHelper
+        include Redmine::Helpers::URL
 
         def link(link, title, content)
+          return nil unless uri_with_safe_scheme?(link)
+
           css = nil
           unless link && link.starts_with?('/')
             css = 'external'
@@ -32,13 +35,19 @@ module Redmine
         end
 
         def block_code(code, language)
-          if language.present?
+          if language.present? && Redmine::SyntaxHighlighting.language_supported?(language)
             "<pre><code class=\"#{CGI.escapeHTML language} syntaxhl\">" +
               Redmine::SyntaxHighlighting.highlight_by_language(code, language) +
               "</code></pre>"
           else
             "<pre>" + CGI.escapeHTML(code) + "</pre>"
           end
+        end
+
+        def image(link, title, alt_text)
+          return unless uri_with_safe_scheme?(link)
+
+          tag('img', :src => link, :alt => alt_text || "", :title => title)
         end
       end
 
@@ -56,6 +65,10 @@ module Redmine
           # restore Redmine links with double-quotes, eg. version:"1.0"
           html.gsub!(/(\w):&quot;(.+?)&quot;/) do
             "#{$1}:\"#{$2}\""
+          end
+          # restore user links with @ in login name eg. [@jsmith@somenet.foo]
+          html.gsub!(%r{[@\A]<a href="mailto:(.*?)">(.*?)</a>}) do
+            "@#{$2}"
           end
           html
         end
@@ -128,7 +141,8 @@ module Redmine
             :tables => true,
             :strikethrough => true,
             :superscript => true,
-            :no_intra_emphasis => true
+            :no_intra_emphasis => true,
+            :footnotes => true
           )
         end
       end

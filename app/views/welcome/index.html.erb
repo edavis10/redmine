@@ -1,7 +1,13 @@
 <h2><%= l(:label_home) %></h2>
 
 <div class="splitcontentleft">
-  <%= textilizable Setting.welcome_text %>
+  <div class="wiki">
+    <%= textilizable Setting.welcome_text %>
+  </div>
+  <%= call_hook(:view_welcome_index_left) %>
+</div>
+
+<div class="splitcontentright">
   <% if @news.any? %>
   <div class="news box">
   <h3><%=l(:label_news_latest)%></h3>
@@ -9,26 +15,7 @@
     <%= link_to l(:label_news_view_all), :controller => 'news' %>
   </div>
   <% end %>
-  <%= call_hook(:view_welcome_index_left, :projects => @projects) %>
-</div>
-
-<div class="splitcontentright">
-    <% if @projects.any? %>
-  <div class="projects box">
-  <h3><%=l(:label_project_latest)%></h3>
-    <ul>
-    <% for project in @projects %>
-      <% @project = project %>
-      <li>
-      <%= link_to_project project %> (<%= format_time(project.created_on) %>)
-      <%= textilizable project.short_description, :project => project %>
-      </li>
-    <% end %>
-    <% @project = nil %>
-    </ul>
-  </div>
-  <% end %>
-    <%= call_hook(:view_welcome_index_right, :projects => @projects) %>
+  <%= call_hook(:view_welcome_index_right) %>
 </div>
 
 <% content_for :header_tags do %>

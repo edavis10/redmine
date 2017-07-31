@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,18 +17,19 @@
 
 require File.expand_path('../../test_helper', __FILE__)
 
-class RepositoriesBazaarControllerTest < ActionController::TestCase
+class RepositoriesBazaarControllerTest < Redmine::RepositoryControllerTest
   tests RepositoriesController
 
-  fixtures :projects, :users, :roles, :members, :member_roles,
+  fixtures :projects, :users, :email_addresses, :roles, :members, :member_roles,
            :repositories, :enabled_modules
 
   REPOSITORY_PATH = Rails.root.join('tmp/test/bazaar_repository').to_s
   REPOSITORY_PATH_TRUNK = File.join(REPOSITORY_PATH, "trunk")
   PRJ_ID = 3
-  CHAR_1_UTF8_HEX   = "\xc3\x9c"
+  CHAR_1_UTF8_HEX   = "\xc3\x9c".dup.force_encoding('UTF-8')
 
   def setup
+    super
     User.current = nil
     @project = Project.find(PRJ_ID)
     @repository = Repository::Bazaar.create(
@@ -36,113 +37,124 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
                     :url          => REPOSITORY_PATH_TRUNK,
                     :log_encoding => 'UTF-8')
     assert @repository
-    @char_1_utf8 = CHAR_1_UTF8_HEX.dup
-    if @char_1_utf8.respond_to?(:force_encoding)
-      @char_1_utf8.force_encoding('UTF-8')
-    end
   end
 
   if File.directory?(REPOSITORY_PATH)
     def test_get_new
       @request.session[:user_id] = 1
       @project.repository.destroy
-      get :new, :project_id => 'subproject1', :repository_scm => 'Bazaar'
+      get :new, :params => {
+          :project_id => 'subproject1',
+          :repository_scm => 'Bazaar'
+        }
       assert_response :success
-      assert_template 'new'
-      assert_kind_of Repository::Bazaar, assigns(:repository)
-      assert assigns(:repository).new_record?
+      assert_select 'select[name=?]', 'repository_scm' do
+        assert_select 'option[value=?][selected=selected]', 'Bazaar'
+      end
     end
 
     def test_browse_root
-      get :show, :id => PRJ_ID
+      get :show, :params => {
+          :id => PRJ_ID
+        }
       assert_response :success
-      assert_template 'show'
-      assert_not_nil assigns(:entries)
-      assert_equal 2, assigns(:entries).size
-      assert assigns(:entries).detect {|e| e.name == 'directory' && e.kind == 'dir'}
-      assert assigns(:entries).detect {|e| e.name == 'doc-mkdir.txt' && e.kind == 'file'}
+      assert_select 'table.entries tbody' do
+        assert_select 'tr', 2
+        assert_select 'tr.dir td.filename a', :text => 'directory'
+        assert_select 'tr.file td.filename a', :text => 'doc-mkdir.txt'
+      end
     end
 
     def test_browse_directory
-      get :show, :id => PRJ_ID, :path => repository_path_hash(['directory'])[:param]
+      get :show, :params => {
+          :id => PRJ_ID,
+          :path => repository_path_hash(['directory'])[:param]
+        }
       assert_response :success
-      assert_template 'show'
-      assert_not_nil assigns(:entries)
-      assert_equal ['doc-ls.txt', 'document.txt', 'edit.png'], assigns(:entries).collect(&:name)
-      entry = assigns(:entries).detect {|e| e.name == 'edit.png'}
-      assert_not_nil entry
-      assert_equal 'file', entry.kind
-      assert_equal 'directory/edit.png', entry.path
+      assert_select 'table.entries tbody' do
+        assert_select 'tr', 3
+        assert_select 'tr.file td.filename a', :text => 'doc-ls.txt'
+        assert_select 'tr.file td.filename a', :text => 'document.txt'
+        assert_select 'tr.file td.filename a', :text => 'edit.png'
+      end
     end
 
     def test_browse_at_given_revision
-      get :show, :id => PRJ_ID, :path => repository_path_hash([])[:param],
+      get :show, :params => {
+          :id => PRJ_ID,
+          :path => repository_path_hash([])[:param],
           :rev => 3
+        }
       assert_response :success
-      assert_template 'show'
-      assert_not_nil assigns(:entries)
-      assert_equal ['directory', 'doc-deleted.txt', 'doc-ls.txt', 'doc-mkdir.txt'],
-                   assigns(:entries).collect(&:name)
+      assert_select 'table.entries tbody' do
+        assert_select 'tr', 4
+        assert_select 'tr.dir td.filename a', :text => 'directory'
+        assert_select 'tr.file td.filename a', :text => 'doc-deleted.txt'
+        assert_select 'tr.file td.filename a', :text => 'doc-ls.txt'
+        assert_select 'tr.file td.filename a', :text => 'doc-mkdir.txt'
+      end
     end
 
     def test_changes
-      get :changes, :id => PRJ_ID,
+      get :changes, :params => {
+          :id => PRJ_ID,
           :path => repository_path_hash(['doc-mkdir.txt'])[:param]
+        }
       assert_response :success
-      assert_template 'changes'
-      assert_tag :tag => 'h2', :content => 'doc-mkdir.txt'
+      assert_select 'h2', :text => /doc-mkdir.txt/
     end
 
     def test_entry_show
-      get :entry, :id => PRJ_ID,
+      get :entry, :params => {
+          :id => PRJ_ID,
           :path => repository_path_hash(['directory', 'doc-ls.txt'])[:param]
+        }
       assert_response :success
-      assert_template 'entry'
       # Line 19
-      assert_tag :tag => 'th',
-                 :content => /29/,
-                 :attributes => { :class => /line-num/ },
-                 :sibling => { :tag => 'td', :content => /Show help message/ }
+      assert_select 'tr#L29 td.line-code', :text => /Show help message/
     end
 
     def test_entry_download
-      get :entry, :id => PRJ_ID,
+      get :entry, :params => {
+          :id => PRJ_ID,
           :path => repository_path_hash(['directory', 'doc-ls.txt'])[:param],
           :format => 'raw'
+        }
       assert_response :success
       # File content
       assert @response.body.include?('Show help message')
     end
 
     def test_directory_entry
-      get :entry, :id => PRJ_ID,
+      get :entry, :params => {
+          :id => PRJ_ID,
           :path => repository_path_hash(['directory'])[:param]
+        }
       assert_response :success
-      assert_template 'show'
-      assert_not_nil assigns(:entry)
-      assert_equal 'directory', assigns(:entry).name
+      assert_select 'table.entries tbody'
     end
 
     def test_diff
       # Full diff of changeset 3
       ['inline', 'sbs'].each do |dt|
-        get :diff, :id => PRJ_ID, :rev => 3, :type => dt
+        get :diff, :params => {
+            :id => PRJ_ID,
+            :rev => 3,
+            :type => dt
+          }
         assert_response :success
-        assert_template 'diff'
         # Line 11 removed
-        assert_tag :tag => 'th',
-                   :content => '11',
-                   :sibling => { :tag => 'td',
-                                 :attributes => { :class => /diff_out/ },
-                                 :content => /Display more information/ }
+        assert_select 'th.line-num:contains(11) ~ td.diff_out', :text => /Display more information/
       end
     end
 
     def test_annotate
-      get :annotate, :id => PRJ_ID,
+      get :annotate, :params => {
+          :id => PRJ_ID,
           :path => repository_path_hash(['doc-mkdir.txt'])[:param]
+        }
       assert_response :success
-      assert_template 'annotate'
+
       assert_select "th.line-num", :text => '2' do
         assert_select "+ td.revision" do
           assert_select "a", :text => '3'
@@ -161,14 +173,17 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
                     :identifier => 'author_escaping',
                     :log_encoding => 'UTF-8')
       assert repository
-      get :annotate, :id => PRJ_ID, :repository_id => 'author_escaping',
+      get :annotate, :params => {
+          :id => PRJ_ID,
+          :repository_id => 'author_escaping',
           :path => repository_path_hash(['author-escaping-test.txt'])[:param]
+        }
       assert_response :success
-      assert_template 'annotate'
+
       assert_select "th.line-num", :text => '1' do
         assert_select "+ td.revision" do
           assert_select "a", :text => '2'
-          assert_select "+ td.author", :text => "test &amp;" do
+          assert_select "+ td.author", :text => "test &" do
             assert_select "+ td",
                           :text => "author escaping test"
           end
@@ -176,31 +191,32 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
       end
     end
 
-    if REPOSITORY_PATH.respond_to?(:force_encoding)
-      def test_annotate_author_non_ascii
-        log_encoding = nil
-        if Encoding.locale_charmap == "UTF-8" ||
-             Encoding.locale_charmap == "ISO-8859-1"
-          log_encoding = Encoding.locale_charmap
-        end
-        unless log_encoding.nil?
-          repository = Repository::Bazaar.create(
-                        :project      => @project,
-                        :url          => File.join(REPOSITORY_PATH, "author_non_ascii"),
-                        :identifier => 'author_non_ascii',
-                        :log_encoding => log_encoding)
-          assert repository
-          get :annotate, :id => PRJ_ID, :repository_id => 'author_non_ascii',
-              :path => repository_path_hash(['author-non-ascii-test.txt'])[:param]
-          assert_response :success
-          assert_template 'annotate'
-          assert_select "th.line-num", :text => '1' do
-            assert_select "+ td.revision" do
-              assert_select "a", :text => '2'
-              assert_select "+ td.author", :text => "test #{@char_1_utf8}" do
-                assert_select "+ td",
-                              :text => "author non ASCII test"
-              end
+    def test_annotate_author_non_ascii
+      log_encoding = nil
+      if Encoding.locale_charmap == "UTF-8" ||
+           Encoding.locale_charmap == "ISO-8859-1"
+        log_encoding = Encoding.locale_charmap
+      end
+      unless log_encoding.nil?
+        repository = Repository::Bazaar.create(
+                      :project      => @project,
+                      :url          => File.join(REPOSITORY_PATH, "author_non_ascii"),
+                      :identifier => 'author_non_ascii',
+                      :log_encoding => log_encoding)
+        assert repository
+        get :annotate, :params => {
+            :id => PRJ_ID,
+            :repository_id => 'author_non_ascii',
+            :path => repository_path_hash(['author-non-ascii-test.txt'])[:param]
+          }
+        assert_response :success
+
+        assert_select "th.line-num", :text => '1' do
+          assert_select "+ td.revision" do
+            assert_select "a", :text => '2'
+            assert_select "+ td.author", :text => "test #{CHAR_1_UTF8_HEX}" do
+              assert_select "+ td",
+                            :text => "author non ASCII test"
             end
           end
         end
@@ -214,7 +230,9 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
       assert @repository.changesets.count > 0
 
       assert_difference 'Repository.count', -1 do
-        delete :destroy, :id => @repository.id
+        delete :destroy, :params => {
+            :id => @repository.id
+          }
       end
       assert_response 302
       @project.reload
@@ -233,7 +251,9 @@ class RepositoriesBazaarControllerTest < ActionController::TestCase
       assert_equal 0, @repository.changesets.count
 
       assert_difference 'Repository.count', -1 do
-        delete :destroy, :id => @repository.id
+        delete :destroy, :params => {
+            :id => @repository.id
+          }
       end
       assert_response 302
       @project.reload

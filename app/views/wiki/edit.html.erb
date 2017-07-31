@@ -1,6 +1,6 @@
 <%= wiki_page_breadcrumb(@page) %>
 
-<h2><%= h @page.pretty_title %></h2>
+<h2><%= @page.pretty_title %></h2>
 
 <%= form_for @content, :as => :content,
             :url => {:action => 'update', :id => @page.title},
@@ -23,18 +23,21 @@
       <%= fp.select :parent_id,
                     content_tag('option', '', :value => '') +
                        wiki_page_options_for_select(
-                         @wiki.pages.includes(:parent).all -
+                         @wiki.pages.includes(:parent).to_a -
                          @page.self_and_descendants, @page.parent) %>
     </p>
   <% end %>
 <% end %>
 
-<p><label><%= l(:field_comments) %></label><%= f.text_field :comments, :size => 120 %></p>
+<p><label><%= l(:field_comments) %></label><%= f.text_field :comments, :size => 120, :maxlength => 1024 %></p>
 <p><label><%=l(:label_attachment_plural)%></label><%= render :partial => 'attachments/form' %></p>
 </div>
 
-<p><%= submit_tag l(:button_save) %>
-   <%= preview_link({:controller => 'wiki', :action => 'preview', :project_id => @project, :id => @page.title }, 'wiki_form') %></p>
+<p>
+  <%= submit_tag l(:button_save) %>
+   <%= preview_link({:controller => 'wiki', :action => 'preview', :project_id => @project, :id => @page.title }, 'wiki_form') %>
+   | <%= link_to l(:button_cancel), wiki_page_edit_cancel_path(@page) %>
+ </p>
 <%= wikitoolbar_for 'content_text' %>
 <% end %>
 

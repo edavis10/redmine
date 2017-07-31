@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,9 +18,11 @@
 class FilesController < ApplicationController
   menu_item :files
 
-  before_filter :find_project_by_project_id
-  before_filter :authorize
+  before_action :find_project_by_project_id
+  before_action :authorize
+  accept_api_auth :index, :create
 
+  helper :attachments
   helper :sort
   include SortHelper
 
@@ -31,9 +33,14 @@ class FilesController < ApplicationController
                 'size' => "#{Attachment.table_name}.filesize",
                 'downloads' => "#{Attachment.table_name}.downloads"
 
-    @containers = [ Project.includes(:attachments).reorder(sort_clause).find(@project.id)]
-    @containers += @project.versions.includes(:attachments).reorder(sort_clause).all.sort.reverse
-    render :layout => !request.xhr?
+    @containers = [Project.includes(:attachments).
+                     references(:attachments).reorder(sort_clause).find(@project.id)]
+    @containers += @project.versions.includes(:attachments).
+                    references(:attachments).reorder(sort_clause).to_a.sort.reverse
+    respond_to do |format|
+      format.html { render :layout => !request.xhr? }
+      format.api
+    end
   end
 
   def new
@@ -41,13 +48,29 @@ class FilesController < ApplicationController
   end
 
   def create
-    container = (params[:version_id].blank? ? @project : @project.versions.find_by_id(params[:version_id]))
-    attachments = Attachment.attach_files(container, params[:attachments])
+    version_id = params[:version_id] || (params[:file] && params[:file][:version_id])
+    container = version_id.blank? ? @project : @project.versions.find_by_id(version_id)
+    attachments = Attachment.attach_files(container, (params[:attachments] || (params[:file] && params[:file][:token] && params)))
     render_attachment_warning_if_needed(container)
 
-    if !attachments.empty? && !attachments[:files].blank? && Setting.notified_events.include?('file_added')
-      Mailer.attachments_added(attachments[:files]).deliver
+    if attachments[:files].present?
+      if Setting.notified_events.include?('file_added')
+        Mailer.attachments_added(attachments[:files]).deliver
+      end
+      respond_to do |format|
+        format.html {
+          flash[:notice] = l(:label_file_added)
+          redirect_to project_files_path(@project) }
+        format.api { render_api_ok }
+      end
+    else
+      respond_to do |format|
+        format.html {
+          flash.now[:error] = l(:label_attachment) + " " + l('activerecord.errors.messages.invalid')
+          new
+          render :action => 'new' }
+        format.api { render :status => :bad_request }
+      end
     end
-    redirect_to project_files_path(@project)
   end
 end

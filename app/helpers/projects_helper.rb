@@ -1,7 +1,7 @@
 # encoding: utf-8
 #
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -19,17 +19,19 @@
 
 module ProjectsHelper
   def project_settings_tabs
-    tabs = [{:name => 'info', :action => :edit_project, :partial => 'projects/edit', :label => :label_information_plural},
-            {:name => 'modules', :action => :select_project_modules, :partial => 'projects/settings/modules', :label => :label_module_plural},
+    tabs = [{:name => 'info', :action => :edit_project, :partial => 'projects/edit', :label => :label_project},
             {:name => 'members', :action => :manage_members, :partial => 'projects/settings/members', :label => :label_member_plural},
-            {:name => 'versions', :action => :manage_versions, :partial => 'projects/settings/versions', :label => :label_version_plural},
+            {:name => 'issues', :action => :edit_project, :module => :issue_tracking, :partial => 'projects/settings/issues', :label => :label_issue_tracking},
+            {:name => 'versions', :action => :manage_versions, :partial => 'projects/settings/versions', :label => :label_version_plural,
+              :url => {:tab => 'versions', :version_status => params[:version_status], :version_name => params[:version_name]}},
             {:name => 'categories', :action => :manage_categories, :partial => 'projects/settings/issue_categories', :label => :label_issue_category_plural},
-            {:name => 'wiki', :action => :manage_wiki, :partial => 'projects/settings/wiki', :label => :label_wiki},
             {:name => 'repositories', :action => :manage_repository, :partial => 'projects/settings/repositories', :label => :label_repository_plural},
             {:name => 'boards', :action => :manage_boards, :partial => 'projects/settings/boards', :label => :label_board_plural},
-            {:name => 'activities', :action => :manage_project_activities, :partial => 'projects/settings/activities', :label => :enumeration_activities}
+            {:name => 'activities', :action => :manage_project_activities, :partial => 'projects/settings/activities', :label => :label_time_tracking}
             ]
-    tabs.select {|tab| User.current.allowed_to?(tab[:action], @project)}
+    tabs.
+      select {|tab| User.current.allowed_to?(tab[:action], @project)}.
+      select {|tab| tab[:module].nil? || @project.module_enabled?(tab[:module])}
   end
 
   def parent_project_select_tag(project)
@@ -47,24 +49,17 @@ module ProjectsHelper
   end
 
   def render_project_action_links
-    links = []
+    links = "".html_safe
     if User.current.allowed_to?(:add_project, nil, :global => true)
       links << link_to(l(:label_project_new), new_project_path, :class => 'icon icon-add')
     end
-    if User.current.allowed_to?(:view_issues, nil, :global => true)
-      links << link_to(l(:label_issue_view_all), issues_path)
-    end
-    if User.current.allowed_to?(:view_time_entries, nil, :global => true)
-      links << link_to(l(:label_overall_spent_time), time_entries_path)
-    end
-    links << link_to(l(:label_overall_activity), activity_path)
-    links.join(" | ").html_safe
+    links
   end
 
   # Renders the projects index
   def render_project_hierarchy(projects)
     render_project_nested_lists(projects) do |project|
-      s = link_to_project(project, {}, :class => "#{project.css_classes} #{User.current.member_of?(project) ? 'my-project' : nil}")
+      s = link_to_project(project, {}, :class => "#{project.css_classes} #{User.current.member_of?(project) ? 'icon icon-fav my-project' : nil}")
       if project.description.present?
         s << content_tag('div', textilizable(project.short_description, :project => project), :class => 'wiki description')
       end
@@ -87,9 +82,35 @@ module ProjectsHelper
     end
   end
 
+  def project_default_version_options(project)
+    versions = project.shared_versions.open.to_a
+    if project.default_version && !versions.include?(project.default_version)
+      versions << project.default_version
+    end
+    version_options_for_select(versions, project.default_version)
+  end
+
+  def project_default_assigned_to_options(project)
+    assignable_users = (project.assignable_users.to_a + [project.default_assigned_to]).uniq.compact
+    principals_options_for_select(assignable_users, project.default_assigned_to)
+  end
+
   def format_version_sharing(sharing)
     sharing = 'none' unless Version::VERSION_SHARINGS.include?(sharing)
     l("label_version_sharing_#{sharing}")
+  end
+
+  def render_boards_tree(boards, parent=nil, level=0, &block)
+    selection = boards.select {|b| b.parent == parent}
+    return '' if selection.empty?
+
+    s = ''.html_safe
+    selection.each do |board|
+      node = capture(board, level, &block)
+      node << render_boards_tree(boards, board, level+1, &block)
+      s << content_tag('div', node)
+    end
+    content_tag('div', s, :class => 'sort-level')
   end
 
   def render_api_includes(project, api)
@@ -105,11 +126,16 @@ module ProjectsHelper
       end
     end if include_in_api_response?('issue_categories')
 
+    api.array :time_entry_activities do
+      project.activities.each do |activity|
+        api.time_entry_activity(:id => activity.id, :name => activity.name)
+      end
+    end if include_in_api_response?('time_entry_activities')
+
     api.array :enabled_modules do
       project.enabled_modules.each do |enabled_module|
         api.enabled_module(:id => enabled_module.id, :name => enabled_module.name)
       end
     end if include_in_api_response?('enabled_modules')
-
   end
 end

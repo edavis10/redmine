@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,13 +18,21 @@
 class Comment < ActiveRecord::Base
   include Redmine::SafeAttributes
   belongs_to :commented, :polymorphic => true, :counter_cache => true
-  belongs_to :author, :class_name => 'User', :foreign_key => 'author_id'
+  belongs_to :author, :class_name => 'User'
 
-  validates_presence_of :commented, :author, :comments
+  validates_presence_of :commented, :author, :content
 
   after_create :send_notification
 
   safe_attributes 'comments'
+
+  def comments=(arg)
+    self.content = arg
+  end
+
+  def comments
+    content
+  end
 
   private
 

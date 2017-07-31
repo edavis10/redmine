@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,11 +17,37 @@
 
 require File.expand_path('../../test_helper', __FILE__)
 
-class AttachmentsTest < ActionController::IntegrationTest
+class AttachmentsTest < Redmine::IntegrationTest
   fixtures :projects, :enabled_modules,
-           :users, :roles, :members, :member_roles,
+           :users, :email_addresses,
+           :roles, :members, :member_roles,
            :trackers, :projects_trackers,
-           :issue_statuses, :enumerations
+           :issues, :issue_statuses, :enumerations,
+           :attachments
+
+  def test_upload_should_set_default_content_type
+    log_user('jsmith', 'jsmith')
+    assert_difference 'Attachment.count' do
+      post "/uploads.js?attachment_id=1&filename=foo.txt",
+        :params => "File content",
+        :headers => {"CONTENT_TYPE" => 'application/octet-stream'}
+      assert_response :success
+    end
+    attachment = Attachment.order(:id => :desc).first
+    assert_equal 'text/plain', attachment.content_type
+  end
+
+  def test_upload_should_accept_content_type_param
+    log_user('jsmith', 'jsmith')
+    assert_difference 'Attachment.count' do
+      post "/uploads.js?attachment_id=1&filename=foo&content_type=image/jpeg",
+        :params => "File content",
+        :headers => {"CONTENT_TYPE" => 'application/octet-stream'}
+      assert_response :success
+    end
+    attachment = Attachment.order(:id => :desc).first
+    assert_equal 'image/jpeg', attachment.content_type
+  end
 
   def test_upload_as_js_and_attach_to_an_issue
     log_user('jsmith', 'jsmith')
@@ -29,7 +55,7 @@ class AttachmentsTest < ActionController::IntegrationTest
     token = ajax_upload('myupload.txt', 'File content')
 
     assert_difference 'Issue.count' do
-      post '/projects/ecookbook/issues', {
+      post '/projects/ecookbook/issues', :params => {
           :issue => {:tracker_id => 1, :subject => 'Issue with upload'},
           :attachments => {'1' => {:filename => 'myupload.txt', :description => 'My uploaded file', :token => token}}
         }
@@ -51,7 +77,7 @@ class AttachmentsTest < ActionController::IntegrationTest
 
     token = ajax_upload('myupload.jpg', 'JPEG content')
 
-    post '/issues/preview/new/ecookbook', {
+    post '/issues/preview/new/ecookbook', :params => {
         :issue => {:tracker_id => 1, :description => 'Inline upload: !myupload.jpg!'},
         :attachments => {'1' => {:filename => 'myupload.jpg', :description => 'My uploaded file', :token => token}}
       }
@@ -71,7 +97,7 @@ class AttachmentsTest < ActionController::IntegrationTest
     token = ajax_upload('myupload.txt', 'File content')
 
     assert_no_difference 'Issue.count' do
-      post '/projects/ecookbook/issues', {
+      post '/projects/ecookbook/issues', :params => {
           :issue => {:tracker_id => 1, :subject => ''},
           :attachments => {'1' => {:filename => 'myupload.txt', :description => 'My uploaded file', :token => token}}
         }
@@ -82,7 +108,7 @@ class AttachmentsTest < ActionController::IntegrationTest
     assert_select 'input[name=?][value=?]', 'attachments[p0][description]', 'My uploaded file'
 
     assert_difference 'Issue.count' do
-      post '/projects/ecookbook/issues', {
+      post '/projects/ecookbook/issues', :params => {
           :issue => {:tracker_id => 1, :subject => 'Issue with upload'},
           :attachments => {'p0' => {:filename => 'myupload.txt', :description => 'My uploaded file', :token => token}}
         }
@@ -116,11 +142,25 @@ class AttachmentsTest < ActionController::IntegrationTest
     assert_include "$('#attachments_1').remove();", response.body
   end
 
+  def test_download_should_set_sendfile_header
+    set_fixtures_attachments_directory
+    Rack::Sendfile.any_instance.stubs(:variation).returns("X-Sendfile")
+
+    get "/attachments/download/4"
+    assert_response :success
+    assert_not_nil response.headers["X-Sendfile"]
+
+  ensure
+    set_tmp_attachments_directory
+  end
+
   private
 
   def ajax_upload(filename, content, attachment_id=1)
     assert_difference 'Attachment.count' do
-      post "/uploads.js?attachment_id=#{attachment_id}&filename=#{filename}", content, {"CONTENT_TYPE" => 'application/octet-stream'}
+      post "/uploads.js?attachment_id=#{attachment_id}&filename=#{filename}",
+        :params => content,
+        :headers => {"CONTENT_TYPE" => 'application/octet-stream'}
       assert_response :success
       assert_equal 'text/javascript', response.content_type
     end

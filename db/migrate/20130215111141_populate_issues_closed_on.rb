@@ -1,4 +1,4 @@
-class PopulateIssuesClosedOn < ActiveRecord::Migration
+class PopulateIssuesClosedOn < ActiveRecord::Migration[4.2]
   def up
     closed_status_ids = IssueStatus.where(:is_closed => true).pluck(:id)
     if closed_status_ids.any?
@@ -15,7 +15,8 @@ class PopulateIssuesClosedOn < ActiveRecord::Migration
 
       # Then set closed_on for closed issues that weren't up updated by the above UPDATE
       # No journal was found so we assume that they were closed on creation
-      Issue.update_all "closed_on = created_on", {:status_id => closed_status_ids, :closed_on => nil}
+      Issue.where({:status_id => closed_status_ids, :closed_on => nil}).
+               update_all("closed_on = created_on")
     end
   end
 

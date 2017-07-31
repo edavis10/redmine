@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -34,14 +34,16 @@ module Redmine
 
         # Loads the default data
         # Raises a RecordNotSaved exception if something goes wrong
-        def load(lang=nil)
+        def load(lang=nil, options={})
           raise DataAlreadyLoaded.new("Some configuration data is already loaded.") unless no_data?
           set_language_if_valid(lang)
+          workflow = !(options[:workflow] == false)
 
           Role.transaction do
             # Roles
             manager = Role.create! :name => l(:default_role_manager),
                                    :issues_visibility => 'all',
+                                   :users_visibility => 'all',
                                    :position => 1
             manager.permissions = manager.setable_permissions.collect {|p| p.name}
             manager.save!
@@ -63,12 +65,14 @@ module Redmine
                                                       :view_calendar,
                                                       :log_time,
                                                       :view_time_entries,
+                                                      :view_news,
                                                       :comment_news,
                                                       :view_documents,
                                                       :view_wiki_pages,
                                                       :view_wiki_edits,
                                                       :edit_wiki_pages,
                                                       :delete_wiki_pages,
+                                                      :view_messages,
                                                       :add_messages,
                                                       :edit_own_messages,
                                                       :view_files,
@@ -88,10 +92,12 @@ module Redmine
                                                     :view_calendar,
                                                     :log_time,
                                                     :view_time_entries,
+                                                    :view_news,
                                                     :comment_news,
                                                     :view_documents,
                                                     :view_wiki_pages,
                                                     :view_wiki_edits,
+                                                    :view_messages,
                                                     :add_messages,
                                                     :edit_own_messages,
                                                     :view_files,
@@ -105,10 +111,12 @@ module Redmine
                                                             :view_gantt,
                                                             :view_calendar,
                                                             :view_time_entries,
+                                                            :view_news,
                                                             :comment_news,
                                                             :view_documents,
                                                             :view_wiki_pages,
                                                             :view_wiki_edits,
+                                                            :view_messages,
                                                             :add_messages,
                                                             :view_files,
                                                             :browse_repository,
@@ -118,51 +126,55 @@ module Redmine
                                                            :view_gantt,
                                                            :view_calendar,
                                                            :view_time_entries,
+                                                           :view_news,
                                                            :view_documents,
                                                            :view_wiki_pages,
                                                            :view_wiki_edits,
+                                                           :view_messages,
                                                            :view_files,
                                                            :browse_repository,
                                                            :view_changesets]
 
-            # Trackers
-            Tracker.create!(:name => l(:default_tracker_bug),     :is_in_chlog => true,  :is_in_roadmap => false, :position => 1)
-            Tracker.create!(:name => l(:default_tracker_feature), :is_in_chlog => true,  :is_in_roadmap => true,  :position => 2)
-            Tracker.create!(:name => l(:default_tracker_support), :is_in_chlog => false, :is_in_roadmap => false, :position => 3)
-
             # Issue statuses
-            new       = IssueStatus.create!(:name => l(:default_issue_status_new), :is_closed => false, :is_default => true, :position => 1)
-            in_progress  = IssueStatus.create!(:name => l(:default_issue_status_in_progress), :is_closed => false, :is_default => false, :position => 2)
-            resolved  = IssueStatus.create!(:name => l(:default_issue_status_resolved), :is_closed => false, :is_default => false, :position => 3)
-            feedback  = IssueStatus.create!(:name => l(:default_issue_status_feedback), :is_closed => false, :is_default => false, :position => 4)
-            closed    = IssueStatus.create!(:name => l(:default_issue_status_closed), :is_closed => true, :is_default => false, :position => 5)
-            rejected  = IssueStatus.create!(:name => l(:default_issue_status_rejected), :is_closed => true, :is_default => false, :position => 6)
+            new       = IssueStatus.create!(:name => l(:default_issue_status_new), :is_closed => false, :position => 1)
+            in_progress  = IssueStatus.create!(:name => l(:default_issue_status_in_progress), :is_closed => false, :position => 2)
+            resolved  = IssueStatus.create!(:name => l(:default_issue_status_resolved), :is_closed => false, :position => 3)
+            feedback  = IssueStatus.create!(:name => l(:default_issue_status_feedback), :is_closed => false, :position => 4)
+            closed    = IssueStatus.create!(:name => l(:default_issue_status_closed), :is_closed => true, :position => 5)
+            rejected  = IssueStatus.create!(:name => l(:default_issue_status_rejected), :is_closed => true, :position => 6)
 
-            # Workflow
-            Tracker.all.each { |t|
-              IssueStatus.all.each { |os|
-                IssueStatus.all.each { |ns|
-                  WorkflowTransition.create!(:tracker_id => t.id, :role_id => manager.id, :old_status_id => os.id, :new_status_id => ns.id) unless os == ns
+            # Trackers
+            Tracker.create!(:name => l(:default_tracker_bug),     :default_status_id => new.id, :is_in_chlog => true,  :is_in_roadmap => false, :position => 1)
+            Tracker.create!(:name => l(:default_tracker_feature), :default_status_id => new.id, :is_in_chlog => true,  :is_in_roadmap => true,  :position => 2)
+            Tracker.create!(:name => l(:default_tracker_support), :default_status_id => new.id, :is_in_chlog => false, :is_in_roadmap => false, :position => 3)
+
+            if workflow
+              # Workflow
+              Tracker.all.each { |t|
+                IssueStatus.all.each { |os|
+                  IssueStatus.all.each { |ns|
+                    WorkflowTransition.create!(:tracker_id => t.id, :role_id => manager.id, :old_status_id => os.id, :new_status_id => ns.id) unless os == ns
+                  }
                 }
               }
-            }
 
-            Tracker.all.each { |t|
-              [new, in_progress, resolved, feedback].each { |os|
-                [in_progress, resolved, feedback, closed].each { |ns|
-                  WorkflowTransition.create!(:tracker_id => t.id, :role_id => developer.id, :old_status_id => os.id, :new_status_id => ns.id) unless os == ns
+              Tracker.all.each { |t|
+                [new, in_progress, resolved, feedback].each { |os|
+                  [in_progress, resolved, feedback, closed].each { |ns|
+                    WorkflowTransition.create!(:tracker_id => t.id, :role_id => developer.id, :old_status_id => os.id, :new_status_id => ns.id) unless os == ns
+                  }
                 }
               }
-            }
 
-            Tracker.all.each { |t|
-              [new, in_progress, resolved, feedback].each { |os|
-                [closed].each { |ns|
-                  WorkflowTransition.create!(:tracker_id => t.id, :role_id => reporter.id, :old_status_id => os.id, :new_status_id => ns.id) unless os == ns
+              Tracker.all.each { |t|
+                [new, in_progress, resolved, feedback].each { |os|
+                  [closed].each { |ns|
+                    WorkflowTransition.create!(:tracker_id => t.id, :role_id => reporter.id, :old_status_id => os.id, :new_status_id => ns.id) unless os == ns
+                  }
                 }
+                WorkflowTransition.create!(:tracker_id => t.id, :role_id => reporter.id, :old_status_id => resolved.id, :new_status_id => feedback.id)
               }
-              WorkflowTransition.create!(:tracker_id => t.id, :role_id => reporter.id, :old_status_id => resolved.id, :new_status_id => feedback.id)
-            }
+            end
 
             # Enumerations
             IssuePriority.create!(:name => l(:default_priority_low), :position => 1)

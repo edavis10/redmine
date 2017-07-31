@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -33,8 +33,8 @@ class Redmine::BoolFieldFormatTest < ActionView::TestCase
     tag = field.format.edit_tag(self, 'abc', 'xyz', value)
     assert_select_in tag, 'input[name=xyz]', 2
     assert_select_in tag, 'input[id=abc]', 1
-    assert_select_in tag, 'input[type=hidden][value=0]'
-    assert_select_in tag, 'input[type=checkbox][value=1]'
+    assert_select_in tag, 'input[type=hidden][value="0"]'
+    assert_select_in tag, 'input[type=checkbox][value="1"]'
   end
 
   def test_check_box_should_be_checked_when_value_is_set
@@ -42,7 +42,7 @@ class Redmine::BoolFieldFormatTest < ActionView::TestCase
     value = CustomFieldValue.new(:custom_field => field, :customized => Issue.new, :value => '1')
 
     tag = field.format.edit_tag(self, 'abc', 'xyz', value)
-    assert_select_in tag, 'input[type=checkbox][value=1][checked=checked]'
+    assert_select_in tag, 'input[type=checkbox][value="1"][checked=checked]'
   end
 
   def test_radio_style_should_render_edit_tag_as_radio_buttons

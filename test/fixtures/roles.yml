@@ -4,6 +4,7 @@ roles_001:
   id: 1
   builtin: 0
   issues_visibility: all
+  users_visibility: all
   permissions: |
     --- 
     - :add_project
@@ -16,10 +17,10 @@ roles_001:
     - :view_issues
     - :add_issues
     - :edit_issues
+    - :copy_issues
     - :manage_issue_relations
     - :manage_subtasks
     - :add_issue_notes
-    - :move_issues
     - :delete_issues
     - :view_issue_watchers
     - :add_issue_watchers
@@ -35,6 +36,7 @@ roles_001:
     - :view_time_entries
     - :edit_time_entries
     - :delete_time_entries
+    - :view_news
     - :manage_news
     - :comment_news
     - :view_documents
@@ -49,6 +51,8 @@ roles_001:
     - :protect_wiki_pages
     - :delete_wiki_pages
     - :rename_wiki_pages
+    - :manage_wiki
+    - :view_messages
     - :add_messages
     - :edit_messages
     - :delete_messages
@@ -60,6 +64,7 @@ roles_001:
     - :view_changesets
     - :manage_related_issues
     - :manage_project_activities
+    - :import_issues
 
   position: 1
 roles_002: 
@@ -67,6 +72,7 @@ roles_002:
   id: 2
   builtin: 0
   issues_visibility: default
+  users_visibility: all
   permissions: |
     --- 
     - :edit_project
@@ -76,10 +82,10 @@ roles_002:
     - :view_issues
     - :add_issues
     - :edit_issues
+    - :copy_issues
     - :manage_issue_relations
     - :manage_subtasks
     - :add_issue_notes
-    - :move_issues
     - :delete_issues
     - :view_issue_watchers
     - :save_queries
@@ -88,6 +94,7 @@ roles_002:
     - :log_time
     - :view_time_entries
     - :edit_own_time_entries
+    - :view_news
     - :manage_news
     - :comment_news
     - :view_documents
@@ -99,6 +106,7 @@ roles_002:
     - :edit_wiki_pages
     - :protect_wiki_pages
     - :delete_wiki_pages
+    - :view_messages
     - :add_messages
     - :edit_own_messages
     - :delete_own_messages
@@ -114,6 +122,7 @@ roles_003:
   id: 3
   builtin: 0
   issues_visibility: default
+  users_visibility: all
   permissions: |
     --- 
     - :edit_project
@@ -125,13 +134,13 @@ roles_003:
     - :edit_issues
     - :manage_issue_relations
     - :add_issue_notes
-    - :move_issues
     - :view_issue_watchers
     - :save_queries
     - :view_gantt
     - :view_calendar
     - :log_time
     - :view_time_entries
+    - :view_news
     - :manage_news
     - :comment_news
     - :view_documents
@@ -142,6 +151,7 @@ roles_003:
     - :view_wiki_edits
     - :edit_wiki_pages
     - :delete_wiki_pages
+    - :view_messages
     - :add_messages
     - :manage_boards
     - :view_files
@@ -155,6 +165,7 @@ roles_004:
   id: 4
   builtin: 1
   issues_visibility: default
+  users_visibility: all
   permissions: |
     --- 
     - :view_issues
@@ -167,23 +178,26 @@ roles_004:
     - :view_calendar
     - :log_time
     - :view_time_entries
+    - :view_news
     - :comment_news
     - :view_documents
     - :view_wiki_pages
     - :view_wiki_edits
     - :edit_wiki_pages
+    - :view_messages
     - :add_messages
     - :view_files
     - :manage_files
     - :browse_repository
     - :view_changesets
 
-  position: 4
+  position: 1
 roles_005: 
   name: Anonymous
   id: 5
   builtin: 2
   issues_visibility: default
+  users_visibility: all
   permissions: |
     --- 
     - :view_issues
@@ -191,12 +205,14 @@ roles_005:
     - :view_gantt
     - :view_calendar
     - :view_time_entries
+    - :view_news
     - :view_documents
     - :view_wiki_pages
     - :view_wiki_edits
+    - :view_messages
     - :view_files
     - :browse_repository
     - :view_changesets
 
-  position: 5
+  position: 1
 

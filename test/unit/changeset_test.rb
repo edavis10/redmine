@@ -1,7 +1,7 @@
 # encoding: utf-8
 #
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,10 +22,13 @@ require File.expand_path('../../test_helper', __FILE__)
 class ChangesetTest < ActiveSupport::TestCase
   fixtures :projects, :repositories,
            :issues, :issue_statuses, :issue_categories,
+           :journals, :journal_details,
+           :workflows,
            :changesets, :changes,
            :enumerations,
            :custom_fields, :custom_values,
            :users, :members, :member_roles,
+           :email_addresses,
            :trackers, :projects_trackers,
            :enabled_modules, :roles
 
@@ -162,6 +165,42 @@ class ChangesetTest < ActiveSupport::TestCase
     assert_equal [1,2,3], c.issue_ids.sort
   end
 
+  def test_ref_keywords_with_large_number_should_not_error
+    Setting.commit_ref_keywords = '*'
+    c = Changeset.new(:repository   => Project.find(1).repository,
+                      :committed_on => Time.now,
+                      :comments     => 'Out of range #2010021810000121',
+                      :revision     => '12345')
+    assert_nothing_raised do
+      assert c.save
+    end
+    assert_equal [], c.issue_ids.sort
+  end
+
+  def test_update_keywords_with_changes_should_create_journal
+    issue = Issue.generate!(:project_id => 1, :status_id => 1)
+
+    with_settings :commit_update_keywords => [{'keywords' => 'fixes', 'status_id' => '3'}] do
+      assert_difference 'Journal.count' do
+        c = Changeset.generate!(:repository => Project.find(1).repository,:comments => "Fixes ##{issue.id}")
+        assert_include c.id, issue.reload.changeset_ids
+        journal = Journal.order('id DESC').first
+        assert_equal 1, journal.details.count
+      end
+    end
+  end
+
+  def test_update_keywords_without_change_should_not_create_journal
+    issue = Issue.generate!(:project_id => 1, :status_id => 3)
+
+    with_settings :commit_update_keywords => [{'keywords' => 'fixes', 'status_id' => '3'}] do
+      assert_no_difference 'Journal.count' do
+        c = Changeset.generate!(:repository => Project.find(1).repository,:comments => "Fixes ##{issue.id}")
+        assert_include c.id, issue.reload.changeset_ids
+      end
+    end
+  end
+
   def test_update_keywords_with_multiple_rules
     with_settings :commit_update_keywords => [
       {'keywords' => 'fixes, closes', 'status_id' => '5'},
@@ -176,7 +215,7 @@ class ChangesetTest < ActiveSupport::TestCase
     end
   end
 
-  def test_update_keywords_with_multiple_rules_should_match_tracker
+  def test_update_keywords_with_multiple_rules_for_the_same_keyword_should_match_tracker
     with_settings :commit_update_keywords => [
       {'keywords' => 'fixes', 'status_id' => '5', 'if_tracker_id' => '2'},
       {'keywords' => 'fixes', 'status_id' => '3', 'if_tracker_id' => ''}
@@ -187,6 +226,24 @@ class ChangesetTest < ActiveSupport::TestCase
       Changeset.generate!(:comments => "Fixes ##{issue1.id}, ##{issue2.id}")
       assert_equal 5, issue1.reload.status_id
       assert_equal 3, issue2.reload.status_id
+    end
+  end
+
+  def test_update_keywords_with_multiple_rules_for_the_same_tracker_should_match_keyword
+    with_settings :commit_update_keywords => [
+      {'keywords' => 'Fixes, Closes', 'status_id' => '5', 'done_ratio' => '100', 'if_tracker_id' => '2'},
+      {'keywords' => 'Testing',       'status_id' => '3', 'done_ratio' => '90',  'if_tracker_id' => '2'}
+    ] do
+
+      issue1 = Issue.generate!(:tracker_id => 2)
+      issue2 = Issue.generate!(:tracker_id => 2)
+      Changeset.generate!(:comments => "Testing ##{issue1.id}, Fixes ##{issue2.id}")
+      issue1.reload
+      assert_equal 3, issue1.status_id
+      assert_equal 90, issue1.done_ratio
+      issue2.reload
+      assert_equal 5, issue2.status_id
+      assert_equal 100, issue2.done_ratio
     end
   end
 
@@ -388,8 +445,7 @@ class ChangesetTest < ActiveSupport::TestCase
   def test_comments_should_be_converted_to_utf8
     proj = Project.find(3)
     # str = File.read("#{RAILS_ROOT}/test/fixtures/encoding/iso-8859-1.txt")
-    str = "Texte encod\xe9 en ISO-8859-1."
-    str.force_encoding("ASCII-8BIT") if str.respond_to?(:force_encoding)
+    str = "Texte encod\xe9 en ISO-8859-1.".force_encoding("ASCII-8BIT")
     r = Repository::Bazaar.create!(
             :project      => proj,
             :url          => '/tmp/test/bazaar',
@@ -401,18 +457,15 @@ class ChangesetTest < ActiveSupport::TestCase
                       :scmid        => '12345',
                       :comments     => str)
     assert( c.save )
-    str_utf8 = "Texte encod\xc3\xa9 en ISO-8859-1."
-    str_utf8.force_encoding("UTF-8") if str_utf8.respond_to?(:force_encoding)
+    str_utf8 = "Texte encod\xc3\xa9 en ISO-8859-1.".force_encoding("UTF-8")
     assert_equal str_utf8, c.comments
   end
 
   def test_invalid_utf8_sequences_in_comments_should_be_replaced_latin1
     proj = Project.find(3)
     # str = File.read("#{RAILS_ROOT}/test/fixtures/encoding/iso-8859-1.txt")
-    str1 = "Texte encod\xe9 en ISO-8859-1."
-    str2 = "\xe9a\xe9b\xe9c\xe9d\xe9e test"
-    str1.force_encoding("UTF-8") if str1.respond_to?(:force_encoding)
-    str2.force_encoding("ASCII-8BIT") if str2.respond_to?(:force_encoding)
+    str1 = "Texte encod\xe9 en ISO-8859-1.".force_encoding("UTF-8")
+    str2 = "\xe9a\xe9b\xe9c\xe9d\xe9e test".force_encoding("ASCII-8BIT")
     r = Repository::Bazaar.create!(
             :project      => proj,
             :url          => '/tmp/test/bazaar',
@@ -431,10 +484,7 @@ class ChangesetTest < ActiveSupport::TestCase
 
   def test_invalid_utf8_sequences_in_comments_should_be_replaced_ja_jis
     proj = Project.find(3)
-    str = "test\xb5\xfetest\xb5\xfe"
-    if str.respond_to?(:force_encoding)
-      str.force_encoding('ASCII-8BIT')
-    end
+    str = "test\xb5\xfetest\xb5\xfe".force_encoding('ASCII-8BIT')
     r = Repository::Bazaar.create!(
             :project      => proj,
             :url          => '/tmp/test/bazaar',
@@ -453,14 +503,12 @@ class ChangesetTest < ActiveSupport::TestCase
     s1 = "\xC2\x80"
     s2 = "\xc3\x82\xc2\x80"
     s4 = s2.dup
-    if s1.respond_to?(:force_encoding)
-      s3 = s1.dup
-      s1.force_encoding('ASCII-8BIT')
-      s2.force_encoding('ASCII-8BIT')
-      s3.force_encoding('ISO-8859-1')
-      s4.force_encoding('UTF-8')
-      assert_equal s3.encode('UTF-8'), s4
-    end
+    s3 = s1.dup
+    s1.force_encoding('ASCII-8BIT')
+    s2.force_encoding('ASCII-8BIT')
+    s3.force_encoding('ISO-8859-1')
+    s4.force_encoding('UTF-8')
+    assert_equal s3.encode('UTF-8'), s4
     proj = Project.find(3)
     r = Repository::Bazaar.create!(
             :project      => proj,
@@ -478,10 +526,8 @@ class ChangesetTest < ActiveSupport::TestCase
 
   def test_invalid_utf8_sequences_in_paths_should_be_replaced
     proj = Project.find(3)
-    str1 = "Texte encod\xe9 en ISO-8859-1"
-    str2 = "\xe9a\xe9b\xe9c\xe9d\xe9e test"
-    str1.force_encoding("UTF-8")      if str1.respond_to?(:force_encoding)
-    str2.force_encoding("ASCII-8BIT") if str2.respond_to?(:force_encoding)
+    str1 = "Texte encod\xe9 en ISO-8859-1".force_encoding("UTF-8")
+    str2 = "\xe9a\xe9b\xe9c\xe9d\xe9e test".force_encoding("ASCII-8BIT")
     r = Repository::Bazaar.create!(
             :project => proj,
             :url => '/tmp/test/bazaar',
@@ -520,10 +566,8 @@ class ChangesetTest < ActiveSupport::TestCase
                       :committer    => nil)
     assert( c.save )
     assert_equal "", c.comments
-    assert_equal nil, c.committer
-    if c.comments.respond_to?(:force_encoding)
-      assert_equal "UTF-8", c.comments.encoding.to_s
-    end
+    assert_nil c.committer
+    assert_equal "UTF-8", c.comments.encoding.to_s
   end
 
   def test_comments_empty
@@ -542,10 +586,8 @@ class ChangesetTest < ActiveSupport::TestCase
     assert( c.save )
     assert_equal "", c.comments
     assert_equal "", c.committer
-    if c.comments.respond_to?(:force_encoding)
-      assert_equal "UTF-8", c.comments.encoding.to_s
-      assert_equal "UTF-8", c.committer.encoding.to_s
-    end
+    assert_equal "UTF-8", c.comments.encoding.to_s
+    assert_equal "UTF-8", c.committer.encoding.to_s
   end
 
   def test_comments_should_accept_more_than_64k

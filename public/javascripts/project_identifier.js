@@ -1,3 +1,6 @@
+/* Redmine - project management software
+   Copyright (C) 2006-2017  Jean-Philippe Lang */
+
 // Automatic project identifier generation
 
 function generateProjectIdentifier(identifier, maxlength) {

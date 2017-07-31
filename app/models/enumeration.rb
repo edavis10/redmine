@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,25 +18,23 @@
 class Enumeration < ActiveRecord::Base
   include Redmine::SubclassFactory
 
-  default_scope :order => "#{Enumeration.table_name}.position ASC"
+  default_scope lambda {order(:position)}
 
   belongs_to :project
 
-  acts_as_list :scope => 'type = \'#{type}\''
+  acts_as_positioned :scope => :parent_id
   acts_as_customizable
-  acts_as_tree :order => "#{Enumeration.table_name}.position ASC"
+  acts_as_tree
 
   before_destroy :check_integrity
   before_save    :check_default
-
-  attr_protected :type
 
   validates_presence_of :name
   validates_uniqueness_of :name, :scope => [:type, :project_id]
   validates_length_of :name, :maximum => 30
 
   scope :shared, lambda { where(:project_id => nil) }
-  scope :sorted, lambda { order("#{table_name}.position ASC") }
+  scope :sorted, lambda { order(:position) }
   scope :active, lambda { where(:active => true) }
   scope :system, lambda { where(:project_id => nil) }
   scope :named, lambda {|arg| where("LOWER(#{table_name}.name) = LOWER(?)", arg.to_s.strip)}
@@ -103,12 +101,6 @@ class Enumeration < ActiveRecord::Base
     subclasses
   end
 
-  # TODO: remove in Redmine 3.0
-  def self.overridding_change?(new, previous)
-    ActiveSupport::Deprecation.warn "Enumeration#overridding_change? is deprecated and will be removed in Redmine 3.0. Please use #overriding_change?."
-    overriding_change?(new, previous)
-  end
-
   # Does the +new+ Hash override the previous Enumeration?
   def self.overriding_change?(new, previous)
     if (same_active_state?(new['active'], previous.active)) && same_custom_values?(new,previous)
@@ -135,11 +127,42 @@ class Enumeration < ActiveRecord::Base
     return new == previous
   end
 
-private
+  private
+
   def check_integrity
-    raise "Can't delete enumeration" if self.in_use?
+    raise "Cannot delete enumeration" if self.in_use?
   end
 
+  # Overrides Redmine::Acts::Positioned#set_default_position so that enumeration overrides
+  # get the same position as the overridden enumeration
+  def set_default_position
+    if position.nil? && parent
+      self.position = parent.position
+    end
+    super
+  end
+
+  # Overrides Redmine::Acts::Positioned#update_position so that overrides get the same
+  # position as the overridden enumeration
+  def update_position
+    super
+    if saved_change_to_position?
+      self.class.where.not(:parent_id => nil).update_all(
+        "position = coalesce((
+          select position
+          from (select id, position from enumerations) as parent
+          where parent_id = parent.id), 1)"
+      )
+    end
+  end
+
+  # Overrides Redmine::Acts::Positioned#remove_position so that enumeration overrides
+  # get the same position as the overridden enumeration
+  def remove_position
+    if parent_id.blank?
+      super
+    end
+  end
 end
 
 # Force load the subclasses in development mode

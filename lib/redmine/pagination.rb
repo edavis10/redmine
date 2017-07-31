@@ -1,7 +1,7 @@
 # encoding: utf-8
 #
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -67,6 +67,10 @@ module Redmine
         end
       end
 
+      def multiple_pages?
+        per_page < item_count
+      end
+
       def first_item
         item_count == 0 ? 0 : (offset + 1)
       end
@@ -112,28 +116,11 @@ module Redmine
     #
     def paginate(scope, options={})
       options = options.dup
-      finder_options = options.extract!(
-        :conditions,
-        :order,
-        :joins,
-        :include,
-        :select
-      )
-      if scope.is_a?(Symbol) || finder_options.values.compact.any?
-        return deprecated_paginate(scope, finder_options, options)
-      end
 
       paginator = paginator(scope.count, options)
       collection = scope.limit(paginator.per_page).offset(paginator.offset).to_a
 
       return paginator, collection
-    end
-
-    def deprecated_paginate(arg, finder_options, options={})
-      ActiveSupport::Deprecation.warn "#paginate with a Symbol and/or find options is depreceted and will be removed. Use a scope instead."
-      klass = arg.is_a?(Symbol) ? arg.to_s.classify.constantize : arg
-      scope = klass.scoped(finder_options)
-      paginate(scope, options)
     end
 
     def paginator(item_count, options={})
@@ -158,7 +145,7 @@ module Redmine
           if block_given?
             yield text, parameters, options
           else
-            link_to text, params.merge(parameters), options
+            link_to text, {:params => request.query_parameters.merge(parameters)}, options
           end
         end
       end
@@ -172,38 +159,56 @@ module Redmine
         per_page_links = false if count.nil?
         page_param = paginator.page_param
 
-        html = ''
-        if paginator.previous_page
+        html = '<ul class="pages">'
+
+        if paginator.multiple_pages?
           # \xc2\xab(utf-8) = &#171;
           text = "\xc2\xab " + l(:label_previous)
-          html << yield(text, {page_param => paginator.previous_page}, :class => 'previous') + ' '
+          if paginator.previous_page
+            html << content_tag('li',
+                                yield(text, {page_param => paginator.previous_page},
+                                      :accesskey => accesskey(:previous)),
+                                :class => 'previous page')
+          else
+            html << content_tag('li', content_tag('span', text), :class => 'previous')
+          end
         end
 
         previous = nil
         paginator.linked_pages.each do |page|
           if previous && previous != page - 1
-            html << content_tag('span', '...', :class => 'spacer') + ' '
+            html << content_tag('li', content_tag('span', '&hellip;'.html_safe), :class => 'spacer')
           end
           if page == paginator.page
-            html << content_tag('span', page.to_s, :class => 'current page')
+            html << content_tag('li', content_tag('span', page.to_s), :class => 'current')
           else
-            html << yield(page.to_s, {page_param => page}, :class => 'page')
+            html << content_tag('li',
+                                yield(page.to_s, {page_param => page}),
+                                :class => 'page')
           end
-          html << ' '
           previous = page
         end
 
-        if paginator.next_page
+        if paginator.multiple_pages?
           # \xc2\xbb(utf-8) = &#187;
           text = l(:label_next) + " \xc2\xbb"
-          html << yield(text, {page_param => paginator.next_page}, :class => 'next') + ' '
+          if paginator.next_page
+            html << content_tag('li',
+                                yield(text, {page_param => paginator.next_page},
+                                      :accesskey => accesskey(:next)),
+                                :class => 'next page')
+          else
+            html << content_tag('li', content_tag('span', text), :class => 'next')
+          end
         end
+        html << '</ul>'
 
-        html << content_tag('span', "(#{paginator.first_item}-#{paginator.last_item}/#{paginator.item_count})", :class => 'items') + ' '
-
+        info = ''.html_safe
+        info << content_tag('span', "(#{paginator.first_item}-#{paginator.last_item}/#{paginator.item_count})", :class => 'items') + ' '
         if per_page_links != false && links = per_page_links(paginator, &block)
-          html << content_tag('span', links.to_s, :class => 'per-page')
+          info << content_tag('span', links.to_s, :class => 'per-page')
         end
+        html << content_tag('span', info)
 
         html.html_safe
       end
@@ -214,7 +219,7 @@ module Redmine
         if values.any?
           links = values.collect do |n|
             if n == paginator.per_page
-              content_tag('span', n.to_s)
+              content_tag('span', n.to_s, :class => 'selected')
             else
               yield(n, :per_page => n, paginator.page_param => nil)
             end

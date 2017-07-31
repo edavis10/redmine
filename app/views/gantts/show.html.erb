@@ -6,7 +6,7 @@
 <% end %>
 </div>
 
-<h2><%= @query.new_record? ? l(:label_gantt) : h(@query.name) %></h2>
+<h2><%= @query.new_record? ? l(:label_gantt) : @query.name %></h2>
 
 <%= form_tag({:controller => 'gantts', :action => 'show',
              :project_id => @project, :month => params[:month],
@@ -14,45 +14,50 @@
              :method => :get, :id => 'query_form') do %>
 <%= hidden_field_tag 'set_filter', '1' %>
 <%= hidden_field_tag 'gantt', '1' %>
-<fieldset id="filters" class="collapsible <%= @query.new_record? ? "" : "collapsed" %>">
-  <legend onclick="toggleFieldset(this);"><%= l(:label_filter_plural) %></legend>
-  <div style="<%= @query.new_record? ? "" : "display: none;" %>">
-    <%= render :partial => 'queries/filters', :locals => {:query => @query} %>
-  </div>
-</fieldset>
-<fieldset class="collapsible collapsed">
-  <legend onclick="toggleFieldset(this);"><%= l(:label_options) %></legend>
-  <div style="display: none;">
-    <table>
-      <tr>
-        <td>
-          <fieldset>
-            <legend><%= l(:label_related_issues) %></legend>
-            <label for="draw_relations">
-              <%= check_box 'query', 'draw_relations', :id => 'draw_relations' %>
-              <% rels = [IssueRelation::TYPE_BLOCKS, IssueRelation::TYPE_PRECEDES] %>
-              <% rels.each do |rel| %>
-                <% color = Redmine::Helpers::Gantt::DRAW_TYPES[rel][:color] %>
-                <%= content_tag(:span, '&nbsp;&nbsp;&nbsp;'.html_safe,
-                                :style => "background-color: #{color}") %>
-                <%= l(IssueRelation::TYPES[rel][:name]) %>
-              <% end %>
-            </label>
-          </fieldset>
-        </td>
-        <td>
-          <fieldset>
-            <legend><%= l(:label_gantt_progress_line) %></legend>
-            <label for="draw_progress_line">
-              <%= check_box 'query', 'draw_progress_line', :id => 'draw_progress_line' %>
-              <%= l(:label_display) %>
-            </label>
-          </fieldset>
-        </td>
-      </tr>
-    </table>
-  </div>
-</fieldset>
+
+<div id="query_form_with_buttons" class="hide-when-print">
+<div id="query_form_content">
+  <fieldset id="filters" class="collapsible <%= @query.new_record? ? "" : "collapsed" %>">
+    <legend onclick="toggleFieldset(this);"><%= l(:label_filter_plural) %></legend>
+    <div style="<%= @query.new_record? ? "" : "display: none;" %>">
+      <%= render :partial => 'queries/filters', :locals => {:query => @query} %>
+    </div>
+  </fieldset>
+
+  <fieldset id="options" class="collapsible collapsed">
+    <legend onclick="toggleFieldset(this);"><%= l(:label_options) %></legend>
+    <div style="display: none;">
+      <table>
+        <tr>
+          <td>
+            <fieldset>
+              <legend><%= l(:label_related_issues) %></legend>
+              <label for="draw_relations">
+                <%= check_box 'query', 'draw_relations', :id => 'draw_relations' %>
+                <% rels = [IssueRelation::TYPE_BLOCKS, IssueRelation::TYPE_PRECEDES] %>
+                <% rels.each do |rel| %>
+                  <% color = Redmine::Helpers::Gantt::DRAW_TYPES[rel][:color] %>
+                  <%= content_tag(:span, '&nbsp;&nbsp;&nbsp;'.html_safe,
+                                  :style => "background-color: #{color}") %>
+                  <%= l(IssueRelation::TYPES[rel][:name]) %>
+                <% end %>
+              </label>
+            </fieldset>
+          </td>
+          <td>
+            <fieldset>
+              <legend><%= l(:label_gantt_progress_line) %></legend>
+              <label for="draw_progress_line">
+                <%= check_box 'query', 'draw_progress_line', :id => 'draw_progress_line' %>
+                <%= l(:label_display) %>
+              </label>
+            </fieldset>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </fieldset>
+</div>
 
 <p class="contextual">
   <%= gantt_zoom_link(@gantt, :in) %>
@@ -60,22 +65,23 @@
 </p>
 
 <p class="buttons">
-<%= text_field_tag 'months', @gantt.months, :size => 2 %>
-<%= l(:label_months_from) %>
-<%= select_month(@gantt.month_from, :prefix => "month", :discard_type => true) %>
-<%= select_year(@gantt.year_from, :prefix => "year", :discard_type => true) %>
-<%= hidden_field_tag 'zoom', @gantt.zoom %>
+  <%= text_field_tag 'months', @gantt.months, :size => 2 %>
+  <%= l(:label_months_from) %>
+  <%= select_month(@gantt.month_from, :prefix => "month", :discard_type => true) %>
+  <%= select_year(@gantt.year_from, :prefix => "year", :discard_type => true) %>
+  <%= hidden_field_tag 'zoom', @gantt.zoom %>
 
-<%= link_to_function l(:button_apply), '$("#query_form").submit()',
-                     :class => 'icon icon-checked' %>
-<%= link_to l(:button_clear), { :project_id => @project, :set_filter => 1 },
-            :class => 'icon icon-reload' %>
-<% if @query.new_record? && User.current.allowed_to?(:save_queries, @project, :global => true) %>
-  <%= link_to_function l(:button_save),
-                       "$('#query_form').attr('action', '#{ @project ? new_project_query_path(@project) : new_query_path }').submit();",
-                       :class => 'icon icon-save' %>
-<% end %>
+  <%= link_to_function l(:button_apply), '$("#query_form").submit()',
+                       :class => 'icon icon-checked' %>
+  <%= link_to l(:button_clear), { :project_id => @project, :set_filter => 1 },
+              :class => 'icon icon-reload' %>
+  <% if @query.new_record? && User.current.allowed_to?(:save_queries, @project, :global => true) %>
+    <%= link_to_function l(:button_save),
+                         "$('#query_form').attr('action', '#{ @project ? new_project_query_path(@project) : new_query_path }').submit();",
+                         :class => 'icon icon-save' %>
+  <% end %>
 </p>
+</div>
 <% end %>
 
 <%= error_messages_for 'query' %>
@@ -90,6 +96,7 @@
   headers_height = header_height
   show_weeks = false
   show_days  = false
+  show_day_num = false
 
   if @gantt.zoom > 1
     show_weeks = true
@@ -97,6 +104,10 @@
     if @gantt.zoom > 2
         show_days = true
         headers_height = 3 * header_height
+        if @gantt.zoom > 3
+          show_day_num = true
+          headers_height = 4 * header_height
+        end
     end
   end
 
@@ -116,14 +127,14 @@
 
 <table style="width:100%; border:0; border-collapse: collapse;">
 <tr>
-<td style="width:<%= subject_width %>px; padding:0px;">
+<td style="width:<%= subject_width %>px; padding:0px;" class="gantt_subjects_column">
   <%
     style  = ""
     style += "position:relative;"
     style += "height: #{t_height + 24}px;"
     style += "width: #{subject_width + 1}px;"
   %>
-  <%= content_tag(:div, :style => style) do %>
+  <%= content_tag(:div, :style => style, :class => "gantt_subjects_container") do %>
     <%
       style  = ""
       style += "right:-2px;"
@@ -172,7 +183,7 @@
     style += "height: #{height}px;"
   %>
   <%= content_tag(:div, :style => style, :class => "gantt_hdr") do %>
-    <%= link_to h("#{month_f.year}-#{month_f.month}"),
+    <%= link_to "#{month_f.year}-#{month_f.month}",
                 @gantt.params.merge(:year => month_f.year, :month => month_f.month),
                 :title => "#{month_name(month_f.month)} #{month_f.year}" %>
   <% end %>
@@ -231,11 +242,44 @@
   <% end %>
 <% end %>
 
+<% ###### Day numbers headers ###### %>
+<% if show_day_num %>
+  <%
+    left = 0
+    height = g_height + header_height*2 - 1
+    wday = @gantt.date_from.cwday
+    day_num = @gantt.date_from
+  %>
+  <% (@gantt.date_to - @gantt.date_from + 1).to_i.times do %>
+    <%
+      width =  zoom - 1
+      style = ""
+      style += "left:#{left}px;"
+      style += "top:37px;"
+      style += "width:#{width}px;"
+      style += "height:#{height}px;"
+      style += "font-size:0.7em;"
+      clss = "gantt_hdr"
+      clss << " nwday" if @gantt.non_working_week_days.include?(wday)
+    %>
+    <%= content_tag(:div, :style => style, :class => clss) do %>
+      <%= day_num.day %>
+    <% end %>
+    <%
+     left = left + width+1
+     day_num = day_num + 1
+     wday = wday + 1
+     wday = 1 if wday > 7
+    %>
+  <% end %>
+<% end %> 
+
 <% ###### Days headers ####### %>
 <% if show_days %>
   <%
     left = 0
     height = g_height + header_height - 1
+    top = (show_day_num ? 55 : 37)
     wday = @gantt.date_from.cwday
   %>
   <% (@gantt.date_to - @gantt.date_from + 1).to_i.times do %>
@@ -243,7 +287,7 @@
       width =  zoom - 1
       style  = ""
       style += "left: #{left}px;"
-      style += "top:37px;"
+      style += "top: #{top}px;"
       style += "width: #{width}px;"
       style += "height: #{height}px;"
       style += "font-size:0.7em;"
@@ -264,9 +308,9 @@
 <%= @gantt.lines.html_safe %>
 
 <% ###### Today red line (excluded from cache) ###### %>
-<% if Date.today >= @gantt.date_from and Date.today <= @gantt.date_to %>
+<% if User.current.today >= @gantt.date_from and User.current.today <= @gantt.date_to %>
   <%
-    today_left = (((Date.today - @gantt.date_from + 1) * zoom).floor() - 1).to_i
+    today_left = (((User.current.today - @gantt.date_from + 1) * zoom).floor() - 1).to_i
     style  = ""
     style += "position: absolute;"
     style += "height: #{g_height}px;"
@@ -294,19 +338,21 @@
 <table style="width:100%">
 <tr>
   <td style="text-align:left;">
-    <%= link_to_content_update("\xc2\xab " + l(:label_previous),
-                               params.merge(@gantt.params_previous)) %>
+    <%= link_to("\xc2\xab " + l(:label_previous),
+                               {:params => request.query_parameters.merge(@gantt.params_previous)},
+                               :accesskey => accesskey(:previous)) %>
   </td>
   <td style="text-align:right;">
-    <%= link_to_content_update(l(:label_next) + " \xc2\xbb",
-                               params.merge(@gantt.params_next)) %>
+    <%= link_to(l(:label_next) + " \xc2\xbb",
+                               {:params => request.query_parameters.merge(@gantt.params_next)},
+                               :accesskey => accesskey(:next)) %>
   </td>
 </tr>
 </table>
 
 <% other_formats_links do |f| %>
-  <%= f.link_to 'PDF', :url => params.merge(@gantt.params) %>
-  <%= f.link_to('PNG', :url => params.merge(@gantt.params)) if @gantt.respond_to?('to_image') %>
+  <%= f.link_to_with_query_parameters 'PDF', @gantt.params %>
+  <%= f.link_to_with_query_parameters('PNG', @gantt.params) if @gantt.respond_to?('to_image') %>
 <% end %>
 <% end # query.valid? %>
 

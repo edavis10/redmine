@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,22 +20,22 @@ class WorkflowRule < ActiveRecord::Base
 
   belongs_to :role
   belongs_to :tracker
-  belongs_to :old_status, :class_name => 'IssueStatus', :foreign_key => 'old_status_id'
-  belongs_to :new_status, :class_name => 'IssueStatus', :foreign_key => 'new_status_id'
+  belongs_to :old_status, :class_name => 'IssueStatus'
+  belongs_to :new_status, :class_name => 'IssueStatus'
 
-  validates_presence_of :role, :tracker, :old_status
+  validates_presence_of :role, :tracker
 
   # Copies workflows from source to targets
   def self.copy(source_tracker, source_role, target_trackers, target_roles)
     unless source_tracker.is_a?(Tracker) || source_role.is_a?(Role)
-      raise ArgumentError.new("source_tracker or source_role must be specified")
+      raise ArgumentError.new("source_tracker or source_role must be specified, given: #{source_tracker.class.name} and #{source_role.class.name}")
     end
 
     target_trackers = [target_trackers].flatten.compact
     target_roles = [target_roles].flatten.compact
 
-    target_trackers = Tracker.sorted.all if target_trackers.empty?
-    target_roles = Role.all if target_roles.empty?
+    target_trackers = Tracker.sorted.to_a if target_trackers.empty?
+    target_roles = Role.all.select(&:consider_workflow?) if target_roles.empty?
 
     target_trackers.each do |target_tracker|
       target_roles.each do |target_role|
@@ -61,7 +61,7 @@ class WorkflowRule < ActiveRecord::Base
       false
     else
       transaction do
-        delete_all :tracker_id => target_tracker.id, :role_id => target_role.id
+        where(:tracker_id => target_tracker.id, :role_id => target_role.id).delete_all
         connection.insert "INSERT INTO #{WorkflowRule.table_name} (tracker_id, role_id, old_status_id, new_status_id, author, assignee, field_name, #{connection.quote_column_name 'rule'}, type)" +
                           " SELECT #{target_tracker.id}, #{target_role.id}, old_status_id, new_status_id, author, assignee, field_name, #{connection.quote_column_name 'rule'}, type" +
                           " FROM #{WorkflowRule.table_name}" +

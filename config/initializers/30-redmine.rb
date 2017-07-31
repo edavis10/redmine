@@ -1,5 +1,7 @@
 I18n.default_locale = 'en'
 I18n.backend = Redmine::I18n::Backend.new
+# Forces I18n to load available locales from the backend
+I18n.config.available_locales = nil
 
 require 'redmine'
 
@@ -13,7 +15,7 @@ if Object.const_defined?(:OpenIdAuthentication)
   openid_authentication_store = Redmine::Configuration['openid_authentication_store']
   OpenIdAuthentication.store =
     openid_authentication_store.present? ?
-      openid_authentication_store : :memory   
+      openid_authentication_store : :memory
 end
 
 Redmine::Plugin.load

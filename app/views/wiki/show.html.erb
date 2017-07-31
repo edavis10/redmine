@@ -1,4 +1,7 @@
 <div class="contextual">
+<% if User.current.allowed_to?(:edit_wiki_pages, @project) %>
+<%= link_to l(:label_wiki_page_new), new_project_wiki_page_path(@project, :parent => @page.title), :remote => true, :class => 'icon icon-add' %>
+<% end %>
 <% if @editable %>
 <% if @content.current_version? %>
   <%= link_to_if_authorized(l(:button_edit), {:action => 'edit', :id => @page.title}, :class => 'icon icon-edit', :accesskey => accesskey(:edit)) %>
@@ -11,7 +14,6 @@
   <%= link_to_if_authorized(l(:button_rollback), {:action => 'edit', :id => @page.title, :version => @content.version }, :class => 'icon icon-cancel') %>
 <% end %>
 <% end %>
-<%= link_to_if_authorized(l(:label_history), {:action => 'history', :id => @page.title}, :class => 'icon icon-history') %>
 </div>
 
 <%= wiki_page_breadcrumb(@page) %>
@@ -36,30 +38,39 @@
     <br />
     <em><%= @content.author ? link_to_user(@content.author) : l(:label_user_anonymous)
          %>, <%= format_time(@content.updated_on) %> </em><br />
-    <%=h @content.comments %>
+    <%= @content.comments %>
     </p>
     <hr />
 <% end %>
 
 <%= render(:partial => "wiki/content", :locals => {:content => @content}) %>
 
-<%= link_to_attachments @page %>
+<fieldset class="collapsible collapsed">
+  <legend onclick="toggleFieldset(this);"><%= l(:label_attachment_plural) %></legend>
+  <div style="display: none;">
 
-<% if @editable && authorize_for('wiki', 'add_attachment') %>
-<div id="wiki_add_attachment">
-<p><%= link_to l(:label_attachment_new), {}, :onclick => "$('#add_attachment_form').show(); return false;",
-                                             :id => 'attach_files_link' %></p>
-<%= form_tag({:controller => 'wiki', :action => 'add_attachment',
-              :project_id => @project, :id => @page.title},
-             :multipart => true, :id => "add_attachment_form",
-             :style => "display:none;") do %>
-  <div class="box">
-  <p><%= render :partial => 'attachments/form' %></p>
+  <%= link_to_attachments @page, :thumbnails => true %>
+  
+  <% if @editable && authorize_for('wiki', 'add_attachment') %>
+  <div id="wiki_add_attachment">
+    <%= form_tag({:controller => 'wiki', :action => 'add_attachment',
+                  :project_id => @project, :id => @page.title},
+                 :multipart => true, :id => "add_attachment_form") do %>
+      <div class="box">
+      <p><%= render :partial => 'attachments/form' %></p>
+      </div>
+      <%= submit_tag l(:button_add) %>
+    <% end %>
   </div>
-<%= submit_tag l(:button_add) %>
-<%= link_to l(:button_cancel), {}, :onclick => "$('#add_attachment_form').hide(); return false;" %>
-<% end %>
+  <% end %>
 </div>
+</fieldset>
+
+<% if User.current.allowed_to?(:view_wiki_edits, @project) %>
+<p class="wiki-update-info">
+  <%= wiki_content_update_info(@content) %>
+ · <%= link_to l(:label_x_revisions, :count => @content.version), {:action => 'history', :id => @page.title} %>
+</p>
 <% end %>
 
 <% other_formats_links do |f| %>

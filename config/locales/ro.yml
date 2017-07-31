@@ -125,6 +125,8 @@ ro:
         circular_dependency: "Această relație ar crea o dependență circulară"
         cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
         earlier_than_minimum_start_date: "cannot be earlier than %{date} because of preceding issues"
+        not_a_regexp: "is not a valid regular expression"
+        open_issue_with_closed_parent: "An open issue cannot be attached to a closed parent task"
 
   actionview_instancetag_blank_option: Selectați
 
@@ -132,14 +134,16 @@ ro:
   general_text_Yes: 'Da'
   general_text_no: 'nu'
   general_text_yes: 'da'
-  general_lang_name: 'Română'
+  general_lang_name: 'Romanian (Română)'
   general_csv_separator: '.'
   general_csv_decimal_separator: ','
   general_csv_encoding: UTF-8
+  general_pdf_fontname: freesans
+  general_pdf_monospaced_fontname: freemono
   general_first_day_of_week: '2'
 
   notice_account_updated: Cont actualizat.
-  notice_account_invalid_creditentials: Utilizator sau parola nevalidă
+  notice_account_invalid_credentials: Utilizator sau parola nevalidă
   notice_account_password_updated: Parolă actualizată.
   notice_account_wrong_password: Parolă greșită
   notice_account_register_done: Contul a fost creat. Pentru activare, urmați legătura trimisă prin email.
@@ -484,10 +488,6 @@ ro:
   label_open_issues_plural: deschise
   label_closed_issues: închis
   label_closed_issues_plural: închise
-  label_x_open_issues_abbr_on_total:
-    zero:  0 deschise / %{total}
-    one:   1 deschis / %{total}
-    other: "%{count} deschise / %{total}"
   label_x_open_issues_abbr:
     zero:  0 deschise
     one:   1 deschis
@@ -508,14 +508,12 @@ ro:
   label_used_by: Folosit de
   label_details: Detalii
   label_add_note: Adaugă o notă
-  label_per_page: pe pagină
   label_calendar: Calendar
   label_months_from: luni de la
   label_gantt: Gantt
   label_internal: Intern
   label_last_changes: "ultimele %{count} schimbări"
   label_change_view_all: Afișează toate schimbările
-  label_personalize_page: Personalizează aceasta pagina
   label_comment: Comentariu
   label_comment_plural: Comentarii
   label_x_comments:
@@ -616,10 +614,6 @@ ro:
   label_blocked_by: blocat de
   label_precedes: precede
   label_follows: urmează
-  label_end_to_start: de la sfârșit la început
-  label_end_to_end: de la sfârșit la sfârșit
-  label_start_to_start: de la început la început
-  label_start_to_end: de la început la sfârșit
   label_stay_logged_in: Păstrează autentificarea
   label_disabled: dezactivat
   label_show_completed_versions: Arată versiunile terminate
@@ -666,7 +660,6 @@ ro:
   label_age: vechime
   label_change_properties: Schimbă proprietățile
   label_general: General
-  label_more: Mai mult
   label_scm: SCM
   label_plugins: Plugin-uri
   label_ldap_authentication: autentificare LDAP
@@ -676,7 +669,6 @@ ro:
   label_preferences: Preferințe
   label_chronological_order: în ordine cronologică
   label_reverse_chronological_order: În ordine invers cronologică
-  label_planning: Planificare
   label_incoming_emails: Mesaje primite
   label_generate_key: Generează o cheie
   label_issue_watchers: Cine urmărește
@@ -896,9 +888,8 @@ ro:
   error_can_not_delete_custom_field: Unable to delete custom field
   error_unable_to_connect: Unable to connect (%{value})
   error_can_not_remove_role: This role is in use and can not be deleted.
-  error_can_not_delete_tracker: This tracker contains issues and can't be deleted.
+  error_can_not_delete_tracker: This tracker contains issues and cannot be deleted.
   field_principal: Principal
-  label_my_page_block: My page block
   notice_failed_to_save_members: "Failed to save member(s): %{errors}."
   text_zoom_out: Zoom out
   text_zoom_in: Zoom in
@@ -909,10 +900,8 @@ ro:
   project_module_calendar: Calendar
   button_edit_associated_wikipage: "Edit associated Wiki page: %{page_title}"
   field_text: Text field
-  label_user_mail_option_only_owner: Only for things I am the owner of
   setting_default_notification_option: Default notification option
   label_user_mail_option_only_my_events: Only for things I watch or I'm involved in
-  label_user_mail_option_only_assigned: Only for things I am assigned to
   label_user_mail_option_none: No events
   field_member_of_group: Assignee's group
   field_assigned_to_role: Assignee's role
@@ -969,16 +958,12 @@ ro:
   description_project_scope: Search scope
   description_filter: Filter
   description_user_mail_notification: Mail notification settings
-  description_date_from: Enter start date
   description_message_content: Message content
   description_available_columns: Available Columns
-  description_date_range_interval: Choose range by selecting start and end date
   description_issue_category_reassign: Choose issue category
   description_search: Searchfield
   description_notes: Notes
-  description_date_range_list: Choose range from list
   description_choose_project: Projects
-  description_date_to: Enter end date
   description_query_sort_criteria_attribute: Sort attribute
   description_wiki_subpages_reassign: Choose new parent page
   description_selected_columns: Selected Columns
@@ -1113,3 +1098,135 @@ ro:
   label_radio_buttons: radio buttons
   label_group_anonymous: Anonymous users
   label_group_non_member: Non member users
+  label_add_projects: Add projects
+  field_default_status: Default status
+  text_subversion_repository_note: 'Examples: file:///, http://, https://, svn://, svn+[tunnelscheme]://'
+  field_users_visibility: Users visibility
+  label_users_visibility_all: All active users
+  label_users_visibility_members_of_visible_projects: Members of visible projects
+  label_edit_attachments: Edit attached files
+  setting_link_copied_issue: Link issues on copy
+  label_link_copied_issue: Link copied issue
+  label_ask: Ask
+  label_search_attachments_yes: Search attachment filenames and descriptions
+  label_search_attachments_no: Do not search attachments
+  label_search_attachments_only: Search attachments only
+  label_search_open_issues_only: Open issues only
+  field_address: Email
+  setting_max_additional_emails: Maximum number of additional email addresses
+  label_email_address_plural: Emails
+  label_email_address_add: Add email address
+  label_enable_notifications: Enable notifications
+  label_disable_notifications: Disable notifications
+  setting_search_results_per_page: Search results per page
+  label_blank_value: blank
+  permission_copy_issues: Copy issues
+  error_password_expired: Your password has expired or the administrator requires you
+    to change it.
+  field_time_entries_visibility: Time logs visibility
+  setting_password_max_age: Require password change after
+  label_parent_task_attributes: Parent tasks attributes
+  label_parent_task_attributes_derived: Calculated from subtasks
+  label_parent_task_attributes_independent: Independent of subtasks
+  label_time_entries_visibility_all: All time entries
+  label_time_entries_visibility_own: Time entries created by the user
+  label_member_management: Member management
+  label_member_management_all_roles: All roles
+  label_member_management_selected_roles_only: Only these roles
+  label_password_required: Confirm your password to continue
+  label_total_spent_time: Overall spent time
+  notice_import_finished: "%{count} items have been imported"
+  notice_import_finished_with_errors: "%{count} out of %{total} items could not be imported"
+  error_invalid_file_encoding: The file is not a valid %{encoding} encoded file
+  error_invalid_csv_file_or_settings: The file is not a CSV file or does not match the
+    settings below
+  error_can_not_read_import_file: An error occurred while reading the file to import
+  permission_import_issues: Import issues
+  label_import_issues: Import issues
+  label_select_file_to_import: Select the file to import
+  label_fields_separator: Field separator
+  label_fields_wrapper: Field wrapper
+  label_encoding: Encoding
+  label_comma_char: Comma
+  label_semi_colon_char: Semicolon
+  label_quote_char: Quote
+  label_double_quote_char: Double quote
+  label_fields_mapping: Fields mapping
+  label_file_content_preview: File content preview
+  label_create_missing_values: Create missing values
+  button_import: Import
+  field_total_estimated_hours: Total estimated time
+  label_api: API
+  label_total_plural: Totals
+  label_assigned_issues: Assigned issues
+  label_field_format_enumeration: Key/value list
+  label_f_hour_short: '%{value} h'
+  field_default_version: Default version
+  error_attachment_extension_not_allowed: Attachment extension %{extension} is not allowed
+  setting_attachment_extensions_allowed: Allowed extensions
+  setting_attachment_extensions_denied: Disallowed extensions
+  label_any_open_issues: any open issues
+  label_no_open_issues: no open issues
+  label_default_values_for_new_users: Default values for new users
+  error_ldap_bind_credentials: Invalid LDAP Account/Password
+  setting_sys_api_key: cheie API
+  setting_lost_password: Parolă uitată
+  mail_subject_security_notification: Security notification
+  mail_body_security_notification_change: ! '%{field} was changed.'
+  mail_body_security_notification_change_to: ! '%{field} was changed to %{value}.'
+  mail_body_security_notification_add: ! '%{field} %{value} was added.'
+  mail_body_security_notification_remove: ! '%{field} %{value} was removed.'
+  mail_body_security_notification_notify_enabled: Email address %{value} now receives
+    notifications.
+  mail_body_security_notification_notify_disabled: Email address %{value} no longer
+    receives notifications.
+  mail_body_settings_updated: ! 'The following settings were changed:'
+  field_remote_ip: IP address
+  label_wiki_page_new: New wiki page
+  label_relations: Relations
+  button_filter: Filter
+  mail_body_password_updated: Your password has been changed.
+  label_no_preview: No preview available
+  error_no_tracker_allowed_for_new_issue_in_project: The project doesn't have any trackers
+    for which you can create an issue
+  label_tracker_all: All trackers
+  label_new_project_issue_tab_enabled: Display the "New issue" tab
+  setting_new_item_menu_tab: Project menu tab for creating new objects
+  label_new_object_tab_enabled: Display the "+" drop-down
+  error_no_projects_with_tracker_allowed_for_new_issue: There are no projects with trackers
+    for which you can create an issue
+  field_textarea_font: Font used for text areas
+  label_font_default: Default font
+  label_font_monospace: Monospaced font
+  label_font_proportional: Proportional font
+  setting_timespan_format: Time span format
+  label_table_of_contents: Table of contents
+  setting_commit_logs_formatting: Apply text formatting to commit messages
+  setting_mail_handler_enable_regex_delimiters: Enable regular expressions
+  error_move_of_child_not_possible: 'Subtask %{child} could not be moved to the new
+    project: %{errors}'
+  error_cannot_reassign_time_entries_to_an_issue_about_to_be_deleted: Spent time cannot
+    be reassigned to an issue that is about to be deleted
+  setting_timelog_required_fields: Required fields for time logs
+  label_attribute_of_object: '%{object_name}''s %{name}'
+  label_user_mail_option_only_assigned: Only for things I watch or I am assigned to
+  label_user_mail_option_only_owner: Only for things I watch or I am the owner of
+  warning_fields_cleared_on_bulk_edit: Changes will result in the automatic deletion
+    of values from one or more fields on the selected objects
+  field_updated_by: Updated by
+  field_last_updated_by: Last updated by
+  field_full_width_layout: Full width layout
+  label_last_notes: Last notes
+  field_digest: Checksum
+  field_default_assigned_to: Default assignee
+  setting_show_custom_fields_on_registration: Show custom fields on registration
+  permission_view_news: View news
+  label_no_preview_alternative_html: No preview available. %{link} the file instead.
+  label_no_preview_download: Download
+  setting_close_duplicate_issues: Close duplicate issues automatically
+  error_exceeds_maximum_hours_per_day: Cannot log more than %{max_hours} hours on the
+    same day (%{logged_hours} hours have already been logged)
+  setting_time_entry_list_defaults: Timelog list defaults
+  setting_timelog_accept_0_hours: Accept time logs with 0 hours
+  setting_timelog_max_hours_per_day: Maximum hours that can be logged per day and user
+  label_x_revisions: "%{count} revisions"

@@ -58,7 +58,7 @@ Authen::Simple::LDAP (and IO::Socket::SSL if LDAPS is used):
      RedmineDbUser "redmine"
      RedmineDbPass "password"
      ## Optional where clause (fulltext search would be slow and
-     ## database dependant).
+     ## database dependent).
      # RedmineDbWhereClause "and members.role_id IN (1,2)"
      ## Optional credentials cache size
      # RedmineCacheCredsMax 50
@@ -84,7 +84,7 @@ and you will have to use this reposman.rb command line to create repository :
 
 =head1 REPOSITORIES NAMING
 
-A projet repository must be named with the projet identifier. In case
+A project repository must be named with the project identifier. In case
 of multiple repositories for the same project, use the project identifier
 and the repository identifier separated with a dot:
 
@@ -244,6 +244,8 @@ sub RedmineDSN {
               WHERE 
                 users.login=? 
                 AND projects.identifier=?
+                AND EXISTS (SELECT 1 FROM enabled_modules em WHERE em.project_id = projects.id AND em.name = 'repository')
+                AND users.type='User'
                 AND users.status=1 
                 AND (
                   roles.id IN (SELECT member_roles.role_id FROM members, member_roles WHERE members.user_id = users.id AND members.project_id = projects.id AND members.id = member_roles.member_id)
@@ -332,8 +334,10 @@ sub access_handler {
 
   my $project_id = get_project_identifier($r);
 
-  $r->set_handlers(PerlAuthenHandler => [\&OK])
-      if is_public_project($project_id, $r) && anonymous_allowed_to_browse_repository($project_id, $r);
+  if (is_public_project($project_id, $r) && anonymous_allowed_to_browse_repository($project_id, $r)) {
+    $r->user("");
+    $r->set_handlers(PerlAuthenHandler => [\&OK]);
+  }
 
   return OK
 }
@@ -387,7 +391,9 @@ sub is_public_project {
 
     my $dbh = connect_database($r);
     my $sth = $dbh->prepare(
-        "SELECT is_public FROM projects WHERE projects.identifier = ? AND projects.status <> 9;"
+        "SELECT is_public FROM projects
+          WHERE projects.identifier = ? AND projects.status <> 9
+          AND EXISTS (SELECT 1 FROM enabled_modules em WHERE em.project_id = projects.id AND em.name = 'repository');"
     );
 
     $sth->execute($project_id);
@@ -453,7 +459,6 @@ sub is_member {
   my $redmine_pass = shift;
   my $r = shift;
 
-  my $dbh         = connect_database($r);
   my $project_id  = get_project_identifier($r);
 
   my $pass_digest = Digest::SHA::sha1_hex($redmine_pass);
@@ -466,6 +471,7 @@ sub is_member {
     $usrprojpass = $cfg->{RedmineCacheCreds}->get($redmine_user.":".$project_id.":".$access_mode);
     return 1 if (defined $usrprojpass and ($usrprojpass eq $pass_digest));
   }
+  my $dbh = connect_database($r);
   my $query = $cfg->{RedmineQuery};
   my $sth = $dbh->prepare($query);
   $sth->execute($redmine_user, $project_id);

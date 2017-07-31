@@ -8,18 +8,27 @@
       <%= link_to_if @prev_issue_id,
                      "\xc2\xab #{l(:label_previous)}",
                      (@prev_issue_id ? issue_path(@prev_issue_id) : nil),
-                     :title => "##{@prev_issue_id}" %> |
+                     :title => "##{@prev_issue_id}",
+                     :accesskey => accesskey(:previous) %> |
       <% if @issue_position && @issue_count %>
-        <span class="position"><%= l(:label_item_position, :position => @issue_position, :count => @issue_count) %></span> |
+        <span class="position">
+          <%= link_to_if @query_path,
+                         l(:label_item_position, :position => @issue_position, :count => @issue_count),
+                         @query_path %>
+        </span> |
       <% end %>
       <%= link_to_if @next_issue_id,
                      "#{l(:label_next)} \xc2\xbb",
                      (@next_issue_id ? issue_path(@next_issue_id) : nil),
-                     :title => "##{@next_issue_id}" %>
+                     :title => "##{@next_issue_id}",
+                     :accesskey => accesskey(:next) %>
     </div>
   <% end %>
 
-  <%= avatar(@issue.author, :size => "50") %>
+  <div class="gravatar-with-child">
+    <%= avatar(@issue.author, :size => "50") %>
+    <%= avatar(@issue.assigned_to, :size => "22", :class => "gravatar gravatar-child") if @issue.assigned_to %>
+  </div>
 
 <div class="subject">
 <%= render_issue_subject_with_tree(@issue) %>
@@ -31,18 +40,18 @@
         <% end %>
         </p>
 
-<table class="attributes">
+<div class="attributes">
 <%= issue_fields_rows do |rows|
-  rows.left l(:field_status), h(@issue.status.name), :class => 'status'
-  rows.left l(:field_priority), h(@issue.priority.name), :class => 'priority'
+  rows.left l(:field_status), @issue.status.name, :class => 'status'
+  rows.left l(:field_priority), @issue.priority.name, :class => 'priority'
 
   unless @issue.disabled_core_fields.include?('assigned_to_id')
-    rows.left l(:field_assigned_to), avatar(@issue.assigned_to, :size => "14").to_s.html_safe + (@issue.assigned_to ? link_to_user(@issue.assigned_to) : "-"), :class => 'assigned-to'
+    rows.left l(:field_assigned_to), (@issue.assigned_to ? link_to_user(@issue.assigned_to) : "-"), :class => 'assigned-to'
   end
-  unless @issue.disabled_core_fields.include?('category_id')
-    rows.left l(:field_category), h(@issue.category ? @issue.category.name : "-"), :class => 'category'
+  unless @issue.disabled_core_fields.include?('category_id') || (@issue.category.nil? && @issue.project.issue_categories.none?)
+    rows.left l(:field_category), (@issue.category ? @issue.category.name : "-"), :class => 'category'
   end
-  unless @issue.disabled_core_fields.include?('fixed_version_id')
+  unless @issue.disabled_core_fields.include?('fixed_version_id') || (@issue.fixed_version.nil? && @issue.assignable_versions.none?)
     rows.left l(:field_fixed_version), (@issue.fixed_version ? link_to_version(@issue.fixed_version) : "-"), :class => 'fixed-version'
   end
 
@@ -53,27 +62,25 @@
     rows.right l(:field_due_date), format_date(@issue.due_date), :class => 'due-date'
   end
   unless @issue.disabled_core_fields.include?('done_ratio')
-    rows.right l(:field_done_ratio), progress_bar(@issue.done_ratio, :width => '80px', :legend => "#{@issue.done_ratio}%"), :class => 'progress'
+    rows.right l(:field_done_ratio), progress_bar(@issue.done_ratio, :legend => "#{@issue.done_ratio}%"), :class => 'progress'
   end
   unless @issue.disabled_core_fields.include?('estimated_hours')
-    unless @issue.estimated_hours.nil?
-      rows.right l(:field_estimated_hours), l_hours(@issue.estimated_hours), :class => 'estimated-hours'
-    end
+    rows.right l(:field_estimated_hours), issue_estimated_hours_details(@issue), :class => 'estimated-hours'
   end
-  if User.current.allowed_to?(:view_time_entries, @project)
-    rows.right l(:label_spent_time), (@issue.total_spent_hours > 0 ? link_to(l_hours(@issue.total_spent_hours), issue_time_entries_path(@issue)) : "-"), :class => 'spent-time'
+  if User.current.allowed_to?(:view_time_entries, @project) && @issue.total_spent_hours > 0
+    rows.right l(:label_spent_time), issue_spent_hours_details(@issue), :class => 'spent-time'
   end
 end %>
-<%= render_custom_fields_rows(@issue) %>
+<%= render_half_width_custom_fields_rows(@issue) %>
 <%= call_hook(:view_issues_show_details_bottom, :issue => @issue) %>
-</table>
+</div>
 
 <% if @issue.description? || @issue.attachments.any? -%>
 <hr />
 <% if @issue.description? %>
 <div class="description">
   <div class="contextual">
-  <%= link_to l(:button_quote), quoted_issue_path(@issue), :remote => true, :method => 'post', :class => 'icon icon-comment' if authorize_for('issues', 'edit') %>
+  <%= link_to l(:button_quote), quoted_issue_path(@issue), :remote => true, :method => 'post', :class => 'icon icon-comment' if @issue.notes_addable? %>
   </div>
 
   <p><strong><%=l(:field_description)%></strong></p>
@@ -85,6 +92,8 @@ end %>
 <%= link_to_attachments @issue, :thumbnails => true %>
 <% end -%>
 
+<%= render_full_width_custom_fields_rows(@issue) %>
+
 <%= call_hook(:view_issues_show_description_bottom, :issue => @issue) %>
 
 <% if !@issue.leaf? || User.current.allowed_to?(:manage_subtasks, @project) %>
@@ -94,7 +103,9 @@ end %>
   <%= link_to_new_subtask(@issue) if User.current.allowed_to?(:manage_subtasks, @project) %>
 </div>
 <p><strong><%=l(:label_subtask_plural)%></strong></p>
+<%= form_tag({}, :data => {:cm_url => issues_context_menu_path}) do %>
 <%= render_descendants_tree(@issue) unless @issue.leaf? %>
+<% end %>
 </div>
 <% end %>
 
@@ -155,4 +166,4 @@ end %>
     <%= auto_discovery_link_tag(:atom, {:format => 'atom', :key => User.current.rss_key}, :title => "#{@issue.project} - #{@issue.tracker} ##{@issue.id}: #{@issue.subject}") %>
 <% end %>
 
-<%= context_menu issues_context_menu_path %>
+<%= context_menu %>

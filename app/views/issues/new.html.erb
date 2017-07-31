@@ -2,7 +2,7 @@
 
 <%= call_hook(:view_issues_new_top, {:issue => @issue}) %>
 
-<%= labelled_form_for @issue, :url => project_issues_path(@project),
+<%= labelled_form_for @issue, :url => _project_issues_path(@project),
                              :html => {:id => 'issue-form', :multipart => true} do |f| %>
   <%= error_messages_for 'issue' %>
   <%= hidden_field_tag 'copy_from', params[:copy_from] if params[:copy_from] %>
@@ -11,6 +11,12 @@
     <%= render :partial => 'issues/form', :locals => {:f => f} %>
     </div>
 
+    <% if @copy_from && Setting.link_copied_issue == 'ask' %>
+    <p>
+      <label for="link_copy"><%= l(:label_link_copied_issue) %></label>
+      <%= check_box_tag 'link_copy', '1', @link_copy %>
+    </p>
+    <% end %>
     <% if @copy_from && @copy_from.attachments.any? %>
     <p>
       <label for="copy_attachments"><%= l(:label_copy_attachments) %></label>
@@ -26,24 +32,14 @@
 
     <p id="attachments_form"><label><%= l(:label_attachment_plural) %></label><%= render :partial => 'attachments/form', :locals => {:container => @issue} %></p>
 
-    <% if @issue.safe_attribute? 'watcher_user_ids' -%>
-      <p id="watchers_form"><label><%= l(:label_issue_watchers) %></label>
-      <span id="watchers_inputs">
-        <%= watchers_checkboxes(@issue, @available_watchers) %>
-      </span>
-      <span class="search_for_watchers">
-      <%= link_to l(:label_search_for_watchers),
-                  {:controller => 'watchers', :action => 'new', :project_id => @issue.project},
-                  :remote => true,
-                  :method => 'get' %>
-      </span>
-      </p>
-    <% end %>
+    <div id="watchers_form_container">
+      <%= render :partial => 'issues/watchers_form' %>
+    </div>
   </div>
 
   <%= submit_tag l(:button_create) %>
   <%= submit_tag l(:button_create_and_continue), :name => 'continue' %>
-  <%= preview_link preview_new_issue_path(:project_id => @project), 'issue-form' %>
+  <%= preview_link preview_new_issue_path(:project_id => @issue.project), 'issue-form' %>
 <% end %>
 
 <div id="preview" class="wiki"></div>

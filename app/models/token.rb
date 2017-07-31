@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,7 +21,25 @@ class Token < ActiveRecord::Base
 
   before_create :delete_previous_tokens, :generate_new_token
 
-  @@validity_time = 1.day
+  cattr_accessor :validity_time
+  self.validity_time = 1.day
+
+  class << self
+    attr_reader :actions
+
+    def add_action(name, options)
+      options.assert_valid_keys(:max_instances, :validity_time)
+      @actions ||= {}
+      @actions[name.to_s] = options
+    end
+  end
+
+  add_action :api,       max_instances: 1,  validity_time: nil
+  add_action :autologin, max_instances: 10, validity_time: Proc.new { Setting.autologin.to_i.days }
+  add_action :feeds,     max_instances: 1,  validity_time: nil
+  add_action :recovery,  max_instances: 1,  validity_time: Proc.new { Token.validity_time }
+  add_action :register,  max_instances: 1,  validity_time: Proc.new { Token.validity_time }
+  add_action :session,   max_instances: 10, validity_time: nil
 
   def generate_new_token
     self.value = Token.generate_token_value
@@ -29,12 +47,46 @@ class Token < ActiveRecord::Base
 
   # Return true if token has expired
   def expired?
-    return Time.now > self.created_on + @@validity_time
+    validity_time = self.class.invalid_when_created_before(action)
+    validity_time.present? && created_on < validity_time
+  end
+
+  def max_instances
+    Token.actions.has_key?(action) ? Token.actions[action][:max_instances] : 1
+  end
+
+  def self.invalid_when_created_before(action = nil)
+    if Token.actions.has_key?(action)
+      validity_time = Token.actions[action][:validity_time]
+      validity_time = validity_time.call(action) if validity_time.respond_to? :call
+    else
+      validity_time = self.validity_time
+    end
+
+    if validity_time
+      Time.now - validity_time
+    end
   end
 
   # Delete all expired tokens
   def self.destroy_expired
-    Token.delete_all ["action NOT IN (?) AND created_on < ?", ['feeds', 'api'], Time.now - @@validity_time]
+    t = Token.arel_table
+
+    # Unknown actions have default validity_time
+    condition = t[:action].not_in(self.actions.keys).and(t[:created_on].lt(invalid_when_created_before))
+
+    self.actions.each do |action, options|
+      validity_time = invalid_when_created_before(action)
+
+      # Do not delete tokens, which don't become invalid
+      next if validity_time.nil?
+
+      condition = condition.or(
+        t[:action].eq(action).and(t[:created_on].lt(validity_time))
+      )
+    end
+
+    Token.where(condition).delete_all
   end
 
   # Returns the active user who owns the key for the given action
@@ -77,7 +129,15 @@ class Token < ActiveRecord::Base
   # Removes obsolete tokens (same user and action)
   def delete_previous_tokens
     if user
-      Token.delete_all(['user_id = ? AND action = ?', user.id, action])
+      scope = Token.where(:user_id => user.id, :action => action)
+      if max_instances > 1
+        ids = scope.order(:updated_on => :desc).offset(max_instances - 1).ids
+        if ids.any?
+          Token.delete(ids)
+        end
+      else
+        scope.delete_all
+      end
     end
   end
 end

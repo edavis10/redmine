@@ -3,12 +3,12 @@
 <% if @plugins.any? %>
 <table class="list plugins">
     <% @plugins.each do |plugin| %>
-        <tr id="plugin-<%= plugin.id %>" class="<%= cycle('odd', 'even') %>">
-        <td class="name"><span class="name"><%=h plugin.name %></span>
-            <%= content_tag('span', h(plugin.description), :class => 'description') unless plugin.description.blank? %>
-            <%= content_tag('span', link_to(h(plugin.url), plugin.url), :class => 'url') unless plugin.url.blank? %>
+        <tr id="plugin-<%= plugin.id %>">
+        <td class="name"><span class="name"><%= plugin.name %></span>
+            <%= content_tag('span', plugin.description, :class => 'description') unless plugin.description.blank? %>
+            <%= content_tag('span', link_to(plugin.url, plugin.url), :class => 'url') unless plugin.url.blank? %>
         </td>
-        <td class="author"><%= plugin.author_url.blank? ? h(plugin.author) : link_to(h(plugin.author), plugin.author_url) %></td>
+        <td class="author"><%= plugin.author_url.blank? ? plugin.author : link_to(plugin.author, plugin.author_url) %></td>
         <td class="version"><span class="icon"><%= plugin.version %></span></td>
         <td class="configure"><%= link_to(l(:button_configure), plugin_settings_path(plugin)) if plugin.configurable? %></td>
         </tr>
@@ -25,7 +25,7 @@ $(document).ready(function(){
     e.preventDefault();
     $.ajax({
       dataType: "jsonp",
-      url: "http://www.redmine.org/plugins/check_updates",
+      url: "https://www.redmine.org/plugins/check_updates",
       data: <%= raw_json plugin_data_for_updates(@plugins) %>,
       timeout: 3000,
       beforeSend: function(){
@@ -36,7 +36,7 @@ $(document).ready(function(){
         $("table.plugins td.version span").addClass("unknown");
         $.each(data, function(plugin_id, plugin_data){
           var s = $("tr#plugin-"+plugin_id+" td.version span");
-          s.removeClass("icon-checked icon-warning unknown");
+          s.removeClass("icon-ok icon-warning unknown");
           if (plugin_data.url) {
             if (s.parent("a").length>0) {
               s.unwrap();
@@ -45,7 +45,7 @@ $(document).ready(function(){
             s.wrap($("<a></a>").attr("href", plugin_data.url).attr("target", "_blank"));
           }
           if (plugin_data.c == s.text()) {
-            s.addClass("icon-checked");
+            s.addClass("icon-ok");
           } else if (plugin_data.c) {
             s.addClass("icon-warning");
             s.attr("title", "<%= escape_javascript l(:label_latest_compatible_version) %>: "+plugin_data.c);

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,11 +17,12 @@
 
 require File.expand_path('../../../../../test_helper', __FILE__)
 
-class Redmine::WikiFormatting::MacrosTest < ActionView::TestCase
+class Redmine::WikiFormatting::MacrosTest < Redmine::HelperTest
   include ApplicationHelper
   include ActionView::Helpers::TextHelper
   include ActionView::Helpers::SanitizeHelper
   include ERB::Util
+  include Rails.application.routes.url_helpers
   extend ActionView::Helpers::SanitizeHelper::ClassMethods
 
   fixtures :projects, :roles, :enabled_modules, :users,
@@ -207,12 +208,14 @@ class Redmine::WikiFormatting::MacrosTest < ActionView::TestCase
 
   def test_macro_collapse
     text = "{{collapse\n*Collapsed* block of text\n}}"
-    result = textilizable(text)
-
-    assert_select_in result, 'div.collapsed-text'
-    assert_select_in result, 'strong', :text => 'Collapsed'
-    assert_select_in result, 'a.collapsible.collapsed', :text => 'Show'
-    assert_select_in result, 'a.collapsible', :text => 'Hide'
+    with_locale 'en' do
+      result = textilizable(text)
+  
+      assert_select_in result, 'div.collapsed-text'
+      assert_select_in result, 'strong', :text => 'Collapsed'
+      assert_select_in result, 'a.collapsible.collapsed', :text => 'Show'
+      assert_select_in result, 'a.collapsible', :text => 'Hide'
+    end
   end
 
   def test_macro_collapse_with_one_arg
@@ -236,6 +239,8 @@ class Redmine::WikiFormatting::MacrosTest < ActionView::TestCase
   end
 
   def test_macro_collapse_should_not_break_toc
+    set_language_if_valid 'en'
+
     text =  <<-RAW
 {{toc}}
 
@@ -246,7 +251,7 @@ h2. Heading
 }}"
 RAW
 
-    expected_toc = '<ul class="toc"><li><a href="#Title">Title</a><ul><li><a href="#Heading">Heading</a></li></ul></li></ul>'
+    expected_toc = '<ul class="toc"><li><strong>Table of contents</strong></li><li><a href="#Title">Title</a><ul><li><a href="#Heading">Heading</a></li></ul></li></ul>'
 
     assert_include expected_toc, textilizable(text).gsub(/[\r\n]/, '')
   end
@@ -302,26 +307,35 @@ RAW
   end
 
   def test_macro_thumbnail
-    link = link_to('<img alt="testfile.PNG" src="http://test.host/attachments/thumbnail/17" />'.html_safe,
-                   "http://test.host/attachments/17",
+    link = link_to('<img alt="testfile.PNG" src="/attachments/thumbnail/17/200" />'.html_safe,
+                   "/attachments/17",
                    :class => "thumbnail",
                    :title => "testfile.PNG")
     assert_equal "<p>#{link}</p>",
                  textilizable("{{thumbnail(testfile.png)}}", :object => Issue.find(14))
   end
 
-  def test_macro_thumbnail_with_size
+  def test_macro_thumbnail_with_full_path
     link = link_to('<img alt="testfile.PNG" src="http://test.host/attachments/thumbnail/17/200" />'.html_safe,
                    "http://test.host/attachments/17",
                    :class => "thumbnail",
                    :title => "testfile.PNG")
     assert_equal "<p>#{link}</p>",
-                 textilizable("{{thumbnail(testfile.png, size=200)}}", :object => Issue.find(14))
+                 textilizable("{{thumbnail(testfile.png)}}", :object => Issue.find(14), :only_path => false)
+  end
+
+  def test_macro_thumbnail_with_size
+    link = link_to('<img alt="testfile.PNG" src="/attachments/thumbnail/17/400" />'.html_safe,
+                   "/attachments/17",
+                   :class => "thumbnail",
+                   :title => "testfile.PNG")
+    assert_equal "<p>#{link}</p>",
+                 textilizable("{{thumbnail(testfile.png, size=400)}}", :object => Issue.find(14))
   end
 
   def test_macro_thumbnail_with_title
-    link = link_to('<img alt="testfile.PNG" src="http://test.host/attachments/thumbnail/17" />'.html_safe,
-                   "http://test.host/attachments/17",
+    link = link_to('<img alt="testfile.PNG" src="/attachments/thumbnail/17/200" />'.html_safe,
+                   "/attachments/17",
                    :class => "thumbnail",
                    :title => "Cool image")
     assert_equal "<p>#{link}</p>",

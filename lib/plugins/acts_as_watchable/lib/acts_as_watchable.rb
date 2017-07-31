@@ -17,10 +17,8 @@ module Redmine
               joins(:watchers).
               where("#{Watcher.table_name}.user_id = ?", user_id)
             }
-            attr_protected :watcher_ids, :watcher_user_ids
           end
           send :include, Redmine::Acts::Watchable::InstanceMethods
-          alias_method_chain :watcher_user_ids=, :uniq_ids
         end
       end
 
@@ -40,12 +38,16 @@ module Redmine
 
         # Adds user as a watcher
         def add_watcher(user)
+          # Rails does not reset the has_many :through association
+          watcher_users.reset
           self.watchers << Watcher.new(:user => user)
         end
 
         # Removes user from the watchers list
         def remove_watcher(user)
           return nil unless user && user.is_a?(User)
+          # Rails does not reset the has_many :through association
+          watcher_users.reset
           watchers.where(:user_id => user.id).delete_all
         end
 
@@ -55,11 +57,11 @@ module Redmine
         end
 
         # Overrides watcher_user_ids= to make user_ids uniq
-        def watcher_user_ids_with_uniq_ids=(user_ids)
+        def watcher_user_ids=(user_ids)
           if user_ids.is_a?(Array)
             user_ids = user_ids.uniq
           end
-          send :watcher_user_ids_without_uniq_ids=, user_ids
+          super user_ids
         end
 
         # Returns true if object is watched by +user+
@@ -68,7 +70,7 @@ module Redmine
         end
 
         def notified_watchers
-          notified = watcher_users.active
+          notified = watcher_users.active.to_a
           notified.reject! {|user| user.mail.blank? || user.mail_notification == 'none'}
           if respond_to?(:visible?)
             notified.reject! {|user| !visible?(user)}

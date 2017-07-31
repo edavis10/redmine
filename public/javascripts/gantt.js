@@ -1,3 +1,6 @@
+/* Redmine - project management software
+   Copyright (C) 2006-2017  Jean-Philippe Lang */
+
 var draw_gantt = null;
 var draw_top;
 var draw_right;

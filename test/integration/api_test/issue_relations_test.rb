@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -27,30 +27,20 @@ class Redmine::ApiTest::IssueRelationsTest < Redmine::ApiTest::Base
            :enabled_modules,
            :issue_relations
 
-  def setup
-    Setting.rest_api_enabled = '1'
-  end
-
   test "GET /issues/:issue_id/relations.xml should return issue relations" do
-    get '/issues/9/relations.xml', {}, credentials('jsmith')
+    get '/issues/9/relations.xml', :headers => credentials('jsmith')
 
     assert_response :success
     assert_equal 'application/xml', @response.content_type
 
-    assert_tag :tag => 'relations',
-      :attributes => { :type => 'array' },
-      :child => {
-        :tag => 'relation',
-        :child => {
-          :tag => 'id',
-          :content => '1'
-        }
-      }
+    assert_select 'relations[type=array] relation id', :text => '1'
   end
 
   test "POST /issues/:issue_id/relations.xml should create the relation" do
     assert_difference('IssueRelation.count') do
-      post '/issues/2/relations.xml', {:relation => {:issue_to_id => 7, :relation_type => 'relates'}}, credentials('jsmith')
+      post '/issues/2/relations.xml',
+        :params => {:relation => {:issue_to_id => 7, :relation_type => 'relates'}},
+        :headers => credentials('jsmith')
     end
 
     relation = IssueRelation.order('id DESC').first
@@ -60,29 +50,31 @@ class Redmine::ApiTest::IssueRelationsTest < Redmine::ApiTest::Base
 
     assert_response :created
     assert_equal 'application/xml', @response.content_type
-    assert_tag 'relation', :child => {:tag => 'id', :content => relation.id.to_s}
+    assert_select 'relation id', :text => relation.id.to_s
   end
 
   test "POST /issues/:issue_id/relations.xml with failure should return errors" do
     assert_no_difference('IssueRelation.count') do
-      post '/issues/2/relations.xml', {:relation => {:issue_to_id => 7, :relation_type => 'foo'}}, credentials('jsmith')
+      post '/issues/2/relations.xml',
+        :params => {:relation => {:issue_to_id => 7, :relation_type => 'foo'}},
+        :headers => credentials('jsmith')
     end
 
     assert_response :unprocessable_entity
-    assert_tag :errors, :child => {:tag => 'error', :content => /relation_type is not included in the list/}
+    assert_select 'errors error', :text => /Relation type is not included in the list/
   end
 
   test "GET /relations/:id.xml should return the relation" do
-    get '/relations/2.xml', {}, credentials('jsmith')
+    get '/relations/2.xml', :headers => credentials('jsmith')
 
     assert_response :success
     assert_equal 'application/xml', @response.content_type
-    assert_tag 'relation', :child => {:tag => 'id', :content => '2'}
+    assert_select 'relation id', :text => '2'
   end
 
   test "DELETE /relations/:id.xml should delete the relation" do
     assert_difference('IssueRelation.count', -1) do
-      delete '/relations/2.xml', {}, credentials('jsmith')
+      delete '/relations/2.xml', :headers => credentials('jsmith')
     end
 
     assert_response :ok

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,18 +16,24 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class AttachmentsController < ApplicationController
-  before_filter :find_project, :except => :upload
-  before_filter :file_readable, :read_authorize, :only => [:show, :download, :thumbnail]
-  before_filter :delete_authorize, :only => :destroy
-  before_filter :authorize_global, :only => :upload
+  before_action :find_attachment, :only => [:show, :download, :thumbnail, :update, :destroy]
+  before_action :find_editable_attachments, :only => [:edit_all, :update_all]
+  before_action :file_readable, :read_authorize, :only => [:show, :download, :thumbnail]
+  before_action :update_authorize, :only => :update
+  before_action :delete_authorize, :only => :destroy
+  before_action :authorize_global, :only => :upload
 
-  accept_api_auth :show, :download, :upload
+  # Disable check for same origin requests for JS files, i.e. attachments with
+  # MIME type text/javascript.
+  skip_after_action :verify_same_origin_request, :only => :download
+
+  accept_api_auth :show, :download, :thumbnail, :upload, :update, :destroy
 
   def show
     respond_to do |format|
       format.html {
         if @attachment.is_diff?
-          @diff = File.new(@attachment.diskfile, "rb").read
+          @diff = File.read(@attachment.diskfile, :mode => "rb")
           @diff_type = params[:type] || User.current.pref[:diff_type] || 'inline'
           @diff_type = 'inline' unless %w(inline sbs).include?(@diff_type)
           # Save diff type as user preference
@@ -37,10 +43,12 @@ class AttachmentsController < ApplicationController
           end
           render :action => 'diff'
         elsif @attachment.is_text? && @attachment.filesize <= Setting.file_max_size_displayed.to_i.kilobyte
-          @content = File.new(@attachment.diskfile, "rb").read
+          @content = File.read(@attachment.diskfile, :mode => "rb")
           render :action => 'file'
+        elsif @attachment.is_image?
+          render :action => 'image'
         else
-          download
+          render :action => 'other'
         end
       }
       format.api
@@ -56,7 +64,7 @@ class AttachmentsController < ApplicationController
       # images are sent inline
       send_file @attachment.diskfile, :filename => filename_for_content_disposition(@attachment.filename),
                                       :type => detect_content_type(@attachment),
-                                      :disposition => (@attachment.image? ? 'inline' : 'attachment')
+                                      :disposition => disposition(@attachment)
     end
   end
 
@@ -70,7 +78,7 @@ class AttachmentsController < ApplicationController
       end
     else
       # No thumbnail for the attachment or thumbnail could not be created
-      render :nothing => true, :status => 404
+      head 404
     end
   end
 
@@ -78,13 +86,14 @@ class AttachmentsController < ApplicationController
     # Make sure that API users get used to set this content type
     # as it won't trigger Rails' automatic parsing of the request body for parameters
     unless request.content_type == 'application/octet-stream'
-      render :nothing => true, :status => 406
+      head 406
       return
     end
 
     @attachment = Attachment.new(:file => request.raw_post)
     @attachment.author = User.current
     @attachment.filename = params[:filename].presence || Redmine::Utils.random_hex(16)
+    @attachment.content_type = params[:content_type].presence
     saved = @attachment.save
 
     respond_to do |format|
@@ -92,6 +101,34 @@ class AttachmentsController < ApplicationController
       format.api {
         if saved
           render :action => 'upload', :status => :created
+        else
+          render_validation_errors(@attachment)
+        end
+      }
+    end
+  end
+
+  # Edit all the attachments of a container
+  def edit_all
+  end
+
+  # Update all the attachments of a container
+  def update_all
+    if Attachment.update_attachments(@attachments, update_all_params)
+      redirect_back_or_default home_path
+      return
+    end
+    render :action => 'edit_all'
+  end
+
+  def update
+    @attachment.safe_attributes = params[:attachment]
+    saved = @attachment.save
+
+    respond_to do |format|
+      format.api {
+        if saved
+          render_api_ok
         else
           render_validation_errors(@attachment)
         end
@@ -113,15 +150,54 @@ class AttachmentsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to_referer_or project_path(@project) }
       format.js
+      format.api { render_api_ok }
     end
   end
 
-private
-  def find_project
+  # Returns the menu item that should be selected when viewing an attachment
+  def current_menu_item
+    if @attachment
+      case @attachment.container
+      when WikiPage
+        :wiki
+      when Message
+        :boards
+      when Project, Version
+        :files
+      else
+        @attachment.container.class.name.pluralize.downcase.to_sym
+      end
+    end
+  end
+
+  private
+
+  def find_attachment
     @attachment = Attachment.find(params[:id])
     # Show 404 if the filename in the url is wrong
     raise ActiveRecord::RecordNotFound if params[:filename] && params[:filename] != @attachment.filename
     @project = @attachment.project
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+
+  def find_editable_attachments
+    klass = params[:object_type].to_s.singularize.classify.constantize rescue nil
+    unless klass && klass.reflect_on_association(:attachments)
+      render_404
+      return
+    end
+
+    @container = klass.find(params[:object_id])
+    if @container.respond_to?(:visible?) && !@container.visible?
+      render_403
+      return
+    end
+    @attachments = @container.attachments.select(&:editable?)
+    if @container.respond_to?(:project)
+      @project = @container.project
+    end
+    render_404 if @attachments.empty?
   rescue ActiveRecord::RecordNotFound
     render_404
   end
@@ -140,15 +216,32 @@ private
     @attachment.visible? ? true : deny_access
   end
 
+  def update_authorize
+    @attachment.editable? ? true : deny_access
+  end
+
   def delete_authorize
     @attachment.deletable? ? true : deny_access
   end
 
   def detect_content_type(attachment)
     content_type = attachment.content_type
-    if content_type.blank?
+    if content_type.blank? || content_type == "application/octet-stream"
       content_type = Redmine::MimeType.of(attachment.filename)
     end
     content_type.to_s
+  end
+
+  def disposition(attachment)
+    if attachment.is_pdf?
+      'inline'
+    else
+      'attachment'
+    end
+  end
+
+  # Returns attachments param for #update_all
+  def update_all_params
+    params.permit(:attachments => [:filename, :description]).require(:attachments)
   end
 end

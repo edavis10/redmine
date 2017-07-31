@@ -1,7 +1,7 @@
 # encoding: utf-8
 #
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -28,6 +28,8 @@ module CustomFieldsHelper
      :label => :label_project_plural},
     {:name => 'VersionCustomField', :partial => 'custom_fields/index',
      :label => :label_version_plural},
+    {:name => 'DocumentCustomField', :partial => 'custom_fields/index',
+     :label => :label_document_plural},
     {:name => 'UserCustomField', :partial => 'custom_fields/index',
      :label => :label_user_plural},
     {:name => 'GroupCustomField', :partial => 'custom_fields/index',
@@ -47,6 +49,15 @@ module CustomFieldsHelper
 
   def custom_field_type_options
     CUSTOM_FIELDS_TABS.map {|h| [l(h[:label]), h[:name]]}
+  end
+
+  def custom_field_title(custom_field)
+    items = []
+    items << [l(:label_custom_field_plural), custom_fields_path]
+    items << [l(custom_field.type_name), custom_fields_path(:tab => custom_field.class.name)] if custom_field
+    items << (custom_field.nil? || custom_field.new_record? ? l(:label_custom_field_new) : custom_field.name) 
+
+    title(*items)
   end
 
   def render_custom_field_format_partial(form, custom_field)
@@ -75,20 +86,33 @@ module CustomFieldsHelper
       :class => "#{custom_value.custom_field.field_format}_cf"
   end
 
+  # Return custom field name tag
+  def custom_field_name_tag(custom_field)
+    title = custom_field.description.presence
+    css = title ? "field-description" : nil
+    content_tag 'span', custom_field.name, :title => title, :class => css
+  end
+  
   # Return custom field label tag
   def custom_field_label_tag(name, custom_value, options={})
     required = options[:required] || custom_value.custom_field.is_required?
-    title = custom_value.custom_field.description.presence
-    content = content_tag 'span', custom_value.custom_field.name, :title => title
+    for_tag_id = options.fetch(:for_tag_id, "#{name}_custom_field_values_#{custom_value.custom_field.id}")
+    content = custom_field_name_tag custom_value.custom_field
 
     content_tag "label", content +
       (required ? " <span class=\"required\">*</span>".html_safe : ""),
-      :for => "#{name}_custom_field_values_#{custom_value.custom_field.id}"
+      :for => for_tag_id
   end
 
   # Return custom field tag with its label tag
   def custom_field_tag_with_label(name, custom_value, options={})
-    custom_field_label_tag(name, custom_value, options) + custom_field_tag(name, custom_value)
+    tag = custom_field_tag(name, custom_value)
+    tag_id = nil
+    ids = tag.scan(/ id="(.+?)"/)
+    if ids.size == 1
+      tag_id = ids.first.first
+    end
+    custom_field_label_tag(name, custom_value, options.merge(:for_tag_id => tag_id)) + tag
   end
 
   # Returns the custom field tag for when bulk editing objects
@@ -115,6 +139,17 @@ module CustomFieldsHelper
   # Return an array of custom field formats which can be used in select_tag
   def custom_field_formats_for_select(custom_field)
     Redmine::FieldFormat.as_select(custom_field.class.customized_class.name)
+  end
+
+  # Yields the given block for each custom field value of object that should be
+  # displayed, with the custom field and the formatted value as arguments
+  def render_custom_field_values(object, &block)
+    object.visible_custom_field_values.each do |custom_value|
+      formatted = show_value(custom_value)
+      if formatted.present?
+        yield custom_value.custom_field, formatted
+      end
+    end
   end
 
   # Renders the custom_values in api views

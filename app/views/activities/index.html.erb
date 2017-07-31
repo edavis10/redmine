@@ -6,10 +6,10 @@
 <h3><%= format_activity_day(day) %></h3>
 <dl>
 <% sort_activity_events(@events_by_day[day]).each do |e, in_group| -%>
-  <dt class="<%= e.event_type %> <%= "grouped" if in_group %> <%= User.current.logged? && e.respond_to?(:event_author) && User.current == e.event_author ? 'me' : nil %>">
+  <dt class="<%= e.event_type %> icon icon-<%= e.event_type %> <%= "grouped" if in_group %> <%= User.current.logged? && e.respond_to?(:event_author) && User.current == e.event_author ? 'me' : nil %>">
   <%= avatar(e.event_author, :size => "24") if e.respond_to?(:event_author) %>
   <span class="time"><%= format_time(e.event_datetime, false) %></span>
-  <%= content_tag('span', h(e.project), :class => 'project') if @project.nil? || @project != e.project %>
+  <%= content_tag('span', e.project, :class => 'project') if @project.nil? || @project != e.project %>
   <%= link_to format_activity_title(e.event_title), e.event_url %>
   </dt>
   <dd class="<%= "grouped" if in_group %>"><span class="description"><%= format_activity_description(e.event_description) %></span>
@@ -21,27 +21,32 @@
 
 <%= content_tag('p', l(:label_no_data), :class => 'nodata') if @events_by_day.empty? %>
 
-<div style="float:left;">
-<%= link_to_content_update("\xc2\xab " + l(:label_previous),
-                   params.merge(:from => @date_to - @days - 1),
-                   :title => l(:label_date_from_to, :start => format_date(@date_to - 2*@days), :end => format_date(@date_to - @days - 1))) %>
-</div>
-<div style="float:right;">
-<%= link_to_content_update(l(:label_next) + " \xc2\xbb",
-                   params.merge(:from => @date_to + @days - 1),
-                   :title => l(:label_date_from_to, :start => format_date(@date_to), :end => format_date(@date_to + @days - 1))) unless @date_to >= Date.today %>
-</div>
+<span class="pagination">
+  <ul class="pages">
+    <li class="previous page">
+<%= link_to("\xc2\xab " + l(:label_previous),
+                   {:params => request.query_parameters.merge(:from => @date_to - @days - 1)},
+                   :title => l(:label_date_from_to, :start => format_date(@date_to - 2*@days), :end => format_date(@date_to - @days - 1)),
+                   :accesskey => accesskey(:previous)) %>
+    </li><% unless @date_to > User.current.today %><li class="next page">
+<%= link_to(l(:label_next) + " \xc2\xbb",
+                   {:params => request.query_parameters.merge(:from => @date_to + @days - 1)},
+                   :title => l(:label_date_from_to, :start => format_date(@date_to), :end => format_date(@date_to + @days - 1)),
+                   :accesskey => accesskey(:next)) %><% end %>
+    </li>
+  </ul>
+</span>
 &nbsp;
 <% other_formats_links do |f| %>
-  <%= f.link_to 'Atom', :url => params.merge(:from => nil, :key => User.current.rss_key) %>
+  <%= f.link_to_with_query_parameters 'Atom', 'from' => nil, :key => User.current.rss_key %>
 <% end %>
 
 <% content_for :header_tags do %>
-<%= auto_discovery_link_tag(:atom, params.merge(:format => 'atom', :from => nil, :key => User.current.rss_key)) %>
+<%= auto_discovery_link_tag(:atom, :params => request.query_parameters.merge(:from => nil, :key => User.current.rss_key), :format => 'atom') %>
 <% end %>
 
 <% content_for :sidebar do %>
-<%= form_tag({}, :method => :get) do %>
+<%= form_tag({}, :method => :get, :id => 'activity_scope_form') do %>
 <h3><%= l(:label_activity) %></h3>
 <ul>
 <% @activity.event_types.each do |t| %>
@@ -55,11 +60,12 @@
 <% end %>
 </ul>
 <% if @project && @project.descendants.active.any? %>
-    <%= hidden_field_tag 'with_subprojects', 0 %>
+    <%= hidden_field_tag 'with_subprojects', 0, :id => nil %>
     <p><label><%= check_box_tag 'with_subprojects', 1, @with_subprojects %> <%=l(:label_subproject_plural)%></label></p>
 <% end %>
 <%= hidden_field_tag('user_id', params[:user_id]) unless params[:user_id].blank? %>
-<p><%= submit_tag l(:button_apply), :class => 'button-small', :name => nil %></p>
+<%= hidden_field_tag('from', params[:from]) unless params[:from].blank? %>
+<p><%= submit_tag l(:button_apply), :class => 'button-small', :name => 'submit' %></p>
 <% end %>
 <% end %>
 

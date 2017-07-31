@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -28,8 +28,8 @@ class RepositoryGitTest < ActiveSupport::TestCase
   NUM_REV = 28
   NUM_HEAD = 6
 
-  FELIX_HEX  = "Felix Sch\xC3\xA4fer"
-  CHAR_1_HEX = "\xc3\x9c"
+  FELIX_HEX  = "Felix Sch\xC3\xA4fer".force_encoding('UTF-8')
+  CHAR_1_HEX = "\xc3\x9c".force_encoding('UTF-8')
 
   ## Git, Mercurial and CVS path encodings are binary.
   ## Subversion supports URL encoding for path.
@@ -47,9 +47,36 @@ class RepositoryGitTest < ActiveSupport::TestCase
                         :path_encoding => 'ISO-8859-1'
                         )
     assert @repository
-    @char_1        = CHAR_1_HEX.dup
-    if @char_1.respond_to?(:force_encoding)
-      @char_1.force_encoding('UTF-8')
+  end
+
+  def test_nondefault_repo_with_blank_identifier_destruction
+    Repository.delete_all
+
+    repo1 = Repository::Git.new(
+                          :project    => @project,
+                          :url        => REPOSITORY_PATH,
+                          :identifier => '',
+                          :is_default => true
+                        )
+    assert repo1.save
+    repo1.fetch_changesets
+
+    repo2 = Repository::Git.new(
+                          :project    => @project,
+                          :url        => REPOSITORY_PATH,
+                          :identifier => 'repo2',
+                          :is_default => true
+                    )
+    assert repo2.save
+    repo2.fetch_changesets
+
+    repo1.reload
+    repo2.reload
+    assert !repo1.is_default?
+    assert  repo2.is_default?
+
+    assert_difference 'Repository.count', -1 do
+      repo1.destroy
     end
   end
 
@@ -60,14 +87,13 @@ class RepositoryGitTest < ActiveSupport::TestCase
                           :identifier   => 'test'
                         )
     assert !repo.save
-    assert_include "Path to repository can't be blank",
+    assert_include "Path to repository cannot be blank",
                    repo.errors.full_messages
   end
 
   def test_blank_path_to_repository_error_message_fr
     set_language_if_valid 'fr'
-    str = "Chemin du d\xc3\xa9p\xc3\xb4t doit \xc3\xaatre renseign\xc3\xa9(e)"
-    str.force_encoding('UTF-8') if str.respond_to?(:force_encoding)
+    str = "Chemin du d\xc3\xa9p\xc3\xb4t doit \xc3\xaatre renseign\xc3\xa9(e)".force_encoding('UTF-8')
     repo = Repository::Git.new(
                           :project      => @project,
                           :url          => "",
@@ -123,7 +149,7 @@ class RepositoryGitTest < ActiveSupport::TestCase
       assert_equal 3, commit.filechanges.count
       change = commit.filechanges.sort_by(&:path).first
       assert_equal "README", change.path
-      assert_equal nil, change.from_path
+      assert_nil change.from_path
       assert_equal "A", change.action
 
       assert_equal NUM_HEAD, @repository.extra_info["heads"].size
@@ -217,22 +243,13 @@ class RepositoryGitTest < ActiveSupport::TestCase
       assert_equal h1, h2
     end
 
-    def test_keep_extra_report_last_commit_in_clear_changesets
+    def test_clear_changesets_should_keep_report_last_commit
       assert_nil @repository.extra_info
-      h = {}
-      h["extra_report_last_commit"] = "1"
-      @repository.merge_extra_info(h)
+      @repository.report_last_commit = "1"
       @repository.save
-      @project.reload
-
-      assert_equal 0, @repository.changesets.count
-      @repository.fetch_changesets
-      @project.reload
-
-      assert_equal NUM_REV, @repository.changesets.count
       @repository.send(:clear_changesets)
-      assert_equal 1, @repository.extra_info.size
-      assert_equal "1", @repository.extra_info["extra_report_last_commit"]
+
+      assert_equal true, @repository.report_last_commit
     end
 
     def test_refetch_after_clear_changesets
@@ -450,14 +467,14 @@ class RepositoryGitTest < ActiveSupport::TestCase
       else
         # latin-1 encoding path
         changesets = @repository.latest_changesets(
-                      "latin-1-dir/test-#{@char_1}-2.txt", '64f1f3e89')
+                      "latin-1-dir/test-#{CHAR_1_HEX}-2.txt", '64f1f3e89')
         assert_equal [
               '64f1f3e89ad1cb57976ff0ad99a107012ba3481d',
               '4fc55c43bf3d3dc2efb66145365ddc17639ce81e',
           ], changesets.collect(&:revision)
 
         changesets = @repository.latest_changesets(
-                    "latin-1-dir/test-#{@char_1}-2.txt", '64f1f3e89', 1)
+                    "latin-1-dir/test-#{CHAR_1_HEX}-2.txt", '64f1f3e89', 1)
         assert_equal [
               '64f1f3e89ad1cb57976ff0ad99a107012ba3481d',
           ], changesets.collect(&:revision)
@@ -475,7 +492,7 @@ class RepositoryGitTest < ActiveSupport::TestCase
         @project.reload
         assert_equal NUM_REV, @repository.changesets.count
         changesets = @repository.latest_changesets(
-                    "latin-1-dir/test-#{@char_1}-subdir", '1ca7f5ed')
+                    "latin-1-dir/test-#{CHAR_1_HEX}-subdir", '1ca7f5ed')
         assert_equal [
               '1ca7f5ed374f3cb31a93ae5215c2e25cc6ec5127',
           ], changesets.collect(&:revision)
@@ -538,13 +555,9 @@ class RepositoryGitTest < ActiveSupport::TestCase
       @repository.fetch_changesets
       @project.reload
       assert_equal NUM_REV, @repository.changesets.count
-      str_felix_hex  = FELIX_HEX.dup
-      if str_felix_hex.respond_to?(:force_encoding)
-          str_felix_hex.force_encoding('UTF-8')
-      end
       c = @repository.changesets.find_by_revision(
                         'ed5bb786bbda2dee66a2d50faf51429dbc043a7b')
-      assert_equal "#{str_felix_hex} <felix@fachschaften.org>", c.committer
+      assert_equal "#{FELIX_HEX} <felix@fachschaften.org>", c.committer
     end
 
     def test_previous

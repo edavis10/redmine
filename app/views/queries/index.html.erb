@@ -9,9 +9,9 @@
 <% else %>
   <table class="list">
   <% @queries.each do |query| %>
-    <tr class="<%= cycle('odd', 'even') %>">
+    <tr>
       <td class="name">
-        <%= link_to h(query.name), :controller => 'issues', :action => 'index', :project_id => @project, :query_id => query %>
+        <%= link_to query.name, :controller => 'issues', :action => 'index', :project_id => @project, :query_id => query %>
       </td>
       <td class="buttons">
         <% if query.editable_by?(User.current) %>

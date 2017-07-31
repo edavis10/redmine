@@ -1,7 +1,7 @@
 # encoding: utf-8
 #
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,19 +20,8 @@
 require File.expand_path('../../test_helper', __FILE__)
 
 class AttachmentTest < ActiveSupport::TestCase
-  fixtures :users, :projects, :roles, :members, :member_roles,
+  fixtures :users, :email_addresses, :projects, :roles, :members, :member_roles,
            :enabled_modules, :issues, :trackers, :attachments
-
-  class MockFile
-    attr_reader :original_filename, :content_type, :content, :size
-
-    def initialize(attributes)
-      @original_filename = attributes[:original_filename]
-      @content_type = attributes[:content_type]
-      @content = attributes[:content] || "Content"
-      @size = content.size
-    end
-  end
 
   def setup
     set_tmp_attachments_directory
@@ -58,7 +47,7 @@ class AttachmentTest < ActiveSupport::TestCase
     assert_equal 59, a.filesize
     assert_equal 'text/plain', a.content_type
     assert_equal 0, a.downloads
-    assert_equal '1478adae0d4eb06d35897518540e25d6', a.digest
+    assert_equal '6bc2eb7e87cfbf9145065689aaa8b5f513089ca0af68e2dc41f9cc025473d106', a.digest
 
     assert a.disk_directory
     assert_match %r{\A\d{4}/\d{2}\z}, a.disk_directory
@@ -67,7 +56,33 @@ class AttachmentTest < ActiveSupport::TestCase
     assert_equal 59, File.size(a.diskfile)
   end
 
+  def test_create_should_clear_content_type_if_too_long
+    a = Attachment.new(:container => Issue.find(1),
+                       :file => uploaded_test_file("testfile.txt", "text/plain"),
+                       :author => User.find(1),
+                       :content_type => 'a'*300)
+    assert a.save
+    a.reload
+    assert_nil a.content_type
+  end
+
+  def test_shorted_filename_if_too_long
+    file = mock_file_with_options(:original_filename => "#{'a'*251}.txt")
+
+    a = Attachment.new(:container => Issue.find(1),
+                       :file => file,
+                       :author => User.find(1))
+    assert a.save
+    a.reload
+    assert_equal 12 + 1 + 32 + 4, a.disk_filename.length
+    assert_equal 255, a.filename.length
+  end
+
   def test_copy_should_preserve_attributes
+
+    # prevent re-use of data from other attachments with equal contents
+    Attachment.where('id <> 1').destroy_all
+
     a = Attachment.find(1)
     copy = a.copy
 
@@ -97,6 +112,56 @@ class AttachmentTest < ActiveSupport::TestCase
     end
   end
 
+  def test_filesize_greater_than_2gb_should_be_supported
+    with_settings :attachment_max_size => (50.gigabyte / 1024) do
+      a = Attachment.create!(:container => Issue.find(1),
+                             :file => uploaded_test_file("testfile.txt", "text/plain"),
+                             :author => User.find(1))
+      a.filesize = 20.gigabyte
+      a.save!
+      assert_equal 20.gigabyte, a.reload.filesize
+    end
+  end
+
+  def test_extension_should_be_validated_against_allowed_extensions
+    with_settings :attachment_extensions_allowed => "txt, png" do
+      a = Attachment.new(:container => Issue.find(1),
+                         :file => mock_file_with_options(:original_filename => "test.png"),
+                         :author => User.find(1))
+      assert_save a
+
+      a = Attachment.new(:container => Issue.find(1),
+                         :file => mock_file_with_options(:original_filename => "test.jpeg"),
+                         :author => User.find(1))
+      assert !a.save
+    end
+  end
+
+  def test_extension_should_be_validated_against_denied_extensions
+    with_settings :attachment_extensions_denied => "txt, png" do
+      a = Attachment.new(:container => Issue.find(1),
+                         :file => mock_file_with_options(:original_filename => "test.jpeg"),
+                         :author => User.find(1))
+      assert_save a
+
+      a = Attachment.new(:container => Issue.find(1),
+                         :file => mock_file_with_options(:original_filename => "test.png"),
+                         :author => User.find(1))
+      assert !a.save
+    end
+  end
+
+  def test_valid_extension_should_be_case_insensitive
+    with_settings :attachment_extensions_allowed => "txt, Png" do
+      assert Attachment.valid_extension?(".pnG")
+      assert !Attachment.valid_extension?(".jpeg")
+    end
+    with_settings :attachment_extensions_denied => "txt, Png" do
+      assert !Attachment.valid_extension?(".pnG")
+      assert Attachment.valid_extension?(".jpeg")
+    end
+  end
+
   def test_description_length_should_be_validated
     a = Attachment.new(:description => 'a' * 300)
     assert !a.save
@@ -112,7 +177,7 @@ class AttachmentTest < ActiveSupport::TestCase
     assert_equal 59, a.filesize
     assert_equal 'text/plain', a.content_type
     assert_equal 0, a.downloads
-    assert_equal '1478adae0d4eb06d35897518540e25d6', a.digest
+    assert_equal '6bc2eb7e87cfbf9145065689aaa8b5f513089ca0af68e2dc41f9cc025473d106', a.digest
     diskfile = a.diskfile
     assert File.exist?(diskfile)
     assert_equal 59, File.size(a.diskfile)
@@ -144,23 +209,38 @@ class AttachmentTest < ActiveSupport::TestCase
     assert_equal 'text/plain', a.content_type
   end
 
-  def test_identical_attachments_at_the_same_time_should_not_overwrite
-    a1 = Attachment.create!(:container => Issue.find(1),
-                            :file => uploaded_test_file("testfile.txt", ""),
-                            :author => User.find(1))
-    a2 = Attachment.create!(:container => Issue.find(1),
-                            :file => uploaded_test_file("testfile.txt", ""),
-                            :author => User.find(1))
-    assert a1.disk_filename != a2.disk_filename
+  def test_attachments_with_same_content_should_reuse_same_file
+    a1 = Attachment.create!(:container => Issue.find(1), :author => User.find(1),
+                            :file => mock_file(:filename => 'foo', :content => 'abcd'))
+    a2 = Attachment.create!(:container => Issue.find(1), :author => User.find(1),
+                            :file => mock_file(:filename => 'bar', :content => 'abcd'))
+    assert_equal a1.diskfile, a2.diskfile
+  end
+
+  def test_attachments_with_same_content_should_not_reuse_same_file_if_deleted
+    a1 = Attachment.create!(:container => Issue.find(1), :author => User.find(1),
+                            :file => mock_file(:filename => 'foo', :content => 'abcd'))
+    a1.delete_from_disk
+    a2 = Attachment.create!(:container => Issue.find(1), :author => User.find(1),
+                            :file => mock_file(:filename => 'bar', :content => 'abcd'))
+    assert_not_equal a1.diskfile, a2.diskfile
+  end
+
+  def test_attachments_with_same_filename_at_the_same_time_should_not_overwrite
+    a1 = Attachment.create!(:container => Issue.find(1), :author => User.find(1),
+                            :file => mock_file(:filename => 'foo', :content => 'abcd'))
+    a2 = Attachment.create!(:container => Issue.find(1), :author => User.find(1),
+                            :file => mock_file(:filename => 'foo', :content => 'efgh'))
+    assert_not_equal a1.diskfile, a2.diskfile
   end
 
   def test_filename_should_be_basenamed
-    a = Attachment.new(:file => MockFile.new(:original_filename => "path/to/the/file"))
+    a = Attachment.new(:file => mock_file(:original_filename => "path/to/the/file"))
     assert_equal 'file', a.filename
   end
 
   def test_filename_should_be_sanitized
-    a = Attachment.new(:file => MockFile.new(:original_filename => "valid:[] invalid:?%*|\"'<>chars"))
+    a = Attachment.new(:file => mock_file(:original_filename => "valid:[] invalid:?%*|\"'<>chars"))
     assert_equal 'valid_[] invalid_chars', a.filename
   end
 
@@ -178,6 +258,12 @@ class AttachmentTest < ActiveSupport::TestCase
 
     a = Attachment.new(:filename => "test.png", :description => "Cool image")
     assert_equal "test.png (Cool image)", a.title
+  end
+
+  def test_new_attachment_should_be_editable_by_author
+    user = User.find(1)
+    a = Attachment.new(:author => user)
+    assert_equal true, a.editable?(user)
   end
 
   def test_prune_should_destroy_old_unattached_attachments
@@ -250,6 +336,53 @@ class AttachmentTest < ActiveSupport::TestCase
     assert_equal 'text/plain', attachment.content_type
   end
 
+  def test_update_digest_to_sha256_should_update_digest
+    set_fixtures_attachments_directory
+    attachment = Attachment.find 6
+    assert attachment.readable?
+    attachment.update_digest_to_sha256!
+    assert_equal 'ac5c6e99a21ae74b2e3f5b8e5b568be1b9107cd7153d139e822b9fe5caf50938', attachment.digest
+  end
+
+  def test_update_attachments
+    attachments = Attachment.where(:id => [2, 3]).to_a
+
+    assert Attachment.update_attachments(attachments, {
+      '2' => {:filename => 'newname.txt', :description => 'New description'},
+      3 => {:filename => 'othername.txt'}
+    })
+
+    attachment = Attachment.find(2)
+    assert_equal 'newname.txt', attachment.filename
+    assert_equal 'New description', attachment.description
+
+    attachment = Attachment.find(3)
+    assert_equal 'othername.txt', attachment.filename
+  end
+
+  def test_update_attachments_with_failure
+    attachments = Attachment.where(:id => [2, 3]).to_a
+
+    assert !Attachment.update_attachments(attachments, {
+      '2' => {:filename => '', :description => 'New description'},
+      3 => {:filename => 'othername.txt'}
+    })
+
+    attachment = Attachment.find(3)
+    assert_equal 'logo.gif', attachment.filename
+  end
+
+  def test_update_attachments_should_sanitize_filename
+    attachments = Attachment.where(:id => 2).to_a
+
+    assert Attachment.update_attachments(attachments, {
+      2 => {:filename => 'newname?.txt'},
+    })
+
+    attachment = Attachment.find(2)
+    assert_equal 'newname_.txt', attachment.filename
+  end
+
   def test_latest_attach
     set_fixtures_attachments_directory
     a1 = Attachment.find(16)
@@ -272,6 +405,13 @@ class AttachmentTest < ActiveSupport::TestCase
     set_tmp_attachments_directory
   end
 
+  def test_latest_attach_should_not_error_with_string_with_invalid_encoding
+    string = "width:50\xFE-Image.jpg".force_encoding('UTF-8')
+    assert_equal false, string.valid_encoding?
+
+    Attachment.latest_attach(Attachment.limit(2).to_a, string)
+  end
+
   def test_thumbnailable_should_be_true_for_images
     assert_equal true, Attachment.new(:filename => 'test.jpg').thumbnailable?
   end
@@ -292,7 +432,15 @@ class AttachmentTest < ActiveSupport::TestCase
         assert File.exists?(thumbnail)
       end
     end
+
+    def test_thumbnail_should_return_nil_if_generation_fails
+      Redmine::Thumbnail.expects(:generate).raises(SystemCallError, 'Something went wrong')
+      set_fixtures_attachments_directory
+      attachment = Attachment.find(16)
+      assert_nil attachment.thumbnail
+    end
   else
     puts '(ImageMagick convert not available)'
   end
+
 end

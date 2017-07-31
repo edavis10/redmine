@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -23,26 +23,9 @@ class Redmine::ApiTest::ProjectsTest < Redmine::ApiTest::Base
            :attachments, :custom_fields, :custom_values, :time_entries, :issue_categories
 
   def setup
-    Setting.rest_api_enabled = '1'
+    super
     set_tmp_attachments_directory
   end
-
-  # TODO: A private project is needed because should_allow_api_authentication
-  # actually tests that authentication is *required*, not just allowed
-  should_allow_api_authentication(:get, "/projects/2.xml")
-  should_allow_api_authentication(:get, "/projects/2.json")
-  should_allow_api_authentication(:post,
-                                  '/projects.xml',
-                                  {:project => {:name => 'API test', :identifier => 'api-test'}},
-                                  {:success_code => :created})
-  should_allow_api_authentication(:put,
-                                  '/projects/2.xml',
-                                  {:project => {:name => 'API update'}},
-                                  {:success_code => :ok})
-  should_allow_api_authentication(:delete,
-                                  '/projects/2.xml',
-                                  {},
-                                  {:success_code => :ok})
 
   test "GET /projects.xml should return projects" do
     get '/projects.xml'
@@ -71,15 +54,7 @@ class Redmine::ApiTest::ProjectsTest < Redmine::ApiTest::Base
     assert_response :success
     assert_equal 'application/xml', @response.content_type
 
-    assert_tag 'issue_categories',
-      :attributes => {:type => 'array'},
-      :child => {
-        :tag => 'issue_category',
-        :attributes => {
-          :id => '2',
-          :name => 'Recipes'
-        }
-      }
+    assert_select 'issue_categories[type=array] issue_category[id="2"][name=Recipes]'
   end
 
   test "GET /projects.xml with include=trackers should return trackers" do
@@ -87,15 +62,7 @@ class Redmine::ApiTest::ProjectsTest < Redmine::ApiTest::Base
     assert_response :success
     assert_equal 'application/xml', @response.content_type
 
-    assert_tag 'trackers',
-      :attributes => {:type => 'array'},
-      :child => {
-        :tag => 'tracker',
-        :attributes => {
-          :id => '2',
-          :name => 'Feature request'
-        }
-      }
+    assert_select 'trackers[type=array] tracker[id="2"][name="Feature request"]'
   end
 
   test "GET /projects.xml with include=enabled_modules should return enabled modules" do
@@ -103,14 +70,7 @@ class Redmine::ApiTest::ProjectsTest < Redmine::ApiTest::Base
     assert_response :success
     assert_equal 'application/xml', @response.content_type
 
-    assert_tag 'enabled_modules',
-      :attributes => {:type => 'array'},
-      :child => {
-        :tag => 'enabled_module',
-        :attributes => {
-          :name => 'issue_tracking'
-        }
-      }
+    assert_select 'enabled_modules[type=array] enabled_module[name=issue_tracking]'
   end
 
   test "GET /projects/:id.xml should return the project" do
@@ -121,10 +81,10 @@ class Redmine::ApiTest::ProjectsTest < Redmine::ApiTest::Base
     assert_select 'project>id', :text => '1'
     assert_select 'project>status', :text => '1'
     assert_select 'project>is_public', :text => 'true'
-    assert_select 'custom_field[name=Development status]', :text => 'Stable'
+    assert_select 'custom_field[name="Development status"]', :text => 'Stable'
 
-    assert_no_tag 'trackers'
-    assert_no_tag 'issue_categories'
+    assert_select 'trackers', 0
+    assert_select 'issue_categories', 0
   end
 
   test "GET /projects/:id.json should return the project" do
@@ -143,8 +103,7 @@ class Redmine::ApiTest::ProjectsTest < Redmine::ApiTest::Base
     assert_response :success
     assert_equal 'application/xml', @response.content_type
 
-    assert_no_tag 'custom_field',
-      :attributes => {:name => 'Development status'}
+    assert_select 'custom_field[name=?]', 'Development status', 0
   end
 
   test "GET /projects/:id.xml with include=issue_categories should return categories" do
@@ -152,15 +111,15 @@ class Redmine::ApiTest::ProjectsTest < Redmine::ApiTest::Base
     assert_response :success
     assert_equal 'application/xml', @response.content_type
 
-    assert_tag 'issue_categories',
-      :attributes => {:type => 'array'},
-      :child => {
-        :tag => 'issue_category',
-        :attributes => {
-          :id => '2',
-          :name => 'Recipes'
-        }
-      }
+    assert_select 'issue_categories[type=array] issue_category[id="2"][name=Recipes]'
+  end
+
+  test "GET /projects/:id.xml with include=time_entry_activities should return activities" do
+    get '/projects/1.xml?include=time_entry_activities'
+    assert_response :success
+    assert_equal 'application/xml', @response.content_type
+
+    assert_select 'time_entry_activities[type=array] time_entry_activity[id="10"][name=Development]'
   end
 
   test "GET /projects/:id.xml with include=trackers should return trackers" do
@@ -168,15 +127,7 @@ class Redmine::ApiTest::ProjectsTest < Redmine::ApiTest::Base
     assert_response :success
     assert_equal 'application/xml', @response.content_type
 
-    assert_tag 'trackers',
-      :attributes => {:type => 'array'},
-      :child => {
-        :tag => 'tracker',
-        :attributes => {
-          :id => '2',
-          :name => 'Feature request'
-        }
-      }
+    assert_select 'trackers[type=array] tracker[id="2"][name="Feature request"]'
   end
 
   test "GET /projects/:id.xml with include=enabled_modules should return enabled modules" do
@@ -184,23 +135,16 @@ class Redmine::ApiTest::ProjectsTest < Redmine::ApiTest::Base
     assert_response :success
     assert_equal 'application/xml', @response.content_type
 
-    assert_tag 'enabled_modules',
-      :attributes => {:type => 'array'},
-      :child => {
-        :tag => 'enabled_module',
-        :attributes => {
-          :name => 'issue_tracking'
-        }
-      }
+    assert_select 'enabled_modules[type=array] enabled_module[name=issue_tracking]'
   end
 
   test "POST /projects.xml with valid parameters should create the project" do
-    Setting.default_projects_modules = ['issue_tracking', 'repository']
-
-    assert_difference('Project.count') do
-      post '/projects.xml',
-        {:project => {:name => 'API test', :identifier => 'api-test'}},
-        credentials('admin')
+    with_settings :default_projects_modules => ['issue_tracking', 'repository'] do
+      assert_difference('Project.count') do
+        post '/projects.xml',
+          :params => {:project => {:name => 'API test', :identifier => 'api-test'}},
+          :headers => credentials('admin')
+      end
     end
 
     project = Project.order('id DESC').first
@@ -211,14 +155,14 @@ class Redmine::ApiTest::ProjectsTest < Redmine::ApiTest::Base
 
     assert_response :created
     assert_equal 'application/xml', @response.content_type
-    assert_tag 'project', :child => {:tag => 'id', :content => project.id.to_s}
+    assert_select 'project id', :text => project.id.to_s
   end
 
   test "POST /projects.xml should accept enabled_module_names attribute" do
     assert_difference('Project.count') do
       post '/projects.xml',
-        {:project => {:name => 'API test', :identifier => 'api-test', :enabled_module_names => ['issue_tracking', 'news', 'time_tracking']}},
-        credentials('admin')
+        :params => {:project => {:name => 'API test', :identifier => 'api-test', :enabled_module_names => ['issue_tracking', 'news', 'time_tracking']}},
+        :headers => credentials('admin')
     end
 
     project = Project.order('id DESC').first
@@ -228,8 +172,8 @@ class Redmine::ApiTest::ProjectsTest < Redmine::ApiTest::Base
   test "POST /projects.xml should accept tracker_ids attribute" do
     assert_difference('Project.count') do
       post '/projects.xml',
-        {:project => {:name => 'API test', :identifier => 'api-test', :tracker_ids => [1, 3]}},
-        credentials('admin')
+        :params => {:project => {:name => 'API test', :identifier => 'api-test', :tracker_ids => [1, 3]}},
+        :headers => credentials('admin')
     end
 
     project = Project.order('id DESC').first
@@ -238,17 +182,21 @@ class Redmine::ApiTest::ProjectsTest < Redmine::ApiTest::Base
 
   test "POST /projects.xml with invalid parameters should return errors" do
     assert_no_difference('Project.count') do
-      post '/projects.xml', {:project => {:name => 'API test'}}, credentials('admin')
+      post '/projects.xml',
+        :params => {:project => {:name => 'API test'}},
+        :headers => credentials('admin')
     end
 
     assert_response :unprocessable_entity
     assert_equal 'application/xml', @response.content_type
-    assert_tag 'errors', :child => {:tag => 'error', :content => "Identifier can't be blank"}
+    assert_select 'errors error', :text => "Identifier cannot be blank"
   end
 
   test "PUT /projects/:id.xml with valid parameters should update the project" do
     assert_no_difference 'Project.count' do
-      put '/projects/2.xml', {:project => {:name => 'API update'}}, credentials('jsmith')
+      put '/projects/2.xml',
+        :params => {:project => {:name => 'API update'}},
+        :headers => credentials('jsmith')
     end
     assert_response :ok
     assert_equal '', @response.body
@@ -259,7 +207,9 @@ class Redmine::ApiTest::ProjectsTest < Redmine::ApiTest::Base
 
   test "PUT /projects/:id.xml should accept enabled_module_names attribute" do
     assert_no_difference 'Project.count' do
-      put '/projects/2.xml', {:project => {:name => 'API update', :enabled_module_names => ['issue_tracking', 'news', 'time_tracking']}}, credentials('admin')
+      put '/projects/2.xml',
+        :params => {:project => {:name => 'API update', :enabled_module_names => ['issue_tracking', 'news', 'time_tracking']}},
+        :headers => credentials('admin')
     end
     assert_response :ok
     assert_equal '', @response.body
@@ -269,7 +219,9 @@ class Redmine::ApiTest::ProjectsTest < Redmine::ApiTest::Base
 
   test "PUT /projects/:id.xml should accept tracker_ids attribute" do
     assert_no_difference 'Project.count' do
-      put '/projects/2.xml', {:project => {:name => 'API update', :tracker_ids => [1, 3]}}, credentials('admin')
+      put '/projects/2.xml',
+        :params => {:project => {:name => 'API update', :tracker_ids => [1, 3]}},
+        :headers => credentials('admin')
     end
     assert_response :ok
     assert_equal '', @response.body
@@ -279,17 +231,19 @@ class Redmine::ApiTest::ProjectsTest < Redmine::ApiTest::Base
 
   test "PUT /projects/:id.xml with invalid parameters should return errors" do
     assert_no_difference('Project.count') do
-      put '/projects/2.xml', {:project => {:name => ''}}, credentials('admin')
+      put '/projects/2.xml',
+        :params => {:project => {:name => ''}},
+        :headers => credentials('admin')
     end
 
     assert_response :unprocessable_entity
     assert_equal 'application/xml', @response.content_type
-    assert_tag 'errors', :child => {:tag => 'error', :content => "Name can't be blank"}
+    assert_select 'errors error', :text => "Name cannot be blank"
   end
 
   test "DELETE /projects/:id.xml should delete the project" do
     assert_difference('Project.count',-1) do
-      delete '/projects/2.xml', {}, credentials('admin')
+      delete '/projects/2.xml', :headers => credentials('admin')
     end
     assert_response :ok
     assert_equal '', @response.body

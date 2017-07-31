@@ -1,0 +1,27 @@
+<%= form_tag({:action => 'edit', :tab => 'timelog'}) do %>
+
+<div class="box tabular settings">
+<p><%= setting_multiselect(:timelog_required_fields,
+        [[l(:field_issue), 'issue_id'], [l(:field_comments), 'comments'] ]) %></p>
+
+<p><%= setting_text_field :timelog_max_hours_per_day, :size => 6 %></p>
+
+<p><%= setting_check_box :timelog_accept_0_hours %></p>
+</div>
+
+<fieldset class="box">
+  <legend><%= l(:setting_time_entry_list_defaults) %></legend>
+
+  <% query = TimeEntryQuery.new(Setting.time_entry_list_defaults) %>
+  <%= render_query_columns_selection(query,
+        :name => 'settings[time_entry_list_defaults][column_names]') %>
+
+  <p>
+    <label><%= l(:label_total_plural) %></label>
+    <%= available_totalable_columns_tags(query,
+          :name => 'settings[time_entry_list_defaults][totalable_names]') %>
+  </p>
+</fieldset>
+
+<%= submit_tag l(:button_save) %>
+<% end %>

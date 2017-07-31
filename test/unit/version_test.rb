@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -27,6 +27,22 @@ class VersionTest < ActiveSupport::TestCase
     assert v.save
     assert_equal 'open', v.status
     assert_equal 'none', v.sharing
+  end
+
+  def test_create_as_default_project_version
+    project = Project.find(1)
+    v = Version.new(:project => project, :name => '1.1',
+                    :default_project_version => '1')
+    assert v.save
+    assert_equal v, project.reload.default_version
+  end
+
+  def test_create_not_as_default_project_version
+    project = Project.find(1)
+    v = Version.new(:project => project, :name => '1.1',
+                    :default_project_version => '0')
+    assert v.save
+    assert_nil project.reload.default_version
   end
 
   def test_invalid_effective_date_validation
@@ -124,12 +140,23 @@ class VersionTest < ActiveSupport::TestCase
     v5 = Version.create!(:project_id => 1, :name => 'v5', :effective_date => '2012-07-02')
 
     assert_equal [v5, v3, v1, v2, v4], [v1, v2, v3, v4, v5].sort
-    assert_equal [v5, v3, v1, v2, v4], Version.sorted.all
+    assert_equal [v5, v3, v1, v2, v4], Version.sorted.to_a
+  end
+
+  def test_should_sort_versions_with_same_date_by_name
+    v1 = Version.new(:effective_date => '2014-12-03', :name => 'v2')
+    v2 = Version.new(:effective_date => '2014-12-03', :name => 'v1')
+    assert_equal [v2, v1], [v1, v2].sort
   end
 
   def test_completed_should_be_false_when_due_today
     version = Version.create!(:project_id => 1, :effective_date => Date.today, :name => 'Due today')
     assert_equal false, version.completed?
+  end
+
+  def test_completed_should_be_true_when_closed
+    version = Version.create!(:project_id => 1, :status => 'closed', :name => 'Closed')
+    assert_equal true, version.completed?
   end
 
   test "#behind_schedule? should be false if there are no issues assigned" do
@@ -216,17 +243,38 @@ class VersionTest < ActiveSupport::TestCase
 
     # Project 1 now out of the shared scope
     project_1_issue.reload
-    assert_equal nil, project_1_issue.fixed_version,
+    assert_nil project_1_issue.fixed_version,
                 "Fixed version is still set after changing the Version's sharing"
 
     # Project 5 now out of the shared scope
     project_5_issue.reload
-    assert_equal nil, project_5_issue.fixed_version,
+    assert_nil project_5_issue.fixed_version,
                 "Fixed version is still set after changing the Version's sharing"
 
     # Project 2 issue remains
     project_2_issue.reload
     assert_equal @version, project_2_issue.fixed_version
+  end
+
+  def test_deletable_should_return_true_when_not_referenced
+    version = Version.generate!
+
+    assert_equal true, version.deletable?
+  end
+
+  def test_deletable_should_return_false_when_referenced_by_an_issue
+    version = Version.generate!
+    Issue.generate!(:fixed_version => version)
+
+    assert_equal false, version.deletable?
+  end
+
+  def test_deletable_should_return_false_when_referenced_by_a_custom_field
+    version = Version.generate!
+    field = IssueCustomField.generate!(:field_format => 'version')
+    value = CustomValue.create!(:custom_field => field, :customized => Issue.first, :value => version.id)
+
+    assert_equal false, version.deletable?
   end
 
   private

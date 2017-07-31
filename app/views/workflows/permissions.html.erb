@@ -14,27 +14,27 @@
 <%= form_tag({}, :method => 'get') do %>
 <p>
   <label><%=l(:label_role)%>:
-  <%= options_for_workflow_select 'role_id[]', Role.sorted, @roles, :id => 'role_id', :class => 'expandable' %>
+  <%= options_for_workflow_select 'role_id[]', Role.sorted.select(&:consider_workflow?), @roles, :id => 'role_id', :class => 'expandable' %>
   </label>
-  <a href="#" data-expands="#role_id"><%= image_tag 'bullet_toggle_plus.png' %></a>
+  <a href="#" data-expands="#role_id"><span class="toggle-multiselect"></a>
 
   <label><%=l(:label_tracker)%>:
   <%= options_for_workflow_select 'tracker_id[]', Tracker.sorted, @trackers, :id => 'tracker_id', :class => 'expandable' %>
   </label>
-  <a href="#" data-expands="#tracker_id"><%= image_tag 'bullet_toggle_plus.png' %></a>
+  <a href="#" data-expands="#tracker_id"><span class="toggle-multiselect"></a>
 
   <%= submit_tag l(:button_edit), :name => nil %>
 
-  <%= hidden_field_tag 'used_statuses_only', '0' %>
+  <%= hidden_field_tag 'used_statuses_only', '0', :id => nil %>
   <label><%= check_box_tag 'used_statuses_only', '1', @used_statuses_only %> <%= l(:label_display_used_statuses_only) %></label>
 </p>
 <% end %>
 
 <% if @trackers && @roles && @statuses.any? %>
   <%= form_tag({}, :id => 'workflow_form' ) do %>
-    <%= @trackers.map {|tracker| hidden_field_tag 'tracker_id[]', tracker.id}.join.html_safe %>
-    <%= @roles.map {|role| hidden_field_tag 'role_id[]', role.id}.join.html_safe %>
-    <%= hidden_field_tag 'used_statuses_only', params[:used_statuses_only] %>
+    <%= @trackers.map {|tracker| hidden_field_tag 'tracker_id[]', tracker.id, :id => nil}.join.html_safe %>
+    <%= @roles.map {|role| hidden_field_tag 'role_id[]', role.id, :id => nil}.join.html_safe %>
+    <%= hidden_field_tag 'used_statuses_only', params[:used_statuses_only], :id => nil %>
     <div class="autoscroll">
     <table class="list workflows fields_permissions">
     <thead>
@@ -47,7 +47,7 @@
         <td></td>
         <% for status in @statuses %>
         <td style="width:<%= 75 / @statuses.size %>%;">
-          <%=h status.name %>
+          <%= status.name %>
         </td>
         <% end %>
       </tr>
@@ -60,12 +60,12 @@
         </td>
       </tr>
       <% @fields.each do |field, name| %>
-      <tr class="<%= cycle("odd", "even") %>">
+      <tr>
         <td class="name">
-          <%=h name %> <%= content_tag('span', '*', :class => 'required') if field_required?(field) %>
+          <%= name %> <%= content_tag('span', '*', :class => 'required') if field_required?(field) %>
         </td>
         <% for status in @statuses -%>
-        <td class="<%= @permissions[status.id][field] %>">
+        <td class="<%= @permissions[status.id][field].try(:join, ' ') %>" title="<%= name %> (<%= status.name %>)">
           <%= field_permission_tag(@permissions, status, field, @roles) %>
           <% unless status == @statuses.last %><a href="#" class="repeat-value">&#187;</a><% end %>
         </td>
@@ -80,12 +80,12 @@
           </td>
         </tr>
         <% @custom_fields.each do |field| %>
-        <tr class="<%= cycle("odd", "even") %>">
+        <tr>
           <td class="name">
-            <%=h field.name %> <%= content_tag('span', '*', :class => 'required') if field_required?(field) %>
+            <%= field.name %> <%= content_tag('span', '*', :class => 'required') if field_required?(field) %>
           </td>
           <% for status in @statuses -%>
-          <td class="<%= @permissions[status.id][field.id.to_s] %>">
+          <td class="<%= @permissions[status.id][field.id.to_s].try(:join, ' ') %>" title="<%= field.name %> (<%= status.name %>)">
             <%= field_permission_tag(@permissions, status, field, @roles) %>
             <% unless status == @statuses.last %><a href="#" class="repeat-value">&#187;</a><% end %>
           </td>

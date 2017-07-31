@@ -3,7 +3,9 @@ var operatorLabels = <%= raw_json Query.operators_labels %>;
 var operatorByType = <%= raw_json Query.operators_by_filter_type %>;
 var availableFilters = <%= raw_json query.available_filters_as_json %>;
 var labelDayPlural = <%= raw_json l(:label_day_plural) %>;
-var allProjects = <%= raw_json query.all_projects_values %>;
+
+var filtersUrl = <%= raw_json queries_filter_path(:project_id => @query.project.try(:id), :type => @query.type) %>;
+
 $(document).ready(function(){
   initFilters();
   <% query.filters.each do |field, options| %>
@@ -12,17 +14,13 @@ $(document).ready(function(){
 });
 <% end %>
 
-<table style="width:100%">
-<tr>
-<td>
 <table id="filters-table">
 </table>
-</td>
-<td class="add-filter">
+
+<div class="add-filter">
 <%= label_tag('add_filter_select', l(:label_filter_add)) %>
 <%= select_tag 'add_filter_select', filters_options_for_select(query), :name => nil %>
-</td>
-</tr>
-</table>
+</div>
+
 <%= hidden_field_tag 'f[]', '' %>
 <% include_calendar_headers_tags %>

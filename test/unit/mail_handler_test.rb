@@ -1,7 +1,7 @@
 # encoding: utf-8
 #
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,6 +22,7 @@ require File.expand_path('../../test_helper', __FILE__)
 class MailHandlerTest < ActiveSupport::TestCase
   fixtures :users, :projects, :enabled_modules, :roles,
            :members, :member_roles, :users,
+           :email_addresses, :user_preferences,
            :issues, :issue_statuses,
            :workflows, :trackers, :projects_trackers,
            :versions, :enumerations, :issue_categories,
@@ -39,11 +40,11 @@ class MailHandlerTest < ActiveSupport::TestCase
     Setting.clear_cache
   end
 
-  def test_add_issue
-    ActionMailer::Base.deliveries.clear
-    lft1 = new_issue_lft
-    # This email contains: 'Project: onlinestore'
-    issue = submit_email('ticket_on_given_project.eml')
+  def test_add_issue_with_specific_overrides
+    issue = submit_email('ticket_on_given_project.eml',
+      :allow_override => ['status', 'start_date', 'due_date', 'assigned_to',
+                          'fixed_version', 'estimated_hours', 'done_ratio']
+    )
     assert issue.is_a?(Issue)
     assert !issue.new_record?
     issue.reload
@@ -59,16 +60,62 @@ class MailHandlerTest < ActiveSupport::TestCase
     assert_equal Version.find_by_name('Alpha'), issue.fixed_version
     assert_equal 2.5, issue.estimated_hours
     assert_equal 30, issue.done_ratio
-    assert_equal [issue.id, lft1, lft1 + 1], [issue.root_id, issue.lft, issue.rgt]
     # keywords should be removed from the email body
     assert !issue.description.match(/^Project:/i)
     assert !issue.description.match(/^Status:/i)
     assert !issue.description.match(/^Start Date:/i)
-    # Email notification should be sent
-    mail = ActionMailer::Base.deliveries.last
-    assert_not_nil mail
-    assert mail.subject.include?("##{issue.id}")
-    assert mail.subject.include?('New ticket on a given project')
+  end
+
+  def test_add_issue_with_all_overrides
+    issue = submit_email('ticket_on_given_project.eml', :allow_override => 'all')
+    assert issue.is_a?(Issue)
+    assert !issue.new_record?
+    issue.reload
+    assert_equal Project.find(2), issue.project
+    assert_equal issue.project.trackers.first, issue.tracker
+    assert_equal IssueStatus.find_by_name('Resolved'), issue.status
+    assert issue.description.include?('Lorem ipsum dolor sit amet, consectetuer adipiscing elit.')
+    assert_equal '2010-01-01', issue.start_date.to_s
+    assert_equal '2010-12-31', issue.due_date.to_s
+    assert_equal User.find_by_login('jsmith'), issue.assigned_to
+    assert_equal Version.find_by_name('Alpha'), issue.fixed_version
+    assert_equal 2.5, issue.estimated_hours
+    assert_equal 30, issue.done_ratio
+  end
+
+  def test_add_issue_without_overrides_should_ignore_attributes
+    WorkflowRule.delete_all
+    issue = submit_email('ticket_on_given_project.eml')
+    assert issue.is_a?(Issue)
+    assert !issue.new_record?
+    issue.reload
+    assert_equal Project.find(2), issue.project
+    assert_equal 'New ticket on a given project', issue.subject
+    assert issue.description.include?('Lorem ipsum dolor sit amet, consectetuer adipiscing elit.')
+    assert_equal User.find_by_login('jsmith'), issue.author
+
+    assert_equal issue.project.trackers.first, issue.tracker
+    assert_equal 'New', issue.status.name
+    assert_not_equal '2010-01-01', issue.start_date.to_s
+    assert_nil issue.due_date
+    assert_nil issue.assigned_to
+    assert_nil issue.fixed_version
+    assert_nil issue.estimated_hours
+    assert_equal 0, issue.done_ratio
+  end
+
+  def test_add_issue_to_project_specified_by_subaddress
+    # This email has redmine+onlinestore@somenet.foo as 'To' header
+    issue = submit_email(
+              'ticket_on_project_given_by_to_header.eml',
+              :issue => {:tracker => 'Support request'},
+              :project_from_subaddress => 'redmine@somenet.foo'
+            )
+    assert issue.is_a?(Issue)
+    assert !issue.new_record?
+    issue.reload
+    assert_equal 'onlinestore', issue.project.identifier
+    assert_equal 'Support request', issue.tracker.name
   end
 
   def test_add_issue_with_default_tracker
@@ -83,9 +130,31 @@ class MailHandlerTest < ActiveSupport::TestCase
     assert_equal 'Support request', issue.tracker.name
   end
 
-  def test_add_issue_with_status
+  def test_add_issue_with_default_version
+    # This email contains: 'Project: onlinestore'
+    issue = submit_email(
+              'ticket_on_given_project.eml',
+              :issue => {:fixed_version => 'Alpha'}
+            )
+    assert issue.is_a?(Issue)
+    assert !issue.new_record?
+    assert_equal 'Alpha', issue.reload.fixed_version.name
+  end
+
+  def test_add_issue_with_default_assigned_to
+    # This email contains: 'Project: onlinestore'
+    issue = submit_email(
+              'ticket_on_given_project.eml',
+              :issue => {:assigned_to => 'jsmith'}
+            )
+    assert issue.is_a?(Issue)
+    assert !issue.new_record?
+    assert_equal 'jsmith', issue.reload.assigned_to.login
+  end
+
+  def test_add_issue_with_status_override
     # This email contains: 'Project: onlinestore' and 'Status: Resolved'
-    issue = submit_email('ticket_on_given_project.eml')
+    issue = submit_email('ticket_on_given_project.eml', :allow_override => ['status'])
     assert issue.is_a?(Issue)
     assert !issue.new_record?
     issue.reload
@@ -93,26 +162,16 @@ class MailHandlerTest < ActiveSupport::TestCase
     assert_equal IssueStatus.find_by_name("Resolved"), issue.status
   end
 
-  def test_add_issue_with_attributes_override
-    issue = submit_email(
-              'ticket_with_attributes.eml',
-              :allow_override => 'tracker,category,priority'
-            )
+  def test_add_issue_should_accept_is_private_attribute
+    issue = submit_email('ticket_on_given_project.eml', :issue => {:is_private => '1'})
     assert issue.is_a?(Issue)
     assert !issue.new_record?
-    issue.reload
-    assert_equal 'New ticket on a given project', issue.subject
-    assert_equal User.find_by_login('jsmith'), issue.author
-    assert_equal Project.find(2), issue.project
-    assert_equal 'Feature request', issue.tracker.to_s
-    assert_equal 'Stock management', issue.category.to_s
-    assert_equal 'Urgent', issue.priority.to_s
-    assert issue.description.include?('Lorem ipsum dolor sit amet, consectetuer adipiscing elit.')
+    assert_equal true, issue.reload.is_private
   end
 
   def test_add_issue_with_group_assignment
     with_settings :issue_group_assignment => '1' do
-      issue = submit_email('ticket_on_given_project.eml') do |email|
+      issue = submit_email('ticket_on_given_project.eml', :allow_override => ['assigned_to']) do |email|
         email.gsub!('Assigned to: John Smith', 'Assigned to: B Team')
       end
       assert issue.is_a?(Issue)
@@ -174,20 +233,32 @@ class MailHandlerTest < ActiveSupport::TestCase
   end
 
   def test_add_issue_with_custom_fields
-    issue = submit_email('ticket_with_custom_fields.eml', :issue => {:project => 'onlinestore'})
+    mutiple = IssueCustomField.generate!(:field_format => 'list',
+                                         :name => 'OS', :multiple => true,
+                                         :possible_values => ['Linux', 'Windows', 'Mac OS X'])
+
+    issue = submit_email('ticket_with_custom_fields.eml',
+      :issue => {:project => 'onlinestore'}, :allow_override => ['database', 'Searchable_field', 'OS']
+    )
     assert issue.is_a?(Issue)
     assert !issue.new_record?
     issue.reload
     assert_equal 'New ticket with custom field values', issue.subject
     assert_equal 'PostgreSQL', issue.custom_field_value(1)
     assert_equal 'Value for a custom field', issue.custom_field_value(2)
+    assert_equal ['Mac OS X', 'Windows'], issue.custom_field_value(mutiple.id).sort
     assert !issue.description.match(/^searchable field:/i)
   end
 
   def test_add_issue_with_version_custom_fields
-    field = IssueCustomField.create!(:name => 'Affected version', :field_format => 'version', :is_for_all => true, :tracker_ids => [1,2,3])
+    field = IssueCustomField.create!(:name => 'Affected version',
+                                     :field_format => 'version',
+                                     :is_for_all => true,
+                                     :tracker_ids => [1,2,3])
 
-    issue = submit_email('ticket_with_custom_fields.eml', :issue => {:project => 'ecookbook'}) do |email|
+    issue = submit_email('ticket_with_custom_fields.eml',
+      :issue => {:project => 'ecookbook'}, :allow_override => ['affected version']
+    ) do |email|
       email << "Affected version: 1.0\n"
     end
     assert issue.is_a?(Issue)
@@ -199,7 +270,7 @@ class MailHandlerTest < ActiveSupport::TestCase
   def test_add_issue_should_match_assignee_on_display_name
     user = User.generate!(:firstname => 'Foo Bar', :lastname => 'Foo Baz')
     User.add_to_project(user, Project.find(2))
-    issue = submit_email('ticket_on_given_project.eml') do |email|
+    issue = submit_email('ticket_on_given_project.eml', :allow_override => ['assigned_to']) do |email|
       email.sub!(/^Assigned to.*$/, 'Assigned to: Foo Bar Foo baz')
     end
     assert issue.is_a?(Issue)
@@ -214,13 +285,25 @@ class MailHandlerTest < ActiveSupport::TestCase
     end
   end
 
-  def test_add_issue_with_cc
+  def test_add_issue_should_add_cc_as_watchers
+    user = User.find_by_mail('dlopper@somenet.foo')
     issue = submit_email('ticket_with_cc.eml', :issue => {:project => 'ecookbook'})
     assert issue.is_a?(Issue)
     assert !issue.new_record?
-    issue.reload
-    assert issue.watched_by?(User.find_by_mail('dlopper@somenet.foo'))
+    assert issue.watched_by?(user)
     assert_equal 1, issue.watcher_user_ids.size
+    assert_include user, issue.watcher_users.to_a
+  end
+
+  def test_add_issue_from_additional_email_address
+    user = User.find(2)
+    user.mail = 'mainaddress@somenet.foo'
+    user.save!
+    EmailAddress.create!(:user => user, :address => 'jsmith@somenet.foo')
+
+    issue = submit_email('ticket_on_given_project.eml')
+    assert issue
+    assert_equal user, issue.author
   end
 
   def test_add_issue_by_unknown_user
@@ -274,7 +357,6 @@ class MailHandlerTest < ActiveSupport::TestCase
   end
 
   def test_add_issue_by_anonymous_user_on_private_project_without_permission_check
-    lft1 = new_issue_lft
     assert_no_difference 'User.count' do
       assert_difference 'Issue.count' do
         issue = submit_email(
@@ -286,7 +368,6 @@ class MailHandlerTest < ActiveSupport::TestCase
         assert issue.is_a?(Issue)
         assert issue.author.anonymous?
         assert !issue.project.is_public?
-        assert_equal [issue.id, lft1, lft1 + 1], [issue.root_id, issue.lft, issue.rgt]
       end
     end
   end
@@ -315,6 +396,17 @@ class MailHandlerTest < ActiveSupport::TestCase
     end
   end
 
+  def test_add_issue_should_send_notification
+    issue = submit_email('ticket_on_given_project.eml', :allow_override => 'all')
+    assert issue.is_a?(Issue)
+    assert !issue.new_record?
+
+    mail = ActionMailer::Base.deliveries.last
+    assert_not_nil mail
+    assert mail.subject.include?("##{issue.id}")
+    assert mail.subject.include?('New ticket on a given project')
+  end
+
   def test_created_user_should_be_added_to_groups
     group1 = Group.generate!
     group2 = Group.generate!
@@ -328,7 +420,7 @@ class MailHandlerTest < ActiveSupport::TestCase
       )
     end
     user = User.order('id DESC').first
-    assert_same_elements [group1, group2], user.groups
+    assert_equal [group1, group2].sort, user.groups.sort
   end
 
   def test_created_user_should_not_receive_account_information_with_no_account_info_option
@@ -384,7 +476,9 @@ class MailHandlerTest < ActiveSupport::TestCase
   end
 
   def test_add_issue_with_invalid_project_should_be_assigned_to_default_project
-    issue = submit_email('ticket_on_given_project.eml', :issue => {:project => 'ecookbook'}, :allow_override => 'project') do |email|
+    issue = submit_email('ticket_on_given_project.eml',
+                         :issue => {:project => 'ecookbook'},
+                         :allow_override => 'project') do |email|
       email.gsub!(/^Project:.+$/, 'Project: invalid')
     end
     assert issue.is_a?(Issue)
@@ -411,9 +505,8 @@ class MailHandlerTest < ActiveSupport::TestCase
   end
 
   def test_add_issue_with_japanese_keywords
-    ja_dev = "\xe9\x96\x8b\xe7\x99\xba"
-    ja_dev.force_encoding('UTF-8') if ja_dev.respond_to?(:force_encoding)
-    tracker = Tracker.create!(:name => ja_dev)
+    ja_dev = "\xe9\x96\x8b\xe7\x99\xba".force_encoding('UTF-8')
+    tracker = Tracker.generate!(:name => ja_dev)
     Project.find(1).trackers << tracker
     issue = submit_email(
               'japanese_keywords_iso_2022_jp.eml',
@@ -437,7 +530,7 @@ class MailHandlerTest < ActiveSupport::TestCase
     assert_equal 10790, attachment.filesize
     assert File.exist?(attachment.diskfile)
     assert_equal 10790, File.size(attachment.diskfile)
-    assert_equal 'caaf384198bcbc9563ab5c058acd73cd', attachment.digest
+    assert_equal '4474dd534c36bdd212e2efc549507377c3e77147c9167b66dedcebfe9da8807f', attachment.digest
   end
 
   def test_thunderbird_with_attachment_ja
@@ -447,14 +540,23 @@ class MailHandlerTest < ActiveSupport::TestCase
             )
     assert_kind_of Issue, issue
     assert_equal 1, issue.attachments.size
-    ja = "\xe3\x83\x86\xe3\x82\xb9\xe3\x83\x88.txt"
-    ja.force_encoding('UTF-8') if ja.respond_to?(:force_encoding)
+    ja = "\xe3\x83\x86\xe3\x82\xb9\xe3\x83\x88.txt".force_encoding('UTF-8')
     attachment = issue.attachments.first
     assert_equal ja, attachment.filename
     assert_equal 5, attachment.filesize
     assert File.exist?(attachment.diskfile)
     assert_equal 5, File.size(attachment.diskfile)
-    assert_equal 'd8e8fca2dc0f896fd7cb4cb0031ba249', attachment.digest
+    assert_equal 'f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2', attachment.digest
+  end
+
+  def test_invalid_utf8
+    issue = submit_email(
+              'invalid_utf8.eml',
+              :issue => {:project => 'ecookbook'}
+            )
+    assert_kind_of Issue, issue
+    description = "\xD0\x97\xD0\xB4\xD1\x80\xD0\xB0\xD0\xB2\xD1\x81\xD1\x82\xD0\xB2\xD1\x83\xD0\xB9\xD1\x82\xD0\xB5?".force_encoding('UTF-8')
+    assert_equal description, issue.description
   end
 
   def test_gmail_with_attachment_ja
@@ -464,14 +566,13 @@ class MailHandlerTest < ActiveSupport::TestCase
             )
     assert_kind_of Issue, issue
     assert_equal 1, issue.attachments.size
-    ja = "\xe3\x83\x86\xe3\x82\xb9\xe3\x83\x88.txt"
-    ja.force_encoding('UTF-8') if ja.respond_to?(:force_encoding)
+    ja = "\xe3\x83\x86\xe3\x82\xb9\xe3\x83\x88.txt".force_encoding('UTF-8')
     attachment = issue.attachments.first
     assert_equal ja, attachment.filename
     assert_equal 5, attachment.filesize
     assert File.exist?(attachment.diskfile)
     assert_equal 5, File.size(attachment.diskfile)
-    assert_equal 'd8e8fca2dc0f896fd7cb4cb0031ba249', attachment.digest
+    assert_equal 'f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2', attachment.digest
   end
 
   def test_thunderbird_with_attachment_latin1
@@ -481,17 +582,15 @@ class MailHandlerTest < ActiveSupport::TestCase
             )
     assert_kind_of Issue, issue
     assert_equal 1, issue.attachments.size
-    u = ""
-    u.force_encoding('UTF-8') if u.respond_to?(:force_encoding)
-    u1 = "\xc3\x84\xc3\xa4\xc3\x96\xc3\xb6\xc3\x9c\xc3\xbc"
-    u1.force_encoding('UTF-8') if u1.respond_to?(:force_encoding)
+    u = "".force_encoding('UTF-8')
+    u1 = "\xc3\x84\xc3\xa4\xc3\x96\xc3\xb6\xc3\x9c\xc3\xbc".force_encoding('UTF-8')
     11.times { u << u1 }
     attachment = issue.attachments.first
     assert_equal "#{u}.png", attachment.filename
     assert_equal 130, attachment.filesize
     assert File.exist?(attachment.diskfile)
     assert_equal 130, File.size(attachment.diskfile)
-    assert_equal '4d80e667ac37dddfe05502530f152abb', attachment.digest
+    assert_equal '5635d67364de20432247e651dfe86fcb2265ad5e9750bd8bba7319a86363e738', attachment.digest
   end
 
   def test_gmail_with_attachment_latin1
@@ -501,17 +600,31 @@ class MailHandlerTest < ActiveSupport::TestCase
             )
     assert_kind_of Issue, issue
     assert_equal 1, issue.attachments.size
-    u = ""
-    u.force_encoding('UTF-8') if u.respond_to?(:force_encoding)
-    u1 = "\xc3\x84\xc3\xa4\xc3\x96\xc3\xb6\xc3\x9c\xc3\xbc"
-    u1.force_encoding('UTF-8') if u1.respond_to?(:force_encoding)
+    u = "".force_encoding('UTF-8')
+    u1 = "\xc3\x84\xc3\xa4\xc3\x96\xc3\xb6\xc3\x9c\xc3\xbc".force_encoding('UTF-8')
     11.times { u << u1 }
     attachment = issue.attachments.first
     assert_equal "#{u}.txt", attachment.filename
     assert_equal 5, attachment.filesize
     assert File.exist?(attachment.diskfile)
     assert_equal 5, File.size(attachment.diskfile)
-    assert_equal 'd8e8fca2dc0f896fd7cb4cb0031ba249', attachment.digest
+    assert_equal 'f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2', attachment.digest
+  end
+
+  def test_mail_with_attachment_latin2
+    issue = submit_email(
+              'ticket_with_text_attachment_iso-8859-2.eml',
+              :issue => {:project => 'ecookbook'}
+            )
+    assert_kind_of Issue, issue
+    assert_equal 1, issue.attachments.size
+    attachment = issue.attachments.first
+    assert_equal 'latin2.txt', attachment.filename
+    assert_equal 19, attachment.filesize
+    assert File.exist?(attachment.diskfile)
+    assert_equal 19, File.size(attachment.diskfile)
+    content = "p\xF8\xEDli\xB9 \xBEluou\xE8k\xFD k\xF9n".force_encoding('CP852')
+    assert_equal content, File.read(attachment.diskfile).force_encoding('CP852')
   end
 
   def test_multiple_inline_text_parts_should_be_appended_to_issue_description
@@ -519,6 +632,16 @@ class MailHandlerTest < ActiveSupport::TestCase
     assert_include 'first', issue.description
     assert_include 'second', issue.description
     assert_include 'third', issue.description
+  end
+
+  def test_empty_text_part_should_not_stop_looking_for_content
+    issue = submit_email('empty_text_part.eml', :issue => {:project => 'ecookbook'})
+    assert_equal 'The html part.', issue.description
+  end
+
+  def test_empty_text_and_html_part_should_make_an_empty_description
+    issue = submit_email('empty_text_and_html_part.eml', :issue => {:project => 'ecookbook'})
+    assert_equal '', issue.description
   end
 
   def test_attachment_text_part_should_be_added_as_issue_attachment
@@ -534,8 +657,7 @@ class MailHandlerTest < ActiveSupport::TestCase
               'subject_as_iso-8859-1.eml',
               :issue => {:project => 'ecookbook'}
             )
-    str = "Testmail from Webmail: \xc3\xa4 \xc3\xb6 \xc3\xbc..."
-    str.force_encoding('UTF-8') if str.respond_to?(:force_encoding)
+    str = "Testmail from Webmail: \xc3\xa4 \xc3\xb6 \xc3\xbc...".force_encoding('UTF-8')
     assert_kind_of Issue, issue
     assert_equal str, issue.subject
   end
@@ -546,8 +668,7 @@ class MailHandlerTest < ActiveSupport::TestCase
               :issue => {:project => 'ecookbook'}
             )
     assert_kind_of Issue, issue
-    str = "Freundliche Gr\xc3\xbcsse"
-    str.force_encoding('UTF-8') if str.respond_to?(:force_encoding)
+    str = "Freundliche Gr\xc3\xbcsse".force_encoding('UTF-8')
     assert_equal str, issue.description
   end
 
@@ -557,8 +678,7 @@ class MailHandlerTest < ActiveSupport::TestCase
               :issue => {:project => 'ecookbook'}
             )
     assert_kind_of Issue, issue
-    str = "Na \xc5\xa1triku se su\xc5\xa1i \xc5\xa1osi\xc4\x87."
-    str.force_encoding('UTF-8') if str.respond_to?(:force_encoding)
+    str = "Na \xc5\xa1triku se su\xc5\xa1i \xc5\xa1osi\xc4\x87.".force_encoding('UTF-8')
     assert issue.description.include?(str)
   end
 
@@ -568,26 +688,20 @@ class MailHandlerTest < ActiveSupport::TestCase
               :issue => {:project => 'ecookbook'}
             )
     assert_kind_of Issue, issue
-    ja = "\xe3\x83\x86\xe3\x82\xb9\xe3\x83\x88"
-    ja.force_encoding('UTF-8') if ja.respond_to?(:force_encoding)
+    ja = "\xe3\x83\x86\xe3\x82\xb9\xe3\x83\x88".force_encoding('UTF-8')
     assert_equal ja, issue.subject
   end
 
   def test_add_issue_with_korean_body
     # Make sure mail bodies with a charset unknown to Ruby
     # but known to the Mail gem 2.5.4 are handled correctly
-    kr = "\xEA\xB3\xA0\xEB\xA7\x99\xEC\x8A\xB5\xEB\x8B\x88\xEB\x8B\xA4."
-    if !kr.respond_to?(:force_encoding)
-      puts "\nOn Ruby 1.8, skip Korean encoding mail body test"
-    else
-      kr.force_encoding('UTF-8')
-      issue = submit_email(
-              'body_ks_c_5601-1987.eml',
-              :issue => {:project => 'ecookbook'}
-            )
-      assert_kind_of Issue, issue
-      assert_equal kr, issue.description
-    end
+    kr = "\xEA\xB3\xA0\xEB\xA7\x99\xEC\x8A\xB5\xEB\x8B\x88\xEB\x8B\xA4.".force_encoding('UTF-8')
+    issue = submit_email(
+            'body_ks_c_5601-1987.eml',
+            :issue => {:project => 'ecookbook'}
+          )
+    assert_kind_of Issue, issue
+    assert_equal kr, issue.description
   end
 
   def test_add_issue_with_no_subject_header
@@ -605,8 +719,7 @@ class MailHandlerTest < ActiveSupport::TestCase
               :issue => {:project => 'ecookbook'}
             )
     assert_kind_of Issue, issue
-    ja = "Re: \xe3\x83\x86\xe3\x82\xb9\xe3\x83\x88"
-    ja.force_encoding('UTF-8') if ja.respond_to?(:force_encoding)
+    ja = "Re: \xe3\x83\x86\xe3\x82\xb9\xe3\x83\x88".force_encoding('UTF-8')
     assert_equal ja, issue.subject
   end
 
@@ -634,10 +747,10 @@ class MailHandlerTest < ActiveSupport::TestCase
   def test_should_ignore_auto_replied_emails
     MailHandler.any_instance.expects(:dispatch).never
     [
-      "X-Auto-Response-Suppress: OOF",
       "Auto-Submitted: auto-replied",
       "Auto-Submitted: Auto-Replied",
-      "Auto-Submitted: auto-generated"
+      "Auto-Submitted: auto-generated",
+      'X-Autoreply: yes'
     ].each do |header|
       raw = IO.read(File.join(FIXTURES_PATH, 'ticket_on_given_project.eml'))
       raw = header + "\n" + raw
@@ -663,7 +776,6 @@ class MailHandlerTest < ActiveSupport::TestCase
 
   def test_add_issue_should_send_email_notification
     Setting.notified_events = ['issue_added']
-    ActionMailer::Base.deliveries.clear
     # This email contains: 'Project: onlinestore'
     issue = submit_email('ticket_on_given_project.eml')
     assert issue.is_a?(Issue)
@@ -680,9 +792,35 @@ class MailHandlerTest < ActiveSupport::TestCase
     assert_equal 'Feature request', journal.issue.tracker.name
   end
 
+  def test_update_issue_should_accept_issue_id_after_space_inside_brackets
+    journal = submit_email('ticket_reply_with_status.eml') do |email|
+      assert email.sub!(/^Subject:.*$/, "Subject: Re: [Feature request #2] Add ingredients categories")
+    end
+    assert journal.is_a?(Journal)
+    assert_equal Issue.find(2), journal.journalized
+  end
+
+  def test_update_issue_should_accept_issue_id_inside_brackets
+    journal = submit_email('ticket_reply_with_status.eml') do |email|
+      assert email.sub!(/^Subject:.*$/, "Subject: Re: [#2] Add ingredients categories")
+    end
+    assert journal.is_a?(Journal)
+    assert_equal Issue.find(2), journal.journalized
+  end
+
+  def test_update_issue_should_ignore_bogus_issue_ids_in_subject
+    journal = submit_email('ticket_reply_with_status.eml') do |email|
+      assert email.sub!(/^Subject:.*$/, "Subject: Re: [12345#1][bogus#1][Feature request #2] Add ingredients categories")
+    end
+    assert journal.is_a?(Journal)
+    assert_equal Issue.find(2), journal.journalized
+  end
+
   def test_update_issue_with_attribute_changes
-    # This email contains: 'Status: Resolved'
-    journal = submit_email('ticket_reply_with_status.eml')
+    journal = submit_email('ticket_reply_with_status.eml',
+                           :allow_override => ['status', 'assigned_to',
+                                               'start_date', 'due_date',
+                                               'float field'])
     assert journal.is_a?(Journal)
     issue = Issue.find(journal.issue.id)
     assert_equal User.find_by_login('jsmith'), journal.user
@@ -721,7 +859,6 @@ class MailHandlerTest < ActiveSupport::TestCase
   end
 
   def test_update_issue_should_send_email_notification
-    ActionMailer::Base.deliveries.clear
     journal = submit_email('ticket_reply.eml')
     assert journal.is_a?(Journal)
     assert_equal 1, ActionMailer::Base.deliveries.size
@@ -738,8 +875,32 @@ class MailHandlerTest < ActiveSupport::TestCase
     assert_equal 'Normal', journal.issue.priority.name
   end
 
+  def test_update_issue_should_add_cc_as_watchers
+    Watcher.delete_all
+    issue = Issue.find(2)
+
+    assert_difference 'Watcher.count' do
+      assert submit_email('issue_update_with_cc.eml')
+    end
+    issue.reload
+    assert_equal 1, issue.watcher_user_ids.size
+    assert issue.watched_by?(User.find_by_mail('dlopper@somenet.foo'))
+  end
+
+  def test_update_issue_should_not_add_cc_as_watchers_if_already_watching
+    Watcher.delete_all
+    issue = Issue.find(2)
+    Watcher.create!(:watchable => issue, :user => User.find_by_mail('dlopper@somenet.foo'))
+
+    assert_no_difference 'Watcher.count' do
+      assert submit_email('issue_update_with_cc.eml')
+    end
+  end
+
   def test_replying_to_a_private_note_should_add_reply_as_private
-    private_journal = Journal.create!(:notes => 'Private notes', :journalized => Issue.find(1), :private_notes => true, :user_id => 2)
+    private_journal = Journal.create!(:notes => 'Private notes',
+                                      :journalized => Issue.find(1),
+                                      :private_notes => true, :user_id => 2)
 
     assert_difference 'Journal.count' do
       journal = submit_email('ticket_reply.eml') do |email|
@@ -771,13 +932,33 @@ class MailHandlerTest < ActiveSupport::TestCase
     assert_equal Message.find(1), m.parent
   end
 
-  def test_should_strip_tags_of_html_only_emails
-    issue = submit_email('ticket_html_only.eml', :issue => {:project => 'ecookbook'})
+  def test_should_convert_tags_of_html_only_emails
+    with_settings :text_formatting => 'textile' do
+      issue = submit_email('ticket_html_only.eml', :issue => {:project => 'ecookbook'})
+      assert issue.is_a?(Issue)
+      assert !issue.new_record?
+      issue.reload
+      assert_equal 'HTML email', issue.subject
+      assert_equal "This is a *html-only* email.\r\n\r\nh1. With a title\r\n\r\nand a paragraph.", issue.description
+    end
+  end
+
+  def test_should_handle_outlook_web_access_2010_html_only
+    issue = submit_email('outlook_web_access_2010_html_only.eml', :issue => {:project => 'ecookbook'})
     assert issue.is_a?(Issue)
-    assert !issue.new_record?
     issue.reload
-    assert_equal 'HTML email', issue.subject
-    assert_equal 'This is a html-only email.', issue.description
+    assert_equal 'Upgrade Redmine to 3.0.x', issue.subject
+    assert_equal "A mess.\r\n\r\n--Geoff Maciolek\r\nMYCOMPANYNAME, LLC", issue.description
+  end
+
+  def test_should_handle_outlook_2010_html_only
+    issue = submit_email('outlook_2010_html_only.eml', :issue => {:project => 'ecookbook'})
+    assert issue.is_a?(Issue)
+    issue.reload
+    assert_equal 'Test email', issue.subject
+    assert_equal "Simple, unadorned test email generated by Outlook 2010. It is in HTML format, but" +
+      " no special formatting has been chosen. I’m going to save this as a draft and then manually" +
+      " drop it into the Inbox for scraping by Redmine 3.0.2.", issue.description
   end
 
   test "truncate emails with no setting should add the entire email into the issue" do
@@ -795,7 +976,7 @@ class MailHandlerTest < ActiveSupport::TestCase
       assert_issue_created(issue)
       assert issue.description.include?('This paragraph is before delimiters')
       assert issue.description.include?('--- This line starts with a delimiter')
-      assert !issue.description.match(/^---$/)
+      assert !issue.description.match(/^---#{"\u00A0"}$/)
       assert !issue.description.include?('This paragraph is after the delimiter')
     end
   end
@@ -829,6 +1010,25 @@ class MailHandlerTest < ActiveSupport::TestCase
       assert !issue.description.include?('This paragraph is between delimiters')
       assert !issue.description.match(/^---$/)
       assert !issue.description.include?('This paragraph is after the delimiter')
+    end
+  end
+
+  test "truncate emails using a regex delimiter" do
+    delimiter = "On .*, .* at .*, .* <.*<mailto:.*>> wrote:"
+    with_settings :mail_handler_enable_regex_delimiters => '1', :mail_handler_body_delimiters => delimiter do
+      issue = submit_email('ticket_reply_from_mail.eml')
+      assert_issue_created(issue)
+      assert issue.description.include?('This paragraph is before delimiter')
+      assert !issue.description.include?('On Wed, 11 Oct at 1:05 PM, Jon Smith <jsmith@somenet.foo<mailto:jsmith@somenet.foo>> wrote:')
+      assert !issue.description.include?('This paragraph is after the delimiter')
+    end
+
+    with_settings :mail_handler_enable_regex_delimiters => '0', :mail_handler_body_delimiters => delimiter do
+      issue = submit_email('ticket_reply_from_mail.eml')
+      assert_issue_created(issue)
+      assert issue.description.include?('This paragraph is before delimiter')
+      assert issue.description.include?('On Wed, 11 Oct at 1:05 PM, Jon Smith <jsmith@somenet.foo<mailto:jsmith@somenet.foo>> wrote:')
+      assert issue.description.include?('This paragraph is after the delimiter')
     end
   end
 
@@ -877,13 +1077,13 @@ class MailHandlerTest < ActiveSupport::TestCase
       ['jsmith@example.net', 'John'] => ['jsmith@example.net', 'John', '-'],
       ['jsmith@example.net', 'John Smith'] => ['jsmith@example.net', 'John', 'Smith'],
       ['jsmith@example.net', 'John Paul Smith'] => ['jsmith@example.net', 'John', 'Paul Smith'],
-      ['jsmith@example.net', 'AVeryLongFirstnameThatExceedsTheMaximumLength Smith'] => ['jsmith@example.net', 'AVeryLongFirstnameThatExceedsT', 'Smith'],
-      ['jsmith@example.net', 'John AVeryLongLastnameThatExceedsTheMaximumLength'] => ['jsmith@example.net', 'John', 'AVeryLongLastnameThatExceedsTh']
+      ['jsmith@example.net', 'AVeryLongFirstnameThatExceedsTheMaximumLength Smith'] =>
+         ['jsmith@example.net', 'AVeryLongFirstnameThatExceedsT', 'Smith'],
+      ['jsmith@example.net', 'John AVeryLongLastnameThatExceedsTheMaximumLength'] =>
+         ['jsmith@example.net', 'John', 'AVeryLongLastnameThatExceedsTh']
     }
-
     to_test.each do |attrs, expected|
       user = MailHandler.new_user_from_attributes(attrs.first, attrs.last)
-
       assert user.valid?, user.errors.full_messages.to_s
       assert_equal attrs.first, user.mail
       assert_equal expected[0], user.login
@@ -910,10 +1110,8 @@ class MailHandlerTest < ActiveSupport::TestCase
     end
     user = User.order('id DESC').first
     assert_equal "foo@example.org", user.mail
-    str1 = "\xc3\x84\xc3\xa4"
-    str2 = "\xc3\x96\xc3\xb6"
-    str1.force_encoding('UTF-8') if str1.respond_to?(:force_encoding)
-    str2.force_encoding('UTF-8') if str2.respond_to?(:force_encoding)
+    str1 = "\xc3\x84\xc3\xa4".force_encoding('UTF-8')
+    str2 = "\xc3\x96\xc3\xb6".force_encoding('UTF-8')
     assert_equal str1, user.firstname
     assert_equal str2, user.lastname
   end
@@ -929,6 +1127,12 @@ class MailHandlerTest < ActiveSupport::TestCase
       :issue => {:tracker => 'defect', :project => 'foo'},
       :unknown_user => 'create'
     }, options)
+  end
+
+  def test_safe_receive_should_rescue_exceptions_and_return_false
+    MailHandler.stubs(:receive).raises(Exception.new "Something went wrong")
+
+    assert_equal false, MailHandler.safe_receive
   end
 
   private

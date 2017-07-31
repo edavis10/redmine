@@ -1,4 +1,4 @@
-class SetTopicAuthorsAsWatchers < ActiveRecord::Migration
+class SetTopicAuthorsAsWatchers < ActiveRecord::Migration[4.2]
   def self.up
     # Sets active users who created/replied a topic as watchers of the topic
     # so that the new watch functionality at topic level doesn't affect notifications behaviour
@@ -10,6 +10,6 @@ class SetTopicAuthorsAsWatchers < ActiveRecord::Migration
 
   def self.down
     # Removes all message watchers
-    Watcher.delete_all("watchable_type = 'Message'")
+    Watcher.where("watchable_type = 'Message'").delete_all
   end
 end

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,7 +17,7 @@
 
 require File.expand_path('../../test_helper', __FILE__)
 
-class GanttsControllerTest < ActionController::TestCase
+class GanttsControllerTest < Redmine::ControllerTest
   fixtures :projects, :trackers, :issue_statuses, :issues,
            :enumerations, :users, :issue_categories,
            :projects_trackers,
@@ -30,10 +30,23 @@ class GanttsControllerTest < ActionController::TestCase
   def test_gantt_should_work
     i2 = Issue.find(2)
     i2.update_attribute(:due_date, 1.month.from_now)
-    get :show, :project_id => 1
+    get :show, :params => {
+        :project_id => 1
+      }
     assert_response :success
-    assert_template 'gantts/show'
-    assert_not_nil assigns(:gantt)
+
+    # query form
+    assert_select 'form#query_form' do
+      assert_select 'div#query_form_with_buttons.hide-when-print' do
+        assert_select 'div#query_form_content' do
+          assert_select 'fieldset#filters.collapsible'
+          assert_select 'fieldset#options'
+        end
+        assert_select 'p.contextual'
+        assert_select 'p.buttons'
+      end
+    end
+
     # Issue with start and due dates
     i = Issue.find(1)
     assert_not_nil i.due_date
@@ -43,41 +56,55 @@ class GanttsControllerTest < ActionController::TestCase
     assert_select "div a.issue", /##{i.id}/
   end
 
+  def test_gantt_at_minimal_zoom
+    get :show, :params => {
+        :project_id => 1,
+        :zoom => 1
+      }
+    assert_response :success
+    assert_select 'input[type=hidden][name=zoom][value=?]', '1'
+  end
+
+  def test_gantt_at_maximal_zoom
+    get :show, :params => {
+        :project_id => 1,
+        :zoom => 4
+      }
+    assert_response :success
+    assert_select 'input[type=hidden][name=zoom][value=?]', '4'
+  end
+
   def test_gantt_should_work_without_issue_due_dates
     Issue.update_all("due_date = NULL")
-    get :show, :project_id => 1
+    get :show, :params => {
+        :project_id => 1
+      }
     assert_response :success
-    assert_template 'gantts/show'
-    assert_not_nil assigns(:gantt)
   end
 
   def test_gantt_should_work_without_issue_and_version_due_dates
     Issue.update_all("due_date = NULL")
     Version.update_all("effective_date = NULL")
-    get :show, :project_id => 1
+    get :show, :params => {
+        :project_id => 1
+      }
     assert_response :success
-    assert_template 'gantts/show'
-    assert_not_nil assigns(:gantt)
   end
 
   def test_gantt_should_work_cross_project
     get :show
     assert_response :success
-    assert_template 'gantts/show'
-    assert_not_nil assigns(:gantt)
-    assert_not_nil assigns(:gantt).query
-    assert_nil assigns(:gantt).project
   end
 
   def test_gantt_should_not_disclose_private_projects
     get :show
     assert_response :success
-    assert_template 'gantts/show'
-    assert_tag 'a', :content => /eCookbook/
+
+    assert_select 'a', :text => /eCookbook/
     # Root private project
-    assert_no_tag 'a', {:content => /OnlineStore/}
+    assert_select 'a', :text => /OnlineStore/, :count => 0
     # Private children of a public project
-    assert_no_tag 'a', :content => /Private child of eCookbook/
+    assert_select 'a', :text => /Private child of eCookbook/, :count => 0
   end
 
   def test_gantt_should_display_relations
@@ -89,32 +116,35 @@ class GanttsControllerTest < ActionController::TestCase
     get :show
     assert_response :success
 
-    relations = assigns(:gantt).relations
-    assert_kind_of Hash, relations
-    assert relations.present?
     assert_select 'div.task_todo[id=?][data-rels*=?]', "task-todo-issue-#{issue1.id}", issue2.id.to_s
     assert_select 'div.task_todo[id=?]:not([data-rels])', "task-todo-issue-#{issue2.id}"
   end
 
   def test_gantt_should_export_to_pdf
-    get :show, :project_id => 1, :format => 'pdf'
+    get :show, :params => {
+        :project_id => 1,
+        :format => 'pdf'
+      }
     assert_response :success
     assert_equal 'application/pdf', @response.content_type
     assert @response.body.starts_with?('%PDF')
-    assert_not_nil assigns(:gantt)
   end
 
   def test_gantt_should_export_to_pdf_cross_project
-    get :show, :format => 'pdf'
+    get :show, :params => {
+        :format => 'pdf'
+      }
     assert_response :success
     assert_equal 'application/pdf', @response.content_type
     assert @response.body.starts_with?('%PDF')
-    assert_not_nil assigns(:gantt)
   end
 
   if Object.const_defined?(:Magick)
     def test_gantt_should_export_to_png
-      get :show, :project_id => 1, :format => 'png'
+      get :show, :params => {
+          :project_id => 1,
+          :format => 'png'
+        }
       assert_response :success
       assert_equal 'image/png', @response.content_type
     end

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,11 +17,14 @@
 
 class WorkflowsController < ApplicationController
   layout 'admin'
+  self.main_menu = false
 
-  before_filter :require_admin
+  before_action :require_admin
 
   def index
-    @workflow_counts = WorkflowTransition.count_by_tracker_and_role
+    @roles = Role.sorted.select(&:consider_workflow?)
+    @trackers = Tracker.sorted
+    @workflow_counts = WorkflowTransition.group(:tracker_id, :role_id).count
   end
 
   def edit
@@ -41,7 +44,9 @@ class WorkflowsController < ApplicationController
     end
 
     if @trackers && @roles && @statuses.any?
-      workflows = WorkflowTransition.where(:role_id => @roles.map(&:id), :tracker_id => @trackers.map(&:id))
+      workflows = WorkflowTransition.
+        where(:role_id => @roles.map(&:id), :tracker_id => @trackers.map(&:id)).
+        preload(:old_status, :new_status)
       @workflows = {}
       @workflows['always'] = workflows.select {|w| !w.author && !w.assignee}
       @workflows['author'] = workflows.select {|w| w.author}
@@ -72,7 +77,7 @@ class WorkflowsController < ApplicationController
   end
 
   def copy
-    @roles = Role.sorted
+    @roles = Role.sorted.select(&:consider_workflow?)
     @trackers = Tracker.sorted
 
     if params[:source_tracker_id].blank? || params[:source_tracker_id] == 'any'
@@ -86,9 +91,9 @@ class WorkflowsController < ApplicationController
       @source_role = Role.find_by_id(params[:source_role_id].to_i)
     end
     @target_trackers = params[:target_tracker_ids].blank? ?
-        nil : Tracker.where(:id => params[:target_tracker_ids]).all
+        nil : Tracker.where(:id => params[:target_tracker_ids]).to_a
     @target_roles = params[:target_role_ids].blank? ?
-        nil : Role.where(:id => params[:target_role_ids]).all
+        nil : Role.where(:id => params[:target_role_ids]).to_a
     if request.post?
       if params[:source_tracker_id].blank? || params[:source_role_id].blank? || (@source_tracker.nil? && @source_role.nil?)
         flash.now[:error] = l(:error_workflow_copy_source)
@@ -113,9 +118,9 @@ class WorkflowsController < ApplicationController
   def find_roles
     ids = Array.wrap(params[:role_id])
     if ids == ['all']
-      @roles = Role.sorted.all
+      @roles = Role.sorted.to_a
     elsif ids.present?
-      @roles = Role.where(:id => ids).all
+      @roles = Role.where(:id => ids).to_a
     end
     @roles = nil if @roles.blank?
   end
@@ -123,9 +128,9 @@ class WorkflowsController < ApplicationController
   def find_trackers
     ids = Array.wrap(params[:tracker_id])
     if ids == ['all']
-      @trackers = Tracker.sorted.all
+      @trackers = Tracker.sorted.to_a
     elsif ids.present?
-      @trackers = Tracker.where(:id => ids).all
+      @trackers = Tracker.where(:id => ids).to_a
     end
     @trackers = nil if @trackers.blank?
   end
@@ -133,8 +138,12 @@ class WorkflowsController < ApplicationController
   def find_statuses
     @used_statuses_only = (params[:used_statuses_only] == '0' ? false : true)
     if @trackers && @used_statuses_only
-      @statuses = @trackers.map(&:issue_statuses).flatten.uniq.sort.presence
+      role_ids = Role.all.select(&:consider_workflow?).map(&:id)
+      status_ids = WorkflowTransition.where(
+        :tracker_id => @trackers.map(&:id), :role_id => role_ids
+      ).distinct.pluck(:old_status_id, :new_status_id).flatten.uniq
+      @statuses = IssueStatus.where(:id => status_ids).sorted.to_a.presence
     end
-    @statuses ||= IssueStatus.sorted.all
+    @statuses ||= IssueStatus.sorted.to_a
   end
 end

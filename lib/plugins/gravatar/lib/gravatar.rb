@@ -52,18 +52,16 @@ module GravatarHelper
       src = h(gravatar_url(email, options))
       options = DEFAULT_OPTIONS.merge(options)
       [:class, :alt, :title].each { |opt| options[opt] = h(options[opt]) }
-      image_tag src, options
+
+      # double the size for hires displays
+      options[:srcset] = "#{gravatar_url(email, options.merge(size: options[:size].to_i * 2))} 2x"
+
+      image_tag src, options.except(:rating, :size, :default, :ssl)
     end
     
-    # Returns the base Gravatar URL for the given email hash. If ssl evaluates to true,
-    # a secure URL will be used instead. This is required when the gravatar is to be 
-    # displayed on a HTTPS site.
-    def gravatar_api_url(hash, ssl=false)
-      if ssl
-        "https://secure.gravatar.com/avatar/#{hash}"
-      else
-        "http://www.gravatar.com/avatar/#{hash}"
-      end
+    # Returns the base Gravatar URL for the given email hash
+    def gravatar_api_url(hash)
+      "//www.gravatar.com/avatar/#{hash}"
     end
 
     # Return the gravatar URL for the given email address.
@@ -71,7 +69,7 @@ module GravatarHelper
       email_hash = Digest::MD5.hexdigest(email)
       options = DEFAULT_OPTIONS.merge(options)
       options[:default] = CGI::escape(options[:default]) unless options[:default].nil?
-      gravatar_api_url(email_hash, options.delete(:ssl)).tap do |url|
+      gravatar_api_url(email_hash).tap do |url|
         opts = []
         [:rating, :size, :default].each do |opt|
           unless options[opt].nil?

@@ -7,16 +7,25 @@
 <% end %>
 </div>
 
-<h2><%=h @document.title %></h2>
+<h2><%= @document.title %></h2>
 
-<p><em><%=h @document.category.name %><br />
+<p><em><%= @document.category.name %><br />
 <%= format_date @document.created_on %></em></p>
+
+<% if @document.custom_field_values.any? %>
+<ul>
+  <% render_custom_field_values(@document) do |custom_field, formatted| %>
+    <li><span class="label"><%= custom_field.name %>:</span> <%= formatted %></li>
+  <% end %>
+</ul>
+<% end %>
+
 <div class="wiki">
 <%= textilizable @document, :description, :attachments => @document.attachments %>
 </div>
 
 <h3><%= l(:label_attachment_plural) %></h3>
-<%= link_to_attachments @document %>
+<%= link_to_attachments @document, :thumbnails => true %>
 
 <% if authorize_for('documents', 'add_attachment') %>
 <p><%= link_to l(:label_attachment_new), {}, :onclick => "$('#add_attachment_form').show(); return false;",

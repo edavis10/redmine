@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,7 +21,7 @@ module Redmine
   module MimeType
 
     MIME_TYPES = {
-      'text/plain' => 'txt,tpl,properties,patch,diff,ini,readme,install,upgrade',
+      'text/plain' => 'txt,tpl,properties,patch,diff,ini,readme,install,upgrade,sql',
       'text/css' => 'css',
       'text/html' => 'html,htm,xhtml',
       'text/jsp' => 'jsp',
@@ -51,6 +51,11 @@ module Redmine
     EXTENSIONS = MIME_TYPES.inject({}) do |map, (type, exts)|
       exts.split(',').each {|ext| map[ext.strip] = type}
       map
+    end
+
+    # returns all full mime types for a given (top level) type
+    def self.by_type(type)
+      MIME_TYPES.keys.select{|m| m.start_with? "#{type}/"}
     end
 
     # returns mime type for name or nil if unknown

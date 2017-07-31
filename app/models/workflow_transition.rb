@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,29 +18,12 @@
 class WorkflowTransition < WorkflowRule
   validates_presence_of :new_status
 
-  # Returns workflow transitions count by tracker and role
-  def self.count_by_tracker_and_role
-    counts = connection.select_all("SELECT role_id, tracker_id, count(id) AS c FROM #{table_name} WHERE type = 'WorkflowTransition' GROUP BY role_id, tracker_id")
-    roles    = Role.sorted
-    trackers = Tracker.sorted
-    result = []
-    trackers.each do |tracker|
-      t = []
-      roles.each do |role|
-        row = counts.detect {|c| c['role_id'].to_s == role.id.to_s && c['tracker_id'].to_s == tracker.id.to_s}
-        t << [role, (row.nil? ? 0 : row['c'].to_i)]
-      end
-      result << [tracker, t]
-    end
-    result
-  end
-
   def self.replace_transitions(trackers, roles, transitions)
     trackers = Array.wrap trackers
     roles = Array.wrap roles
 
     transaction do
-      records = WorkflowTransition.where(:tracker_id => trackers.map(&:id), :role_id => roles.map(&:id)).all
+      records = WorkflowTransition.where(:tracker_id => trackers.map(&:id), :role_id => roles.map(&:id)).to_a
 
       transitions.each do |old_status_id, transitions_by_new_status|
         transitions_by_new_status.each do |new_status_id, transition_by_rule|

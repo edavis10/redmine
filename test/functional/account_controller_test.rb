@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,8 +17,8 @@
 
 require File.expand_path('../../test_helper', __FILE__)
 
-class AccountControllerTest < ActionController::TestCase
-  fixtures :users, :roles
+class AccountControllerTest < Redmine::ControllerTest
+  fixtures :users, :email_addresses, :roles
 
   def setup
     User.current = nil
@@ -27,7 +27,6 @@ class AccountControllerTest < ActionController::TestCase
   def test_get_login
     get :login
     assert_response :success
-    assert_template 'login'
 
     assert_select 'input[name=username]'
     assert_select 'input[name=password]'
@@ -37,7 +36,9 @@ class AccountControllerTest < ActionController::TestCase
     @request.session[:user_id] = 2
     @request.env["HTTP_REFERER"] = 'http://test.host/issues/show/1'
 
-    get :login, :back_url => 'http://test.host/issues/show/1'
+    get :login, :params => {
+        :back_url => 'http://test.host/issues/show/1'
+      }
     assert_redirected_to '/issues/show/1'
     assert_equal 2, @request.session[:user_id]
   end
@@ -63,28 +64,37 @@ class AccountControllerTest < ActionController::TestCase
     # request.uri is "test.host" in test environment
     back_urls = [
       'http://test.host/issues/show/1',
+      'http://test.host/',
       '/'
     ]
     back_urls.each do |back_url|
-      post :login, :username => 'jsmith', :password => 'jsmith', :back_url => back_url
+      post :login, :params => {
+          :username => 'jsmith',
+          :password => 'jsmith',
+          :back_url => back_url
+        }
       assert_redirected_to back_url
     end
   end
 
   def test_login_with_suburi_should_redirect_to_back_url_param
-    @relative_url_root = ApplicationController.relative_url_root
-    ApplicationController.relative_url_root = '/redmine'
+    @relative_url_root = Redmine::Utils.relative_url_root
+    Redmine::Utils.relative_url_root = '/redmine'
 
     back_urls = [
       'http://test.host/redmine/issues/show/1',
       '/redmine'
     ]
     back_urls.each do |back_url|
-      post :login, :username => 'jsmith', :password => 'jsmith', :back_url => back_url
+      post :login, :params => {
+          :username => 'jsmith',
+          :password => 'jsmith',
+          :back_url => back_url
+        }
       assert_redirected_to back_url
     end
   ensure
-    ApplicationController.relative_url_root = @relative_url_root
+    Redmine::Utils.relative_url_root = @relative_url_root
   end
 
   def test_login_should_not_redirect_to_another_host
@@ -93,14 +103,18 @@ class AccountControllerTest < ActionController::TestCase
       '//test.foo/fake'
     ]
     back_urls.each do |back_url|
-      post :login, :username => 'jsmith', :password => 'jsmith', :back_url => back_url
+      post :login, :params => {
+          :username => 'jsmith',
+          :password => 'jsmith',
+          :back_url => back_url
+        }
       assert_redirected_to '/my/page'
     end
   end
 
   def test_login_with_suburi_should_not_redirect_to_another_suburi
-    @relative_url_root = ApplicationController.relative_url_root
-    ApplicationController.relative_url_root = '/redmine'
+    @relative_url_root = Redmine::Utils.relative_url_root
+    Redmine::Utils.relative_url_root = '/redmine'
 
     back_urls = [
       'http://test.host/',
@@ -108,20 +122,35 @@ class AccountControllerTest < ActionController::TestCase
       'http://test.host/fake/issues',
       'http://test.host/redmine/../fake',
       'http://test.host/redmine/../fake/issues',
-      'http://test.host/redmine/%2e%2e/fake'
+      'http://test.host/redmine/%2e%2e/fake',
+      '//test.foo/fake',
+      'http://test.host//fake',
+      'http://test.host/\n//fake',
+      '//bar@test.foo',
+      '//test.foo',
+      '////test.foo',
+      '@test.foo',
+      'fake@test.foo',
+      '.test.foo'
     ]
     back_urls.each do |back_url|
-      post :login, :username => 'jsmith', :password => 'jsmith', :back_url => back_url
+      post :login, :params => {
+          :username => 'jsmith',
+          :password => 'jsmith',
+          :back_url => back_url
+        }
       assert_redirected_to '/my/page'
     end
   ensure
-    ApplicationController.relative_url_root = @relative_url_root
+    Redmine::Utils.relative_url_root = @relative_url_root
   end
 
   def test_login_with_wrong_password
-    post :login, :username => 'admin', :password => 'bad'
+    post :login, :params => {
+        :username => 'admin',
+        :password => 'bad'
+      }
     assert_response :success
-    assert_template 'login'
 
     assert_select 'div.flash.error', :text => /Invalid user or password/
     assert_select 'input[name=username][value=admin]'
@@ -132,7 +161,10 @@ class AccountControllerTest < ActionController::TestCase
   def test_login_with_locked_account_should_fail
     User.find(2).update_attribute :status, User::STATUS_LOCKED
 
-    post :login, :username => 'jsmith', :password => 'jsmith'
+    post :login, :params => {
+        :username => 'jsmith',
+        :password => 'jsmith'
+      }
     assert_redirected_to '/login'
     assert_include 'locked', flash[:error]
     assert_nil @request.session[:user_id]
@@ -142,7 +174,10 @@ class AccountControllerTest < ActionController::TestCase
     User.find(2).update_attribute :status, User::STATUS_REGISTERED
 
     with_settings :self_registration => '2', :default_language => 'en' do
-      post :login, :username => 'jsmith', :password => 'jsmith'
+      post :login, :params => {
+          :username => 'jsmith',
+          :password => 'jsmith'
+        }
       assert_redirected_to '/login'
       assert_include 'pending administrator approval', flash[:error]
     end
@@ -152,7 +187,10 @@ class AccountControllerTest < ActionController::TestCase
     User.find(2).update_attribute :status, User::STATUS_REGISTERED
 
     with_settings :self_registration => '1', :default_language => 'en' do
-      post :login, :username => 'jsmith', :password => 'jsmith'
+      post :login, :params => {
+          :username => 'jsmith',
+          :password => 'jsmith'
+        }
       assert_redirected_to '/login'
       assert_equal 2, @request.session[:registered_user_id]
       assert_include 'new activation email', flash[:error]
@@ -164,15 +202,21 @@ class AccountControllerTest < ActionController::TestCase
     User.find(2).update_attribute :auth_source_id, source.id
     AuthSource.any_instance.stubs(:authenticate).raises(AuthSourceException.new("Something wrong"))
 
-    post :login, :username => 'jsmith', :password => 'jsmith'
+    post :login, :params => {
+        :username => 'jsmith',
+        :password => 'jsmith'
+      }
     assert_response 500
-    assert_error_tag :content => /Something wrong/
+    assert_select_error /Something wrong/
   end
 
   def test_login_should_reset_session
     @controller.expects(:reset_session).once
 
-    post :login, :username => 'jsmith', :password => 'jsmith'
+    post :login, :params => {
+        :username => 'jsmith',
+        :password => 'jsmith'
+      }
     assert_response 302
   end
 
@@ -180,7 +224,6 @@ class AccountControllerTest < ActionController::TestCase
     @request.session[:user_id] = 2
     get :logout
     assert_response :success
-    assert_template 'logout'
 
     assert_equal 2, @request.session[:user_id]
   end
@@ -209,8 +252,6 @@ class AccountControllerTest < ActionController::TestCase
     with_settings :self_registration => '3' do
       get :register
       assert_response :success
-      assert_template 'register'
-      assert_not_nil assigns(:user)
 
       assert_select 'input[name=?]', 'user[password]'
       assert_select 'input[name=?]', 'user[password_confirmation]'
@@ -222,8 +263,7 @@ class AccountControllerTest < ActionController::TestCase
       @request.env['HTTP_ACCEPT_LANGUAGE'] = 'fr,fr-fr;q=0.8,en-us;q=0.5,en;q=0.3'
       get :register
       assert_response :success
-      assert_not_nil assigns(:user)
-      assert_equal 'fr', assigns(:user).language
+
       assert_select 'select[name=?]', 'user[language]' do
         assert_select 'option[value=fr][selected=selected]'
       end
@@ -237,18 +277,33 @@ class AccountControllerTest < ActionController::TestCase
     end
   end
 
+  def test_get_register_should_show_hide_mail_preference
+    get :register
+    assert_select 'input[name=?][checked=checked]', 'pref[hide_mail]'
+  end
+
+  def test_get_register_should_show_hide_mail_preference_with_setting_turned_off
+    with_settings :default_users_hide_mail => '0' do
+      get :register
+      assert_select 'input[name=?]:not([checked=checked])', 'pref[hide_mail]'
+    end
+  end
+
   # See integration/account_test.rb for the full test
   def test_post_register_with_registration_on
     with_settings :self_registration => '3' do
       assert_difference 'User.count' do
-        post :register, :user => {
-          :login => 'register',
-          :password => 'secret123',
-          :password_confirmation => 'secret123',
-          :firstname => 'John',
-          :lastname => 'Doe',
-          :mail => 'register@example.com'
-        }
+        post :register, :params => {
+            :user => {
+              :login => 'register',
+              :password => 'secret123',
+              :password_confirmation => 'secret123',
+              :firstname => 'John',
+              :lastname => 'Doe',
+              :mail => 'register@example.com'
+              
+            }
+          }
         assert_redirected_to '/my/account'
       end
       user = User.order('id DESC').first
@@ -264,16 +319,42 @@ class AccountControllerTest < ActionController::TestCase
   def test_post_register_with_registration_off_should_redirect
     with_settings :self_registration => '0' do
       assert_no_difference 'User.count' do
-        post :register, :user => {
-          :login => 'register',
-          :password => 'test',
-          :password_confirmation => 'test',
-          :firstname => 'John',
-          :lastname => 'Doe',
-          :mail => 'register@example.com'
-        }
+        post :register, :params => {
+            :user => {
+              :login => 'register',
+              :password => 'test',
+              :password_confirmation => 'test',
+              :firstname => 'John',
+              :lastname => 'Doe',
+              :mail => 'register@example.com'
+              
+            }
+          }
         assert_redirected_to '/'
       end
+    end
+  end
+
+  def test_post_register_should_create_user_with_hide_mail_preference
+    with_settings :default_users_hide_mail => '0' do
+      user = new_record(User) do
+        post :register, :params => {
+            :user => {
+              :login => 'register',
+              :password => 'secret123',
+              :password_confirmation => 'secret123',
+              :firstname => 'John',
+              :lastname => 'Doe',
+              :mail => 'register@example.com'
+              
+            },  
+            :pref => {
+              :hide_mail => '1'
+              
+            }
+          }
+      end
+      assert_equal true, user.pref.hide_mail
     end
   end
 
@@ -288,10 +369,10 @@ class AccountControllerTest < ActionController::TestCase
     ActionMailer::Base.deliveries.clear
     assert_difference 'ActionMailer::Base.deliveries.size' do
       assert_difference 'Token.count' do
-        with_settings :host_name => 'mydomain.foo', :protocol => 'http' do
-          post :lost_password, :mail => 'JSmith@somenet.foo'
-          assert_redirected_to '/login'
-        end
+        post :lost_password, :params => {
+            :mail => 'JSmith@somenet.foo'
+          }
+        assert_redirected_to '/login'
       end
     end
 
@@ -300,14 +381,32 @@ class AccountControllerTest < ActionController::TestCase
     assert_equal 'recovery', token.action
 
     assert_select_email do
-      assert_select "a[href=?]", "http://mydomain.foo/account/lost_password?token=#{token.value}"
+      assert_select "a[href=?]", "http://localhost:3000/account/lost_password?token=#{token.value}"
     end
+  end
+
+  def test_lost_password_using_additional_email_address_should_send_email_to_the_address
+    EmailAddress.create!(:user_id => 2, :address => 'anotherAddress@foo.bar')
+    Token.delete_all
+
+    assert_difference 'ActionMailer::Base.deliveries.size' do
+      assert_difference 'Token.count' do
+        post :lost_password, :params => {
+            :mail => 'ANOTHERaddress@foo.bar'
+          }
+        assert_redirected_to '/login'
+      end
+    end
+    mail = ActionMailer::Base.deliveries.last
+    assert_equal ['anotherAddress@foo.bar'], mail.bcc
   end
 
   def test_lost_password_for_unknown_user_should_fail
     Token.delete_all
     assert_no_difference 'Token.count' do
-      post :lost_password, :mail => 'invalid@somenet.foo'
+      post :lost_password, :params => {
+          :mail => 'invalid@somenet.foo'
+        }
       assert_response :success
     end
   end
@@ -317,7 +416,9 @@ class AccountControllerTest < ActionController::TestCase
     assert User.find(2).lock!
 
     assert_no_difference 'Token.count' do
-      post :lost_password, :mail => 'JSmith@somenet.foo'
+      post :lost_password, :params => {
+          :mail => 'JSmith@somenet.foo'
+        }
       assert_redirected_to '/account/lost_password'
     end
   end
@@ -326,36 +427,61 @@ class AccountControllerTest < ActionController::TestCase
     User.any_instance.stubs(:change_password_allowed?).returns(false)
 
     assert_no_difference 'Token.count' do
-      post :lost_password, :mail => 'JSmith@somenet.foo'
+      post :lost_password, :params => {
+          :mail => 'JSmith@somenet.foo'
+        }
       assert_response :success
     end
   end
 
-  def test_get_lost_password_with_token_should_display_the_password_recovery_form
+  def test_get_lost_password_with_token_should_redirect_with_token_in_session
     user = User.find(2)
     token = Token.create!(:action => 'recovery', :user => user)
 
-    get :lost_password, :token => token.value
+    get :lost_password, :params => {
+        :token => token.value
+      }
+    assert_redirected_to '/account/lost_password'
+
+    assert_equal token.value, request.session[:password_recovery_token]
+  end
+
+  def test_get_lost_password_with_token_in_session_should_display_the_password_recovery_form
+    user = User.find(2)
+    token = Token.create!(:action => 'recovery', :user => user)
+    request.session[:password_recovery_token] = token.value
+
+    get :lost_password
     assert_response :success
-    assert_template 'password_recovery'
 
     assert_select 'input[type=hidden][name=token][value=?]', token.value
   end
 
   def test_get_lost_password_with_invalid_token_should_redirect
-    get :lost_password, :token => "abcdef"
+    get :lost_password, :params => {
+        :token => "abcdef"
+      }
     assert_redirected_to '/'
   end
 
   def test_post_lost_password_with_token_should_change_the_user_password
+    ActionMailer::Base.deliveries.clear
     user = User.find(2)
     token = Token.create!(:action => 'recovery', :user => user)
 
-    post :lost_password, :token => token.value, :new_password => 'newpass123', :new_password_confirmation => 'newpass123'
+    post :lost_password, :params => {
+        :token => token.value,
+        :new_password => 'newpass123',
+        :new_password_confirmation => 'newpass123'
+      }
     assert_redirected_to '/login'
     user.reload
     assert user.check_password?('newpass123')
     assert_nil Token.find_by_id(token.id), "Token was not deleted"
+    assert_not_nil (mail = ActionMailer::Base.deliveries.last)
+    assert_select_email do
+      assert_select 'a[href^=?]', 'http://localhost:3000/my/password', :text => 'Change password'
+    end
   end
 
   def test_post_lost_password_with_token_for_non_active_user_should_fail
@@ -363,7 +489,11 @@ class AccountControllerTest < ActionController::TestCase
     token = Token.create!(:action => 'recovery', :user => user)
     user.lock!
 
-    post :lost_password, :token => token.value, :new_password => 'newpass123', :new_password_confirmation => 'newpass123'
+    post :lost_password, :params => {
+        :token => token.value,
+        :new_password => 'newpass123',
+        :new_password_confirmation => 'newpass123'
+      }
     assert_redirected_to '/'
     assert ! user.check_password?('newpass123')
   end
@@ -372,16 +502,59 @@ class AccountControllerTest < ActionController::TestCase
     user = User.find(2)
     token = Token.create!(:action => 'recovery', :user => user)
 
-    post :lost_password, :token => token.value, :new_password => 'newpass', :new_password_confirmation => 'wrongpass'
+    post :lost_password, :params => {
+        :token => token.value,
+        :new_password => 'newpass',
+        :new_password_confirmation => 'wrongpass'
+      }
     assert_response :success
-    assert_template 'password_recovery'
     assert_not_nil Token.find_by_id(token.id), "Token was deleted"
 
     assert_select 'input[type=hidden][name=token][value=?]', token.value
   end
 
+  def test_post_lost_password_with_token_should_not_accept_same_password_if_user_must_change_password
+    user = User.find(2)
+    user.password = "originalpassword"
+    user.must_change_passwd = true
+    user.save!
+    token = Token.create!(:action => 'recovery', :user => user)
+
+    post :lost_password, :params => {
+        :token => token.value,
+        :new_password => 'originalpassword',
+        :new_password_confirmation => 'originalpassword'
+      }
+    assert_response :success
+    assert_not_nil Token.find_by_id(token.id), "Token was deleted"
+
+    assert_select '.flash', :text => /The new password must be different/
+    assert_select 'input[type=hidden][name=token][value=?]', token.value
+  end
+
+  def test_post_lost_password_with_token_should_reset_must_change_password
+    user = User.find(2)
+    user.password = "originalpassword"
+    user.must_change_passwd = true
+    user.save!
+    token = Token.create!(:action => 'recovery', :user => user)
+
+    post :lost_password, :params => {
+        :token => token.value,
+        :new_password => 'newpassword',
+        :new_password_confirmation => 'newpassword'
+      }
+    assert_redirected_to '/login'
+
+    assert_equal false, user.reload.must_change_passwd
+  end
+
   def test_post_lost_password_with_invalid_token_should_redirect
-    post :lost_password, :token => "abcdef", :new_password => 'newpass', :new_password_confirmation => 'newpass'
+    post :lost_password, :params => {
+        :token => "abcdef",
+        :new_password => 'newpass',
+        :new_password_confirmation => 'newpass'
+      }
     assert_redirected_to '/'
   end
 

@@ -68,9 +68,6 @@ namespace :locales do
   desc <<-END_DESC
 Removes a translation string from all locale file (only works for top-level childless non-multiline keys, probably doesn\'t work on windows).
 
-This task does not work on Ruby 1.8.6.
-You need to use Ruby 1.8.7 or later.
-
 Options:
   key=key_1,key_2    Comma-separated list of keys to delete
   skip=en,de         Comma-separated list of locale files to ignore (filename without extension)
@@ -114,7 +111,7 @@ END_DESC
     files.each do |path|
       # Skip certain locales
       (puts "Skipping #{path}"; next) if File.basename(path, ".yml") =~ skips
-      # TODO: Check for dupliate/existing keys
+      # TODO: Check for duplicate/existing keys
       puts "Adding #{key_list} to #{path}"
       File.open(path, 'a') do |file|
         adds.each do |kv|

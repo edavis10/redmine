@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2014  Jean-Philippe Lang
+# Copyright (C) 2006-2017  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,13 +16,15 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class Journal < ActiveRecord::Base
+  include Redmine::SafeAttributes
+
   belongs_to :journalized, :polymorphic => true
   # added as a quick fix to allow eager loading of the polymorphic association
   # since always associated to an issue, for now
   belongs_to :issue, :foreign_key => :journalized_id
 
   belongs_to :user
-  has_many :details, :class_name => "JournalDetail", :dependent => :delete_all
+  has_many :details, :class_name => "JournalDetail", :dependent => :delete_all, :inverse_of => :journal
   attr_accessor :indice
 
   acts_as_event :title => Proc.new {|o| status = ((s = o.new_status) ? " (#{s})" : nil); "#{o.issue.tracker} ##{o.issue.id}#{status}: #{o.issue.subject}" },
@@ -34,22 +36,47 @@ class Journal < ActiveRecord::Base
 
   acts_as_activity_provider :type => 'issues',
                             :author_key => :user_id,
-                            :find_options => {:include => [{:issue => :project}, :details, :user],
-                                              :conditions => "#{Journal.table_name}.journalized_type = 'Issue' AND" +
-                                                             " (#{JournalDetail.table_name}.prop_key = 'status_id' OR #{Journal.table_name}.notes <> '')"}
+                            :scope => preload({:issue => :project}, :user).
+                                      joins("LEFT OUTER JOIN #{JournalDetail.table_name} ON #{JournalDetail.table_name}.journal_id = #{Journal.table_name}.id").
+                                      where("#{Journal.table_name}.journalized_type = 'Issue' AND" +
+                                            " (#{JournalDetail.table_name}.prop_key = 'status_id' OR #{Journal.table_name}.notes <> '')").distinct
 
   before_create :split_private_notes
-  after_create :send_notification
+  after_commit :send_notification, :on => :create
 
   scope :visible, lambda {|*args|
     user = args.shift || User.current
+    options = args.shift || {}
 
-    includes(:issue => :project).
-      where(Issue.visible_condition(user, *args)).
-      where("(#{Journal.table_name}.private_notes = ? OR (#{Project.allowed_to_condition(user, :view_private_notes, *args)}))", false)
+    joins(:issue => :project).
+      where(Issue.visible_condition(user, options)).
+      where(Journal.visible_notes_condition(user, :skip_pre_condition => true))
   }
 
+  safe_attributes 'notes',
+    :if => lambda {|journal, user| journal.new_record? || journal.editable_by?(user)}
+  safe_attributes 'private_notes',
+    :if => lambda {|journal, user| user.allowed_to?(:set_notes_private, journal.project)}
+
+  # Returns a SQL condition to filter out journals with notes that are not visible to user
+  def self.visible_notes_condition(user=User.current, options={})
+    private_notes_permission = Project.allowed_to_condition(user, :view_private_notes, options)
+    sanitize_sql_for_conditions(["(#{table_name}.private_notes = ? OR #{table_name}.user_id = ? OR (#{private_notes_permission}))", false, user.id])
+  end
+
+  def initialize(*args)
+    super
+    if journalized
+      if journalized.new_record?
+        self.notify = false
+      else
+        start
+      end
+    end
+  end
+
   def save(*args)
+    journalize_changes
     # Do not save an empty journal
     (details.empty? && notes.blank?) ? false : super
   end
@@ -105,7 +132,7 @@ class Journal < ActiveRecord::Base
   end
 
   def attachments
-    journalized.respond_to?(:attachments) ? journalized.attachments : nil
+    journalized.respond_to?(:attachments) ? journalized.attachments : []
   end
 
   # Returns a string of css classes
@@ -165,7 +192,108 @@ class Journal < ActiveRecord::Base
     journals
   end
 
+  # Stores the values of the attributes and custom fields of the journalized object
+  def start
+    if journalized
+      @attributes_before_change = journalized.journalized_attribute_names.inject({}) do |h, attribute|
+        h[attribute] = journalized.send(attribute)
+        h
+      end
+      @custom_values_before_change = journalized.custom_field_values.inject({}) do |h, c|
+        h[c.custom_field_id] = c.value
+        h
+      end
+    end
+    self
+  end
+
+  # Adds a journal detail for an attachment that was added or removed
+  def journalize_attachment(attachment, added_or_removed)
+    key = (added_or_removed == :removed ? :old_value : :value)
+    details << JournalDetail.new(
+        :property => 'attachment',
+        :prop_key => attachment.id,
+        key => attachment.filename
+      )
+  end
+
+  # Adds a journal detail for an issue relation that was added or removed
+  def journalize_relation(relation, added_or_removed)
+    key = (added_or_removed == :removed ? :old_value : :value)
+    details << JournalDetail.new(
+        :property  => 'relation',
+        :prop_key  => relation.relation_type_for(journalized),
+        key => relation.other_issue(journalized).try(:id)
+      )
+  end
+
   private
+
+  # Generates journal details for attribute and custom field changes
+  def journalize_changes
+    # attributes changes
+    if @attributes_before_change
+      attrs = (journalized.journalized_attribute_names + @attributes_before_change.keys).uniq
+      attrs.each do |attribute|
+        before = @attributes_before_change[attribute]
+        after = journalized.send(attribute)
+        next if before == after || (before.blank? && after.blank?)
+        add_attribute_detail(attribute, before, after)
+      end
+    end
+    # custom fields changes
+    if @custom_values_before_change
+      values_by_custom_field_id = {}
+      @custom_values_before_change.each do |custom_field_id, value|
+        values_by_custom_field_id[custom_field_id] = nil
+      end
+      journalized.custom_field_values.each do |c|
+        values_by_custom_field_id[c.custom_field_id] = c.value
+      end
+
+      values_by_custom_field_id.each do |custom_field_id, after|
+        before = @custom_values_before_change[custom_field_id]
+        next if before == after || (before.blank? && after.blank?)
+
+        if before.is_a?(Array) || after.is_a?(Array)
+          before = [before] unless before.is_a?(Array)
+          after = [after] unless after.is_a?(Array)
+
+          # values removed
+          (before - after).reject(&:blank?).each do |value|
+            add_custom_field_detail(custom_field_id, value, nil)
+          end
+          # values added
+          (after - before).reject(&:blank?).each do |value|
+            add_custom_field_detail(custom_field_id, nil, value)
+          end
+        else
+          add_custom_field_detail(custom_field_id, before, after)
+        end
+      end
+    end
+    start
+  end
+
+  # Adds a journal detail for an attribute change
+  def add_attribute_detail(attribute, old_value, value)
+    add_detail('attr', attribute, old_value, value)
+  end
+
+  # Adds a journal detail for a custom field value change
+  def add_custom_field_detail(custom_field_id, old_value, value)
+    add_detail('cf', custom_field_id, old_value, value)
+  end
+
+  # Adds a journal detail
+  def add_detail(property, prop_key, old_value, value)
+    details << JournalDetail.new(
+        :property => property,
+        :prop_key => prop_key,
+        :old_value => old_value,
+        :value => value
+      )
+  end
 
   def split_private_notes
     if private_notes?
