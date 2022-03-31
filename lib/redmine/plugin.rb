@@ -92,6 +92,15 @@ module Redmine
     #     requires_redmine version_or_higher: '3.0.0'
     #   end
     def self.register(id, &block)
+      # check if the plugin is in the correct location
+      unless Engines.plugins.collect(&:name).include? id
+        if Redmine::VERSION::MAJOR <= 1 && Redmine::VERSION::MINOR < 1
+          ActiveSupport::Deprecation.warn "WARNING: The #{id} plugin needs to be inside #{File.join(RAILS_ROOT, 'vendor', 'plugins', id.to_s)}"
+        else
+          raise "ERROR: The #{id} plugin needs to be inside #{File.join(RAILS_ROOT, 'vendor', 'plugins', id.to_s)}"
+        end
+      end
+      
       p = new(id)
       p.instance_eval(&block)
 
