@@ -1,0 +1,54 @@
+production:
+    after_checkout:
+      - source: /config/cloud/cloud66/files/configuration.yml
+        destination: <%= ENV['RAILS_STACK_PATH'] %>/config/configuration.yml
+        target: rails
+        run_on: all_servers
+      - source: /config/cloud/cloud66/files/database.yml
+        destination: <%= ENV['RAILS_STACK_PATH'] %>/config/database.yml
+        target: rails
+        run_on: all_servers
+    after_rails:
+      - source: /config/cloud/cloud66/scripts/permissions.sh
+        destination: /tmp/permissions.sh
+        target: rails
+        apply_during: build_only
+        execute: true
+        run_on: all_servers
+        sudo: true
+staging:
+    after_checkout:
+      - source: /config/cloud/cloud66/files/configuration.yml
+        destination: <%= ENV['RAILS_STACK_PATH'] %>/config/configuration.yml
+        target: rails
+        run_on: all_servers
+      - source: /config/cloud/cloud66/files/database.yml
+        destination: <%= ENV['RAILS_STACK_PATH'] %>/config/database.yml
+        target: rails
+        run_on: all_servers
+    after_rails:
+      - source: /config/cloud/cloud66/scripts/permissions.sh
+        destination: /tmp/permissions.sh
+        target: rails
+        apply_during: build_only
+        execute: true
+        run_on: all_servers
+        sudo: true
+development:
+    after_checkout:
+      - source: /config/cloud/cloud66/files/configuration.yml
+        destination: <%= ENV['RAILS_STACK_PATH'] %>/config/configuration.yml
+        target: rails
+        run_on: all_servers
+      - source: /config/cloud/cloud66/files/database.yml
+        destination: <%= ENV['RAILS_STACK_PATH'] %>/config/database.yml
+        target: rails
+        run_on: all_servers
+    after_rails:
+      - source: /config/cloud/cloud66/scripts/permissions.sh
+        destination: /tmp/permissions.sh
+        target: rails
+        apply_during: build_only
+        execute: true
+        run_on: all_servers
+        sudo: true

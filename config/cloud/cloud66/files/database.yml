@@ -1,0 +1,6 @@
+production:
+  adapter: mysql2
+development:
+  adapter: mysql2
+staging:
+  adapter: mysql2
