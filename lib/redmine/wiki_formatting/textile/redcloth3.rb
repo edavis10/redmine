@@ -567,6 +567,7 @@ class RedCloth3 < String
                         if depth.last.length > tl.length
                             (depth.length - 1).downto(0) do |i|
                                 break if depth[i].length == tl.length
+
                                 lines[line_id - 1] << "</li>\n\t</#{lT(depth[i])}l>\n\t"
                                 depth.pop
                             end
@@ -962,6 +963,7 @@ class RedCloth3 < String
             url, url_title = check_refs( url )
 
             next m unless uri_with_safe_scheme?(url.partition('?').first)
+
             if href
               href = htmlesc(href.dup)
               next m if href.downcase.start_with?('javascript:')
@@ -1195,6 +1197,7 @@ class RedCloth3 < String
                         if raw[3] =~ /#{prop}\s*=\s*#{q}([^#{q2}]+)#{q}/i
                             attrv = $1
                             next if prop == 'src' and attrv =~ %r{^(?!http)\w+:}
+
                             pcs << "#{prop}=\"#{$1.gsub('"', '\\"')}\""
                             break
                         end

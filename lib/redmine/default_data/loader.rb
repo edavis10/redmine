@@ -39,6 +39,7 @@ module Redmine
         # Raises a RecordNotSaved exception if something goes wrong
         def load(lang=nil, options={})
           raise DataAlreadyLoaded.new("Some configuration data is already loaded.") unless no_data?
+
           set_language_if_valid(lang)
           workflow = !(options[:workflow] == false)
 

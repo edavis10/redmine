@@ -72,6 +72,7 @@ module Redmine
           index = (high+low)/2
           found = self[index]
           return nil if value == found
+
           if value > found
             low = index + 1
           else

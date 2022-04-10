@@ -52,6 +52,7 @@ module Redmine
     #   book.safe_attributes(book.author) # => ['title', 'pages', 'isbn']
     def safe_attribute_names(user=nil)
       return @safe_attribute_names if @safe_attribute_names && user.nil?
+
       names = []
       self.class.safe_attributes.collect do |attrs, options|
         if options[:if].nil? || options[:if].call(self, user || User.current)
@@ -87,6 +88,7 @@ module Redmine
       end
 
       return unless attrs.is_a?(Hash)
+
       self.attributes = delete_unsafe_attributes(attrs, user)
     end
   end
