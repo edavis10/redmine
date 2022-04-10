@@ -19,16 +19,6 @@ Layout/DotPosition:
   Enabled: false
 
 # This cop supports safe auto-correction (--auto-correct).
-Layout/EmptyLineAfterGuardClause:
-  Exclude:
-    - 'db/migrate/101_populate_changesets_user_id.rb'
-    - 'lib/redmine/default_data/loader.rb'
-    - 'lib/redmine/safe_attributes.rb'
-    - 'lib/redmine/string_array_diff/diff.rb'
-    - 'lib/redmine/string_array_diff/diffable.rb'
-    - 'lib/redmine/wiki_formatting/textile/redcloth3.rb'
-
-# This cop supports safe auto-correction (--auto-correct).
 # Configuration parameters: EmptyLineBetweenMethodDefs, EmptyLineBetweenClassDefs, EmptyLineBetweenModuleDefs, AllowAdjacentOneLineDefs, NumberOfEmptyLines.
 Layout/EmptyLineBetweenDefs:
   Exclude:
